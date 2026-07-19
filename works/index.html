@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="HALKAの作品一覧。" />
+    <title>作品一覧 | HALKA</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../style.css" />
+    <link rel="stylesheet" href="works.css" />
+  </head>
+  <body>
+    <main id="top">
+      <div class="yellow-tape" aria-hidden="true">
+        <span>HALKA WORKS</span>
+        <span>tap a card to watch ↗</span>
+      </div>
+
+      <div class="notebook">
+        <header class="site-header">
+          <a class="small-sign" href="../index.html" aria-label="トップページへ戻る"></a>
+          <p>works archive</p>
+          <span class="header-doodle" aria-hidden="true">♪　〰</span>
+        </header>
+
+        <section class="works-section" aria-labelledby="works-title">
+          <div class="section-heading">
+            <div>
+              <p>works archive</p>
+              <h1 id="works-title">作品一覧</h1>
+            </div>
+            <span aria-hidden="true">♪　・　☆</span>
+          </div>
+
+          <nav id="works-toc" class="works-toc" aria-label="カテゴリー目次"></nav>
+
+          <!-- 作品は works/works-data.js にタイトルとYouTube URLを追加するだけで、ここに自動表示されます。 -->
+          <div id="works-categories"></div>
+        </section>
+
+        <footer>
+          <p><a href="../index.html">← リンク集へ戻る</a></p>
+          <span aria-hidden="true">・　・　・</span>
+          <a href="#top">いちばん上へ ↑</a>
+        </footer>
+      </div>
+    </main>
+
+    <script src="works-data.js" defer></script>
+    <script src="works.js" defer></script>
+  </body>
+</html>
