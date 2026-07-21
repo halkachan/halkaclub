@@ -4,6 +4,21 @@
   padding: 58px 0 84px;
 }
 
+.game-description {
+  margin: 0 0 28px;
+}
+
+.game-description p {
+  margin: 0 0 14px;
+  color: var(--pencil);
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+.game-description p:last-child {
+  margin-bottom: 0;
+}
+
 .game-orientation-note {
   display: inline-block;
   margin: 0 0 32px;
@@ -101,6 +116,14 @@
 @media (max-width: 780px) {
   .game-section {
     padding: 48px 0 69px;
+  }
+
+  .game-description {
+    margin-bottom: 22px;
+  }
+
+  .game-description p {
+    font-size: 13px;
   }
 
   .game-orientation-note {
