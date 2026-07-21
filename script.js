@@ -1,28 +1,6 @@
 // 最新動画を変更するときは、この1行のURLだけ書き換えてください。
 const latestVideoUrl = "https://youtu.be/RFQw7HejNZ0";
 
-function extractYouTubeId(url) {
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.replace(/^www\./, "");
-
-    if (host === "youtu.be") {
-      return parsed.pathname.split("/").filter(Boolean)[0] || null;
-    }
-
-    if (host.endsWith("youtube.com")) {
-      if (parsed.pathname.startsWith("/shorts/")) {
-        return parsed.pathname.split("/")[2] || null;
-      }
-      return parsed.searchParams.get("v");
-    }
-  } catch (error) {
-    return null;
-  }
-
-  return null;
-}
-
 document.addEventListener("DOMContentLoaded", () => {
   const videoId = extractYouTubeId(latestVideoUrl);
   if (!videoId) return;
@@ -32,12 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!link || !thumb) return;
 
   link.href = `https://www.youtube.com/watch?v=${videoId}`;
-
-  thumb.onerror = () => {
-    thumb.onerror = null;
-    thumb.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-  };
-  thumb.src = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+  setYouTubeThumbnail(thumb, videoId);
 });
 
 // works/works-data.js の全カテゴリーから、ランダムで1本を選んで表示します。
@@ -88,11 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
   titleEl.textContent = work.title;
   dateEl.textContent = work.publishedAt ? work.publishedAt.replace(/-/g, ".") : "";
 
-  thumb.onerror = () => {
-    thumb.onerror = null;
-    thumb.src = `https://img.youtube.com/vi/${work.videoId}/hqdefault.jpg`;
-  };
-  thumb.src = `https://img.youtube.com/vi/${work.videoId}/maxresdefault.jpg`;
+  setYouTubeThumbnail(thumb, work.videoId);
 
   section.hidden = false;
 });

@@ -4,28 +4,6 @@
 const WORKS_PAGE_SIZE = 12;
 let closeOpenWorksCategory = null;
 
-function extractYouTubeId(url) {
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.replace(/^www\./, "");
-
-    if (host === "youtu.be") {
-      return parsed.pathname.split("/").filter(Boolean)[0] || null;
-    }
-
-    if (host.endsWith("youtube.com")) {
-      if (parsed.pathname.startsWith("/shorts/")) {
-        return parsed.pathname.split("/")[2] || null;
-      }
-      return parsed.searchParams.get("v");
-    }
-  } catch (error) {
-    return null;
-  }
-
-  return null;
-}
-
 function formatPublishedAt(publishedAt) {
   if (!publishedAt) return "";
   return publishedAt.replace(/-/g, ".");
@@ -51,11 +29,7 @@ function createWorkCard(work) {
   thumb.decoding = "async";
 
   if (videoId) {
-    thumb.onerror = () => {
-      thumb.onerror = null;
-      thumb.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-    };
-    thumb.src = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    setYouTubeThumbnail(thumb, videoId);
   }
 
   thumbWrap.appendChild(thumb);
