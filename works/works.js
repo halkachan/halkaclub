@@ -1,5 +1,8 @@
 // works/works.js
-// works-data.js のデータから、目次と作品カードを自動生成します。
+// works-data.js のデータから、カテゴリーをアコーディオン表示し、開いたときだけ作品カードを描画します。
+
+const WORKS_PAGE_SIZE = 12;
+let closeOpenWorksCategory = null;
 
 function extractYouTubeId(url) {
   try {
@@ -56,6 +59,7 @@ function createWorkCard(work) {
   }
 
   thumbWrap.appendChild(thumb);
+  card.appendChild(thumbWrap);
 
   const body = document.createElement("span");
   body.className = "work-body";
@@ -72,53 +76,140 @@ function createWorkCard(work) {
     body.appendChild(date);
   }
 
-  card.appendChild(thumbWrap);
   card.appendChild(body);
 
   return card;
 }
 
 function renderWorksCategory(category) {
-  const section = document.createElement("section");
+  const works = category.works || [];
+  const panelId = `${category.id}-panel`;
+
+  const section = document.createElement("div");
   section.className = "works-category";
   section.id = category.id;
-  section.setAttribute("aria-labelledby", `${category.id}-title`);
 
-  const heading = document.createElement("h2");
-  heading.id = `${category.id}-title`;
-  heading.textContent = category.name;
-  section.appendChild(heading);
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "works-category-toggle";
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.setAttribute("aria-controls", panelId);
 
-  if (!category.works || category.works.length === 0) {
+  const info = document.createElement("span");
+  info.className = "works-category-info";
+
+  const name = document.createElement("strong");
+  name.className = "works-category-name";
+  name.id = `${category.id}-title`;
+  name.textContent = category.name;
+  info.appendChild(name);
+
+  if (category.description) {
+    const desc = document.createElement("small");
+    desc.className = "works-category-desc";
+    desc.textContent = category.description;
+    info.appendChild(desc);
+  }
+
+  const count = document.createElement("span");
+  count.className = "works-category-count";
+  count.textContent = `${works.length}曲`;
+  info.appendChild(count);
+
+  const cta = document.createElement("span");
+  cta.className = "works-category-cta";
+
+  const ctaLabel = document.createElement("span");
+  ctaLabel.textContent = "作品を見る";
+  cta.appendChild(ctaLabel);
+
+  const ctaArrow = document.createElement("span");
+  ctaArrow.className = "works-category-arrow";
+  ctaArrow.setAttribute("aria-hidden", "true");
+  ctaArrow.textContent = "▶";
+  cta.appendChild(ctaArrow);
+
+  toggle.appendChild(info);
+  toggle.appendChild(cta);
+
+  const panel = document.createElement("div");
+  panel.className = "works-category-panel";
+  panel.id = panelId;
+  panel.setAttribute("aria-labelledby", `${category.id}-title`);
+  panel.hidden = true;
+
+  let renderMore = null;
+
+  if (works.length === 0) {
     const empty = document.createElement("p");
     empty.className = "works-empty";
     empty.textContent = "準備中";
-    section.appendChild(empty);
-    return section;
+    panel.appendChild(empty);
+  } else {
+    const grid = document.createElement("div");
+    grid.className = "work-grid";
+    panel.appendChild(grid);
+
+    const moreWrap = document.createElement("div");
+    moreWrap.className = "work-more-wrap";
+
+    const moreButton = document.createElement("button");
+    moreButton.type = "button";
+    moreButton.className = "work-more-button";
+    moreButton.textContent = "もっと見る";
+    moreWrap.appendChild(moreButton);
+    panel.appendChild(moreWrap);
+
+    let renderedCount = 0;
+
+    renderMore = () => {
+      const next = works.slice(renderedCount, renderedCount + WORKS_PAGE_SIZE);
+      next.forEach((work) => grid.appendChild(createWorkCard(work)));
+      renderedCount += next.length;
+      moreWrap.hidden = renderedCount >= works.length;
+    };
+
+    moreButton.addEventListener("click", renderMore);
   }
 
-  const grid = document.createElement("div");
-  grid.className = "work-grid";
+  let built = false;
 
-  category.works.forEach((work) => {
-    grid.appendChild(createWorkCard(work));
+  function openPanel() {
+    if (!built) {
+      built = true;
+      if (renderMore) renderMore();
+    }
+    panel.hidden = false;
+    toggle.setAttribute("aria-expanded", "true");
+  }
+
+  function closePanel() {
+    panel.hidden = true;
+    toggle.setAttribute("aria-expanded", "false");
+  }
+
+  toggle.addEventListener("click", () => {
+    const isOpen = toggle.getAttribute("aria-expanded") === "true";
+    if (isOpen) {
+      closePanel();
+      closeOpenWorksCategory = null;
+      return;
+    }
+    if (closeOpenWorksCategory) closeOpenWorksCategory();
+    openPanel();
+    closeOpenWorksCategory = closePanel;
   });
 
-  section.appendChild(grid);
+  section.appendChild(toggle);
+  section.appendChild(panel);
   return section;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  const toc = document.getElementById("works-toc");
   const container = document.getElementById("works-categories");
-  if (!toc || !container || typeof worksData === "undefined") return;
+  if (!container || typeof worksData === "undefined") return;
 
   worksData.forEach((category) => {
-    const link = document.createElement("a");
-    link.href = `#${category.id}`;
-    link.textContent = category.name;
-    toc.appendChild(link);
-
     container.appendChild(renderWorksCategory(category));
   });
 });

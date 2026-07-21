@@ -16,6 +16,7 @@ const worksData = [
   {
     id: "utattemita",
     name: "歌ってみた",
+    description: "Arrange coverした歌ってみた作品",
     works: [
       {
         title: "脱法ロックｳﾀｯﾀ (Arrange cover)",
@@ -127,6 +128,7 @@ const worksData = [
   {
     id: "hiragana",
     name: "ひらがな一文字シリーズ",
+    description: "ひらがな一文字ずつをテーマに制作している楽曲シリーズ。",
     works: [
       {
         title: "あ / 鏡音リン",
@@ -328,6 +330,7 @@ const worksData = [
   {
     id: "direction",
     name: "方向シリーズ",
+    description: "前・後・右・左・上・下などの向きをテーマにした楽曲シリーズ。",
     works: [
       {
         title: "まえがみえない！ / 鏡音リン&鏡音レン",
@@ -359,6 +362,7 @@ const worksData = [
   {
     id: "sonota",
     name: "その他",
+    description: "はぐれもの",
     works: [
       {
         title: "わぁっ！ / 鏡音リン",
