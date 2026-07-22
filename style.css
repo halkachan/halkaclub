@@ -134,13 +134,24 @@ main {
   border: 2px solid var(--ink);
   border-radius: 10px 4px 10px 4px / 4px 10px 4px 10px;
   box-shadow: 4px 5px 0 rgba(22, 21, 15, 0.14);
-  cursor: pointer;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-tap-highlight-color: transparent;
   transform: rotate(-1deg);
-  transition: box-shadow 160ms ease, transform 160ms ease;
+  transition: box-shadow 160ms ease;
 }
 
 .halka-gif-button:hover {
   box-shadow: 6px 7px 0 var(--ink);
+}
+
+.halka-gif-button.is-dragging {
+  cursor: grabbing;
+  box-shadow: 8px 10px 0 rgba(22, 21, 15, 0.32);
+  z-index: 5;
 }
 
 .halka-gif {
@@ -148,6 +159,8 @@ main {
   width: 192px;
   height: 192px;
   image-rendering: pixelated;
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 .halka-gif-button.is-clicked {
@@ -234,6 +247,84 @@ main {
     opacity: 0;
     transform: translate(var(--fx-x, 40px), var(--fx-y, -60px)) scale(1.1) rotate(var(--fx-rot, 20deg));
   }
+}
+
+.halka-gif-button.is-combo-shake {
+  animation: halka-gif-combo-shake 350ms ease;
+}
+
+@keyframes halka-gif-combo-shake {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(-1deg);
+  }
+  15% {
+    transform: translate(-10px, 2px) rotate(-9deg);
+  }
+  30% {
+    transform: translate(10px, -2px) rotate(7deg);
+  }
+  45% {
+    transform: translate(-8px, 2px) rotate(-7deg);
+  }
+  60% {
+    transform: translate(8px, -2px) rotate(5deg);
+  }
+  75% {
+    transform: translate(-5px, 1px) rotate(-4deg);
+  }
+  90% {
+    transform: translate(5px, -1px) rotate(2deg);
+  }
+}
+
+.halka-gif-button.is-combo-flee {
+  animation: halka-gif-combo-flee 500ms ease-out forwards;
+}
+
+@keyframes halka-gif-combo-flee {
+  from {
+    transform: translate(0, 0) rotate(-1deg);
+  }
+  to {
+    transform: translate(var(--combo-flee-x, 120px), var(--combo-flee-y, -120px)) rotate(359deg);
+  }
+}
+
+.halka-gif-clone-layer {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.halka-gif-clone {
+  position: absolute;
+  image-rendering: pixelated;
+  opacity: 1;
+  pointer-events: none;
+  transition: opacity 420ms ease;
+}
+
+.halka-gif-clone.is-flying {
+  animation-name: halka-gif-clone-float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+@keyframes halka-gif-clone-float {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(var(--clone-x, 40px), var(--clone-y, -40px));
+  }
+}
+
+.halka-gif-clone.is-fading {
+  opacity: 0;
 }
 
 .latest-video-section {
@@ -1107,7 +1198,10 @@ footer a {
 
   .halka-gif-button.is-clicked,
   .halka-gif-bubble,
-  .halka-gif-fx {
+  .halka-gif-fx,
+  .halka-gif-button.is-combo-shake,
+  .halka-gif-button.is-combo-flee,
+  .halka-gif-clone.is-flying {
     animation: none;
   }
 }
