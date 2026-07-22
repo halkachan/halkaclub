@@ -121,8 +121,37 @@ main {
   padding: 24px 0 6px;
 }
 
+.halka-gif-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .halka-gif-stage {
   position: relative;
+}
+
+.halka-secret-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--yellow);
+  opacity: 0.38;
+  transition: opacity 200ms ease, transform 200ms ease, filter 200ms ease;
+}
+
+.halka-secret-icon-svg {
+  width: 16px;
+  height: 16px;
+}
+
+.halka-secret-icon:hover,
+.halka-secret-icon:focus-visible {
+  opacity: 1;
+  transform: rotate(-12deg);
+  filter: drop-shadow(0 0 4px var(--yellow));
 }
 
 .halka-gif-button {

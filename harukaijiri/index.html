@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="ﾊﾙｶﾁｬﾝをいじっていじり値を貯める、HALKAサイトのおまけクリッカーゲーム。" />
+    <title>はるかいじり / HARUKA IJIRI | HALKA</title>
+    <link rel="icon" href="/favicon.png?v=2" type="image/png" />
+    <link rel="stylesheet" href="../style.css?v=1" />
+    <link rel="stylesheet" href="harukaijiri.css" />
+  </head>
+  <body>
+    <main id="top">
+      <div class="yellow-tape" aria-hidden="true">
+        <span>HALKA HARUKA IJIRI</span>
+        <span>いじって、増やして、埋め尽くす。</span>
+      </div>
+
+      <div class="notebook harukaijiri-notebook">
+        <header class="site-header">
+          <a class="small-sign" href="../index.html">HALKA</a>
+          <p>harukaijiri</p>
+          <span class="header-doodle" aria-hidden="true">目　〰</span>
+        </header>
+
+        <section class="harukaijiri-hero">
+          <p class="harukaijiri-kicker">HARUKA IJIRI</p>
+          <h1>はるかいじり</h1>
+        </section>
+
+        <section class="harukaijiri-stats" aria-label="いじりステータス">
+          <div class="harukaijiri-stat">
+            <p class="harukaijiri-stat-label">いじり値</p>
+            <p class="harukaijiri-stat-value" id="harukaijiri-stat-value">0</p>
+          </div>
+          <div class="harukaijiri-stat">
+            <p class="harukaijiri-stat-label">1クリックあたり</p>
+            <p class="harukaijiri-stat-value" id="harukaijiri-stat-click-power">1</p>
+          </div>
+          <div class="harukaijiri-stat">
+            <p class="harukaijiri-stat-label">1秒あたり（自動いじり）</p>
+            <p class="harukaijiri-stat-value" id="harukaijiri-stat-auto-rate">0</p>
+          </div>
+          <div class="harukaijiri-stat">
+            <p class="harukaijiri-stat-label">総クリック数</p>
+            <p class="harukaijiri-stat-value" id="harukaijiri-stat-total-clicks">0</p>
+          </div>
+          <div class="harukaijiri-stat">
+            <p class="harukaijiri-stat-label">現在のﾊﾙｶﾁｬﾝ</p>
+            <p class="harukaijiri-stat-value" id="harukaijiri-stat-character-count">1体</p>
+          </div>
+        </section>
+
+        <p class="harukaijiri-notice" id="harukaijiri-notice" role="status" aria-live="polite"></p>
+
+        <section class="harukaijiri-stage-section" aria-label="はるかいじりエリア">
+          <div class="harukaijiri-hero-stage" id="harukaijiri-hero-stage">
+            <button type="button" class="harukaijiri-hero-button" id="harukaijiri-hero-button" aria-label="ﾊﾙｶﾁｬﾝをいじる（クリックでいじり値を獲得）">
+              <img class="harukaijiri-hero-gif" src="../assets/profile/halgif1.gif" width="64" height="64" alt="ﾊﾙｶﾁｬﾝ" draggable="false" />
+            </button>
+          </div>
+
+          <!-- 増殖した個体（2体目以降）はここに表示されます。個々の画像へはリスナーを付けず、イベント委譲で処理します。 -->
+          <div class="harukaijiri-characters" id="harukaijiri-characters" aria-hidden="true"></div>
+
+          <div class="harukaijiri-zones" id="harukaijiri-zones" role="group" aria-label="区画の切り替え"></div>
+        </section>
+
+        <section class="harukaijiri-section" aria-labelledby="harukaijiri-facilities-title">
+          <h2 id="harukaijiri-facilities-title">いじり道具</h2>
+          <!-- 道具の内容は harukaijiri.js の HarukaijiriConfig.facilities から自動生成されます -->
+          <div class="harukaijiri-facilities" id="harukaijiri-facilities"></div>
+        </section>
+
+        <section class="harukaijiri-section" aria-labelledby="harukaijiri-records-title">
+          <h2 id="harukaijiri-records-title">いじり記録</h2>
+          <details class="harukaijiri-records">
+            <summary>いじり記録を開く</summary>
+            <!-- 記録の内容は harukaijiri.js の HarukaijiriConfig.achievements から自動生成されます -->
+            <ul class="harukaijiri-records-list" id="harukaijiri-records-list"></ul>
+          </details>
+        </section>
+
+        <section class="harukaijiri-section harukaijiri-reset-section" aria-label="いじり記録の初期化">
+          <button type="button" class="harukaijiri-reset-button" id="harukaijiri-reset-button">いじり記録を初期化する</button>
+
+          <div class="harukaijiri-reset-confirm" id="harukaijiri-reset-confirm" hidden>
+            <p>
+              すべてのいじり値、道具、ﾊﾙｶﾁｬﾝ、いじり記録が初期化されます。<br />
+              この操作は元に戻せません。
+            </p>
+            <div class="harukaijiri-reset-confirm-actions">
+              <button type="button" class="harukaijiri-reset-cancel-button" id="harukaijiri-reset-cancel-button">やめる</button>
+              <button type="button" class="harukaijiri-reset-confirm-button" id="harukaijiri-reset-confirm-button">本当に初期化する</button>
+            </div>
+          </div>
+        </section>
+
+        <a class="back-link" href="../index.html">← リンク集へ戻る</a>
+      </div>
+    </main>
+
+    <script src="harukaijiri.js" defer></script>
+  </body>
+</html>
