@@ -1,4 +1,4 @@
-/* game/game.css：かがみねちゃれんじページ専用のデザイン */
+/* game/game.css：ゲーム集ページ専用のデザイン */
 
 .game-section {
   padding: 58px 0 84px;
@@ -17,6 +17,24 @@
 
 .game-description p:last-child {
   margin-bottom: 0;
+}
+
+.game-collection-lead {
+  margin: 0 0 48px;
+  color: var(--pencil);
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+.game-entry {
+  padding: 34px 0 54px;
+  border-top: 2px dashed rgba(22, 21, 15, 0.25);
+}
+
+.game-entry-title {
+  margin: 0 0 22px;
+  font-size: clamp(26px, 6vw, 42px);
+  line-height: 1.2;
 }
 
 .game-orientation-note {
@@ -44,6 +62,11 @@
   border: 2px solid var(--ink);
   border-radius: 9px 3px 8px 2px / 3px 8px 2px 9px;
   box-shadow: 5px 6px 0 rgba(22, 21, 15, 0.14);
+}
+
+.game-frame--landscape {
+  width: min(100%, 960px);
+  aspect-ratio: 8 / 5;
 }
 
 .game-frame iframe {
@@ -110,6 +133,8 @@
 }
 
 .game-section .back-link {
+  display: inline-block;
+  margin-top: 28px;
   color: var(--pencil);
 }
 
@@ -124,6 +149,15 @@
 
   .game-description p {
     font-size: 13px;
+  }
+
+  .game-collection-lead {
+    margin-bottom: 36px;
+    font-size: 13px;
+  }
+
+  .game-entry {
+    padding: 28px 0 44px;
   }
 
   .game-orientation-note {

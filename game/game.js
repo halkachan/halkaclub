@@ -1,21 +1,18 @@
-// game/game.js：「ゲームを起動」ボタンが押された時だけiframeを生成します
+// 各ゲームは「ゲームを起動」が押された時だけiframeを生成します。
 (function () {
-  const frame = document.getElementById("game-frame");
-  const launchButton = document.getElementById("game-launch-button");
-  const newTabButton = document.querySelector(".game-newtab-button");
+  document.querySelectorAll("[data-game-frame]").forEach((frame) => {
+    const launchButton = frame.querySelector(".game-launch-button");
+    if (!launchButton) return;
 
-  if (!frame || !launchButton || !newTabButton) return;
+    launchButton.addEventListener("click", () => {
+      const iframe = document.createElement("iframe");
+      iframe.src = launchButton.dataset.gameUrl;
+      iframe.title = launchButton.dataset.gameTitle;
+      iframe.loading = "eager";
+      iframe.setAttribute("allow", "autoplay; fullscreen; gamepad");
+      iframe.setAttribute("allowfullscreen", "true");
 
-  const gameUrl = newTabButton.href;
-
-  launchButton.addEventListener("click", () => {
-    const iframe = document.createElement("iframe");
-    iframe.src = gameUrl;
-    iframe.title = "かがみねちゃれんじ";
-    iframe.loading = "lazy";
-    iframe.setAttribute("allow", "autoplay; fullscreen");
-    iframe.setAttribute("allowfullscreen", "true");
-
-    frame.replaceChildren(iframe);
+      frame.replaceChildren(iframe);
+    });
   });
 })();
