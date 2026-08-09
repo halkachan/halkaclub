@@ -1,7 +1,98 @@
-/* game/game.css：ゲーム集ページ専用のデザイン */
+/* game/game.css：ゲーム一覧・個別ページ共通のデザイン */
 
 .game-section {
   padding: 58px 0 84px;
+}
+
+.game-collection-lead {
+  margin: 0 0 42px;
+  color: var(--pencil);
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 28px;
+}
+
+.game-card {
+  position: relative;
+  display: flex;
+  min-height: 360px;
+  flex-direction: column;
+  padding: 30px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.76);
+  border: 2px solid var(--ink);
+  border-radius: 9px 3px 8px 2px / 3px 8px 2px 9px;
+  box-shadow: 5px 6px 0 rgba(22, 21, 15, 0.14);
+}
+
+.game-card:nth-child(even) {
+  transform: rotate(0.45deg);
+}
+
+.game-card-number {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  margin: 0;
+  color: rgba(22, 21, 15, 0.16);
+  font-size: 54px;
+  line-height: 1;
+}
+
+.game-card h2 {
+  position: relative;
+  margin: 28px 0 22px;
+  font-size: clamp(25px, 4vw, 36px);
+  line-height: 1.3;
+}
+
+.game-card > p:not(.game-card-number) {
+  margin: 0 0 24px;
+  color: var(--pencil);
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.game-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 28px;
+  padding: 0;
+  list-style: none;
+}
+
+.game-card-tags li {
+  padding: 4px 11px;
+  background: var(--yellow);
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.game-card-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: auto;
+  padding: 15px 18px;
+  background: var(--ink);
+  color: white;
+  border: 2px solid var(--ink);
+  font-size: 15px;
+  transition: transform 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.game-card-link:hover {
+  background: var(--yellow);
+  color: var(--ink);
+  transform: translateY(-3px);
 }
 
 .game-description {
@@ -17,24 +108,6 @@
 
 .game-description p:last-child {
   margin-bottom: 0;
-}
-
-.game-collection-lead {
-  margin: 0 0 48px;
-  color: var(--pencil);
-  font-size: 15px;
-  line-height: 1.9;
-}
-
-.game-entry {
-  padding: 34px 0 54px;
-  border-top: 2px dashed rgba(22, 21, 15, 0.25);
-}
-
-.game-entry-title {
-  margin: 0 0 22px;
-  font-size: clamp(26px, 6vw, 42px);
-  line-height: 1.2;
 }
 
 .game-orientation-note {
@@ -90,7 +163,7 @@
   font-family: inherit;
   font-size: clamp(18px, 4vw, 24px);
   cursor: pointer;
-  transition: transform 160ms ease, background 160ms ease, color 160ms ease;
+  transition: background 160ms ease, color 160ms ease;
 }
 
 .game-launch-button:hover {
@@ -134,13 +207,31 @@
 
 .game-section .back-link {
   display: inline-block;
-  margin-top: 28px;
+  margin-top: 54px;
   color: var(--pencil);
 }
 
 @media (max-width: 780px) {
   .game-section {
     padding: 48px 0 69px;
+  }
+
+  .game-collection-lead {
+    margin-bottom: 32px;
+    font-size: 13px;
+  }
+
+  .game-grid {
+    gap: 22px;
+  }
+
+  .game-card {
+    min-height: 320px;
+    padding: 24px;
+  }
+
+  .game-card:nth-child(even) {
+    transform: none;
   }
 
   .game-description {
@@ -151,15 +242,6 @@
     font-size: 13px;
   }
 
-  .game-collection-lead {
-    margin-bottom: 36px;
-    font-size: 13px;
-  }
-
-  .game-entry {
-    padding: 28px 0 44px;
-  }
-
   .game-orientation-note {
     margin-bottom: 24px;
   }
@@ -167,5 +249,9 @@
   .game-newtab-button {
     width: 100%;
     justify-content: center;
+  }
+
+  .game-section .back-link {
+    margin-top: 42px;
   }
 }
