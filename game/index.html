@@ -7,13 +7,13 @@
     <title>ゲーム集 | HALKA</title>
     <link rel="icon" href="/favicon.png?v=2" type="image/png" />
     <link rel="stylesheet" href="../style.css?v=1" />
-    <link rel="stylesheet" href="game.css?v=2" />
+    <link rel="stylesheet" href="game.css?v=3" />
   </head>
   <body>
     <main id="top">
       <div class="yellow-tape" aria-hidden="true">
         <span>HALKA GAME</span>
-        <span>tap to launch ▶</span>
+        <span>choose a game ▶</span>
       </div>
 
       <div class="notebook">
@@ -32,74 +32,47 @@
             <span aria-hidden="true">♪　・　☆</span>
           </div>
 
-          <p class="game-collection-lead">遊びたいゲームの「ゲームを起動」を押してください。</p>
+          <p class="game-collection-lead">遊びたいゲームを選んでください。ゲーム本体は各ページで起動します。</p>
 
-          <article class="game-entry">
-            <h2 class="game-entry-title">かがみねちゃれんじ</h2>
-            <div class="game-description">
+          <div class="game-grid">
+            <article class="game-card">
+              <p class="game-card-number" aria-hidden="true">01</p>
+              <h2>かがみねちゃれんじ</h2>
               <p>
-                ルーレットを回して鏡音リン、鏡音レンの文字が揃ったらラッキー🍌🍊<br />
-                揃うまでのちゃれんじ回数ランキングもあるよ。<br />
-                全625通りの結果から占いもできます。
+                リンとレンの文字を揃えるルーレットゲーム。<br />
+                全625通りの占いもあります。
               </p>
-            </div>
-            <p class="game-orientation-note">📱 縦画面推奨</p>
-            <div class="game-frame-wrap">
-              <div class="game-frame" data-game-frame>
-                <button
-                  class="game-launch-button"
-                  type="button"
-                  data-game-url="https://halkachan.github.io/kagamine-challenge/"
-                  data-game-title="かがみねちゃれんじ"
-                >
-                  <span>ゲームを起動</span>
-                  <span aria-hidden="true">▶</span>
-                </button>
-              </div>
-            </div>
-            <div class="game-newtab-wrap">
-              <a class="game-newtab-button" href="https://halkachan.github.io/kagamine-challenge/" target="_blank" rel="noreferrer">
-                <span>別タブで遊ぶ</span>
-                <span aria-hidden="true">↗</span>
+              <ul class="game-card-tags" aria-label="対応情報">
+                <li>スマホ対応</li>
+                <li>縦画面推奨</li>
+              </ul>
+              <a class="game-card-link" href="kagamine-challenge/">
+                <span>ゲームページへ</span>
+                <span aria-hidden="true">▶</span>
               </a>
-            </div>
-          </article>
+            </article>
 
-          <article class="game-entry">
-            <h2 class="game-entry-title">みねだんじょん</h2>
-            <div class="game-description">
+            <article class="game-card">
+              <p class="game-card-number" aria-hidden="true">02</p>
+              <h2>みねだんじょん</h2>
               <p>
-                リンちゃんを操作して、敵を避けながら100個のみかんを集めよう🍊<br />
-                バナナを拾うと、敵に捕まっても一度だけ復活できます🍌
+                リンちゃんを操作して、敵を避けながら<br />
+                100個のみかんを集めるダンジョンゲーム。
               </p>
-            </div>
-            <p class="game-orientation-note">⌨️ キーボード・📱 スマホ対応</p>
-            <div class="game-frame-wrap">
-              <div class="game-frame game-frame--landscape" data-game-frame>
-                <button
-                  class="game-launch-button"
-                  type="button"
-                  data-game-url="https://halkachan.github.io/mine-dungeon/"
-                  data-game-title="みねだんじょん"
-                >
-                  <span>ゲームを起動</span>
-                  <span aria-hidden="true">▶</span>
-                </button>
-              </div>
-            </div>
-            <div class="game-newtab-wrap">
-              <a class="game-newtab-button" href="https://halkachan.github.io/mine-dungeon/" target="_blank" rel="noreferrer">
-                <span>別タブで遊ぶ</span>
-                <span aria-hidden="true">↗</span>
+              <ul class="game-card-tags" aria-label="対応情報">
+                <li>キーボード対応</li>
+                <li>スマホ対応</li>
+              </ul>
+              <a class="game-card-link" href="mine-dungeon/">
+                <span>ゲームページへ</span>
+                <span aria-hidden="true">▶</span>
               </a>
-            </div>
-          </article>
+            </article>
+          </div>
 
           <a class="back-link" href="../index.html">← リンク集へ戻る</a>
         </section>
       </div>
     </main>
-
-    <script src="game.js?v=2" defer></script>
   </body>
 </html>
