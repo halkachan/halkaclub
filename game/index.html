@@ -3,11 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="HALKAのゲーム「かがみねちゃれんじ」。" />
-    <title>かがみねちゃれんじ | HALKA</title>
+    <meta name="description" content="HALKAのブラウザゲーム集。" />
+    <title>ゲーム集 | HALKA</title>
     <link rel="icon" href="/favicon.png?v=2" type="image/png" />
     <link rel="stylesheet" href="../style.css?v=1" />
-    <link rel="stylesheet" href="game.css" />
+    <link rel="stylesheet" href="game.css?v=2" />
   </head>
   <body>
     <main id="top">
@@ -19,52 +19,87 @@
       <div class="notebook">
         <header class="site-header">
           <a class="small-sign" href="../index.html">HALKA</a>
-          <p>かがみねちゃれんじ</p>
+          <p>ゲーム集</p>
           <span class="header-doodle" aria-hidden="true">遊　〰</span>
         </header>
 
         <section class="game-section" aria-labelledby="game-title">
           <div class="section-heading">
             <div>
-              <p>game</p>
-              <h1 id="game-title">かがみねちゃれんじ</h1>
+              <p>games</p>
+              <h1 id="game-title">ゲーム集</h1>
             </div>
             <span aria-hidden="true">♪　・　☆</span>
           </div>
 
-          <div class="game-description">
-            <p>
-              ルーレットを回して鏡音リン、鏡音レンの文字が揃ったらラッキー🍌🍊<br />
-              揃うまでのちゃれんじ回数ランキングもあるよ<br />
-              めっちゃ低確率だからがんばって
-            </p>
-            <p>全625通りの結果から占いもできちゃうおまけつき</p>
-            <p>リセットはリンレンのどちらかが出たらできるよ</p>
-          </div>
+          <p class="game-collection-lead">遊びたいゲームの「ゲームを起動」を押してください。</p>
 
-          <p class="game-orientation-note">📱 縦画面推奨</p>
-
-          <div class="game-frame-wrap">
-            <div class="game-frame" id="game-frame">
-              <button class="game-launch-button" id="game-launch-button" type="button">
-                <span>ゲームを起動</span>
-                <span aria-hidden="true">▶</span>
-              </button>
+          <article class="game-entry">
+            <h2 class="game-entry-title">かがみねちゃれんじ</h2>
+            <div class="game-description">
+              <p>
+                ルーレットを回して鏡音リン、鏡音レンの文字が揃ったらラッキー🍌🍊<br />
+                揃うまでのちゃれんじ回数ランキングもあるよ。<br />
+                全625通りの結果から占いもできます。
+              </p>
             </div>
-          </div>
+            <p class="game-orientation-note">📱 縦画面推奨</p>
+            <div class="game-frame-wrap">
+              <div class="game-frame" data-game-frame>
+                <button
+                  class="game-launch-button"
+                  type="button"
+                  data-game-url="https://halkachan.github.io/kagamine-challenge/"
+                  data-game-title="かがみねちゃれんじ"
+                >
+                  <span>ゲームを起動</span>
+                  <span aria-hidden="true">▶</span>
+                </button>
+              </div>
+            </div>
+            <div class="game-newtab-wrap">
+              <a class="game-newtab-button" href="https://halkachan.github.io/kagamine-challenge/" target="_blank" rel="noreferrer">
+                <span>別タブで遊ぶ</span>
+                <span aria-hidden="true">↗</span>
+              </a>
+            </div>
+          </article>
 
-          <div class="game-newtab-wrap">
-            <a class="game-newtab-button" href="https://halkachan.github.io/kagamine-challenge/" target="_blank" rel="noreferrer">
-              <span>別タブで遊ぶ</span>
-              <span aria-hidden="true">↗</span>
-            </a>
-          </div>
+          <article class="game-entry">
+            <h2 class="game-entry-title">みねだんじょん</h2>
+            <div class="game-description">
+              <p>
+                リンちゃんを操作して、敵を避けながら100個のみかんを集めよう🍊<br />
+                バナナを拾うと、敵に捕まっても一度だけ復活できます🍌
+              </p>
+            </div>
+            <p class="game-orientation-note">⌨️ キーボード・📱 スマホ対応</p>
+            <div class="game-frame-wrap">
+              <div class="game-frame game-frame--landscape" data-game-frame>
+                <button
+                  class="game-launch-button"
+                  type="button"
+                  data-game-url="https://halkachan.github.io/mine-dungeon/"
+                  data-game-title="みねだんじょん"
+                >
+                  <span>ゲームを起動</span>
+                  <span aria-hidden="true">▶</span>
+                </button>
+              </div>
+            </div>
+            <div class="game-newtab-wrap">
+              <a class="game-newtab-button" href="https://halkachan.github.io/mine-dungeon/" target="_blank" rel="noreferrer">
+                <span>別タブで遊ぶ</span>
+                <span aria-hidden="true">↗</span>
+              </a>
+            </div>
+          </article>
 
           <a class="back-link" href="../index.html">← リンク集へ戻る</a>
         </section>
       </div>
     </main>
 
-    <script src="game.js" defer></script>
+    <script src="game.js?v=2" defer></script>
   </body>
 </html>
