@@ -59,16 +59,19 @@
   line-height: 1.2;
 }
 
-/* 料金カード */
-.price-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-  margin: 0 0 30px;
+/* 依頼一覧（クリックで開閉するカード） */
+.request-plans-hint {
+  margin: -10px 0 20px;
+  color: var(--pencil);
+  font-size: 13px;
 }
 
-.price-card {
-  padding: 22px 20px;
+.plan-list {
+  display: grid;
+  gap: 16px;
+}
+
+.plan-card {
   background: rgba(255, 255, 255, 0.84);
   border: 2px solid var(--ink);
   border-radius: 8px 3px 9px 2px / 3px 9px 2px 8px;
@@ -76,52 +79,258 @@
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
-.price-card:nth-child(3n + 1) {
-  transform: rotate(-0.6deg);
-}
-
-.price-card:nth-child(3n + 2) {
-  transform: rotate(0.5deg);
-}
-
-.price-card:nth-child(3n) {
+.plan-card:nth-child(odd) {
   transform: rotate(-0.35deg);
 }
 
-.price-card:hover {
-  box-shadow: 5px 6px 0 var(--ink);
-  transform: rotate(0deg) translateY(-3px);
+.plan-card:nth-child(even) {
+  transform: rotate(0.3deg);
 }
 
-.price-card-en {
-  margin: 0 0 6px;
+.plan-card:hover {
+  box-shadow: 5px 6px 0 var(--ink);
+}
+
+.plan-card[open] {
+  box-shadow: 5px 6px 0 var(--ink);
+  transform: rotate(0deg);
+}
+
+.plan-summary {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  grid-template-areas: "num head amount toggle";
+  align-items: center;
+  gap: 8px 18px;
+  padding: 18px 20px;
+  list-style: none;
+  cursor: pointer;
+}
+
+/* Safari の既定マーカーを消します */
+.plan-summary::-webkit-details-marker {
+  display: none;
+}
+
+.plan-summary:focus-visible {
+  outline: 4px solid var(--yellow);
+  outline-offset: -6px;
+}
+
+.plan-number {
+  grid-area: num;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: var(--yellow);
+  border: 2px solid var(--ink);
+  border-radius: 47% 53% 46% 54% / 52% 43% 57% 48%;
+  font-size: 17px;
+  transform: rotate(-4deg);
+}
+
+.plan-heading {
+  grid-area: head;
+  margin: 0;
+  font-weight: 400;
+}
+
+.plan-en {
+  display: block;
+  margin-bottom: 3px;
   color: var(--pencil);
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
   font-size: 11px;
   letter-spacing: 0.04em;
 }
 
-.price-card-name {
-  margin: 0 0 10px;
+.plan-name {
+  display: block;
   font-size: 19px;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
-.price-card-amount {
-  margin: 0;
+.plan-amount {
+  grid-area: amount;
   white-space: nowrap;
-  font-size: 22px;
+  font-size: 20px;
 }
 
-.request-notes {
+.plan-toggle {
+  grid-area: toggle;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 1;
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.plan-card[open] .plan-toggle {
+  background: var(--yellow);
+  transform: rotate(45deg);
+}
+
+.plan-body {
+  margin: 0 20px 22px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--ink);
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.plan-body > * + * {
+  margin-top: 14px;
+}
+
+.plan-body p {
+  margin: 0;
+}
+
+.plan-block {
+  padding: 16px 18px;
+  background: rgba(255, 220, 24, 0.14);
+  border: 2px dashed var(--ink);
+  border-radius: 8px 3px 9px 2px / 3px 9px 2px 8px;
+}
+
+.plan-block > * + * {
+  margin-top: 10px;
+}
+
+.plan-block-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.plan-block-title::before {
+  content: "■";
+  margin-right: 4px;
+}
+
+.plan-sub-note {
+  color: var(--pencil);
+  font-size: 13px;
+}
+
+/* 「・」付きのリスト */
+.dot-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dot-list > li {
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+
+.dot-list > li::before {
+  content: "・";
+}
+
+/* 追加プラン（項目名＋金額） */
+.plan-options {
   display: grid;
   gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.plan-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+}
+
+.plan-option-name::before {
+  content: "・";
+}
+
+.plan-option-price {
+  padding: 1px 12px;
+  background: var(--yellow);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* 「※」付きの注意書き */
+.caution-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 14px 0 0;
+  border-top: 1px dashed var(--ink);
+  list-style: none;
   color: var(--pencil);
   font-size: 13px;
   line-height: 1.8;
+}
+
+.caution-list > li {
+  padding-left: 1.3em;
+  text-indent: -1.3em;
+}
+
+.caution-list > li::before {
+  content: "※";
+}
+
+/* 「」で囲んだ例のリスト */
+.quote-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quote-list-boxed {
+  padding: 16px 18px;
+  background: rgba(255, 220, 24, 0.14);
+  border: 2px dashed var(--ink);
+  border-radius: 8px 3px 9px 2px / 3px 9px 2px 8px;
+}
+
+/* リテイク・納期の説明カード */
+.note-card {
+  padding: 26px clamp(22px, 4vw, 32px);
+  background: rgba(255, 255, 255, 0.84);
+  border: 2px solid var(--ink);
+  border-radius: 8px 3px 9px 2px / 3px 9px 2px 8px;
+  box-shadow: 3px 4px 0 rgba(22, 21, 15, 0.12);
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.note-card > * + * {
+  margin-top: 14px;
+}
+
+.note-card p {
+  margin: 0;
+}
+
+.note-lead {
+  font-size: 16px;
+}
+
+.note-strong {
+  padding: 14px 16px;
+  background: var(--yellow);
+  border: 2px solid var(--ink);
+  border-radius: 7px 3px 9px 2px / 3px 8px 2px 9px;
 }
 
 /* ご依頼の流れ */
@@ -238,6 +447,12 @@
 }
 
 /* 依頼テンプレート */
+.template-intro {
+  margin: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.9;
+}
+
 .template-card {
   padding: 22px clamp(20px, 4vw, 28px);
   background: rgba(255, 255, 255, 0.6);
@@ -288,15 +503,32 @@
   font-size: 13px;
 }
 
-.notebook > .back-link {
-  margin: 44px 0 40px;
+.template-note {
+  margin: 14px 0 0;
+  padding-left: 1.3em;
   color: var(--pencil);
+  font-size: 13px;
+  line-height: 1.8;
+  text-indent: -1.3em;
 }
 
-@media (max-width: 980px) {
-  .price-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.template-outro {
+  margin-top: 20px;
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.template-outro > * + * {
+  margin-top: 8px;
+}
+
+.template-outro p {
+  margin: 0;
+}
+
+/* ページ末尾の余白（以前は「リンク集へ戻る」のリンクが担っていました） */
+.notebook > .request-section:last-child {
+  padding-bottom: 52px;
 }
 
 @media (max-width: 780px) {
@@ -308,9 +540,39 @@
     padding: 32px 0 0;
   }
 
-  .price-grid {
-    grid-template-columns: 1fr;
+  .plan-list {
     gap: 14px;
+  }
+
+  .plan-summary {
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "num head toggle"
+      "amount amount amount";
+    gap: 10px 14px;
+    padding: 16px;
+  }
+
+  .plan-number {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .plan-name {
+    font-size: 17px;
+  }
+
+  .plan-amount {
+    font-size: 18px;
+  }
+
+  .plan-body {
+    margin: 0 16px 18px;
+  }
+
+  .plan-block {
+    padding: 14px 16px;
   }
 
   .flow-step {
