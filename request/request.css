@@ -37,6 +37,39 @@
   transform: rotate(-1deg);
 }
 
+.request-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.request-hero-actions .request-status-badge {
+  margin: 0;
+}
+
+/* 日本語版と英語版を行き来するリンク */
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 7px 18px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 2px dashed var(--ink);
+  border-radius: 999px;
+  font-size: 14px;
+  transform: rotate(0.7deg);
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.lang-switch:hover {
+  background: var(--yellow);
+  box-shadow: 3px 4px 0 var(--ink);
+  transform: rotate(0deg) translateY(-2px);
+}
+
 .request-section {
   padding: 40px 0 0;
 }

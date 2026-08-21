@@ -47,11 +47,13 @@ function selectRequestTemplateForManualCopy(target) {
 
 async function copyRequestTemplate(templateEl, statusEl) {
   const text = templateEl.textContent;
+  const copiedMessage = statusEl.dataset.copiedMessage || "コピーしました";
+  const manualMessage = statusEl.dataset.manualMessage || "テキストを選択しました。Ctrl+C（Macは⌘+C）でコピーしてください";
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     try {
       await navigator.clipboard.writeText(text);
-      showRequestCopyStatus(statusEl, "コピーしました");
+      showRequestCopyStatus(statusEl, copiedMessage);
       return;
     } catch (error) {
       // Clipboard APIが使えない/拒否された場合は下のフォールバックへ進みます。
@@ -59,12 +61,12 @@ async function copyRequestTemplate(templateEl, statusEl) {
   }
 
   if (legacyCopyRequestTemplate(text)) {
-    showRequestCopyStatus(statusEl, "コピーしました");
+    showRequestCopyStatus(statusEl, copiedMessage);
     return;
   }
 
   selectRequestTemplateForManualCopy(templateEl);
-  showRequestCopyStatus(statusEl, "テキストを選択しました。Ctrl+C（Macは⌘+C）でコピーしてください");
+  showRequestCopyStatus(statusEl, manualMessage);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -72,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const mailButton = document.getElementById("request-mail-button");
   if (mailButton && templateEl) {
-    const subject = "【ご依頼相談】";
+    const subject = mailButton.dataset.mailSubject || "【ご依頼相談】";
     const body = templateEl.textContent;
     mailButton.href = `mailto:kanatahalka@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
