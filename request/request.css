@@ -1,4 +1,4 @@
-/* request/request.css：ご依頼／COMMISSIONページ専用のデザイン */
+/* request/request.css：依頼／COMMISSIONページ専用のデザイン */
 
 .request-hero {
   padding: 54px 0 20px;
@@ -366,7 +366,7 @@
   border-radius: 7px 3px 9px 2px / 3px 8px 2px 9px;
 }
 
-/* ご依頼の流れ */
+/* 依頼の流れ */
 .flow-list {
   display: grid;
   gap: 16px;

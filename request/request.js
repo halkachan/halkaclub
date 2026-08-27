@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const mailButton = document.getElementById("request-mail-button");
   if (mailButton && templateEl) {
-    const subject = mailButton.dataset.mailSubject || "【ご依頼相談】";
+    const subject = mailButton.dataset.mailSubject || "【依頼相談】";
     const body = templateEl.textContent;
     mailButton.href = `mailto:kanatahalka@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
