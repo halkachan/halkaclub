@@ -121,6 +121,21 @@
   transform: rotate(-1deg);
 }
 
+/* 版の表記。縦画面推奨の隣に並べる。
+   同じ黄色にすると「推奨」と強さが並んでしまい、どちらも読まれなくなるので、
+   こちらは線と文字だけの控えめな見た目にしてある。
+   傾きは隣と逆向き(+1deg)。同じ向きだと平行に揃って手書きらしさが消える。 */
+.game-version {
+  display: inline-block;
+  margin: 0 0 32px 10px;
+  padding: 4px 14px;
+  border: 2px solid var(--pencil);
+  border-radius: 999px;
+  color: var(--pencil);
+  font-size: 13px;
+  transform: rotate(1deg);
+}
+
 .game-frame-wrap {
   display: flex;
   justify-content: center;
@@ -252,7 +267,8 @@
     font-size: 13px;
   }
 
-  .game-orientation-note {
+  .game-orientation-note,
+  .game-version {
     margin-bottom: 24px;
   }
 
