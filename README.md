@@ -1,6 +1,6 @@
 # HALKA Links：VS Code編集版
 
-現在のリンク集を、特別な制作ソフトやビルド作業なしで編集できるHTML・CSSへ移したものです。
+リンク集部分は、特別な制作ソフトやビルド作業なしで編集できるHTML・CSSです。`harukaijiri/` のゲーム本体は別途Unityでビルドします。
 
 ## ファイルの役割
 
@@ -13,6 +13,9 @@
 - `works/works.css`：作品一覧ページ専用のデザイン
 - `works/works.js`：作品カードとサムネイルを自動生成する仕組み
 - `assets/fonts`：現在使用している手書きフォント
+- `harukaijiri/index.html`：旧URLを維持したUnity WebGLゲームページ
+- `harukaijiri/webgl/`：Unityの公開用WebGLビルド
+- `unity-project/`：Unity 6.3 LTSのゲーム本体（手順は `unity-project/README.md`）
 
 ## VS Codeで編集する
 

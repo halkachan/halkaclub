@@ -1,0 +1,95 @@
+{
+  "front_idle": {
+    "source_sha256": "66ee78ff7fcd1991a6773ca08fabaf4393015475e60965a3e6dcc28da881283c",
+    "size": [
+      64,
+      64
+    ],
+    "frames": 2,
+    "duration_ms": [
+      400,
+      400
+    ]
+  },
+  "back_idle": {
+    "source_sha256": "37d4fc7a9944cb66ecca30dc1aa02aabe2e6c10c258d0ef4ad80233e94c7de8e",
+    "size": [
+      64,
+      64
+    ],
+    "frames": 2,
+    "duration_ms": [
+      400,
+      400
+    ]
+  },
+  "left_idle": {
+    "source_sha256": "3e05cbde094c5ea5a43adb989bc87f1aa663b6a19c6fa6e88279991c7a56efac",
+    "size": [
+      64,
+      64
+    ],
+    "frames": 2,
+    "duration_ms": [
+      400,
+      400
+    ]
+  },
+  "right_idle": {
+    "source_sha256": "10c98f09bde139e2c1c7924bb368af4158fabb4bcf6de849766a94f968f034c8",
+    "size": [
+      64,
+      64
+    ],
+    "frames": 2,
+    "duration_ms": [
+      400,
+      400
+    ]
+  },
+  "turn": {
+    "source_sha256": "017e3425800c1518b036bb5b70cf7316b8c000ca7dc83cb017c859e699beb7d6",
+    "size": [
+      64,
+      64
+    ],
+    "frames": 4,
+    "duration_ms": [
+      250,
+      250,
+      250,
+      250
+    ]
+  },
+  "front_jump": {
+    "source_sha256": "af78ba686d6456b53322b66a1187372bb7945ff3da9936e9c872541d5543cc87",
+    "size": [
+      62,
+      87
+    ],
+    "frames": 21,
+    "duration_ms": [
+      300,
+      50,
+      60,
+      140,
+      40,
+      40,
+      40,
+      40,
+      40,
+      50,
+      90,
+      50,
+      40,
+      40,
+      40,
+      40,
+      40,
+      120,
+      60,
+      60,
+      60
+    ]
+  }
+}
