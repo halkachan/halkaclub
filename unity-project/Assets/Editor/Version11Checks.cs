@@ -18,6 +18,18 @@ namespace Halka.Game.Editor
             Check(world != null && Mathf.Approximately(world.CellSize, 1f), "one-unit cells");
             Check(UnityEngine.Object.FindObjectsByType<GridObstacle>(FindObjectsSortMode.None).Length == 1,
                 "exactly one obstacle");
+            var stone = UnityEngine.Object.FindFirstObjectByType<GridObstacle>();
+            var stoneSprite = stone.GetComponent<SpriteRenderer>().sprite;
+            var stoneCollider = stone.GetComponent<PolygonCollider2D>();
+            Check(stoneSprite.texture.width == 64 && stoneSprite.texture.height == 64 &&
+                Mathf.Approximately(stoneSprite.pixelsPerUnit, 80f), "compact supplied stone sprite");
+            Check(stoneCollider != null && stoneCollider.pathCount > 0 &&
+                stoneCollider.bounds.size.x < stone.GetComponent<SpriteRenderer>().bounds.size.x &&
+                stoneCollider.bounds.size.y < stone.GetComponent<SpriteRenderer>().bounds.size.y,
+                "stone collider excludes transparent border");
+            Check(stoneCollider.OverlapPoint(stone.transform.position) &&
+                !stoneCollider.OverlapPoint(stone.transform.position + Vector3.up * 0.29f),
+                "stone art can be targeted without hitting the transparent top margin");
             Check(!world.CanEnter(new Vector2Int(1, 1)), "stone blocks its cell");
             Check(world.CanEnter(new Vector2Int(2, 1)), "adjacent cell is open");
             Check(!world.CanEnter(new Vector2Int(6, 0)) && !world.CanEnter(new Vector2Int(0, -4)),

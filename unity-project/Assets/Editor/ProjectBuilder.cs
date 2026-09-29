@@ -31,7 +31,7 @@ namespace Halka.Game.Editor
             ConfigureSpriteImport(PixelPath, 1f);
             var pixel = AssetDatabase.LoadAssetAtPath<Sprite>(PixelPath);
             if (pixel == null) throw new InvalidOperationException("World pixel import failed");
-            ConfigureSpriteImport(StonePath, 512f);
+            ConfigureSpriteImport(StonePath, 80f);
             var stoneSprite = AssetDatabase.LoadAssetAtPath<Sprite>(StonePath);
             if (stoneSprite == null) throw new InvalidOperationException("Stone sprite import failed");
 
@@ -74,8 +74,7 @@ namespace Halka.Game.Editor
             var stoneRenderer = stone.AddComponent<SpriteRenderer>();
             stoneRenderer.sprite = stoneSprite;
             stoneRenderer.sortingOrder = 2;
-            var stoneCollider = stone.AddComponent<BoxCollider2D>();
-            stoneCollider.size = new Vector2(0.75f, 0.75f);
+            stone.AddComponent<PolygonCollider2D>();
             stone.AddComponent<GridObstacle>();
 
             var hudObject = new GameObject("UI - minimal HUD");

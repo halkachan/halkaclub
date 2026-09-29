@@ -6,7 +6,7 @@ The game uses the Built-in Render Pipeline. It currently renders a small 2D scen
 
 The six supplied original GIFs are preserved in `SourceGifs/` and converted without drawing changes to `Assets/Content/Character/`. All four idle directions are used. `turn` and `front_jump` are stored for later versions. See `Assets/Content/Character/README.md` for the import method.
 
-ver1.1 uses one-unit grid cells and 0.18 seconds per step. The scene contains one blocking stone at cell `(1, 1)` using the supplied original PNG in `Assets/Content/World/stone.png`. Keyboard input uses WASD or arrows. Touch devices show a four-way D-pad, while taps outside it still go through the shared Interaction router. `?touchControls=1` on the direct `webgl/` URL enables a desktop mouse preview of the mobile controls for verification.
+ver1.1 uses one-unit grid cells and 0.18 seconds per step. The scene contains one blocking stone at cell `(1, 1)` using the supplied 64×64 PNG in `Assets/Content/World/stone.png`. The Sprite uses 80 pixels per unit and a PolygonCollider2D fitted to its opaque shape. Keyboard input uses WASD or arrows. Touch devices show a four-way D-pad, while taps outside it still go through the shared Interaction router. `?touchControls=1` on the direct `webgl/` URL enables a desktop mouse preview of the mobile controls for verification.
 
 ## Build
 
