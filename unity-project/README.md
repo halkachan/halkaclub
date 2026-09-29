@@ -9,7 +9,7 @@ The six supplied original GIFs are preserved in `SourceGifs/` and converted with
 ## Build
 
 1. Open `Assets/Scenes/FirstDay.unity` to inspect the scene.
-2. Run **HALKA > Build WebGL for HP** in the Editor. The output is written to `../harukaijiri/webgl/`, preserving the existing website URL.
+2. Run **HALKA > Build WebGL for HP** in the Editor. The output is written to `../halkaworld/webgl/`. The former `/harukaijiri/` URL redirects to `/halkaworld/`.
 3. Serve the repository root over HTTP for testing; opening an HTML file directly cannot load the WebGL data reliably.
 
 Command line build:

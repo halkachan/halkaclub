@@ -99,7 +99,7 @@ namespace Halka.Game.Editor
         {
             ConfigureProject();
             if (!File.Exists(ScenePath)) PrepareScene();
-            var output = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "harukaijiri", "webgl"));
+            var output = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "halkaworld", "webgl"));
             Directory.CreateDirectory(output);
             var options = new BuildPlayerOptions
             {
