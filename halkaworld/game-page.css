@@ -33,6 +33,34 @@
   line-height: 1.7;
 }
 
+.update-history {
+  margin-top: 30px;
+  padding-top: 18px;
+  border-top: 1px solid var(--ink);
+  color: var(--ink);
+}
+
+.update-history h2 {
+  margin: 0 0 14px;
+  font-size: 20px;
+}
+
+.update-entry + .update-entry {
+  margin-top: 17px;
+}
+
+.update-entry h3 {
+  margin: 0 0 5px;
+  font-size: 15px;
+}
+
+.update-entry ul {
+  margin: 0;
+  padding-left: 1.5em;
+  line-height: 1.75;
+  font-size: 13px;
+}
+
 @media (max-width: 780px) {
   .unity-frame {
     height: min(68svh, 620px);

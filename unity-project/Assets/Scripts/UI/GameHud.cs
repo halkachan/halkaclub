@@ -5,15 +5,7 @@ namespace Halka.Game.UI
 {
     public sealed class GameHud : MonoBehaviour
     {
-        private string message;
-        private float hideAt;
         private GUIStyle style;
-
-        public void ShowMessage(string value)
-        {
-            message = value;
-            hideAt = Time.unscaledTime + 2f;
-        }
 
         private void OnGUI()
         {
@@ -27,8 +19,6 @@ namespace Halka.Game.UI
                 };
             }
             GUI.Label(new Rect(Screen.width - 110f, 10f, 100f, 28f), GameVersion.Label, style);
-            if (Time.unscaledTime < hideAt)
-                GUI.Label(new Rect(10f, Screen.height - 46f, Screen.width - 20f, 36f), message, style);
         }
     }
 }

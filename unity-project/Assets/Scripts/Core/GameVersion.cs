@@ -2,7 +2,7 @@ namespace Halka.Game.Core
 {
     public static class GameVersion
     {
-        public const string Value = "1.0";
+        public const string Value = "1.1";
         public static string Label => "ver" + Value;
     }
 }

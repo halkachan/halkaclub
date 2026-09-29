@@ -6,6 +6,7 @@ using Halka.Game.Input;
 using Halka.Game.Interaction;
 using Halka.Game.Player;
 using Halka.Game.UI;
+using Halka.Game.World;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
@@ -19,8 +20,9 @@ namespace Halka.Game.Editor
         private const string ScenePath = "Assets/Scenes/FirstDay.unity";
         private const string CharacterPath = "Assets/Content/Character/front_idle";
         private const string PixelPath = "Assets/Content/World/pixel.png";
+        private const string StonePath = "Assets/Content/World/stone.png";
 
-        [MenuItem("HALKA/Prepare ver1.0 scene")]
+        [MenuItem("HALKA/Prepare ver1.1 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -29,9 +31,15 @@ namespace Halka.Game.Editor
             ConfigureSpriteImport(PixelPath, 1f);
             var pixel = AssetDatabase.LoadAssetAtPath<Sprite>(PixelPath);
             if (pixel == null) throw new InvalidOperationException("World pixel import failed");
+            ConfigureSpriteImport(StonePath, 512f);
+            var stoneSprite = AssetDatabase.LoadAssetAtPath<Sprite>(StonePath);
+            if (stoneSprite == null) throw new InvalidOperationException("Stone sprite import failed");
 
             Directory.CreateDirectory("Assets/Scenes");
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            var worldObject = new GameObject("World - first day grid");
+            var world = worldObject.AddComponent<GridWorld2D>();
 
             var player = new GameObject("Player - HarukaChan");
             player.transform.position = Vector3.zero;
@@ -60,15 +68,29 @@ namespace Halka.Game.Editor
             groundRenderer.sortingOrder = -10;
             ground.transform.localScale = new Vector3(12f, 8f, 1f);
 
+            var stone = new GameObject("Stone - first world object");
+            stone.transform.position = world.CellToWorld(new Vector2Int(1, 1));
+            stone.transform.localScale = new Vector3(0.75f, 0.75f, 1f);
+            var stoneRenderer = stone.AddComponent<SpriteRenderer>();
+            stoneRenderer.sprite = stoneSprite;
+            stoneRenderer.sortingOrder = 2;
+            var stoneCollider = stone.AddComponent<BoxCollider2D>();
+            stoneCollider.size = new Vector2(0.75f, 0.75f);
+            stone.AddComponent<GridObstacle>();
+
             var hudObject = new GameObject("UI - minimal HUD");
-            var hud = hudObject.AddComponent<GameHud>();
+            hudObject.AddComponent<GameHud>();
+            var dpadObject = new GameObject("UI - touch D-pad");
+            var dpad = dpadObject.AddComponent<TouchDpad>();
             var interactionObject = new GameObject("Interaction Router");
             var interaction = interactionObject.AddComponent<InteractionRouter>();
             SetReference(interaction, "worldCamera", camera);
-            var inputObject = new GameObject("Input - keyboard mouse touch");
+            var inputObject = new GameObject("Input - keyboard pointer");
             var input = inputObject.AddComponent<GameInput>();
             SetReference(input, "interaction", interaction);
+            SetReference(input, "dpad", dpad);
             SetReference(mover, "input", input);
+            SetReference(mover, "world", world);
             SetReference(visual, "mover", mover);
             SetReference(visual, "spriteRenderer", playerRenderer);
             SetSprites(visual, "frontIdle", frames);
@@ -77,21 +99,10 @@ namespace Halka.Game.Editor
             SetSprites(visual, "rightIdle", LoadFrames("right_idle"));
             SetFloat(visual, "frameSeconds", CharacterVisual.OriginalIdleFrameSeconds);
 
-            var sample = new GameObject("PLACEHOLDER - interaction sample");
-            sample.transform.position = new Vector3(1.8f, 0.5f, 0f);
-            sample.transform.localScale = new Vector3(0.65f, 0.65f, 1f);
-            var sampleRenderer = sample.AddComponent<SpriteRenderer>();
-            sampleRenderer.sprite = pixel;
-            sampleRenderer.color = new Color(0.6f, 0.68f, 0.82f);
-            sampleRenderer.sortingOrder = 1;
-            sample.AddComponent<BoxCollider2D>();
-            var sampleInteraction = sample.AddComponent<PlaceholderInteractable>();
-            SetReference(sampleInteraction, "hud", hud);
-
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.SaveAssets();
-            Debug.Log("HALKA ver1.0 scene prepared.");
+            Debug.Log("HALKA ver1.1 scene prepared.");
         }
 
         [MenuItem("HALKA/Build WebGL for HP")]
@@ -151,13 +162,16 @@ namespace Halka.Game.Editor
             if (importer == null) throw new InvalidOperationException($"Missing texture: {path}");
             if (importer.textureType == TextureImporterType.Sprite &&
                 Mathf.Approximately(importer.spritePixelsPerUnit, pixelsPerUnit) &&
-                importer.filterMode == FilterMode.Point && !importer.mipmapEnabled) return;
+                importer.filterMode == FilterMode.Point && !importer.mipmapEnabled &&
+                importer.textureCompression == TextureImporterCompression.Uncompressed &&
+                importer.npotScale == TextureImporterNPOTScale.None) return;
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.spritePixelsPerUnit = pixelsPerUnit;
             importer.filterMode = FilterMode.Point;
             importer.mipmapEnabled = false;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.npotScale = TextureImporterNPOTScale.None;
             importer.SaveAndReimport();
         }
 

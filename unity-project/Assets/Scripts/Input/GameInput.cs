@@ -3,33 +3,31 @@ using UnityEngine;
 
 namespace Halka.Game.Input
 {
+    [DefaultExecutionOrder(-50)]
     public sealed class GameInput : MonoBehaviour
     {
         [SerializeField] private InteractionRouter interaction;
-        [SerializeField, Range(0.02f, 0.2f)] private float dragStartScreenFraction = 0.035f;
-        [SerializeField, Range(2f, 8f)] private float fullSpeedThresholdMultiplier = 4f;
-        [SerializeField] private float tapMaxSeconds = 0.4f;
+        [SerializeField] private TouchDpad dpad;
+        [SerializeField, Min(1f)] private float tapMovementLimit = 24f;
+        [SerializeField, Min(0.05f)] private float tapMaxSeconds = 0.4f;
 
-        private readonly TouchGesture gesture = new TouchGesture();
-        private Vector2 mouseOrigin;
+        private readonly PointerTap worldTap = new PointerTap();
+        private Vector2 mouseStart;
+        private bool mouseStartedOnDpad;
         private float lastTouchAt = -10f;
 
-        public Vector2 Move { get; private set; }
-
-        private float DragThreshold => Mathf.Clamp(
-            Mathf.Min(Screen.width, Screen.height) * dragStartScreenFraction, 14f, 36f);
+        public Vector2Int Direction { get; private set; }
 
         private void Update()
         {
             ReadTouches();
             ReadMouse();
-
-            var keyboard = Vector2.zero;
-            if (UnityEngine.Input.GetKey(KeyCode.A) || UnityEngine.Input.GetKey(KeyCode.LeftArrow)) keyboard.x -= 1f;
-            if (UnityEngine.Input.GetKey(KeyCode.D) || UnityEngine.Input.GetKey(KeyCode.RightArrow)) keyboard.x += 1f;
-            if (UnityEngine.Input.GetKey(KeyCode.S) || UnityEngine.Input.GetKey(KeyCode.DownArrow)) keyboard.y -= 1f;
-            if (UnityEngine.Input.GetKey(KeyCode.W) || UnityEngine.Input.GetKey(KeyCode.UpArrow)) keyboard.y += 1f;
-            Move = Vector2.ClampMagnitude(keyboard + gesture.Movement, 1f);
+            Direction = CardinalInput.Choose(
+                UnityEngine.Input.GetKey(KeyCode.W) || UnityEngine.Input.GetKey(KeyCode.UpArrow),
+                UnityEngine.Input.GetKey(KeyCode.S) || UnityEngine.Input.GetKey(KeyCode.DownArrow),
+                UnityEngine.Input.GetKey(KeyCode.A) || UnityEngine.Input.GetKey(KeyCode.LeftArrow),
+                UnityEngine.Input.GetKey(KeyCode.D) || UnityEngine.Input.GetKey(KeyCode.RightArrow),
+                dpad.Direction);
         }
 
         private void ReadMouse()
@@ -37,10 +35,12 @@ namespace Halka.Game.Input
             if (UnityEngine.Input.touchCount > 0 || Time.unscaledTime - lastTouchAt < 0.25f) return;
             if (UnityEngine.Input.GetMouseButtonDown(0))
             {
-                mouseOrigin = UnityEngine.Input.mousePosition;
+                mouseStart = UnityEngine.Input.mousePosition;
+                mouseStartedOnDpad = dpad.IsOverControls(mouseStart);
             }
-            if (UnityEngine.Input.GetMouseButtonUp(0) &&
-                Vector2.Distance(mouseOrigin, UnityEngine.Input.mousePosition) < DragThreshold)
+            if (UnityEngine.Input.GetMouseButtonUp(0) && !mouseStartedOnDpad &&
+                !dpad.IsOverControls(UnityEngine.Input.mousePosition) &&
+                Vector2.Distance(mouseStart, UnityEngine.Input.mousePosition) <= tapMovementLimit)
             {
                 interaction.TryInteract(UnityEngine.Input.mousePosition);
             }
@@ -52,32 +52,29 @@ namespace Halka.Game.Input
             for (var i = 0; i < UnityEngine.Input.touchCount; i++)
             {
                 var touch = UnityEngine.Input.GetTouch(i);
-                if (touch.phase == TouchPhase.Began && gesture.ActiveFingerId == -1 && UnityEngine.Input.touchCount == 1)
+                if (touch.phase == TouchPhase.Began)
                 {
-                    gesture.TryBegin(touch.fingerId, touch.position,
-                        interaction.IsInteractableAt(touch.position), Time.unscaledTime);
+                    worldTap.TryBegin(touch.fingerId, touch.position,
+                        dpad.IsOverControls(touch.position), Time.unscaledTime);
+                    continue;
                 }
-                if (touch.fingerId != gesture.ActiveFingerId) continue;
-
                 if (touch.phase == TouchPhase.Canceled)
+                    worldTap.Cancel(touch.fingerId);
+                else if (touch.phase == TouchPhase.Ended)
                 {
-                    gesture.Cancel(touch.fingerId);
-                    continue;
+                    if (worldTap.End(touch.fingerId, touch.position,
+                        dpad.IsOverControls(touch.position), Time.unscaledTime,
+                        tapMovementLimit, tapMaxSeconds)) interaction.TryInteract(touch.position);
                 }
-                if (touch.phase == TouchPhase.Ended)
-                {
-                    if (gesture.End(touch.fingerId, touch.position, Time.unscaledTime,
-                        DragThreshold, tapMaxSeconds)) interaction.TryInteract(touch.position);
-                    continue;
-                }
-                gesture.Move(touch.fingerId, touch.position, DragThreshold, fullSpeedThresholdMultiplier);
+                else worldTap.Move(touch.fingerId, touch.position, tapMovementLimit);
             }
+            if (UnityEngine.Input.touchCount == 0) worldTap.Reset();
         }
 
         private void OnDisable()
         {
-            gesture.Reset();
-            Move = Vector2.zero;
+            worldTap.Reset();
+            Direction = Vector2Int.zero;
         }
     }
 }
