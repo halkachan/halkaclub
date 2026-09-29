@@ -21,6 +21,14 @@ namespace Halka.Game.Input
 
         public Vector2Int Direction { get; private set; }
         public bool Visible => visible;
+        public Rect ControlBoundsGui
+        {
+            get
+            {
+                GetLayout(out _, out _, out _, out _, out var bounds);
+                return bounds;
+            }
+        }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]

@@ -21,8 +21,9 @@ namespace Halka.Game.Editor
         private const string CharacterPath = "Assets/Content/Character/front_idle";
         private const string PixelPath = "Assets/Content/World/pixel.png";
         private const string StonePath = "Assets/Content/World/stone.png";
+        private static readonly Vector2 StoneOpaquePixels = new Vector2(28f, 20f);
 
-        [MenuItem("HALKA/Prepare ver1.1 scene")]
+        [MenuItem("HALKA/Prepare ver1.2 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -31,7 +32,7 @@ namespace Halka.Game.Editor
             ConfigureSpriteImport(PixelPath, 1f);
             var pixel = AssetDatabase.LoadAssetAtPath<Sprite>(PixelPath);
             if (pixel == null) throw new InvalidOperationException("World pixel import failed");
-            ConfigureSpriteImport(StonePath, 80f);
+            ConfigureSpriteImport(StonePath, GridWorld2D.TilePixels);
             var stoneSprite = AssetDatabase.LoadAssetAtPath<Sprite>(StonePath);
             if (stoneSprite == null) throw new InvalidOperationException("Stone sprite import failed");
 
@@ -43,11 +44,14 @@ namespace Halka.Game.Editor
 
             var player = new GameObject("Player - HarukaChan");
             player.transform.position = Vector3.zero;
-            var playerRenderer = player.AddComponent<SpriteRenderer>();
+            var artwork = new GameObject("Player artwork");
+            artwork.transform.SetParent(player.transform, false);
+            var playerRenderer = artwork.AddComponent<SpriteRenderer>();
             playerRenderer.sprite = frames[0];
             playerRenderer.sortingOrder = 10;
             var mover = player.AddComponent<PlayerMover>();
             var visual = player.AddComponent<CharacterVisual>();
+            var visualAnchor = player.AddComponent<PlayerVisualAnchor2D>();
 
             var cameraObject = new GameObject("Main Camera");
             cameraObject.tag = "MainCamera";
@@ -70,17 +74,21 @@ namespace Halka.Game.Editor
 
             var stone = new GameObject("Stone - first world object");
             stone.transform.position = world.CellToWorld(new Vector2Int(1, 1));
-            stone.transform.localScale = new Vector3(0.75f, 0.75f, 1f);
             var stoneRenderer = stone.AddComponent<SpriteRenderer>();
             stoneRenderer.sprite = stoneSprite;
             stoneRenderer.sortingOrder = 2;
-            stone.AddComponent<PolygonCollider2D>();
+            var stoneCollider = stone.AddComponent<BoxCollider2D>();
+            stoneCollider.size = StoneOpaquePixels / GridWorld2D.TilePixels;
             stone.AddComponent<GridObstacle>();
+            var examine = stone.AddComponent<ExamineInteractable>();
 
             var hudObject = new GameObject("UI - minimal HUD");
             hudObject.AddComponent<GameHud>();
             var dpadObject = new GameObject("UI - touch D-pad");
             var dpad = dpadObject.AddComponent<TouchDpad>();
+            var hud = hudObject.GetComponent<GameHud>();
+            SetReference(hud, "dpad", dpad);
+            SetReference(hud, "messageFont", AssetDatabase.LoadAssetAtPath<Font>("Assets/Content/Fonts/HalkaMessageSubset.ttf"));
             var interactionObject = new GameObject("Interaction Router");
             var interaction = interactionObject.AddComponent<InteractionRouter>();
             SetReference(interaction, "worldCamera", camera);
@@ -90,8 +98,15 @@ namespace Halka.Game.Editor
             SetReference(input, "dpad", dpad);
             SetReference(mover, "input", input);
             SetReference(mover, "world", world);
+            SetReference(visualAnchor, "mover", mover);
+            SetReference(visualAnchor, "world", world);
+            SetReference(visualAnchor, "artwork", artwork.transform);
             SetReference(visual, "mover", mover);
             SetReference(visual, "spriteRenderer", playerRenderer);
+            SetReference(examine, "player", mover);
+            SetReference(examine, "world", world);
+            SetReference(examine, "hud", hud);
+            SetString(examine, "message", "いし。");
             SetSprites(visual, "frontIdle", frames);
             SetSprites(visual, "backIdle", LoadFrames("back_idle"));
             SetSprites(visual, "leftIdle", LoadFrames("left_idle"));
@@ -101,7 +116,7 @@ namespace Halka.Game.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.SaveAssets();
-            Debug.Log("HALKA ver1.1 scene prepared.");
+            Debug.Log("HALKA ver1.2 scene prepared.");
         }
 
         [MenuItem("HALKA/Build WebGL for HP")]
@@ -150,7 +165,7 @@ namespace Halka.Game.Editor
             PlayerSettings.WebGL.template = "PROJECT:MinimalNoBrand";
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
             PlayerSettings.WebGL.decompressionFallback = false;
-            PlayerSettings.WebGL.nameFilesAsHashes = false;
+            PlayerSettings.WebGL.nameFilesAsHashes = true;
             EditorUserBuildSettings.development = false;
             EditorUserBuildSettings.allowDebugging = false;
         }
@@ -184,7 +199,7 @@ namespace Halka.Game.Editor
             for (var i = 0; i < paths.Length; i++)
             {
                 var path = paths[i].Replace('\\', '/');
-                ConfigureSpriteImport(path, 64f);
+                ConfigureSpriteImport(path, GridWorld2D.TilePixels);
                 sprites[i] = AssetDatabase.LoadAssetAtPath<Sprite>(path);
                 if (sprites[i] == null) throw new InvalidOperationException($"Sprite import failed: {path}");
             }
@@ -212,6 +227,13 @@ namespace Halka.Game.Editor
         {
             var serialized = new SerializedObject(target);
             serialized.FindProperty(field).floatValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void SetString(UnityEngine.Object target, string field, string value)
+        {
+            var serialized = new SerializedObject(target);
+            serialized.FindProperty(field).stringValue = value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
     }

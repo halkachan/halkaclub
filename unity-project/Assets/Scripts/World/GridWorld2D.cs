@@ -4,7 +4,10 @@ namespace Halka.Game.World
 {
     public sealed class GridWorld2D : MonoBehaviour
     {
-        [SerializeField, Min(0.1f)] private float cellSize = 1f;
+        public const int TilePixels = 64;
+        public const float TileWorldSize = 1f;
+
+        [SerializeField, Min(0.1f)] private float cellSize = TileWorldSize;
         [SerializeField] private Vector2Int minCell = new Vector2Int(-5, -3);
         [SerializeField] private Vector2Int maxCell = new Vector2Int(5, 3);
 
@@ -24,12 +27,17 @@ namespace Halka.Game.World
             if (cell.x < minCell.x || cell.x > maxCell.x ||
                 cell.y < minCell.y || cell.y > maxCell.y) return false;
 
+            return !HasObstacle(cell);
+        }
+
+        public bool HasObstacle(Vector2Int cell)
+        {
             Physics2D.SyncTransforms();
             foreach (var hit in Physics2D.OverlapPointAll(CellToWorld(cell)))
             {
-                if (hit.GetComponentInParent<GridObstacle>() != null) return false;
+                if (hit.GetComponentInParent<GridObstacle>() != null) return true;
             }
-            return true;
+            return false;
         }
     }
 }
