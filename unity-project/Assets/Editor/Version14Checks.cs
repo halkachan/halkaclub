@@ -12,9 +12,9 @@ using UnityEngine;
 
 namespace Halka.Game.Editor
 {
-    public static class Version13Checks
+    public static class Version14Checks
     {
-        [MenuItem("HALKA/Validate ver1.3")]
+        [MenuItem("HALKA/Validate ver1.4")]
         public static void Run()
         {
             EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
@@ -22,10 +22,12 @@ namespace Halka.Game.Editor
             var player = UnityEngine.Object.FindFirstObjectByType<PlayerMover>();
             var visual = UnityEngine.Object.FindFirstObjectByType<CharacterVisual>();
             var hud = UnityEngine.Object.FindFirstObjectByType<GameHud>();
+            var router = UnityEngine.Object.FindFirstObjectByType<InteractionRouter>();
+            var worldCamera = UnityEngine.Object.FindFirstObjectByType<Camera>();
             var stone = UnityEngine.Object.FindFirstObjectByType<GridObstacle>();
             var examine = stone.GetComponent<ExamineInteractable>();
             var artwork = player.GetComponentInChildren<SpriteRenderer>().transform;
-            Check(GameVersion.Value == "1.3", "version source");
+            Check(GameVersion.Value == "1.4", "version source");
             Check(GridWorld2D.TilePixels == 32 && Mathf.Approximately(GridWorld2D.TileWorldSize, 0.5f) &&
                 Mathf.Approximately(world.CellSize, GridWorld2D.TileWorldSize), "32-pixel grid scale");
             Check(world.MinCell == new Vector2Int(-10, -6) && world.MaxCell == new Vector2Int(10, 6),
@@ -46,6 +48,9 @@ namespace Halka.Game.Editor
             Check(collider.size == new Vector2(28f / 64f, 20f / 64f) &&
                 stone.transform.position == world.CellToWorld(new Vector2Int(1, 1)) &&
                 !world.CanEnter(new Vector2Int(1, 1)), "stone collider and blocking cell");
+            Check(Physics2D.OverlapPoint(stone.transform.position) == collider &&
+                router.IsInteractableAt(worldCamera.WorldToScreenPoint(stone.transform.position)),
+                "stone world pointer routes to shared interaction");
             Check(world.CanEnter(new Vector2Int(0, 1)) && !world.CanEnter(new Vector2Int(11, 0)) &&
                 !world.CanEnter(new Vector2Int(0, -7)), "adjacent and field bounds");
             var grid = GameObject.Find("FirstDay - 32px cell boundaries").GetComponent<SpriteRenderer>();
@@ -54,6 +59,47 @@ namespace Halka.Game.Editor
                 Mathf.Approximately(grid.sprite.bounds.size.y, 6.5f) &&
                 grid.transform.position == Vector3.zero && grid.sprite.texture.filterMode == FilterMode.Point,
                 "world-aligned sharp 32-pixel grid overlay");
+            var grassGroup = GameObject.Find("Grass decorations");
+            Check(grassGroup != null && grassGroup.transform.childCount == 4,
+                "four grass prefab instances");
+            var grassImporter = (TextureImporter)AssetImporter.GetAtPath("Assets/Content/World/grass.png");
+            Check(grassImporter != null && grassImporter.textureType == TextureImporterType.Sprite &&
+                grassImporter.spriteImportMode == SpriteImportMode.Single &&
+                grassImporter.filterMode == FilterMode.Point && !grassImporter.mipmapEnabled &&
+                grassImporter.textureCompression == TextureImporterCompression.Uncompressed &&
+                grassImporter.npotScale == TextureImporterNPOTScale.None &&
+                Mathf.Approximately(grassImporter.spritePixelsPerUnit, 64f), "grass pixel import");
+            var expectedGrassCells = new[]
+            {
+                new Vector2Int(-1, 0), new Vector2Int(4, 2),
+                new Vector2Int(-4, -2), new Vector2Int(3, -3)
+            };
+            var actualGrassCells = new System.Collections.Generic.HashSet<Vector2Int>();
+            foreach (Transform grass in grassGroup.transform)
+            {
+                var renderer = grass.GetComponent<SpriteRenderer>();
+                var cell = world.WorldToCell(grass.position);
+                Check(PrefabUtility.IsPartOfPrefabInstance(grass.gameObject) && renderer != null &&
+                    renderer.sprite != null && renderer.sprite.texture.width == 32 &&
+                    renderer.sprite.texture.height == 32 &&
+                    Mathf.Approximately(renderer.sprite.pixelsPerUnit, 64f) &&
+                    renderer.sortingOrder == -8 && grass.localScale == Vector3.one &&
+                    grass.position == world.CellToWorld(cell), "grass prefab, sprite, order and cell alignment");
+                Check(grass.GetComponent<Collider2D>() == null &&
+                    grass.GetComponent<GridObstacle>() == null &&
+                    grass.GetComponent<ExamineInteractable>() == null &&
+                    grass.GetComponents<MonoBehaviour>().Length == 0 && world.CanEnter(cell),
+                    "grass remains walkable and non-interactive");
+                Check(actualGrassCells.Add(cell), "no overlapping grass cells");
+            }
+            foreach (var cell in expectedGrassCells)
+                Check(actualGrassCells.Contains(cell) && cell != Vector2Int.zero &&
+                    cell != new Vector2Int(1, 1) && world.CanEnter(cell),
+                    "four scattered grass cells avoid player and stone");
+            Check(GameObject.Find("FirstDay - small ground").GetComponent<SpriteRenderer>().sortingOrder == -10 &&
+                grid.sortingOrder == -9 && stone.GetComponent<SpriteRenderer>().sortingOrder == 2 &&
+                artwork.GetComponent<SpriteRenderer>().sortingOrder == 10,
+                "ground grid grass stone player render order");
             foreach (var clip in new[] { "frontWalk", "backWalk", "leftWalk", "rightWalk" })
             {
                 var property = new SerializedObject(visual).FindProperty(clip);
@@ -169,12 +215,12 @@ namespace Halka.Game.Editor
                 !tap.End(3, Vector2.zero, false, 0.1f, 24f, 0.4f) &&
                 tap.End(2, Vector2.zero, false, 0.1f, 24f, 0.4f),
                 "pointer ID prevents second finger interference");
-            Debug.Log("HALKA ver1.3 checks passed.");
+            Debug.Log("HALKA ver1.4 checks passed.");
         }
 
         private static void Check(bool condition, string label)
         {
-            if (!condition) throw new InvalidOperationException("ver1.3 check failed: " + label);
+            if (!condition) throw new InvalidOperationException("ver1.4 check failed: " + label);
         }
     }
 }

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>ゲーム</title>
+    <title>HALKA WORLD</title>
     <style>
       html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #e7eecf; }
       #unity-canvas { display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
@@ -21,13 +21,13 @@
       const loading = document.getElementById("loading");
       const error = document.getElementById("error");
       createUnityInstance(canvas, {
-        dataUrl: "Build/58402aa503e732176baecdf6ea92a35d.data",
+        dataUrl: "Build/bfb6018a2f31f31b06e2014ada0700b4.data",
         frameworkUrl: "Build/c2f80f048f6e61cc6a7649162c948444.framework.js",
         codeUrl: "Build/386f87007bc2017d954c80bfbabc7a24.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "HALKA",
-        productName: "Game",
-        productVersion: "1.3",
+        productName: "HALKA WORLD",
+        productVersion: "1.4",
         devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2)
       }, (progress) => {
         loading.textContent = `Loading... ${Math.round(progress * 100)}%`;

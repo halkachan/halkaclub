@@ -20,12 +20,19 @@ namespace Halka.Game.Editor
         private const string ScenePath = "Assets/Scenes/FirstDay.unity";
         private const string PixelPath = "Assets/Content/World/pixel.png";
         private const string StonePath = "Assets/Content/World/stone.png";
+        private const string GrassPath = "Assets/Content/World/grass.png";
+        private const string GrassPrefabPath = "Assets/Content/World/GrassDecoration.prefab";
         private const string GridPath = "Assets/Content/World/grid.png";
         private const float SpritePixelsPerUnit = 64f;
         private const float ArtworkFootOffset = 0.5f;
         private static readonly Vector2 StoneOpaquePixels = new Vector2(28f, 20f);
+        private static readonly Vector2Int[] GrassCells =
+        {
+            new Vector2Int(-1, 0), new Vector2Int(4, 2),
+            new Vector2Int(-4, -2), new Vector2Int(3, -3)
+        };
 
-        [MenuItem("HALKA/Prepare ver1.3 scene")]
+        [MenuItem("HALKA/Prepare ver1.4 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -37,6 +44,10 @@ namespace Halka.Game.Editor
             ConfigureSpriteImport(StonePath, SpritePixelsPerUnit);
             var stoneSprite = AssetDatabase.LoadAssetAtPath<Sprite>(StonePath);
             if (stoneSprite == null) throw new InvalidOperationException("Stone sprite import failed");
+            ConfigureSpriteImport(GrassPath, SpritePixelsPerUnit);
+            var grassSprite = AssetDatabase.LoadAssetAtPath<Sprite>(GrassPath);
+            if (grassSprite == null) throw new InvalidOperationException("Grass sprite import failed");
+            var grassPrefab = CreateGrassPrefab(grassSprite);
 
             Directory.CreateDirectory("Assets/Scenes");
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -90,6 +101,18 @@ namespace Halka.Game.Editor
             stone.AddComponent<GridObstacle>();
             var examine = stone.AddComponent<ExamineInteractable>();
 
+            var grassGroup = new GameObject("Grass decorations");
+            foreach (var cell in GrassCells)
+            {
+                if (cell == Vector2Int.zero || cell == new Vector2Int(1, 1) ||
+                    cell.x < world.MinCell.x || cell.x > world.MaxCell.x ||
+                    cell.y < world.MinCell.y || cell.y > world.MaxCell.y)
+                    throw new InvalidOperationException($"Invalid grass cell: {cell}");
+                var grass = (GameObject)PrefabUtility.InstantiatePrefab(grassPrefab);
+                grass.transform.SetParent(grassGroup.transform);
+                grass.transform.position = world.CellToWorld(cell);
+            }
+
             var hudObject = new GameObject("UI - minimal HUD");
             hudObject.AddComponent<GameHud>();
             var dpadObject = new GameObject("UI - touch D-pad");
@@ -124,7 +147,7 @@ namespace Halka.Game.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.SaveAssets();
-            Debug.Log("HALKA ver1.3 scene prepared.");
+            Debug.Log("HALKA ver1.4 scene prepared.");
         }
 
         [MenuItem("HALKA/Build WebGL for HP")]
@@ -186,10 +209,26 @@ namespace Halka.Game.Editor
             return sprite;
         }
 
+        private static GameObject CreateGrassPrefab(Sprite sprite)
+        {
+            var root = new GameObject("GrassDecoration");
+            try
+            {
+                var renderer = root.AddComponent<SpriteRenderer>();
+                renderer.sprite = sprite;
+                renderer.sortingOrder = -8;
+                return PrefabUtility.SaveAsPrefabAsset(root, GrassPrefabPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
         private static void ConfigureProject()
         {
             PlayerSettings.companyName = "HALKA";
-            PlayerSettings.productName = "Game";
+            PlayerSettings.productName = "HALKA WORLD";
             PlayerSettings.bundleVersion = GameVersion.Value;
             PlayerSettings.SplashScreen.show = false;
             PlayerSettings.SplashScreen.showUnityLogo = false;
