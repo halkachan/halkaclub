@@ -1,0 +1,13 @@
+unity-project/Library/
+unity-project/Temp/
+unity-project/Obj/
+unity-project/Build/
+unity-project/Builds/
+unity-project/Logs/
+unity-project/UserSettings/
+unity-project/.vs/
+unity-project/*.csproj
+unity-project/*.sln
+unity-project/*.slnx
+unity-project/.gradle/
+unity-*.log

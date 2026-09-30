@@ -1,6 +1,6 @@
 # HALKA Links：VS Code編集版
 
-現在のリンク集を、特別な制作ソフトやビルド作業なしで編集できるHTML・CSSへ移したものです。
+リンク集部分は、特別な制作ソフトやビルド作業なしで編集できるHTML・CSSです。`halkaworld/` のゲーム本体は別途Unityでビルドします。
 
 ## ファイルの役割
 
@@ -13,6 +13,10 @@
 - `works/works.css`：作品一覧ページ専用のデザイン
 - `works/works.js`：作品カードとサムネイルを自動生成する仕組み
 - `assets/fonts`：現在使用している手書きフォント
+- `halkaworld/index.html`：Unity WebGLゲームページ
+- `halkaworld/webgl/`：Unityの公開用WebGLビルド
+- `harukaijiri/index.html`：旧URLからの転送ページ
+- `unity-project/`：Unity 6.3 LTSのゲーム本体（手順は `unity-project/README.md`）
 
 ## VS Codeで編集する
 
@@ -85,4 +89,4 @@ GitHubへ保存した後は、GitHub Desktopの「History」から正常だっ�
 
 ## 公開について
 
-このままGitHub PagesやCloudflare Pagesへ公開できます。公開設定と `halkaclub.com` の接続は、ドメイン取得後に行います。
+`main` ブランチのルートをGitHub Pagesで公開し、`halkaclub.com` に接続しています。ゲームは `/halkaworld/` で公開します。

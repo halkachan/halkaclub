@@ -1,0 +1,27 @@
+# HALKA WORLD ver1.4 Unity project
+
+Open this folder with Unity **6000.3.10f1 (Unity 6.3 LTS)**. The WebGL Build Support module is required to build the website version.
+
+The game uses the Built-in Render Pipeline. It currently renders a small 2D scene, while scenes, cameras, and interactions can be replaced for later 3D areas. Game logic is split into `Core`, `Input`, `Player`, `Interaction`, `World`, `Camera`, and `UI` components. `Core/GameVersion.cs` is the only version source.
+
+The ten supplied original GIFs are preserved in `SourceGifs/` and converted without drawing changes to `Assets/Content/Character/`. Four idle and four walk directions are used. `turn` and `front_jump` are stored for later versions. See `Assets/Content/Character/README.md` for the import method. The current design specification is `Docs/HALKA_WORLD_企画書仕様書_ver1.1.md` (document ver1.1, game ver1.4).
+
+ver1.4 treats one logical cell as a 32×32-pixel map tile (0.5 Unity unit at 64 PPU) and uses 0.18 seconds per step. Bounds are 21×13 cells, preserving approximately the previous physical field size. A subtle one-pixel world-space overlay marks cell boundaries. The player's root stays on exact grid cells, and the artwork child has one fixed +0.5-unit Y offset so the feet align with the cell anchor. No obstacle-dependent artwork movement runs. The scene contains one blocking stone at cell `(1, 1)` using the supplied 32×32 PNG in `Assets/Content/World/stone.png`, imported at 64 pixels per unit without scaling. Its BoxCollider2D matches the opaque 28×20-pixel area. The shared `ExamineInteractable` displays `いし。` only when stopped in a cardinally adjacent cell and facing the stone. Blocked movement input still changes facing. Keyboard input uses WASD or arrows. Touch devices show a four-way D-pad, while taps outside it still go through the shared Interaction router. `?touchControls=1` on the direct `webgl/` URL enables a desktop mouse preview of the mobile controls for verification.
+
+## Build
+
+1. Open `Assets/Scenes/FirstDay.unity` to inspect the scene.
+2. Run **HALKA > Build WebGL for HP** in the Editor. The output is written to `../halkaworld/webgl/`. The former `/harukaijiri/` URL redirects to `/halkaworld/`.
+3. Serve the repository root over HTTP for testing; opening an HTML file directly cannot load the WebGL data reliably.
+
+Command line build:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.3.10f1\Editor\Unity.exe' -batchmode -nographics -quit -projectPath '<repo>\unity-project' -executeMethod Halka.Game.Editor.ProjectBuilder.BuildWeb -logFile '<repo>\unity-build.log'
+```
+
+The HP is hosted on GitHub Pages. Build compression is disabled because this host's per-file `Content-Encoding` headers cannot be configured from this repository. The simple custom WebGL template has no Unity or game logo. `ProjectBuilder` disables the Unity splash settings, development build, and debug symbols.
+
+The original `grass.png` is preserved byte for byte from the supplied 32×32 asset. `GrassDecoration.prefab` has only a SpriteRenderer at order -8, between the grid (-9) and stone (2) / player (10). Four instances occupy cells `(-1,0)`, `(4,2)`, `(-4,-2)`, and `(3,-3)`. Grass has no collider, obstacle, interaction, or movement code; all four cells remain passable.
+
+Do not run **HALKA > Prepare ver1.4 scene** on a customized scene: it recreates `FirstDay.unity`. **Build WebGL for HP** preserves existing scene edits. **HALKA > Validate ver1.4** checks grid steps, fixed art anchor, sprites, stone interaction, grass placement and passability, facing and examine range, message timing, cardinal input, and tap handling. **Refresh character sprites** updates the directional frame arrays after adding art.
