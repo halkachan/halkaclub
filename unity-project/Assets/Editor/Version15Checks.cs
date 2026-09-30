@@ -67,11 +67,15 @@ namespace Halka.Game.Editor
             Check(grassField != null && grassGroup.GetComponents<MonoBehaviour>().Length == 1,
                 "one shared grass animation manager");
             var grassImporter = (TextureImporter)AssetImporter.GetAtPath("Assets/Content/World/grass.png");
+            var grassSettings = new TextureImporterSettings();
+            grassImporter.ReadTextureSettings(grassSettings);
             Check(grassImporter != null && grassImporter.textureType == TextureImporterType.Sprite &&
                 grassImporter.spriteImportMode == SpriteImportMode.Single &&
                 grassImporter.filterMode == FilterMode.Point && !grassImporter.mipmapEnabled &&
                 grassImporter.textureCompression == TextureImporterCompression.Uncompressed &&
                 grassImporter.npotScale == TextureImporterNPOTScale.None &&
+                grassSettings.spriteAlignment == (int)SpriteAlignment.Custom &&
+                grassSettings.spritePivot.y < 0.5f &&
                 Mathf.Approximately(grassImporter.spritePixelsPerUnit, 64f), "grass pixel import");
             var actualGrassCells = new System.Collections.Generic.HashSet<Vector2Int>();
             foreach (Transform grass in grassGroup.transform)
@@ -126,14 +130,19 @@ namespace Halka.Game.Editor
                 rustle.FindProperty("frontOverlay").objectReferenceValue == frontOverlay &&
                 rustle.FindProperty("idleFrontSprite").objectReferenceValue == idleFront &&
                 idleFront.texture.width == 32 && idleFront.texture.height == 32 &&
-                Mathf.Approximately(idleFront.pixelsPerUnit, 64f),
+                Mathf.Approximately(idleFront.pixelsPerUnit, 64f) &&
+                idleFront.pivot == AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/World/grass.png").pivot,
                 "five paired rustle frames and aligned idle grass sprites");
             var frontImporter = (TextureImporter)AssetImporter.GetAtPath("Assets/Content/World/grass_front.png");
+            var frontSettings = new TextureImporterSettings();
+            frontImporter.ReadTextureSettings(frontSettings);
             Check(frontImporter.textureType == TextureImporterType.Sprite &&
                 frontImporter.spriteImportMode == SpriteImportMode.Single &&
                 frontImporter.filterMode == FilterMode.Point && !frontImporter.mipmapEnabled &&
                 frontImporter.textureCompression == TextureImporterCompression.Uncompressed &&
-                frontImporter.npotScale == TextureImporterNPOTScale.None,
+                frontImporter.npotScale == TextureImporterNPOTScale.None &&
+                frontSettings.spriteAlignment == grassSettings.spriteAlignment &&
+                frontSettings.spritePivot == grassSettings.spritePivot,
                 "front sprite pixel import");
             var expectedMilliseconds = new[] { 90, 90, 90, 90, 420 };
             for (var i = 0; i < rustleFrames.arraySize; i++)
@@ -153,6 +162,7 @@ namespace Halka.Game.Editor
                         expectedMilliseconds[i] / 1000f) &&
                     frontSprite.texture.width == 32 && frontSprite.texture.height == 32 &&
                     Mathf.Approximately(frontSprite.pixelsPerUnit, sprite.pixelsPerUnit) &&
+                    sprite.pivot == idleFront.pivot && frontSprite.pivot == sprite.pivot &&
                     pairedImporter.textureType == TextureImporterType.Sprite &&
                     pairedImporter.spriteImportMode == SpriteImportMode.Single &&
                     pairedImporter.filterMode == FilterMode.Point && !pairedImporter.mipmapEnabled &&
