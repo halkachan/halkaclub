@@ -18,12 +18,14 @@ namespace Halka.Game.Editor
     public static class ProjectBuilder
     {
         private const string ScenePath = "Assets/Scenes/FirstDay.unity";
-        private const string CharacterPath = "Assets/Content/Character/front_idle";
         private const string PixelPath = "Assets/Content/World/pixel.png";
         private const string StonePath = "Assets/Content/World/stone.png";
+        private const string GridPath = "Assets/Content/World/grid.png";
+        private const float SpritePixelsPerUnit = 64f;
+        private const float ArtworkFootOffset = 0.5f;
         private static readonly Vector2 StoneOpaquePixels = new Vector2(28f, 20f);
 
-        [MenuItem("HALKA/Prepare ver1.2 scene")]
+        [MenuItem("HALKA/Prepare ver1.3 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -32,7 +34,7 @@ namespace Halka.Game.Editor
             ConfigureSpriteImport(PixelPath, 1f);
             var pixel = AssetDatabase.LoadAssetAtPath<Sprite>(PixelPath);
             if (pixel == null) throw new InvalidOperationException("World pixel import failed");
-            ConfigureSpriteImport(StonePath, GridWorld2D.TilePixels);
+            ConfigureSpriteImport(StonePath, SpritePixelsPerUnit);
             var stoneSprite = AssetDatabase.LoadAssetAtPath<Sprite>(StonePath);
             if (stoneSprite == null) throw new InvalidOperationException("Stone sprite import failed");
 
@@ -46,12 +48,12 @@ namespace Halka.Game.Editor
             player.transform.position = Vector3.zero;
             var artwork = new GameObject("Player artwork");
             artwork.transform.SetParent(player.transform, false);
+            artwork.transform.localPosition = Vector3.up * ArtworkFootOffset;
             var playerRenderer = artwork.AddComponent<SpriteRenderer>();
             playerRenderer.sprite = frames[0];
             playerRenderer.sortingOrder = 10;
             var mover = player.AddComponent<PlayerMover>();
             var visual = player.AddComponent<CharacterVisual>();
-            var visualAnchor = player.AddComponent<PlayerVisualAnchor2D>();
 
             var cameraObject = new GameObject("Main Camera");
             cameraObject.tag = "MainCamera";
@@ -72,13 +74,19 @@ namespace Halka.Game.Editor
             groundRenderer.sortingOrder = -10;
             ground.transform.localScale = new Vector3(12f, 8f, 1f);
 
+            var gridSprite = CreateGridOverlay(world);
+            var gridObject = new GameObject("FirstDay - 32px cell boundaries");
+            var gridRenderer = gridObject.AddComponent<SpriteRenderer>();
+            gridRenderer.sprite = gridSprite;
+            gridRenderer.sortingOrder = -9;
+
             var stone = new GameObject("Stone - first world object");
             stone.transform.position = world.CellToWorld(new Vector2Int(1, 1));
             var stoneRenderer = stone.AddComponent<SpriteRenderer>();
             stoneRenderer.sprite = stoneSprite;
             stoneRenderer.sortingOrder = 2;
             var stoneCollider = stone.AddComponent<BoxCollider2D>();
-            stoneCollider.size = StoneOpaquePixels / GridWorld2D.TilePixels;
+            stoneCollider.size = StoneOpaquePixels / SpritePixelsPerUnit;
             stone.AddComponent<GridObstacle>();
             var examine = stone.AddComponent<ExamineInteractable>();
 
@@ -98,9 +106,6 @@ namespace Halka.Game.Editor
             SetReference(input, "dpad", dpad);
             SetReference(mover, "input", input);
             SetReference(mover, "world", world);
-            SetReference(visualAnchor, "mover", mover);
-            SetReference(visualAnchor, "world", world);
-            SetReference(visualAnchor, "artwork", artwork.transform);
             SetReference(visual, "mover", mover);
             SetReference(visual, "spriteRenderer", playerRenderer);
             SetReference(examine, "player", mover);
@@ -111,12 +116,15 @@ namespace Halka.Game.Editor
             SetSprites(visual, "backIdle", LoadFrames("back_idle"));
             SetSprites(visual, "leftIdle", LoadFrames("left_idle"));
             SetSprites(visual, "rightIdle", LoadFrames("right_idle"));
-            SetFloat(visual, "frameSeconds", CharacterVisual.OriginalIdleFrameSeconds);
+            SetSprites(visual, "frontWalk", LoadFrames("walk_front"));
+            SetSprites(visual, "backWalk", LoadFrames("walk_back"));
+            SetSprites(visual, "leftWalk", LoadFrames("walk_left"));
+            SetSprites(visual, "rightWalk", LoadFrames("walk_right"));
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.SaveAssets();
-            Debug.Log("HALKA ver1.2 scene prepared.");
+            Debug.Log("HALKA ver1.3 scene prepared.");
         }
 
         [MenuItem("HALKA/Build WebGL for HP")]
@@ -149,8 +157,33 @@ namespace Halka.Game.Editor
             SetSprites(visual, "backIdle", LoadFrames("back_idle"));
             SetSprites(visual, "leftIdle", LoadFrames("left_idle"));
             SetSprites(visual, "rightIdle", LoadFrames("right_idle"));
-            SetFloat(visual, "frameSeconds", CharacterVisual.OriginalIdleFrameSeconds);
+            SetSprites(visual, "frontWalk", LoadFrames("walk_front"));
+            SetSprites(visual, "backWalk", LoadFrames("walk_back"));
+            SetSprites(visual, "leftWalk", LoadFrames("walk_left"));
+            SetSprites(visual, "rightWalk", LoadFrames("walk_right"));
             EditorSceneManager.SaveScene(scene);
+        }
+
+        private static Sprite CreateGridOverlay(GridWorld2D world)
+        {
+            var width = (world.MaxCell.x - world.MinCell.x + 1) * GridWorld2D.TilePixels;
+            var height = (world.MaxCell.y - world.MinCell.y + 1) * GridWorld2D.TilePixels;
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            var pixels = new Color32[width * height];
+            var line = new Color32(56, 83, 49, 30);
+            for (var y = 0; y < height; y++)
+            for (var x = 0; x < width; x++)
+                pixels[y * width + x] = x % GridWorld2D.TilePixels == 0 ||
+                    y % GridWorld2D.TilePixels == 0 ? line : new Color32(0, 0, 0, 0);
+            texture.SetPixels32(pixels);
+            texture.Apply();
+            File.WriteAllBytes(GridPath, texture.EncodeToPNG());
+            UnityEngine.Object.DestroyImmediate(texture);
+            AssetDatabase.ImportAsset(GridPath, ImportAssetOptions.ForceSynchronousImport);
+            ConfigureSpriteImport(GridPath, SpritePixelsPerUnit);
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(GridPath);
+            if (sprite == null) throw new InvalidOperationException("Grid overlay import failed");
+            return sprite;
         }
 
         private static void ConfigureProject()
@@ -199,7 +232,7 @@ namespace Halka.Game.Editor
             for (var i = 0; i < paths.Length; i++)
             {
                 var path = paths[i].Replace('\\', '/');
-                ConfigureSpriteImport(path, GridWorld2D.TilePixels);
+                ConfigureSpriteImport(path, SpritePixelsPerUnit);
                 sprites[i] = AssetDatabase.LoadAssetAtPath<Sprite>(path);
                 if (sprites[i] == null) throw new InvalidOperationException($"Sprite import failed: {path}");
             }
@@ -220,13 +253,6 @@ namespace Halka.Game.Editor
             array.arraySize = sprites.Length;
             for (var i = 0; i < sprites.Length; i++)
                 array.GetArrayElementAtIndex(i).objectReferenceValue = sprites[i];
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        private static void SetFloat(UnityEngine.Object target, string field, float value)
-        {
-            var serialized = new SerializedObject(target);
-            serialized.FindProperty(field).floatValue = value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

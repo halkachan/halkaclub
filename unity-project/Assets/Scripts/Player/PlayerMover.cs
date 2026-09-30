@@ -15,7 +15,7 @@ namespace Halka.Game.Player
         private GridStepMotion motion;
 
         public Vector2Int Cell => motion != null ? motion.Cell : Vector2Int.zero;
-        public Vector2 Facing { get; private set; } = Vector2.down;
+        public FacingDirection Facing { get; private set; } = FacingDirection.Down;
         public bool IsMoving => motion != null && motion.IsMoving;
 
         private void Awake()
@@ -26,18 +26,18 @@ namespace Halka.Game.Player
 
         private void Update()
         {
-            if (!motion.IsMoving)
-            {
-                var direction = input.Direction;
-                if (direction != Vector2Int.zero)
-                {
-                    Facing = direction;
-                    motion.TryBegin(direction, world.CanEnter, stepSeconds);
-                }
-            }
-
+            if (!motion.IsMoving) ApplyDirection(input.Direction);
+            var wasMoving = motion.IsMoving;
             motion.Advance(Time.deltaTime);
+            if (wasMoving && !motion.IsMoving) ApplyDirection(input.Direction);
             transform.position = world.CellToWorld(motion.Position);
+        }
+
+        public void ApplyDirection(Vector2Int direction)
+        {
+            if (motion.IsMoving || Mathf.Abs(direction.x) + Mathf.Abs(direction.y) != 1) return;
+            Facing = FacingDirectionExtensions.FromVector(direction);
+            motion.TryBegin(direction, world.CanEnter, stepSeconds);
         }
     }
 }

@@ -2,16 +2,21 @@ using UnityEngine;
 
 namespace Halka.Game.Player
 {
+    [DefaultExecutionOrder(50)]
     public sealed class CharacterVisual : MonoBehaviour
     {
         public const float OriginalIdleFrameSeconds = 0.4f;
+        public const float OriginalWalkFrameSeconds = 0.15f;
         [SerializeField] private PlayerMover mover;
         [SerializeField] private SpriteRenderer spriteRenderer;
         [SerializeField] private Sprite[] frontIdle;
         [SerializeField] private Sprite[] backIdle;
         [SerializeField] private Sprite[] leftIdle;
         [SerializeField] private Sprite[] rightIdle;
-        [SerializeField, Min(0.02f)] private float frameSeconds = OriginalIdleFrameSeconds;
+        [SerializeField] private Sprite[] frontWalk;
+        [SerializeField] private Sprite[] backWalk;
+        [SerializeField] private Sprite[] leftWalk;
+        [SerializeField] private Sprite[] rightWalk;
 
         private Sprite[] currentFrames;
         private float frameTimer;
@@ -19,13 +24,7 @@ namespace Halka.Game.Player
 
         private void Update()
         {
-            var facing = mover.Facing;
-            var selected = Mathf.Abs(facing.x) > Mathf.Abs(facing.y)
-                ? (facing.x < 0 ? leftIdle : rightIdle)
-                : (facing.y > 0 ? backIdle : frontIdle);
-
-            // Unsupplied directional art keeps the existing character visible until real sprites arrive.
-            if (selected == null || selected.Length == 0) selected = frontIdle;
+            var selected = SelectFrames(mover.Facing, mover.IsMoving);
             if (selected == null || selected.Length == 0) return;
 
             if (currentFrames != selected)
@@ -34,6 +33,7 @@ namespace Halka.Game.Player
                 frameIndex = 0;
                 frameTimer = 0f;
             }
+            var frameSeconds = mover.IsMoving ? OriginalWalkFrameSeconds : OriginalIdleFrameSeconds;
             if (currentFrames.Length > 1)
             {
                 frameTimer += Time.deltaTime;
@@ -44,6 +44,17 @@ namespace Halka.Game.Player
                 }
             }
             spriteRenderer.sprite = currentFrames[frameIndex];
+        }
+
+        private Sprite[] SelectFrames(FacingDirection facing, bool walking)
+        {
+            switch (facing)
+            {
+                case FacingDirection.Up: return walking ? backWalk : backIdle;
+                case FacingDirection.Left: return walking ? leftWalk : leftIdle;
+                case FacingDirection.Right: return walking ? rightWalk : rightIdle;
+                default: return walking ? frontWalk : frontIdle;
+            }
         }
     }
 }

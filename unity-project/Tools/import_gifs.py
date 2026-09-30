@@ -12,7 +12,11 @@ from PIL import Image, ImageSequence
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "SourceGifs"
 DESTINATION = ROOT / "Assets" / "Content" / "Character"
-NAMES = ("front_idle", "back_idle", "left_idle", "right_idle", "turn", "front_jump")
+NAMES = (
+    "front_idle", "back_idle", "left_idle", "right_idle",
+    "walk_front", "walk_back", "walk_left", "walk_right",
+    "turn", "front_jump",
+)
 
 
 def main() -> None:

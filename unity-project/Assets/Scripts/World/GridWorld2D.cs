@@ -4,14 +4,16 @@ namespace Halka.Game.World
 {
     public sealed class GridWorld2D : MonoBehaviour
     {
-        public const int TilePixels = 64;
-        public const float TileWorldSize = 1f;
+        public const int TilePixels = 32;
+        public const float TileWorldSize = 0.5f;
 
         [SerializeField, Min(0.1f)] private float cellSize = TileWorldSize;
-        [SerializeField] private Vector2Int minCell = new Vector2Int(-5, -3);
-        [SerializeField] private Vector2Int maxCell = new Vector2Int(5, 3);
+        [SerializeField] private Vector2Int minCell = new Vector2Int(-10, -6);
+        [SerializeField] private Vector2Int maxCell = new Vector2Int(10, 6);
 
         public float CellSize => cellSize;
+        public Vector2Int MinCell => minCell;
+        public Vector2Int MaxCell => maxCell;
 
         public Vector2Int WorldToCell(Vector3 position) => new Vector2Int(
             Mathf.RoundToInt((position.x - transform.position.x) / cellSize),

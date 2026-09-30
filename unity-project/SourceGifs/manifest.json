@@ -47,6 +47,62 @@
       400
     ]
   },
+  "walk_front": {
+    "source_sha256": "b0c7e8c7a5b71aed370e1f2a86c6c9adb8760e96604923c040126f6d67dbca86",
+    "size": [
+      64,
+      64
+    ],
+    "frames": 4,
+    "duration_ms": [
+      150,
+      150,
+      150,
+      150
+    ]
+  },
+  "walk_back": {
+    "source_sha256": "091e2202092f1444fbedfd09353dadbf67cfa2d4be2cc5604ab423817d2071de",
+    "size": [
+      64,
+      64
+    ],
+    "frames": 4,
+    "duration_ms": [
+      150,
+      150,
+      150,
+      150
+    ]
+  },
+  "walk_left": {
+    "source_sha256": "19bed16e464ed1330d6215e42efd94c6203584ec1028396788b3fc6a7761ae1d",
+    "size": [
+      64,
+      64
+    ],
+    "frames": 4,
+    "duration_ms": [
+      150,
+      150,
+      150,
+      150
+    ]
+  },
+  "walk_right": {
+    "source_sha256": "d6289e728596bc6a4233c290ae7ec0bfc4d614dd450a81fb61f392b33fc892c7",
+    "size": [
+      64,
+      64
+    ],
+    "frames": 4,
+    "duration_ms": [
+      150,
+      150,
+      150,
+      150
+    ]
+  },
   "turn": {
     "source_sha256": "017e3425800c1518b036bb5b70cf7316b8c000ca7dc83cb017c859e699beb7d6",
     "size": [
