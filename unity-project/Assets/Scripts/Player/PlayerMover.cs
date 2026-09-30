@@ -1,3 +1,4 @@
+using System;
 using Halka.Game.Input;
 using Halka.Game.World;
 using UnityEngine;
@@ -17,6 +18,7 @@ namespace Halka.Game.Player
         public Vector2Int Cell => motion != null ? motion.Cell : Vector2Int.zero;
         public FacingDirection Facing { get; private set; } = FacingDirection.Down;
         public bool IsMoving => motion != null && motion.IsMoving;
+        public event Action<Vector2Int> StepStarted;
 
         private void Awake()
         {
@@ -37,7 +39,9 @@ namespace Halka.Game.Player
         {
             if (motion.IsMoving || Mathf.Abs(direction.x) + Mathf.Abs(direction.y) != 1) return;
             Facing = FacingDirectionExtensions.FromVector(direction);
-            motion.TryBegin(direction, world.CanEnter, stepSeconds);
+            var target = motion.Cell + direction;
+            if (motion.TryBegin(direction, world.CanEnter, stepSeconds))
+                StepStarted?.Invoke(target);
         }
     }
 }

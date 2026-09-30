@@ -12,19 +12,21 @@ from PIL import Image, ImageSequence
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "SourceGifs"
 DESTINATION = ROOT / "Assets" / "Content" / "Character"
+WORLD_DESTINATION = ROOT / "Assets" / "Content" / "World"
 NAMES = (
     "front_idle", "back_idle", "left_idle", "right_idle",
     "walk_front", "walk_back", "walk_left", "walk_right",
     "turn", "front_jump",
 )
+WORLD_NAMES = ("grass_rustle",)
 
 
 def main() -> None:
     manifest = {}
-    for name in NAMES:
+    for name in (*NAMES, *WORLD_NAMES):
         source = SOURCE / f"{name}.gif"
         with Image.open(source) as gif:
-            folder = DESTINATION / name
+            folder = (WORLD_DESTINATION if name in WORLD_NAMES else DESTINATION) / name
             folder.mkdir(parents=True, exist_ok=True)
             durations = []
             for index, frame in enumerate(ImageSequence.Iterator(gif)):

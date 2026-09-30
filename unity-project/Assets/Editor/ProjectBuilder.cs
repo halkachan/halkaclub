@@ -21,18 +21,14 @@ namespace Halka.Game.Editor
         private const string PixelPath = "Assets/Content/World/pixel.png";
         private const string StonePath = "Assets/Content/World/stone.png";
         private const string GrassPath = "Assets/Content/World/grass.png";
+        private const string GrassRustlePath = "Assets/Content/World/grass_rustle";
         private const string GrassPrefabPath = "Assets/Content/World/GrassDecoration.prefab";
         private const string GridPath = "Assets/Content/World/grid.png";
         private const float SpritePixelsPerUnit = 64f;
         private const float ArtworkFootOffset = 0.5f;
         private static readonly Vector2 StoneOpaquePixels = new Vector2(28f, 20f);
-        private static readonly Vector2Int[] GrassCells =
-        {
-            new Vector2Int(-1, 0), new Vector2Int(4, 2),
-            new Vector2Int(-4, -2), new Vector2Int(3, -3)
-        };
 
-        [MenuItem("HALKA/Prepare ver1.4 scene")]
+        [MenuItem("HALKA/Prepare ver1.5 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -47,6 +43,8 @@ namespace Halka.Game.Editor
             ConfigureSpriteImport(GrassPath, SpritePixelsPerUnit);
             var grassSprite = AssetDatabase.LoadAssetAtPath<Sprite>(GrassPath);
             if (grassSprite == null) throw new InvalidOperationException("Grass sprite import failed");
+            var rustleFrames = LoadFramesFromFolder(GrassRustlePath);
+            if (rustleFrames.Length == 0) throw new InvalidOperationException("Grass rustle frames are missing");
             var grassPrefab = CreateGrassPrefab(grassSprite);
 
             Directory.CreateDirectory("Assets/Scenes");
@@ -102,16 +100,22 @@ namespace Halka.Game.Editor
             var examine = stone.AddComponent<ExamineInteractable>();
 
             var grassGroup = new GameObject("Grass decorations");
-            foreach (var cell in GrassCells)
+            var grassCount = 0;
+            for (var y = world.MinCell.y; y <= world.MaxCell.y; y++)
+            for (var x = world.MinCell.x; x <= world.MaxCell.x; x++)
             {
-                if (cell == Vector2Int.zero || cell == new Vector2Int(1, 1) ||
-                    cell.x < world.MinCell.x || cell.x > world.MaxCell.x ||
-                    cell.y < world.MinCell.y || cell.y > world.MaxCell.y)
-                    throw new InvalidOperationException($"Invalid grass cell: {cell}");
+                var cell = new Vector2Int(x, y);
+                if (!world.CanEnter(cell)) continue;
                 var grass = (GameObject)PrefabUtility.InstantiatePrefab(grassPrefab);
                 grass.transform.SetParent(grassGroup.transform);
                 grass.transform.position = world.CellToWorld(cell);
+                grassCount++;
             }
+            var grassField = grassGroup.AddComponent<GrassField2D>();
+            SetReference(grassField, "world", world);
+            SetReference(grassField, "player", mover);
+            SetReference(grassField, "idleSprite", grassSprite);
+            SetSprites(grassField, "rustleFrames", rustleFrames);
 
             var hudObject = new GameObject("UI - minimal HUD");
             hudObject.AddComponent<GameHud>();
@@ -147,7 +151,7 @@ namespace Halka.Game.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.SaveAssets();
-            Debug.Log("HALKA ver1.4 scene prepared.");
+            Debug.Log($"HALKA ver1.5 scene prepared with {grassCount} grass cells.");
         }
 
         [MenuItem("HALKA/Build WebGL for HP")]
@@ -216,7 +220,7 @@ namespace Halka.Game.Editor
             {
                 var renderer = root.AddComponent<SpriteRenderer>();
                 renderer.sprite = sprite;
-                renderer.sortingOrder = -8;
+                renderer.sortingOrder = 20;
                 return PrefabUtility.SaveAsPrefabAsset(root, GrassPrefabPath);
             }
             finally
@@ -263,7 +267,11 @@ namespace Halka.Game.Editor
 
         private static Sprite[] LoadFrames(string direction)
         {
-            var folder = $"Assets/Content/Character/{direction}";
+            return LoadFramesFromFolder($"Assets/Content/Character/{direction}");
+        }
+
+        private static Sprite[] LoadFramesFromFolder(string folder)
+        {
             if (!AssetDatabase.IsValidFolder(folder)) return Array.Empty<Sprite>();
             var paths = Directory.GetFiles(folder, "*.png");
             Array.Sort(paths, StringComparer.OrdinalIgnoreCase);

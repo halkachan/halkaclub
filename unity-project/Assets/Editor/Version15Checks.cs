@@ -12,9 +12,9 @@ using UnityEngine;
 
 namespace Halka.Game.Editor
 {
-    public static class Version14Checks
+    public static class Version15Checks
     {
-        [MenuItem("HALKA/Validate ver1.4")]
+        [MenuItem("HALKA/Validate ver1.5")]
         public static void Run()
         {
             EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
@@ -27,7 +27,7 @@ namespace Halka.Game.Editor
             var stone = UnityEngine.Object.FindFirstObjectByType<GridObstacle>();
             var examine = stone.GetComponent<ExamineInteractable>();
             var artwork = player.GetComponentInChildren<SpriteRenderer>().transform;
-            Check(GameVersion.Value == "1.4", "version source");
+            Check(GameVersion.Value == "1.5", "version source");
             Check(GridWorld2D.TilePixels == 32 && Mathf.Approximately(GridWorld2D.TileWorldSize, 0.5f) &&
                 Mathf.Approximately(world.CellSize, GridWorld2D.TileWorldSize), "32-pixel grid scale");
             Check(world.MinCell == new Vector2Int(-10, -6) && world.MaxCell == new Vector2Int(10, 6),
@@ -60,8 +60,11 @@ namespace Halka.Game.Editor
                 grid.transform.position == Vector3.zero && grid.sprite.texture.filterMode == FilterMode.Point,
                 "world-aligned sharp 32-pixel grid overlay");
             var grassGroup = GameObject.Find("Grass decorations");
-            Check(grassGroup != null && grassGroup.transform.childCount == 4,
-                "four grass prefab instances");
+            Check(grassGroup != null && grassGroup.transform.childCount == 272,
+                "all 272 walkable cells have grass prefab instances");
+            var grassField = grassGroup.GetComponent<GrassField2D>();
+            Check(grassField != null && grassGroup.GetComponents<MonoBehaviour>().Length == 1,
+                "one shared grass animation manager");
             var grassImporter = (TextureImporter)AssetImporter.GetAtPath("Assets/Content/World/grass.png");
             Check(grassImporter != null && grassImporter.textureType == TextureImporterType.Sprite &&
                 grassImporter.spriteImportMode == SpriteImportMode.Single &&
@@ -69,11 +72,6 @@ namespace Halka.Game.Editor
                 grassImporter.textureCompression == TextureImporterCompression.Uncompressed &&
                 grassImporter.npotScale == TextureImporterNPOTScale.None &&
                 Mathf.Approximately(grassImporter.spritePixelsPerUnit, 64f), "grass pixel import");
-            var expectedGrassCells = new[]
-            {
-                new Vector2Int(-1, 0), new Vector2Int(4, 2),
-                new Vector2Int(-4, -2), new Vector2Int(3, -3)
-            };
             var actualGrassCells = new System.Collections.Generic.HashSet<Vector2Int>();
             foreach (Transform grass in grassGroup.transform)
             {
@@ -83,7 +81,7 @@ namespace Halka.Game.Editor
                     renderer.sprite != null && renderer.sprite.texture.width == 32 &&
                     renderer.sprite.texture.height == 32 &&
                     Mathf.Approximately(renderer.sprite.pixelsPerUnit, 64f) &&
-                    renderer.sortingOrder == -8 && grass.localScale == Vector3.one &&
+                    renderer.sortingOrder == 20 && grass.localScale == Vector3.one &&
                     grass.position == world.CellToWorld(cell), "grass prefab, sprite, order and cell alignment");
                 Check(grass.GetComponent<Collider2D>() == null &&
                     grass.GetComponent<GridObstacle>() == null &&
@@ -92,14 +90,43 @@ namespace Halka.Game.Editor
                     "grass remains walkable and non-interactive");
                 Check(actualGrassCells.Add(cell), "no overlapping grass cells");
             }
-            foreach (var cell in expectedGrassCells)
-                Check(actualGrassCells.Contains(cell) && cell != Vector2Int.zero &&
-                    cell != new Vector2Int(1, 1) && world.CanEnter(cell),
-                    "four scattered grass cells avoid player and stone");
+            for (var y = world.MinCell.y; y <= world.MaxCell.y; y++)
+            for (var x = world.MinCell.x; x <= world.MaxCell.x; x++)
+            {
+                var cell = new Vector2Int(x, y);
+                Check(actualGrassCells.Contains(cell) == world.CanEnter(cell),
+                    "grass exactly covers every walkable cell");
+            }
+            Check(actualGrassCells.Contains(Vector2Int.zero) &&
+                !actualGrassCells.Contains(new Vector2Int(1, 1)) &&
+                actualGrassCells.Count == 21 * 13 - 1,
+                "start cell covered and stone cell excluded");
             Check(GameObject.Find("FirstDay - small ground").GetComponent<SpriteRenderer>().sortingOrder == -10 &&
                 grid.sortingOrder == -9 && stone.GetComponent<SpriteRenderer>().sortingOrder == 2 &&
                 artwork.GetComponent<SpriteRenderer>().sortingOrder == 10,
-                "ground grid grass stone player render order");
+                "ground grid stone player grass render order");
+            var rustle = new SerializedObject(grassField);
+            var rustleFrames = rustle.FindProperty("rustleFrames");
+            var frameTimes = rustle.FindProperty("frameSeconds");
+            Check(rustleFrames.arraySize == 5 && frameTimes.arraySize == 5 &&
+                rustle.FindProperty("idleSprite").objectReferenceValue ==
+                    AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/World/grass.png"),
+                "five rustle frames and original idle grass");
+            var expectedMilliseconds = new[] { 90, 90, 90, 90, 420 };
+            for (var i = 0; i < rustleFrames.arraySize; i++)
+            {
+                var sprite = (Sprite)rustleFrames.GetArrayElementAtIndex(i).objectReferenceValue;
+                var importer = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(sprite));
+                Check(sprite.texture.width == 32 && sprite.texture.height == 32 &&
+                    Mathf.Approximately(sprite.pixelsPerUnit, 64f) &&
+                    importer.textureType == TextureImporterType.Sprite &&
+                    importer.spriteImportMode == SpriteImportMode.Single &&
+                    importer.filterMode == FilterMode.Point && !importer.mipmapEnabled &&
+                    importer.textureCompression == TextureImporterCompression.Uncompressed &&
+                    importer.npotScale == TextureImporterNPOTScale.None &&
+                    Mathf.Approximately(frameTimes.GetArrayElementAtIndex(i).floatValue,
+                        expectedMilliseconds[i] / 1000f), "rustle frame import and GIF timing");
+            }
             foreach (var clip in new[] { "frontWalk", "backWalk", "leftWalk", "rightWalk" })
             {
                 var property = new SerializedObject(visual).FindProperty(clip);
@@ -215,12 +242,59 @@ namespace Halka.Game.Editor
                 !tap.End(3, Vector2.zero, false, 0.1f, 24f, 0.4f) &&
                 tap.End(2, Vector2.zero, false, 0.1f, 24f, 0.4f),
                 "pointer ID prevents second finger interference");
-            Debug.Log("HALKA ver1.4 checks passed.");
+            var notifiedCells = new System.Collections.Generic.List<Vector2Int>();
+            Action<Vector2Int> listener = cell => notifiedCells.Add(cell);
+            player.StepStarted += listener;
+            typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(player, new GridStepMotion(new Vector2Int(0, 1)));
+            player.ApplyDirection(Vector2Int.right);
+            Check(notifiedCells.Count == 0 && !player.IsMoving,
+                "blocked stone step does not announce entry");
+            typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(player, new GridStepMotion(Vector2Int.zero));
+            player.ApplyDirection(Vector2Int.left);
+            Check(notifiedCells.Count == 1 && notifiedCells[0] == Vector2Int.left &&
+                player.IsMoving && player.Cell == Vector2Int.zero,
+                "step start announces target grass cell before arrival");
+            player.StepStarted -= listener;
+
+            var flags = BindingFlags.NonPublic | BindingFlags.Instance;
+            typeof(GrassField2D).GetMethod("Initialize", flags).Invoke(grassField, null);
+            var startRustle = typeof(GrassField2D).GetMethod("OnStepStarted", flags);
+            var advanceRustle = typeof(GrassField2D).GetMethod("AdvanceAnimations", flags);
+            var idleGrass = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/World/grass.png");
+            var firstGrass = FindGrass(grassGroup.transform, world, Vector2Int.zero);
+            var secondGrass = FindGrass(grassGroup.transform, world, Vector2Int.up);
+            startRustle.Invoke(grassField, new object[] { Vector2Int.zero });
+            Check(firstGrass.sprite == rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
+                secondGrass.sprite == idleGrass, "only entered grass starts rustling");
+            advanceRustle.Invoke(grassField, new object[] { 0.09f });
+            Check(firstGrass.sprite == rustleFrames.GetArrayElementAtIndex(1).objectReferenceValue,
+                "rustle advances at original frame time");
+            startRustle.Invoke(grassField, new object[] { Vector2Int.up });
+            Check(secondGrass.sprite == rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue,
+                "next grass starts independently while previous grass moves");
+            advanceRustle.Invoke(grassField, new object[] { 1f });
+            Check(firstGrass.sprite == idleGrass && secondGrass.sprite == idleGrass,
+                "both one-shot animations return to original grass");
+            startRustle.Invoke(grassField, new object[] { Vector2Int.zero });
+            Check(firstGrass.sprite == rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue,
+                "re-entering grass restarts one-shot animation");
+            advanceRustle.Invoke(grassField, new object[] { 1f });
+            Debug.Log("HALKA ver1.5 checks passed.");
+        }
+
+        private static SpriteRenderer FindGrass(Transform root, GridWorld2D world, Vector2Int cell)
+        {
+            foreach (Transform child in root)
+                if (world.WorldToCell(child.position) == cell)
+                    return child.GetComponent<SpriteRenderer>();
+            throw new InvalidOperationException($"Missing grass cell: {cell}");
         }
 
         private static void Check(bool condition, string label)
         {
-            if (!condition) throw new InvalidOperationException("ver1.4 check failed: " + label);
+            if (!condition) throw new InvalidOperationException("ver1.5 check failed: " + label);
         }
     }
 }

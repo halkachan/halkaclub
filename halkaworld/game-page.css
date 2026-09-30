@@ -40,9 +40,20 @@
   color: var(--ink);
 }
 
-.update-history h2 {
-  margin: 0 0 14px;
+.update-history summary {
+  cursor: pointer;
   font-size: 20px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.update-history summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+.update-history-entries {
+  padding-top: 14px;
 }
 
 .update-entry + .update-entry {
@@ -52,6 +63,13 @@
 .update-entry h3 {
   margin: 0 0 5px;
   font-size: 15px;
+}
+
+.update-entry time {
+  margin-left: 0.5em;
+  color: var(--pencil);
+  font-size: 12px;
+  font-weight: 400;
 }
 
 .update-entry ul {

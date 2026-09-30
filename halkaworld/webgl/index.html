@@ -15,19 +15,19 @@
     <canvas id="unity-canvas" tabindex="0"></canvas>
     <div id="loading">Loading...</div>
     <div id="error" role="alert"></div>
-    <script src="Build/1698df219197d85bad6f80c629ae39fc.loader.js"></script>
+    <script src="Build/49f311196b132788a14e9c5ba8ef4a66.loader.js"></script>
     <script>
       const canvas = document.getElementById("unity-canvas");
       const loading = document.getElementById("loading");
       const error = document.getElementById("error");
       createUnityInstance(canvas, {
-        dataUrl: "Build/bfb6018a2f31f31b06e2014ada0700b4.data",
-        frameworkUrl: "Build/c2f80f048f6e61cc6a7649162c948444.framework.js",
-        codeUrl: "Build/386f87007bc2017d954c80bfbabc7a24.wasm",
+        dataUrl: "Build/b006247cce863c4c9c63a1a38f637b7b.data",
+        frameworkUrl: "Build/b6876fe851de0697825bd6771388fe09.framework.js",
+        codeUrl: "Build/3ecd915329f499e75732c2f1a4494222.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "HALKA",
         productName: "HALKA WORLD",
-        productVersion: "1.4",
+        productVersion: "1.5",
         devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2)
       }, (progress) => {
         loading.textContent = `Loading... ${Math.round(progress * 100)}%`;
