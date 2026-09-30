@@ -21,7 +21,9 @@ namespace Halka.Game.Editor
         private const string PixelPath = "Assets/Content/World/pixel.png";
         private const string StonePath = "Assets/Content/World/stone.png";
         private const string GrassPath = "Assets/Content/World/grass.png";
+        private const string GrassFrontPath = "Assets/Content/World/grass_front.png";
         private const string GrassRustlePath = "Assets/Content/World/grass_rustle";
+        private const string GrassRustleFrontPath = "Assets/Content/World/grass_rustle_front";
         private const string GrassPrefabPath = "Assets/Content/World/GrassDecoration.prefab";
         private const string GridPath = "Assets/Content/World/grid.png";
         private const float SpritePixelsPerUnit = 64f;
@@ -43,8 +45,14 @@ namespace Halka.Game.Editor
             ConfigureSpriteImport(GrassPath, SpritePixelsPerUnit);
             var grassSprite = AssetDatabase.LoadAssetAtPath<Sprite>(GrassPath);
             if (grassSprite == null) throw new InvalidOperationException("Grass sprite import failed");
+            ConfigureSpriteImport(GrassFrontPath, SpritePixelsPerUnit);
+            var grassFrontSprite = AssetDatabase.LoadAssetAtPath<Sprite>(GrassFrontPath);
+            if (grassFrontSprite == null) throw new InvalidOperationException("Grass front sprite import failed");
             var rustleFrames = LoadFramesFromFolder(GrassRustlePath);
             if (rustleFrames.Length == 0) throw new InvalidOperationException("Grass rustle frames are missing");
+            var rustleFrontFrames = LoadFramesFromFolder(GrassRustleFrontPath);
+            if (rustleFrontFrames.Length != rustleFrames.Length)
+                throw new InvalidOperationException("Grass rustle front frame count differs from back");
             var grassPrefab = CreateGrassPrefab(grassSprite);
 
             Directory.CreateDirectory("Assets/Scenes");
@@ -112,10 +120,18 @@ namespace Halka.Game.Editor
                 grassCount++;
             }
             var grassField = grassGroup.AddComponent<GrassField2D>();
+            var grassFront = new GameObject("Grass Front Overlay");
+            grassFront.transform.position = world.CellToWorld(Vector2Int.zero);
+            var frontRenderer = grassFront.AddComponent<SpriteRenderer>();
+            frontRenderer.sprite = grassFrontSprite;
+            frontRenderer.sortingOrder = 20;
             SetReference(grassField, "world", world);
             SetReference(grassField, "player", mover);
             SetReference(grassField, "idleSprite", grassSprite);
             SetSprites(grassField, "rustleFrames", rustleFrames);
+            SetReference(grassField, "frontOverlay", frontRenderer);
+            SetReference(grassField, "idleFrontSprite", grassFrontSprite);
+            SetSprites(grassField, "rustleFrontFrames", rustleFrontFrames);
 
             var hudObject = new GameObject("UI - minimal HUD");
             hudObject.AddComponent<GameHud>();
@@ -220,7 +236,7 @@ namespace Halka.Game.Editor
             {
                 var renderer = root.AddComponent<SpriteRenderer>();
                 renderer.sprite = sprite;
-                renderer.sortingOrder = 20;
+                renderer.sortingOrder = 0;
                 return PrefabUtility.SaveAsPrefabAsset(root, GrassPrefabPath);
             }
             finally

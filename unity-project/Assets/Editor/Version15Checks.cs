@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection;
 using Halka.Game.Core;
 using Halka.Game.Input;
@@ -81,7 +82,7 @@ namespace Halka.Game.Editor
                     renderer.sprite != null && renderer.sprite.texture.width == 32 &&
                     renderer.sprite.texture.height == 32 &&
                     Mathf.Approximately(renderer.sprite.pixelsPerUnit, 64f) &&
-                    renderer.sortingOrder == 20 && grass.localScale == Vector3.one &&
+                    renderer.sortingOrder == 0 && grass.localScale == Vector3.one &&
                     grass.position == world.CellToWorld(cell), "grass prefab, sprite, order and cell alignment");
                 Check(grass.GetComponent<Collider2D>() == null &&
                     grass.GetComponent<GridObstacle>() == null &&
@@ -101,22 +102,46 @@ namespace Halka.Game.Editor
                 !actualGrassCells.Contains(new Vector2Int(1, 1)) &&
                 actualGrassCells.Count == 21 * 13 - 1,
                 "start cell covered and stone cell excluded");
+            var frontOverlay = GameObject.Find("Grass Front Overlay").GetComponent<SpriteRenderer>();
+            Check(frontOverlay != null && frontOverlay.sortingOrder == 20 &&
+                frontOverlay.transform.parent == null &&
+                frontOverlay.GetComponent<Collider2D>() == null &&
+                UnityEngine.Object.FindObjectsByType<GrassField2D>(FindObjectsSortMode.None).Length == 1 &&
+                UnityEngine.Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None)
+                    .Count(renderer => renderer.sortingOrder == 20) == 1,
+                "one world-space foreground overlay without collider");
             Check(GameObject.Find("FirstDay - small ground").GetComponent<SpriteRenderer>().sortingOrder == -10 &&
                 grid.sortingOrder == -9 && stone.GetComponent<SpriteRenderer>().sortingOrder == 2 &&
                 artwork.GetComponent<SpriteRenderer>().sortingOrder == 10,
-                "ground grid stone player grass render order");
+                "ground grid grass back stone player grass front render order");
             var rustle = new SerializedObject(grassField);
             var rustleFrames = rustle.FindProperty("rustleFrames");
+            var rustleFrontFrames = rustle.FindProperty("rustleFrontFrames");
             var frameTimes = rustle.FindProperty("frameSeconds");
-            Check(rustleFrames.arraySize == 5 && frameTimes.arraySize == 5 &&
+            var idleFront = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/World/grass_front.png");
+            Check(rustleFrames.arraySize == 5 && rustleFrontFrames.arraySize == 5 &&
+                frameTimes.arraySize == 5 &&
                 rustle.FindProperty("idleSprite").objectReferenceValue ==
-                    AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/World/grass.png"),
-                "five rustle frames and original idle grass");
+                    AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/World/grass.png") &&
+                rustle.FindProperty("frontOverlay").objectReferenceValue == frontOverlay &&
+                rustle.FindProperty("idleFrontSprite").objectReferenceValue == idleFront &&
+                idleFront.texture.width == 32 && idleFront.texture.height == 32 &&
+                Mathf.Approximately(idleFront.pixelsPerUnit, 64f),
+                "five paired rustle frames and aligned idle grass sprites");
+            var frontImporter = (TextureImporter)AssetImporter.GetAtPath("Assets/Content/World/grass_front.png");
+            Check(frontImporter.textureType == TextureImporterType.Sprite &&
+                frontImporter.spriteImportMode == SpriteImportMode.Single &&
+                frontImporter.filterMode == FilterMode.Point && !frontImporter.mipmapEnabled &&
+                frontImporter.textureCompression == TextureImporterCompression.Uncompressed &&
+                frontImporter.npotScale == TextureImporterNPOTScale.None,
+                "front sprite pixel import");
             var expectedMilliseconds = new[] { 90, 90, 90, 90, 420 };
             for (var i = 0; i < rustleFrames.arraySize; i++)
             {
                 var sprite = (Sprite)rustleFrames.GetArrayElementAtIndex(i).objectReferenceValue;
                 var importer = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(sprite));
+                var frontSprite = (Sprite)rustleFrontFrames.GetArrayElementAtIndex(i).objectReferenceValue;
+                var pairedImporter = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(frontSprite));
                 Check(sprite.texture.width == 32 && sprite.texture.height == 32 &&
                     Mathf.Approximately(sprite.pixelsPerUnit, 64f) &&
                     importer.textureType == TextureImporterType.Sprite &&
@@ -125,7 +150,15 @@ namespace Halka.Game.Editor
                     importer.textureCompression == TextureImporterCompression.Uncompressed &&
                     importer.npotScale == TextureImporterNPOTScale.None &&
                     Mathf.Approximately(frameTimes.GetArrayElementAtIndex(i).floatValue,
-                        expectedMilliseconds[i] / 1000f), "rustle frame import and GIF timing");
+                        expectedMilliseconds[i] / 1000f) &&
+                    frontSprite.texture.width == 32 && frontSprite.texture.height == 32 &&
+                    Mathf.Approximately(frontSprite.pixelsPerUnit, sprite.pixelsPerUnit) &&
+                    pairedImporter.textureType == TextureImporterType.Sprite &&
+                    pairedImporter.spriteImportMode == SpriteImportMode.Single &&
+                    pairedImporter.filterMode == FilterMode.Point && !pairedImporter.mipmapEnabled &&
+                    pairedImporter.textureCompression == TextureImporterCompression.Uncompressed &&
+                    pairedImporter.npotScale == TextureImporterNPOTScale.None,
+                    "paired rustle frame import and GIF timing");
             }
             foreach (var clip in new[] { "frontWalk", "backWalk", "leftWalk", "rightWalk" })
             {
@@ -265,21 +298,52 @@ namespace Halka.Game.Editor
             var idleGrass = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/World/grass.png");
             var firstGrass = FindGrass(grassGroup.transform, world, Vector2Int.zero);
             var secondGrass = FindGrass(grassGroup.transform, world, Vector2Int.up);
+            Check(frontOverlay.enabled && frontOverlay.transform.position == world.CellToWorld(Vector2Int.zero) &&
+                frontOverlay.sprite == idleFront && firstGrass.sprite == idleGrass,
+                "initial grass is behind player with only current cell foot overlay");
             startRustle.Invoke(grassField, new object[] { Vector2Int.zero });
             Check(firstGrass.sprite == rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
-                secondGrass.sprite == idleGrass, "only entered grass starts rustling");
+                frontOverlay.sprite == rustleFrontFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
+                secondGrass.sprite == idleGrass, "only entered grass starts with matched front frame");
             advanceRustle.Invoke(grassField, new object[] { 0.09f });
-            Check(firstGrass.sprite == rustleFrames.GetArrayElementAtIndex(1).objectReferenceValue,
-                "rustle advances at original frame time");
+            Check(firstGrass.sprite == rustleFrames.GetArrayElementAtIndex(1).objectReferenceValue &&
+                frontOverlay.sprite == rustleFrontFrames.GetArrayElementAtIndex(1).objectReferenceValue,
+                "back and front advance together at original GIF frame time");
             startRustle.Invoke(grassField, new object[] { Vector2Int.up });
-            Check(secondGrass.sprite == rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue,
-                "next grass starts independently while previous grass moves");
+            Check(secondGrass.sprite == rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
+                firstGrass.sprite == rustleFrames.GetArrayElementAtIndex(1).objectReferenceValue &&
+                frontOverlay.transform.position == world.CellToWorld(Vector2Int.up) &&
+                frontOverlay.sprite == rustleFrontFrames.GetArrayElementAtIndex(0).objectReferenceValue,
+                "front changes to next cell while previous back continues rustling");
             advanceRustle.Invoke(grassField, new object[] { 1f });
-            Check(firstGrass.sprite == idleGrass && secondGrass.sprite == idleGrass,
-                "both one-shot animations return to original grass");
+            Check(firstGrass.sprite == idleGrass && secondGrass.sprite == idleGrass &&
+                frontOverlay.enabled && frontOverlay.sprite == idleFront,
+                "both one-shot animations return to original grass while occupied front remains");
             startRustle.Invoke(grassField, new object[] { Vector2Int.zero });
-            Check(firstGrass.sprite == rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue,
+            Check(firstGrass.sprite == rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
+                frontOverlay.sprite == rustleFrontFrames.GetArrayElementAtIndex(0).objectReferenceValue,
                 "re-entering grass restarts one-shot animation");
+            advanceRustle.Invoke(grassField, new object[] { 1f });
+            var playerPosition = player.transform.position;
+            foreach (var direction in new[] { Vector2Int.up, Vector2Int.down,
+                Vector2Int.left, Vector2Int.right })
+            {
+                startRustle.Invoke(grassField, new object[] { direction });
+                Check(frontOverlay.enabled && frontOverlay.transform.position == world.CellToWorld(direction) &&
+                    frontOverlay.sprite == rustleFrontFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
+                    player.transform.position == playerPosition &&
+                    artwork.localPosition == new Vector3(0f, 0.5f, 0f),
+                    "four-direction entry keeps overlay cell-aligned and player transform fixed");
+            }
+            foreach (var cell in new[] { new Vector2Int(-1, 0), new Vector2Int(-2, 0),
+                new Vector2Int(-3, 0), new Vector2Int(-4, 0), new Vector2Int(-5, 0) })
+            {
+                startRustle.Invoke(grassField, new object[] { cell });
+                Check(frontOverlay.enabled && frontOverlay.transform.position == world.CellToWorld(cell) &&
+                    UnityEngine.Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None)
+                        .Count(renderer => renderer.sortingOrder == 20) == 1,
+                    "five consecutive grass cells keep one current front overlay");
+            }
             advanceRustle.Invoke(grassField, new object[] { 1f });
             Debug.Log("HALKA ver1.5 checks passed.");
         }
