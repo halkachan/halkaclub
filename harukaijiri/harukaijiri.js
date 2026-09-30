@@ -6,7 +6,7 @@
 // ============================================================
 const HarukaijiriConfig = {
   storageKey: "halka-harukaijiri-save-v1",
-  gifSrc: "../assets/profile/halgif1.gif",
+  gifSrc: "../assets/profile/halgif1.gif?v=2",
 
   autosaveIntervalMs: 5000,
   tickIntervalMs: 250,
