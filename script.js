@@ -84,7 +84,7 @@ const HALKA_GIF_COMBO_WINDOW_MS = 3000;
 const HALKA_GIF_COMBO_COOLDOWN_MS = 5000;
 const HALKA_GIF_MULTIPLY_CHANCE = 0.2;
 const HALKA_GIF_MAX_CLONES = 10;
-const HALKA_GIF_SRC = "assets/profile/halgif1.gif";
+const HALKA_GIF_SRC = "assets/profile/halgif1.gif?v=2";
 
 function halkaGifPrefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
