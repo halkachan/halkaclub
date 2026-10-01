@@ -23,6 +23,8 @@ namespace Halka.Game.Editor
         private const string StonePath = "Assets/Content/World/stone.png";
         private const string GrassPath = "Assets/Content/World/grass.png";
         private const string GrassRustlePath = "Assets/Content/World/grass_rustle";
+        private const string FootstepPath = "Assets/Content/Audio/footstep.wav";
+        private const string MessageFontPath = "Assets/Content/Fonts/k8x12L.ttf";
         private const string PlayerGrassMaskPath = "Assets/Content/World/player_grass_mask.png";
         private const string GrassPrefabPath = "Assets/Content/World/GrassDecoration.prefab";
         private const string GridPath = "Assets/Content/World/grid.png";
@@ -30,7 +32,7 @@ namespace Halka.Game.Editor
         internal const float ArtworkFootOffset = GridWorld2D.TileWorldSize / 2f;
         private static readonly Vector2 StoneOpaquePixels = new Vector2(28f, 20f);
 
-        [MenuItem("HALKA/Prepare ver1.5 scene")]
+        [MenuItem("HALKA/Prepare ver1.6 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -48,6 +50,8 @@ namespace Halka.Game.Editor
             var rustleFrames = LoadFramesFromFolder(GrassRustlePath);
             if (rustleFrames.Length == 0) throw new InvalidOperationException("Grass rustle frames are missing");
             var maskSprite = CreatePlayerGrassMask();
+            var footstepClip = AssetDatabase.LoadAssetAtPath<AudioClip>(FootstepPath);
+            if (footstepClip == null) throw new InvalidOperationException("Footstep WAV import failed");
             var grassPrefab = CreateGrassPrefab(grassSprite);
 
             Directory.CreateDirectory("Assets/Scenes");
@@ -70,6 +74,14 @@ namespace Halka.Game.Editor
             spriteMask.sprite = maskSprite;
             var mover = player.AddComponent<PlayerMover>();
             var visual = player.AddComponent<CharacterVisual>();
+            var audioSource = player.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+            audioSource.spatialBlend = 0f;
+            audioSource.volume = 0.45f;
+            var footstepAudio = player.AddComponent<PlayerFootstepAudio>();
+            SetReference(footstepAudio, "mover", mover);
+            SetReference(footstepAudio, "source", audioSource);
+            SetReference(footstepAudio, "footstep", footstepClip);
 
             var cameraObject = new GameObject("Main Camera");
             cameraObject.tag = "MainCamera";
@@ -133,16 +145,34 @@ namespace Halka.Game.Editor
             hudObject.AddComponent<GameHud>();
             var dpadObject = new GameObject("UI - touch D-pad");
             var dpad = dpadObject.AddComponent<TouchDpad>();
+            var actionObject = new GameObject("UI - touch action");
+            var actionButton = actionObject.AddComponent<TouchActionButton>();
+            SetReference(actionButton, "dpad", dpad);
             var hud = hudObject.GetComponent<GameHud>();
             SetReference(hud, "dpad", dpad);
-            SetReference(hud, "messageFont", AssetDatabase.LoadAssetAtPath<Font>("Assets/Content/Fonts/HalkaMessageSubset.ttf"));
+            SetReference(hud, "actionButton", actionButton);
+            var fontImporter = AssetImporter.GetAtPath(MessageFontPath) as TrueTypeFontImporter;
+            if (fontImporter == null) throw new InvalidOperationException("k8x12L font import failed");
+            if (fontImporter.fontRenderingMode != FontRenderingMode.HintedRaster ||
+                fontImporter.fontSize != 12)
+            {
+                fontImporter.fontRenderingMode = FontRenderingMode.HintedRaster;
+                fontImporter.fontSize = 12;
+                fontImporter.SaveAndReimport();
+            }
+            var messageFont = AssetDatabase.LoadAssetAtPath<Font>(MessageFontPath);
+            if (messageFont == null) throw new InvalidOperationException("k8x12L font is missing");
+            SetReference(hud, "messageFont", messageFont);
             var interactionObject = new GameObject("Interaction Router");
             var interaction = interactionObject.AddComponent<InteractionRouter>();
             SetReference(interaction, "worldCamera", camera);
+            SetReference(interaction, "player", mover);
+            SetReference(interaction, "world", world);
             var inputObject = new GameObject("Input - keyboard pointer");
             var input = inputObject.AddComponent<GameInput>();
             SetReference(input, "interaction", interaction);
             SetReference(input, "dpad", dpad);
+            SetReference(input, "actionButton", actionButton);
             SetReference(mover, "input", input);
             SetReference(mover, "world", world);
             SetReference(visual, "mover", mover);
@@ -163,7 +193,7 @@ namespace Halka.Game.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.SaveAssets();
-            Debug.Log($"HALKA ver1.5 scene prepared with {grassCount} grass cells.");
+            Debug.Log($"HALKA ver1.6 scene prepared with {grassCount} grass cells.");
         }
 
         [MenuItem("HALKA/Build WebGL for HP")]

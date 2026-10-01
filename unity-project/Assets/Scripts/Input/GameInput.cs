@@ -8,73 +8,70 @@ namespace Halka.Game.Input
     {
         [SerializeField] private InteractionRouter interaction;
         [SerializeField] private TouchDpad dpad;
-        [SerializeField, Min(1f)] private float tapMovementLimit = 24f;
-        [SerializeField, Min(0.05f)] private float tapMaxSeconds = 0.4f;
+        [SerializeField] private TouchActionButton actionButton;
+        [SerializeField, Min(1f)] private float clickMovementLimit = 24f;
 
-        private readonly PointerTap worldTap = new PointerTap();
         private Vector2 mouseStart;
-        private bool mouseStartedOnDpad;
+        private bool mouseDown;
+        private bool mouseStartedOnControls;
+        private bool pendingClick;
+        private Vector2 pendingClickPosition;
         private float lastTouchAt = -10f;
 
         public Vector2Int Direction { get; private set; }
 
         private void Update()
         {
-            ReadTouches();
-            ReadMouse();
+            if (UnityEngine.Input.touchCount > 0) lastTouchAt = Time.unscaledTime;
             Direction = CardinalInput.Choose(
                 UnityEngine.Input.GetKey(KeyCode.W) || UnityEngine.Input.GetKey(KeyCode.UpArrow),
                 UnityEngine.Input.GetKey(KeyCode.S) || UnityEngine.Input.GetKey(KeyCode.DownArrow),
                 UnityEngine.Input.GetKey(KeyCode.A) || UnityEngine.Input.GetKey(KeyCode.LeftArrow),
                 UnityEngine.Input.GetKey(KeyCode.D) || UnityEngine.Input.GetKey(KeyCode.RightArrow),
                 dpad.Direction);
+            if (actionButton.JustPressed && Direction == Vector2Int.zero)
+                interaction.TryInteractAhead();
+            if (pendingClick)
+            {
+                interaction.TryInteract(pendingClickPosition);
+                pendingClick = false;
+            }
         }
 
-        private void ReadMouse()
+        private bool IsOverControls(Vector2 position) =>
+            dpad.IsOverControls(position) || actionButton.IsOverControls(position);
+
+        private void OnGUI()
         {
+            if (dpad.Visible && !dpad.PreviewMouse) return;
             if (UnityEngine.Input.touchCount > 0 || Time.unscaledTime - lastTouchAt < 0.25f) return;
-            if (UnityEngine.Input.GetMouseButtonDown(0))
+            var current = Event.current;
+            if (current.button == 0 && current.type == EventType.MouseDown)
             {
-                mouseStart = UnityEngine.Input.mousePosition;
-                mouseStartedOnDpad = dpad.IsOverControls(mouseStart);
+                mouseDown = true;
+                mouseStart = new Vector2(current.mousePosition.x,
+                    Screen.height - current.mousePosition.y);
+                mouseStartedOnControls = IsOverControls(mouseStart);
             }
-            if (UnityEngine.Input.GetMouseButtonUp(0) && !mouseStartedOnDpad &&
-                !dpad.IsOverControls(UnityEngine.Input.mousePosition) &&
-                Vector2.Distance(mouseStart, UnityEngine.Input.mousePosition) <= tapMovementLimit)
+            if (current.button == 0 && current.type == EventType.MouseUp && mouseDown)
             {
-                interaction.TryInteract(UnityEngine.Input.mousePosition);
-            }
-        }
-
-        private void ReadTouches()
-        {
-            if (UnityEngine.Input.touchCount > 0) lastTouchAt = Time.unscaledTime;
-            for (var i = 0; i < UnityEngine.Input.touchCount; i++)
-            {
-                var touch = UnityEngine.Input.GetTouch(i);
-                if (touch.phase == TouchPhase.Began)
+                mouseDown = false;
+                var position = new Vector2(current.mousePosition.x,
+                    Screen.height - current.mousePosition.y);
+                if (!mouseStartedOnControls && !IsOverControls(position) &&
+                    Vector2.Distance(mouseStart, position) <= clickMovementLimit)
                 {
-                    worldTap.TryBegin(touch.fingerId, touch.position,
-                        dpad.IsOverControls(touch.position), Time.unscaledTime);
-                    continue;
+                    pendingClickPosition = position;
+                    pendingClick = true;
                 }
-                if (touch.phase == TouchPhase.Canceled)
-                    worldTap.Cancel(touch.fingerId);
-                else if (touch.phase == TouchPhase.Ended)
-                {
-                    if (worldTap.End(touch.fingerId, touch.position,
-                        dpad.IsOverControls(touch.position), Time.unscaledTime,
-                        tapMovementLimit, tapMaxSeconds)) interaction.TryInteract(touch.position);
-                }
-                else worldTap.Move(touch.fingerId, touch.position, tapMovementLimit);
             }
-            if (UnityEngine.Input.touchCount == 0) worldTap.Reset();
         }
 
         private void OnDisable()
         {
-            worldTap.Reset();
             Direction = Vector2Int.zero;
+            mouseDown = false;
+            pendingClick = false;
         }
     }
 }

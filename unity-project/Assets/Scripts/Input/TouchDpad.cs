@@ -13,6 +13,7 @@ namespace Halka.Game.Input
 
         private int activeFingerId = -1;
         private bool mousePreviewHeld;
+        private Vector2Int pendingPreviewDirection;
         private bool visible;
         private bool previewMouse;
         private GUIStyle buttonStyle;
@@ -21,6 +22,7 @@ namespace Halka.Game.Input
 
         public Vector2Int Direction { get; private set; }
         public bool Visible => visible;
+        public bool PreviewMouse => previewMouse;
         public Rect ControlBoundsGui
         {
             get
@@ -71,10 +73,12 @@ namespace Halka.Game.Input
             }
 
             if (!previewMouse || UnityEngine.Input.touchCount > 0) return;
-            if (UnityEngine.Input.GetMouseButtonDown(0) &&
-                DirectionAt(UnityEngine.Input.mousePosition) != Vector2Int.zero)
-                mousePreviewHeld = true;
-            if (UnityEngine.Input.GetMouseButtonUp(0)) mousePreviewHeld = false;
+            if (pendingPreviewDirection != Vector2Int.zero)
+            {
+                Direction = pendingPreviewDirection;
+                pendingPreviewDirection = Vector2Int.zero;
+                return;
+            }
             if (mousePreviewHeld) Direction = DirectionAt(UnityEngine.Input.mousePosition);
             else if (activeFingerId == -1) Direction = Vector2Int.zero;
         }
@@ -121,6 +125,19 @@ namespace Halka.Game.Input
         private void OnGUI()
         {
             if (!visible) return;
+            if (previewMouse && UnityEngine.Input.touchCount == 0)
+            {
+                var current = Event.current;
+                if (current.button == 0 && current.type == EventType.MouseDown)
+                {
+                    var screenPosition = new Vector2(current.mousePosition.x,
+                        Screen.height - current.mousePosition.y);
+                    pendingPreviewDirection = DirectionAt(screenPosition);
+                    mousePreviewHeld = pendingPreviewDirection != Vector2Int.zero;
+                }
+                if (current.button == 0 && current.type == EventType.MouseUp)
+                    mousePreviewHeld = false;
+            }
             EnsureStyle();
             GetLayout(out var up, out var down, out var left, out var right, out _);
             DrawButton(up, 0, Vector2Int.up);
@@ -187,6 +204,7 @@ namespace Halka.Game.Input
         {
             activeFingerId = -1;
             mousePreviewHeld = false;
+            pendingPreviewDirection = Vector2Int.zero;
             Direction = Vector2Int.zero;
         }
 
