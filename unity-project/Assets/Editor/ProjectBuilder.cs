@@ -27,14 +27,7 @@ namespace Halka.Game.Editor
         private const string GrassPrefabPath = "Assets/Content/World/GrassDecoration.prefab";
         private const string GridPath = "Assets/Content/World/grid.png";
         private const float SpritePixelsPerUnit = 64f;
-        internal const float PlayerVisualOffsetPixelsY = -3f;
-        internal const float GrassVisualOffsetPixelsY = -3f;
-        internal const float ArtworkFootOffset = 0.5f + PlayerVisualOffsetPixelsY / SpritePixelsPerUnit;
-        private static readonly Vector3 GrassVisualOffset =
-            Vector3.up * (GrassVisualOffsetPixelsY / SpritePixelsPerUnit);
-        private const float GrassBasePixelsFromBottom = 5f;
-        private static readonly Vector2 GrassPivot = new Vector2(
-            0.5f, GrassBasePixelsFromBottom / GridWorld2D.TilePixels);
+        internal const float ArtworkFootOffset = GridWorld2D.TileWorldSize / 2f;
         private static readonly Vector2 StoneOpaquePixels = new Vector2(28f, 20f);
 
         [MenuItem("HALKA/Prepare ver1.5 scene")]
@@ -49,15 +42,15 @@ namespace Halka.Game.Editor
             ConfigureSpriteImport(StonePath, SpritePixelsPerUnit);
             var stoneSprite = AssetDatabase.LoadAssetAtPath<Sprite>(StonePath);
             if (stoneSprite == null) throw new InvalidOperationException("Stone sprite import failed");
-            ConfigureSpriteImport(GrassPath, SpritePixelsPerUnit, GrassPivot);
+            ConfigureSpriteImport(GrassPath, SpritePixelsPerUnit);
             var grassSprite = AssetDatabase.LoadAssetAtPath<Sprite>(GrassPath);
             if (grassSprite == null) throw new InvalidOperationException("Grass sprite import failed");
-            ConfigureSpriteImport(GrassFrontPath, SpritePixelsPerUnit, GrassPivot);
+            ConfigureSpriteImport(GrassFrontPath, SpritePixelsPerUnit);
             var grassFrontSprite = AssetDatabase.LoadAssetAtPath<Sprite>(GrassFrontPath);
             if (grassFrontSprite == null) throw new InvalidOperationException("Grass front sprite import failed");
-            var rustleFrames = LoadFramesFromFolder(GrassRustlePath, GrassPivot);
+            var rustleFrames = LoadFramesFromFolder(GrassRustlePath);
             if (rustleFrames.Length == 0) throw new InvalidOperationException("Grass rustle frames are missing");
-            var rustleFrontFrames = LoadFramesFromFolder(GrassRustleFrontPath, GrassPivot);
+            var rustleFrontFrames = LoadFramesFromFolder(GrassRustleFrontPath);
             if (rustleFrontFrames.Length != rustleFrames.Length)
                 throw new InvalidOperationException("Grass rustle front frame count differs from back");
             var grassPrefab = CreateGrassPrefab(grassSprite);
@@ -131,7 +124,7 @@ namespace Halka.Game.Editor
             grassFront.transform.position = world.CellToWorld(Vector2Int.zero);
             var grassFrontArtwork = new GameObject("Grass front artwork");
             grassFrontArtwork.transform.SetParent(grassFront.transform, false);
-            grassFrontArtwork.transform.localPosition = GrassVisualOffset;
+            grassFrontArtwork.transform.localPosition = Vector3.zero;
             var frontRenderer = grassFrontArtwork.AddComponent<SpriteRenderer>();
             frontRenderer.sprite = grassFrontSprite;
             frontRenderer.sortingOrder = 20;
@@ -246,7 +239,7 @@ namespace Halka.Game.Editor
             {
                 var artwork = new GameObject("Grass artwork");
                 artwork.transform.SetParent(root.transform, false);
-                artwork.transform.localPosition = GrassVisualOffset;
+                artwork.transform.localPosition = Vector3.zero;
                 var renderer = artwork.AddComponent<SpriteRenderer>();
                 renderer.sprite = sprite;
                 renderer.sortingOrder = 0;
@@ -275,7 +268,7 @@ namespace Halka.Game.Editor
             EditorUserBuildSettings.allowDebugging = false;
         }
 
-        private static void ConfigureSpriteImport(string path, float pixelsPerUnit, Vector2? pivot = null)
+        private static void ConfigureSpriteImport(string path, float pixelsPerUnit)
         {
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
             if (importer == null) throw new InvalidOperationException($"Missing texture: {path}");
@@ -286,8 +279,8 @@ namespace Halka.Game.Editor
                 importer.filterMode == FilterMode.Point && !importer.mipmapEnabled &&
                 importer.textureCompression == TextureImporterCompression.Uncompressed &&
                 importer.npotScale == TextureImporterNPOTScale.None &&
-                (!pivot.HasValue || (settings.spriteAlignment == (int)SpriteAlignment.Custom &&
-                                     settings.spritePivot == pivot.Value))) return;
+                settings.spriteAlignment == (int)SpriteAlignment.Center &&
+                settings.spritePivot == new Vector2(0.5f, 0.5f)) return;
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.spritePixelsPerUnit = pixelsPerUnit;
@@ -295,12 +288,9 @@ namespace Halka.Game.Editor
             importer.mipmapEnabled = false;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.npotScale = TextureImporterNPOTScale.None;
-            if (pivot.HasValue)
-            {
-                settings.spriteAlignment = (int)SpriteAlignment.Custom;
-                settings.spritePivot = pivot.Value;
-                importer.SetTextureSettings(settings);
-            }
+            settings.spriteAlignment = (int)SpriteAlignment.Center;
+            settings.spritePivot = new Vector2(0.5f, 0.5f);
+            importer.SetTextureSettings(settings);
             importer.SaveAndReimport();
         }
 
@@ -309,7 +299,7 @@ namespace Halka.Game.Editor
             return LoadFramesFromFolder($"Assets/Content/Character/{direction}");
         }
 
-        private static Sprite[] LoadFramesFromFolder(string folder, Vector2? pivot = null)
+        private static Sprite[] LoadFramesFromFolder(string folder)
         {
             if (!AssetDatabase.IsValidFolder(folder)) return Array.Empty<Sprite>();
             var paths = Directory.GetFiles(folder, "*.png");
@@ -318,7 +308,7 @@ namespace Halka.Game.Editor
             for (var i = 0; i < paths.Length; i++)
             {
                 var path = paths[i].Replace('\\', '/');
-                ConfigureSpriteImport(path, SpritePixelsPerUnit, pivot);
+                ConfigureSpriteImport(path, SpritePixelsPerUnit);
                 sprites[i] = AssetDatabase.LoadAssetAtPath<Sprite>(path);
                 if (sprites[i] == null) throw new InvalidOperationException($"Sprite import failed: {path}");
             }

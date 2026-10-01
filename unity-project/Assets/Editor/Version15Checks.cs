@@ -36,18 +36,39 @@ namespace Halka.Game.Editor
             Check(world.CellToWorld(Vector2Int.right) == new Vector3(0.5f, 0f, 0f) &&
                 world.WorldToCell(new Vector3(0.5f, 0f, 0f)) == Vector2Int.right,
                 "integer grid world conversion");
+            Check(world.CellToWorld(Vector2Int.zero) == world.transform.position &&
+                world.CellToWorld(Vector2Int.up) - world.CellToWorld(Vector2Int.zero) ==
+                    Vector3.up * GridWorld2D.TileWorldSize,
+                "CellToWorld returns each tile center");
             Check(artwork.localPosition == new Vector3(0f, ProjectBuilder.ArtworkFootOffset, 0f) &&
-                Mathf.Approximately(ProjectBuilder.PlayerVisualOffsetPixelsY, -3f) &&
-                Mathf.Approximately(ProjectBuilder.GrassVisualOffsetPixelsY, -3f) &&
+                Mathf.Approximately(ProjectBuilder.ArtworkFootOffset, 0.25f) &&
+                player.transform.position == world.CellToWorld(player.Cell) &&
+                artwork.position == player.transform.position + Vector3.up * 0.25f &&
                 artwork.GetComponents<Component>().Length == 2,
-                "fixed artwork foot anchor without runtime offset component");
+                "two-cell artwork center without runtime offset component");
+            var playerSprite = artwork.GetComponent<SpriteRenderer>().sprite;
+            var playerHalfHeight = playerSprite.rect.height / playerSprite.pixelsPerUnit / 2f;
+            Check(playerSprite.rect.width == 64f && playerSprite.rect.height == 64f &&
+                playerSprite.pivot == new Vector2(32f, 32f) &&
+                Mathf.Approximately(artwork.position.x, player.transform.position.x) &&
+                Mathf.Approximately(artwork.position.y - playerHalfHeight,
+                    player.transform.position.y - GridWorld2D.TileWorldSize / 2f) &&
+                Mathf.Approximately(artwork.position.y + playerHalfHeight,
+                    player.transform.position.y + GridWorld2D.TileWorldSize * 1.5f),
+                "64-pixel art exactly spans foot tile and tile above");
             Check(UnityEngine.Object.FindObjectsByType<GridObstacle>(FindObjectsSortMode.None).Length == 1,
                 "one world obstacle");
             var stoneSprite = stone.GetComponent<SpriteRenderer>().sprite;
             var collider = stone.GetComponent<BoxCollider2D>();
+            var stoneImporter = (TextureImporter)AssetImporter.GetAtPath("Assets/Content/World/stone.png");
+            var stoneSettings = new TextureImporterSettings();
+            stoneImporter.ReadTextureSettings(stoneSettings);
             Check(stoneSprite.texture.width == 32 && stoneSprite.texture.height == 32 &&
+                stoneSprite.pivot == new Vector2(16f, 16f) &&
+                stoneSettings.spriteAlignment == (int)SpriteAlignment.Center &&
+                stoneSettings.spritePivot == new Vector2(0.5f, 0.5f) &&
                 Mathf.Approximately(stoneSprite.pixelsPerUnit, 64f) && stone.transform.localScale == Vector3.one,
-                "supplied stone occupies one 32-pixel cell");
+                "stone sprite uses centered 32-pixel canvas");
             Check(collider.size == new Vector2(28f / 64f, 20f / 64f) &&
                 stone.transform.position == world.CellToWorld(new Vector2Int(1, 1)) &&
                 !world.CanEnter(new Vector2Int(1, 1)), "stone collider and blocking cell");
@@ -76,8 +97,8 @@ namespace Halka.Game.Editor
                 grassImporter.filterMode == FilterMode.Point && !grassImporter.mipmapEnabled &&
                 grassImporter.textureCompression == TextureImporterCompression.Uncompressed &&
                 grassImporter.npotScale == TextureImporterNPOTScale.None &&
-                grassSettings.spriteAlignment == (int)SpriteAlignment.Custom &&
-                grassSettings.spritePivot.y < 0.5f &&
+                grassSettings.spriteAlignment == (int)SpriteAlignment.Center &&
+                grassSettings.spritePivot == new Vector2(0.5f, 0.5f) &&
                 Mathf.Approximately(grassImporter.spritePixelsPerUnit, 64f), "grass pixel import");
             var actualGrassCells = new System.Collections.Generic.HashSet<Vector2Int>();
             foreach (Transform grass in grassGroup.transform)
@@ -89,9 +110,10 @@ namespace Halka.Game.Editor
                     renderer.sprite.texture.height == 32 &&
                     Mathf.Approximately(renderer.sprite.pixelsPerUnit, 64f) &&
                     renderer.sortingOrder == 0 && grass.localScale == Vector3.one &&
-                    renderer.transform.localPosition == new Vector3(0f,
-                        ProjectBuilder.GrassVisualOffsetPixelsY / 64f, 0f) &&
-                    grass.position == world.CellToWorld(cell), "grass prefab, sprite, order and cell alignment");
+                    renderer.transform.localPosition == Vector3.zero &&
+                    renderer.transform.position == world.CellToWorld(cell) &&
+                    renderer.sprite.pivot == new Vector2(16f, 16f) &&
+                    grass.position == world.CellToWorld(cell), "grass image center equals tile center");
                 Check(grass.GetComponent<Collider2D>() == null &&
                     grass.GetComponent<GridObstacle>() == null &&
                     grass.GetComponent<ExamineInteractable>() == null &&
@@ -115,8 +137,8 @@ namespace Halka.Game.Editor
             Check(frontOverlay != null && frontOverlay.sortingOrder == 20 &&
                 frontRoot.parent == null &&
                 frontOverlay.transform.parent == frontRoot &&
-                frontOverlay.transform.localPosition == new Vector3(0f,
-                    ProjectBuilder.GrassVisualOffsetPixelsY / 64f, 0f) &&
+                frontOverlay.transform.localPosition == Vector3.zero &&
+                frontOverlay.transform.position == world.CellToWorld(Vector2Int.zero) &&
                 frontRoot.position == world.CellToWorld(Vector2Int.zero) &&
                 frontOverlay.GetComponent<Collider2D>() == null &&
                 UnityEngine.Object.FindObjectsByType<GrassField2D>(FindObjectsSortMode.None).Length == 1 &&
@@ -140,6 +162,7 @@ namespace Halka.Game.Editor
                 rustle.FindProperty("idleFrontSprite").objectReferenceValue == idleFront &&
                 idleFront.texture.width == 32 && idleFront.texture.height == 32 &&
                 Mathf.Approximately(idleFront.pixelsPerUnit, 64f) &&
+                idleFront.pivot == new Vector2(16f, 16f) &&
                 idleFront.pivot == AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/World/grass.png").pivot,
                 "five paired rustle frames and aligned idle grass sprites");
             var frontImporter = (TextureImporter)AssetImporter.GetAtPath("Assets/Content/World/grass_front.png");
@@ -158,10 +181,16 @@ namespace Halka.Game.Editor
             {
                 var sprite = (Sprite)rustleFrames.GetArrayElementAtIndex(i).objectReferenceValue;
                 var importer = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(sprite));
+                var backSettings = new TextureImporterSettings();
+                importer.ReadTextureSettings(backSettings);
                 var frontSprite = (Sprite)rustleFrontFrames.GetArrayElementAtIndex(i).objectReferenceValue;
                 var pairedImporter = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(frontSprite));
+                var pairedSettings = new TextureImporterSettings();
+                pairedImporter.ReadTextureSettings(pairedSettings);
                 Check(sprite.texture.width == 32 && sprite.texture.height == 32 &&
                     Mathf.Approximately(sprite.pixelsPerUnit, 64f) &&
+                    sprite.pivot == new Vector2(16f, 16f) &&
+                    backSettings.spriteAlignment == (int)SpriteAlignment.Center &&
                     importer.textureType == TextureImporterType.Sprite &&
                     importer.spriteImportMode == SpriteImportMode.Single &&
                     importer.filterMode == FilterMode.Point && !importer.mipmapEnabled &&
@@ -172,6 +201,7 @@ namespace Halka.Game.Editor
                     frontSprite.texture.width == 32 && frontSprite.texture.height == 32 &&
                     Mathf.Approximately(frontSprite.pixelsPerUnit, sprite.pixelsPerUnit) &&
                     sprite.pivot == idleFront.pivot && frontSprite.pivot == sprite.pivot &&
+                    pairedSettings.spriteAlignment == (int)SpriteAlignment.Center &&
                     pairedImporter.textureType == TextureImporterType.Sprite &&
                     pairedImporter.spriteImportMode == SpriteImportMode.Single &&
                     pairedImporter.filterMode == FilterMode.Point && !pairedImporter.mipmapEnabled &&
@@ -179,16 +209,27 @@ namespace Halka.Game.Editor
                     pairedImporter.npotScale == TextureImporterNPOTScale.None,
                     "paired rustle frame import and GIF timing");
             }
-            foreach (var clip in new[] { "frontWalk", "backWalk", "leftWalk", "rightWalk" })
+            foreach (var clip in new[] { "frontIdle", "backIdle", "leftIdle", "rightIdle",
+                "frontWalk", "backWalk", "leftWalk", "rightWalk" })
             {
                 var property = new SerializedObject(visual).FindProperty(clip);
-                Check(property.arraySize == 4, clip + " four frames");
+                Check(property.arraySize > 0 &&
+                    (!clip.EndsWith("Walk", StringComparison.Ordinal) || property.arraySize == 4),
+                    clip + " available frames");
                 for (var i = 0; i < property.arraySize; i++)
                 {
                     var sprite = (Sprite)property.GetArrayElementAtIndex(i).objectReferenceValue;
-                    Check(sprite != null && sprite.texture.width == 64 && sprite.texture.height == 64 &&
+                    Check(sprite != null, clip + " missing frame");
+                    var importer = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(sprite));
+                    var settings = new TextureImporterSettings();
+                    importer.ReadTextureSettings(settings);
+                    Check(sprite != null && sprite.rect.width == 64f && sprite.rect.height == 64f &&
+                        sprite.pivot == new Vector2(32f, 32f) &&
                         sprite.texture.filterMode == FilterMode.Point &&
-                        Mathf.Approximately(sprite.pixelsPerUnit, 64f), clip + " sprite import");
+                        settings.spriteAlignment == (int)SpriteAlignment.Center &&
+                        Mathf.Approximately(sprite.pixelsPerUnit, 64f) &&
+                        artwork.localPosition == new Vector3(0f, 0.25f, 0f),
+                        clip + " centered sprite and shared artwork anchor");
                 }
             }
             var select = typeof(CharacterVisual).GetMethod("SelectFrames", BindingFlags.NonPublic | BindingFlags.Instance);
