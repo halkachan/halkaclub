@@ -21,13 +21,13 @@
       const loading = document.getElementById("loading");
       const error = document.getElementById("error");
       createUnityInstance(canvas, {
-        dataUrl: "Build/d349dd5408697ed8addecf9b22f17704.data",
+        dataUrl: "Build/17a03c71ceae91f5dca225e6f3007a2e.data",
         frameworkUrl: "Build/204e5645e76a562adcbaaf77204fdd1a.framework.js",
         codeUrl: "Build/f5cb6e1dad050ec66a2ef416a39be4cc.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "HALKA",
         productName: "HALKA WORLD",
-        productVersion: "1.6",
+        productVersion: "1.7",
         devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2)
       }, (progress) => {
         loading.textContent = `Loading... ${Math.round(progress * 100)}%`;

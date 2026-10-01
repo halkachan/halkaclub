@@ -14,9 +14,9 @@ using UnityEngine;
 
 namespace Halka.Game.Editor
 {
-    public static class Version16Checks
+    public static class Version17Checks
     {
-        [MenuItem("HALKA/Validate ver1.6")]
+        [MenuItem("HALKA/Validate ver1.7")]
         public static void Run()
         {
             EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
@@ -26,10 +26,12 @@ namespace Halka.Game.Editor
             var hud = UnityEngine.Object.FindFirstObjectByType<GameHud>();
             var router = UnityEngine.Object.FindFirstObjectByType<InteractionRouter>();
             var worldCamera = UnityEngine.Object.FindFirstObjectByType<Camera>();
-            var stone = UnityEngine.Object.FindFirstObjectByType<GridObstacle>();
+            var stone = GameObject.Find("Stone - first world object").GetComponent<GridObstacle>();
+            var flower = GameObject.Find("Flower - first bloom").GetComponent<GridObstacle>();
             var examine = stone.GetComponent<ExamineInteractable>();
+            var flowerExamine = flower.GetComponent<ExamineInteractable>();
             var artwork = player.GetComponentInChildren<SpriteRenderer>().transform;
-            Check(GameVersion.Value == "1.6", "version source");
+            Check(GameVersion.Value == "1.7", "version source");
             Check(GridWorld2D.TilePixels == 32 && Mathf.Approximately(GridWorld2D.TileWorldSize, 0.5f) &&
                 Mathf.Approximately(world.CellSize, GridWorld2D.TileWorldSize), "32-pixel grid scale");
             Check(world.MinCell == new Vector2Int(-10, -6) && world.MaxCell == new Vector2Int(10, 6),
@@ -57,8 +59,9 @@ namespace Halka.Game.Editor
                 Mathf.Approximately(artwork.position.y + playerHalfHeight,
                     player.transform.position.y + GridWorld2D.TileWorldSize * 1.5f),
                 "64-pixel art exactly spans foot tile and tile above");
-            Check(UnityEngine.Object.FindObjectsByType<GridObstacle>(FindObjectsSortMode.None).Length == 1,
-                "one world obstacle");
+            Check(UnityEngine.Object.FindObjectsByType<GridObstacle>(FindObjectsSortMode.None).Length == 2 &&
+                UnityEngine.Object.FindObjectsByType<ExamineInteractable>(FindObjectsSortMode.None).Length == 2,
+                "exactly one stone and one flower use shared world components");
             var stoneSprite = stone.GetComponent<SpriteRenderer>().sprite;
             var collider = stone.GetComponent<BoxCollider2D>();
             var stoneImporter = (TextureImporter)AssetImporter.GetAtPath("Assets/Content/World/stone.png");
@@ -76,6 +79,32 @@ namespace Halka.Game.Editor
             Check(Physics2D.OverlapPoint(stone.transform.position) == collider &&
                 router.IsInteractableAt(worldCamera.WorldToScreenPoint(stone.transform.position)),
                 "stone world pointer routes to shared interaction");
+            var flowerSprite = flower.GetComponent<SpriteRenderer>().sprite;
+            var flowerCollider = flower.GetComponent<BoxCollider2D>();
+            var flowerImporter = (TextureImporter)AssetImporter.GetAtPath("Assets/Content/World/flower.png");
+            var flowerSettings = new TextureImporterSettings();
+            flowerImporter.ReadTextureSettings(flowerSettings);
+            Check(flowerImporter.textureType == TextureImporterType.Sprite &&
+                flowerImporter.spriteImportMode == SpriteImportMode.Single &&
+                flowerImporter.filterMode == FilterMode.Point && !flowerImporter.mipmapEnabled &&
+                flowerImporter.textureCompression == TextureImporterCompression.Uncompressed &&
+                flowerImporter.npotScale == TextureImporterNPOTScale.None &&
+                Mathf.Approximately(flowerImporter.spritePixelsPerUnit, 64f) &&
+                flowerSettings.spriteAlignment == (int)SpriteAlignment.Center &&
+                flowerSettings.spritePivot == new Vector2(0.5f, 0.5f) &&
+                flowerSprite.texture.width == 32 && flowerSprite.texture.height == 32 &&
+                flowerSprite.pivot == new Vector2(16f, 16f),
+                "flower is a sharp centered 32-pixel RGBA sprite");
+            Check(ProjectBuilder.FlowerCell == new Vector2Int(-3, 1) &&
+                flower.transform.position == world.CellToWorld(ProjectBuilder.FlowerCell) &&
+                flower.transform.localScale == Vector3.one &&
+                flowerCollider != null && flowerCollider.size == Vector2.one * GridWorld2D.TileWorldSize &&
+                flowerExamine is IInteractable && world.HasObstacle(ProjectBuilder.FlowerCell) &&
+                !world.CanEnter(ProjectBuilder.FlowerCell) &&
+                router.IsInteractableAt(worldCamera.WorldToScreenPoint(flower.transform.position)),
+                "flower occupies one exact blocking and clickable cell");
+            Check(new SerializedObject(flowerExamine).FindProperty("message").stringValue == "はな。",
+                "flower uses the generic examine text");
             Check(world.CanEnter(new Vector2Int(0, 1)) && !world.CanEnter(new Vector2Int(11, 0)) &&
                 !world.CanEnter(new Vector2Int(0, -7)), "adjacent and field bounds");
             var grid = GameObject.Find("FirstDay - 32px cell boundaries").GetComponent<SpriteRenderer>();
@@ -85,8 +114,8 @@ namespace Halka.Game.Editor
                 grid.transform.position == Vector3.zero && grid.sprite.texture.filterMode == FilterMode.Point,
                 "world-aligned sharp 32-pixel grid overlay");
             var grassGroup = GameObject.Find("Grass decorations");
-            Check(grassGroup != null && grassGroup.transform.childCount == 272,
-                "all 272 walkable cells have grass prefab instances");
+            Check(grassGroup != null && grassGroup.transform.childCount == 271,
+                "all 271 walkable cells have grass prefab instances");
             var grassField = grassGroup.GetComponent<GrassField2D>();
             Check(grassField != null && grassGroup.GetComponents<MonoBehaviour>().Length == 1,
                 "one shared grass animation manager");
@@ -131,8 +160,9 @@ namespace Halka.Game.Editor
             }
             Check(actualGrassCells.Contains(Vector2Int.zero) &&
                 !actualGrassCells.Contains(new Vector2Int(1, 1)) &&
-                actualGrassCells.Count == 21 * 13 - 1,
-                "start cell covered and stone cell excluded");
+                !actualGrassCells.Contains(ProjectBuilder.FlowerCell) &&
+                actualGrassCells.Count == 21 * 13 - 2,
+                "start cell covered; stone and flower cells excluded");
             Check(GameObject.Find("Grass Front Overlay") == null &&
                 UnityEngine.Object.FindObjectsByType<GrassField2D>(FindObjectsSortMode.None).Length == 1 &&
                 UnityEngine.Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None)
@@ -140,8 +170,9 @@ namespace Halka.Game.Editor
                 "foreground grass overlay removed");
             Check(GameObject.Find("FirstDay - small ground").GetComponent<SpriteRenderer>().sortingOrder == -10 &&
                 grid.sortingOrder == -9 && stone.GetComponent<SpriteRenderer>().sortingOrder == 2 &&
+                flower.GetComponent<SpriteRenderer>().sortingOrder == 2 &&
                 artwork.GetComponent<SpriteRenderer>().sortingOrder == 10,
-                "ground grid grass stone player render order");
+                "ground grid grass world objects player render order");
             var occlusion = player.GetComponent<PlayerGrassOcclusion>();
             var playerMask = player.GetComponentInChildren<SpriteMask>();
             Check(occlusion != null && playerMask != null &&
@@ -271,6 +302,32 @@ namespace Halka.Game.Editor
             router.TryInteractAhead();
             Check(string.IsNullOrEmpty(activeMessage.TextAt(Time.unscaledTime)),
                 "action does not auto-turn toward adjacent stone");
+            typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(player, new GridStepMotion(ProjectBuilder.FlowerCell + Vector2Int.left));
+            hud.ShowMessage(string.Empty);
+            router.TryInteract(worldCamera.WorldToScreenPoint(flower.transform.position));
+            Check(string.IsNullOrEmpty(activeMessage.TextAt(Time.unscaledTime)),
+                "clicking flower does not auto-turn");
+            player.ApplyDirection(Vector2Int.right);
+            Check(player.Facing == FacingDirection.Right && !player.IsMoving &&
+                player.Cell == ProjectBuilder.FlowerCell + Vector2Int.left,
+                "blocked flower input turns without entering");
+            router.TryInteractAhead();
+            Check(activeMessage.TextAt(Time.unscaledTime) == "はな。",
+                "front-cell action reaches generic flower examine");
+            hud.ShowMessage(string.Empty);
+            router.TryInteract(worldCamera.WorldToScreenPoint(flower.transform.position));
+            Check(activeMessage.TextAt(Time.unscaledTime) == "はな。",
+                "desktop pointer reaches generic flower examine");
+            hud.ShowMessage(string.Empty);
+            player.ApplyDirection(Vector2Int.left);
+            router.TryInteractAhead();
+            Check(player.IsMoving && string.IsNullOrEmpty(activeMessage.TextAt(Time.unscaledTime)),
+                "flower action ignored during a grid step");
+            typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(player, new GridStepMotion(new Vector2Int(0, 1)));
+            typeof(PlayerMover).GetField("<Facing>k__BackingField",
+                BindingFlags.NonPublic | BindingFlags.Instance).SetValue(player, FacingDirection.Up);
             player.ApplyDirection(Vector2Int.left);
             hud.ShowMessage(string.Empty);
             router.TryInteractAhead();
@@ -338,15 +395,26 @@ namespace Halka.Game.Editor
                 "front cell interaction uses shared router and grid");
             var footstep = player.GetComponent<PlayerFootstepAudio>();
             var audioSource = player.GetComponent<AudioSource>();
-            var footstepClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Content/Audio/footstep.wav");
+            var footstepClip = AssetDatabase.LoadAssetAtPath<AudioClip>(
+                "Assets/Content/Audio/footstep_one_step.wav");
+            var originalMp3 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Content/Audio/footstep.mp3");
+            var footstepImporter = (AudioImporter)AssetImporter.GetAtPath(
+                "Assets/Content/Audio/footstep_one_step.wav");
             Check(footstep != null && audioSource != null && footstepClip != null &&
+                originalMp3 != null &&
                 new SerializedObject(footstep).FindProperty("mover").objectReferenceValue == player &&
                 new SerializedObject(footstep).FindProperty("source").objectReferenceValue == audioSource &&
                 new SerializedObject(footstep).FindProperty("footstep").objectReferenceValue == footstepClip &&
                 !audioSource.playOnAwake && audioSource.spatialBlend == 0f &&
-                footstepClip.channels == 1 && footstepClip.frequency > 0 &&
-                footstepClip.length >= 0.03f && footstepClip.length <= 0.08f,
-                "short mono WAV is wired to successful steps only");
+                Mathf.Approximately(audioSource.volume, 0.45f) &&
+                footstepClip.channels == 1 && footstepClip.frequency == 44100 &&
+                footstepClip.length >= 0.09f && footstepClip.length <= 0.11f &&
+                footstepImporter.defaultSampleSettings.compressionFormat == AudioCompressionFormat.PCM &&
+                footstepImporter.defaultSampleSettings.sampleRateSetting ==
+                    AudioSampleRateSetting.PreserveSampleRate &&
+                new SerializedObject(footstepImporter).FindProperty("m_Normalize").boolValue == false &&
+                !File.Exists("Assets/Content/Audio/footstep.wav"),
+                "one-burst excerpt is wired; original MP3 is preserved and obsolete WAV removed");
             var startedCells = new System.Collections.Generic.List<Vector2Int>();
             var enteredCells = new System.Collections.Generic.List<Vector2Int>();
             Action<Vector2Int> startListener = cell => startedCells.Add(cell);
@@ -358,6 +426,12 @@ namespace Halka.Game.Editor
             player.ApplyDirection(Vector2Int.right);
             Check(startedCells.Count == 0 && enteredCells.Count == 0 && !player.IsMoving,
                 "blocked stone step does not announce entry");
+            typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(player, new GridStepMotion(ProjectBuilder.FlowerCell + Vector2Int.left));
+            player.ApplyDirection(Vector2Int.right);
+            Check(startedCells.Count == 0 && enteredCells.Count == 0 && !player.IsMoving &&
+                !grassField.HasGrass(ProjectBuilder.FlowerCell),
+                "blocked flower step triggers neither footstep event nor grass rustle");
             typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(player, new GridStepMotion(new Vector2Int(-10, 1)));
             player.ApplyDirection(Vector2Int.left);
@@ -489,7 +563,7 @@ namespace Halka.Game.Editor
             maskStepComplete.Invoke(occlusion, new object[] { Vector2Int.zero });
             Check(occlusion.IsMasked, "grass destination remains masked");
             advanceRustle.Invoke(grassField, new object[] { 1f });
-            Debug.Log("HALKA ver1.6 checks passed.");
+            Debug.Log("HALKA ver1.7 checks passed.");
         }
 
         private static SpriteRenderer FindGrass(Transform root, GridWorld2D world, Vector2Int cell)
@@ -502,7 +576,7 @@ namespace Halka.Game.Editor
 
         private static void Check(bool condition, string label)
         {
-            if (!condition) throw new InvalidOperationException("ver1.6 check failed: " + label);
+            if (!condition) throw new InvalidOperationException("ver1.7 check failed: " + label);
         }
     }
 }

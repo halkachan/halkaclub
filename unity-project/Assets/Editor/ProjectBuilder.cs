@@ -21,18 +21,20 @@ namespace Halka.Game.Editor
         private const string ScenePath = "Assets/Scenes/FirstDay.unity";
         private const string PixelPath = "Assets/Content/World/pixel.png";
         private const string StonePath = "Assets/Content/World/stone.png";
+        private const string FlowerPath = "Assets/Content/World/flower.png";
         private const string GrassPath = "Assets/Content/World/grass.png";
         private const string GrassRustlePath = "Assets/Content/World/grass_rustle";
-        private const string FootstepPath = "Assets/Content/Audio/footstep.wav";
+        private const string FootstepPath = "Assets/Content/Audio/footstep_one_step.wav";
         private const string MessageFontPath = "Assets/Content/Fonts/k8x12L.ttf";
         private const string PlayerGrassMaskPath = "Assets/Content/World/player_grass_mask.png";
         private const string GrassPrefabPath = "Assets/Content/World/GrassDecoration.prefab";
         private const string GridPath = "Assets/Content/World/grid.png";
         private const float SpritePixelsPerUnit = 64f;
         internal const float ArtworkFootOffset = GridWorld2D.TileWorldSize / 2f;
+        internal static readonly Vector2Int FlowerCell = new Vector2Int(-3, 1);
         private static readonly Vector2 StoneOpaquePixels = new Vector2(28f, 20f);
 
-        [MenuItem("HALKA/Prepare ver1.6 scene")]
+        [MenuItem("HALKA/Prepare ver1.7 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -44,14 +46,19 @@ namespace Halka.Game.Editor
             ConfigureSpriteImport(StonePath, SpritePixelsPerUnit);
             var stoneSprite = AssetDatabase.LoadAssetAtPath<Sprite>(StonePath);
             if (stoneSprite == null) throw new InvalidOperationException("Stone sprite import failed");
+            ConfigureSpriteImport(FlowerPath, SpritePixelsPerUnit);
+            var flowerSprite = AssetDatabase.LoadAssetAtPath<Sprite>(FlowerPath);
+            if (flowerSprite == null || flowerSprite.rect.size != new Vector2(32f, 32f))
+                throw new InvalidOperationException("Flower must be an unchanged 32x32 sprite");
             ConfigureSpriteImport(GrassPath, SpritePixelsPerUnit);
             var grassSprite = AssetDatabase.LoadAssetAtPath<Sprite>(GrassPath);
             if (grassSprite == null) throw new InvalidOperationException("Grass sprite import failed");
             var rustleFrames = LoadFramesFromFolder(GrassRustlePath);
             if (rustleFrames.Length == 0) throw new InvalidOperationException("Grass rustle frames are missing");
             var maskSprite = CreatePlayerGrassMask();
+            ConfigureFootstepImport();
             var footstepClip = AssetDatabase.LoadAssetAtPath<AudioClip>(FootstepPath);
-            if (footstepClip == null) throw new InvalidOperationException("Footstep WAV import failed");
+            if (footstepClip == null) throw new InvalidOperationException("Single-step audio import failed");
             var grassPrefab = CreateGrassPrefab(grassSprite);
 
             Directory.CreateDirectory("Assets/Scenes");
@@ -118,6 +125,16 @@ namespace Halka.Game.Editor
             stone.AddComponent<GridObstacle>();
             var examine = stone.AddComponent<ExamineInteractable>();
 
+            var flower = new GameObject("Flower - first bloom");
+            flower.transform.position = world.CellToWorld(FlowerCell);
+            var flowerRenderer = flower.AddComponent<SpriteRenderer>();
+            flowerRenderer.sprite = flowerSprite;
+            flowerRenderer.sortingOrder = stoneRenderer.sortingOrder;
+            var flowerCollider = flower.AddComponent<BoxCollider2D>();
+            flowerCollider.size = Vector2.one * GridWorld2D.TileWorldSize;
+            flower.AddComponent<GridObstacle>();
+            var flowerExamine = flower.AddComponent<ExamineInteractable>();
+
             var grassGroup = new GameObject("Grass decorations");
             var grassCount = 0;
             for (var y = world.MinCell.y; y <= world.MaxCell.y; y++)
@@ -181,6 +198,10 @@ namespace Halka.Game.Editor
             SetReference(examine, "world", world);
             SetReference(examine, "hud", hud);
             SetString(examine, "message", "いし。");
+            SetReference(flowerExamine, "player", mover);
+            SetReference(flowerExamine, "world", world);
+            SetReference(flowerExamine, "hud", hud);
+            SetString(flowerExamine, "message", "はな。");
             SetSprites(visual, "frontIdle", frames);
             SetSprites(visual, "backIdle", LoadFrames("back_idle"));
             SetSprites(visual, "leftIdle", LoadFrames("left_idle"));
@@ -193,7 +214,7 @@ namespace Halka.Game.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.SaveAssets();
-            Debug.Log($"HALKA ver1.6 scene prepared with {grassCount} grass cells.");
+            Debug.Log($"HALKA ver1.7 scene prepared with {grassCount} grass cells.");
         }
 
         [MenuItem("HALKA/Build WebGL for HP")]
@@ -342,6 +363,27 @@ namespace Halka.Game.Editor
             importer.mipmapEnabled = false;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.npotScale = TextureImporterNPOTScale.None;
+            importer.SaveAndReimport();
+        }
+
+        private static void ConfigureFootstepImport()
+        {
+            var importer = AssetImporter.GetAtPath(FootstepPath) as AudioImporter;
+            if (importer == null) throw new InvalidOperationException("Single-step audio is missing");
+            var settings = importer.defaultSampleSettings;
+            var importerObject = new SerializedObject(importer);
+            var normalize = importerObject.FindProperty("m_Normalize");
+            var normalized = normalize != null && normalize.boolValue;
+            if (settings.compressionFormat == AudioCompressionFormat.PCM &&
+                settings.sampleRateSetting == AudioSampleRateSetting.PreserveSampleRate &&
+                !importer.forceToMono && !normalized) return;
+            settings.compressionFormat = AudioCompressionFormat.PCM;
+            settings.sampleRateSetting = AudioSampleRateSetting.PreserveSampleRate;
+            importer.defaultSampleSettings = settings;
+            importer.forceToMono = false;
+            if (normalize == null) throw new InvalidOperationException("Audio normalization setting is missing");
+            normalize.boolValue = false;
+            importerObject.ApplyModifiedPropertiesWithoutUndo();
             importer.SaveAndReimport();
         }
 
