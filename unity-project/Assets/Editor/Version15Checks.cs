@@ -36,7 +36,9 @@ namespace Halka.Game.Editor
             Check(world.CellToWorld(Vector2Int.right) == new Vector3(0.5f, 0f, 0f) &&
                 world.WorldToCell(new Vector3(0.5f, 0f, 0f)) == Vector2Int.right,
                 "integer grid world conversion");
-            Check(artwork.localPosition == new Vector3(0f, 0.5f, 0f) &&
+            Check(artwork.localPosition == new Vector3(0f, ProjectBuilder.ArtworkFootOffset, 0f) &&
+                Mathf.Approximately(ProjectBuilder.PlayerVisualOffsetPixelsY, -3f) &&
+                Mathf.Approximately(ProjectBuilder.GrassVisualOffsetPixelsY, -3f) &&
                 artwork.GetComponents<Component>().Length == 2,
                 "fixed artwork foot anchor without runtime offset component");
             Check(UnityEngine.Object.FindObjectsByType<GridObstacle>(FindObjectsSortMode.None).Length == 1,
@@ -80,13 +82,15 @@ namespace Halka.Game.Editor
             var actualGrassCells = new System.Collections.Generic.HashSet<Vector2Int>();
             foreach (Transform grass in grassGroup.transform)
             {
-                var renderer = grass.GetComponent<SpriteRenderer>();
+                var renderer = grass.GetComponentInChildren<SpriteRenderer>();
                 var cell = world.WorldToCell(grass.position);
                 Check(PrefabUtility.IsPartOfPrefabInstance(grass.gameObject) && renderer != null &&
                     renderer.sprite != null && renderer.sprite.texture.width == 32 &&
                     renderer.sprite.texture.height == 32 &&
                     Mathf.Approximately(renderer.sprite.pixelsPerUnit, 64f) &&
                     renderer.sortingOrder == 0 && grass.localScale == Vector3.one &&
+                    renderer.transform.localPosition == new Vector3(0f,
+                        ProjectBuilder.GrassVisualOffsetPixelsY / 64f, 0f) &&
                     grass.position == world.CellToWorld(cell), "grass prefab, sprite, order and cell alignment");
                 Check(grass.GetComponent<Collider2D>() == null &&
                     grass.GetComponent<GridObstacle>() == null &&
@@ -106,9 +110,14 @@ namespace Halka.Game.Editor
                 !actualGrassCells.Contains(new Vector2Int(1, 1)) &&
                 actualGrassCells.Count == 21 * 13 - 1,
                 "start cell covered and stone cell excluded");
-            var frontOverlay = GameObject.Find("Grass Front Overlay").GetComponent<SpriteRenderer>();
+            var frontRoot = GameObject.Find("Grass Front Overlay").transform;
+            var frontOverlay = frontRoot.GetComponentInChildren<SpriteRenderer>();
             Check(frontOverlay != null && frontOverlay.sortingOrder == 20 &&
-                frontOverlay.transform.parent == null &&
+                frontRoot.parent == null &&
+                frontOverlay.transform.parent == frontRoot &&
+                frontOverlay.transform.localPosition == new Vector3(0f,
+                    ProjectBuilder.GrassVisualOffsetPixelsY / 64f, 0f) &&
+                frontRoot.position == world.CellToWorld(Vector2Int.zero) &&
                 frontOverlay.GetComponent<Collider2D>() == null &&
                 UnityEngine.Object.FindObjectsByType<GrassField2D>(FindObjectsSortMode.None).Length == 1 &&
                 UnityEngine.Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None)
@@ -202,7 +211,7 @@ namespace Halka.Game.Editor
             {
                 var neighbor = target + side;
                 Check(world.CanEnter(neighbor) && !world.CanEnter(target) &&
-                    artwork.localPosition == new Vector3(0f, 0.5f, 0f),
+                    artwork.localPosition == new Vector3(0f, ProjectBuilder.ArtworkFootOffset, 0f),
                     "stone approach from all four sides keeps fixed artwork offset");
             }
             foreach (var facing in new[] { FacingDirection.Up, FacingDirection.Down,
@@ -285,75 +294,112 @@ namespace Halka.Game.Editor
                 !tap.End(3, Vector2.zero, false, 0.1f, 24f, 0.4f) &&
                 tap.End(2, Vector2.zero, false, 0.1f, 24f, 0.4f),
                 "pointer ID prevents second finger interference");
-            var notifiedCells = new System.Collections.Generic.List<Vector2Int>();
-            Action<Vector2Int> listener = cell => notifiedCells.Add(cell);
-            player.StepStarted += listener;
+            var startedCells = new System.Collections.Generic.List<Vector2Int>();
+            var enteredCells = new System.Collections.Generic.List<Vector2Int>();
+            Action<Vector2Int> startListener = cell => startedCells.Add(cell);
+            Action<Vector2Int> completeListener = cell => enteredCells.Add(cell);
+            player.StepStarted += startListener;
+            player.StepCompleted += completeListener;
             typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(player, new GridStepMotion(new Vector2Int(0, 1)));
             player.ApplyDirection(Vector2Int.right);
-            Check(notifiedCells.Count == 0 && !player.IsMoving,
+            Check(startedCells.Count == 0 && enteredCells.Count == 0 && !player.IsMoving,
                 "blocked stone step does not announce entry");
             typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(player, new GridStepMotion(Vector2Int.zero));
-            player.ApplyDirection(Vector2Int.left);
-            Check(notifiedCells.Count == 1 && notifiedCells[0] == Vector2Int.left &&
-                player.IsMoving && player.Cell == Vector2Int.zero,
-                "step start announces target grass cell before arrival");
-            player.StepStarted -= listener;
+            var tick = typeof(PlayerMover).GetMethod("Tick", BindingFlags.NonPublic | BindingFlags.Instance);
+            tick.Invoke(player, new object[] { 0f, Vector2Int.left });
+            Check(startedCells.Count == 1 && startedCells[0] == Vector2Int.left &&
+                enteredCells.Count == 0 && player.IsMoving && player.Cell == Vector2Int.zero,
+                "step start announces target without completed entry");
+            tick.Invoke(player, new object[] { PlayerMover.DefaultStepSeconds * 0.5f, Vector2Int.zero });
+            Check(player.IsMoving && enteredCells.Count == 0 &&
+                player.transform.position == world.CellToWorld(new Vector2(-0.5f, 0f)),
+                "half step has no completed entry");
+            tick.Invoke(player, new object[] { PlayerMover.DefaultStepSeconds * 0.5f, Vector2Int.zero });
+            Check(!player.IsMoving && enteredCells.Count == 1 &&
+                enteredCells[0] == Vector2Int.left && player.Cell == Vector2Int.left &&
+                player.transform.position == world.CellToWorld(Vector2Int.left),
+                "cell entry announces after root reaches destination");
+            player.StepStarted -= startListener;
+            player.StepCompleted -= completeListener;
+            player.transform.position = world.CellToWorld(Vector2Int.zero);
+            typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(player, new GridStepMotion(Vector2Int.zero));
 
             var flags = BindingFlags.NonPublic | BindingFlags.Instance;
             typeof(GrassField2D).GetMethod("Initialize", flags).Invoke(grassField, null);
             var startRustle = typeof(GrassField2D).GetMethod("OnStepStarted", flags);
+            var completeStep = typeof(GrassField2D).GetMethod("OnStepCompleted", flags);
             var advanceRustle = typeof(GrassField2D).GetMethod("AdvanceAnimations", flags);
             var idleGrass = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/World/grass.png");
             var firstGrass = FindGrass(grassGroup.transform, world, Vector2Int.zero);
             var secondGrass = FindGrass(grassGroup.transform, world, Vector2Int.up);
-            Check(frontOverlay.enabled && frontOverlay.transform.position == world.CellToWorld(Vector2Int.zero) &&
+            Check(frontOverlay.enabled && frontRoot.position == world.CellToWorld(Vector2Int.zero) &&
                 frontOverlay.sprite == idleFront && firstGrass.sprite == idleGrass,
                 "initial grass is behind player with only current cell foot overlay");
-            startRustle.Invoke(grassField, new object[] { Vector2Int.zero });
-            Check(firstGrass.sprite == rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
-                frontOverlay.sprite == rustleFrontFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
-                secondGrass.sprite == idleGrass, "only entered grass starts with matched front frame");
-            advanceRustle.Invoke(grassField, new object[] { 0.09f });
-            Check(firstGrass.sprite == rustleFrames.GetArrayElementAtIndex(1).objectReferenceValue &&
-                frontOverlay.sprite == rustleFrontFrames.GetArrayElementAtIndex(1).objectReferenceValue,
-                "back and front advance together at original GIF frame time");
             startRustle.Invoke(grassField, new object[] { Vector2Int.up });
-            Check(secondGrass.sprite == rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
-                firstGrass.sprite == rustleFrames.GetArrayElementAtIndex(1).objectReferenceValue &&
-                frontOverlay.transform.position == world.CellToWorld(Vector2Int.up) &&
+            Check(!frontOverlay.enabled && secondGrass.sprite ==
+                rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
+                firstGrass.sprite == idleGrass,
+                "departure hides front while only target back begins rustling");
+            advanceRustle.Invoke(grassField, new object[] { 0.09f });
+            Check(!frontOverlay.enabled && secondGrass.sprite ==
+                rustleFrames.GetArrayElementAtIndex(1).objectReferenceValue,
+                "front remains hidden during step even as back animates");
+            completeStep.Invoke(grassField, new object[] { Vector2Int.up });
+            Check(frontOverlay.enabled && frontRoot.position == world.CellToWorld(Vector2Int.up) &&
+                frontOverlay.sprite == rustleFrontFrames.GetArrayElementAtIndex(1).objectReferenceValue,
+                "arrival shows matching current back frame at destination");
+            startRustle.Invoke(grassField, new object[] { Vector2Int.zero });
+            Check(!frontOverlay.enabled && firstGrass.sprite ==
+                rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
+                secondGrass.sprite == rustleFrames.GetArrayElementAtIndex(1).objectReferenceValue,
+                "next departure clears previous front while old back continues");
+            completeStep.Invoke(grassField, new object[] { Vector2Int.zero });
+            Check(frontOverlay.enabled && frontRoot.position == world.CellToWorld(Vector2Int.zero) &&
                 frontOverlay.sprite == rustleFrontFrames.GetArrayElementAtIndex(0).objectReferenceValue,
-                "front changes to next cell while previous back continues rustling");
+                "next arrival shows only destination front");
             advanceRustle.Invoke(grassField, new object[] { 1f });
             Check(firstGrass.sprite == idleGrass && secondGrass.sprite == idleGrass &&
                 frontOverlay.enabled && frontOverlay.sprite == idleFront,
-                "both one-shot animations return to original grass while occupied front remains");
+                "one-shot animations return to original grass while occupied front remains");
             startRustle.Invoke(grassField, new object[] { Vector2Int.zero });
-            Check(firstGrass.sprite == rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
+            Check(!frontOverlay.enabled && firstGrass.sprite ==
+                rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue,
+                "re-entering grass restarts one-shot back without early front");
+            completeStep.Invoke(grassField, new object[] { Vector2Int.zero });
+            Check(frontOverlay.enabled &&
                 frontOverlay.sprite == rustleFrontFrames.GetArrayElementAtIndex(0).objectReferenceValue,
-                "re-entering grass restarts one-shot animation");
+                "re-entering grass shows matched front after arrival");
             advanceRustle.Invoke(grassField, new object[] { 1f });
             var playerPosition = player.transform.position;
             foreach (var direction in new[] { Vector2Int.up, Vector2Int.down,
                 Vector2Int.left, Vector2Int.right })
             {
                 startRustle.Invoke(grassField, new object[] { direction });
-                Check(frontOverlay.enabled && frontOverlay.transform.position == world.CellToWorld(direction) &&
+                Check(!frontOverlay.enabled, "four-direction entry has no in-flight foreground");
+                completeStep.Invoke(grassField, new object[] { direction });
+                Check(frontOverlay.enabled && frontRoot.position == world.CellToWorld(direction) &&
                     frontOverlay.sprite == rustleFrontFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
                     player.transform.position == playerPosition &&
-                    artwork.localPosition == new Vector3(0f, 0.5f, 0f),
+                    artwork.localPosition == new Vector3(0f, ProjectBuilder.ArtworkFootOffset, 0f),
                     "four-direction entry keeps overlay cell-aligned and player transform fixed");
             }
             foreach (var cell in new[] { new Vector2Int(-1, 0), new Vector2Int(-2, 0),
                 new Vector2Int(-3, 0), new Vector2Int(-4, 0), new Vector2Int(-5, 0) })
             {
                 startRustle.Invoke(grassField, new object[] { cell });
-                Check(frontOverlay.enabled && frontOverlay.transform.position == world.CellToWorld(cell) &&
+                Check(!frontOverlay.enabled, "consecutive departure removes last front");
+                completeStep.Invoke(grassField, new object[] { cell });
+                Check(frontOverlay.enabled && frontRoot.position == world.CellToWorld(cell) &&
                     UnityEngine.Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None)
                         .Count(renderer => renderer.sortingOrder == 20) == 1,
                     "five consecutive grass cells keep one current front overlay");
             }
+            startRustle.Invoke(grassField, new object[] { new Vector2Int(1, 1) });
+            completeStep.Invoke(grassField, new object[] { new Vector2Int(1, 1) });
+            Check(!frontOverlay.enabled, "stone cell has no grass front");
             advanceRustle.Invoke(grassField, new object[] { 1f });
             Debug.Log("HALKA ver1.5 checks passed.");
         }
@@ -362,7 +408,7 @@ namespace Halka.Game.Editor
         {
             foreach (Transform child in root)
                 if (world.WorldToCell(child.position) == cell)
-                    return child.GetComponent<SpriteRenderer>();
+                    return child.GetComponentInChildren<SpriteRenderer>();
             throw new InvalidOperationException($"Missing grass cell: {cell}");
         }
 

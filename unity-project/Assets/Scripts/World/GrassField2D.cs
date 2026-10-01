@@ -46,25 +46,35 @@ namespace Halka.Game.World
                 if (rustleFrames[i] == null || rustleFrontFrames[i] == null || frameSeconds[i] <= 0f)
                     throw new InvalidOperationException("Grass rustle has an invalid frame");
 
+            active.Clear();
             grassByCell.Clear();
             foreach (var renderer in GetComponentsInChildren<SpriteRenderer>())
             {
+                renderer.sprite = idleSprite;
                 var cell = world.WorldToCell(renderer.transform.position);
                 if (!grassByCell.TryAdd(cell, renderer))
                     throw new InvalidOperationException($"Duplicate grass cell: {cell}");
             }
-            ShowFrontAt(world.WorldToCell(player.transform.position));
+            if (player.IsMoving)
+            {
+                frontCell = null;
+                frontOverlay.enabled = false;
+            }
+            else ShowFrontAt(player.Cell);
         }
 
         private void OnEnable()
         {
             if (player != null) player.StepStarted += OnStepStarted;
-            if (grassByCell.Count > 0) ShowFrontAt(world.WorldToCell(player.transform.position));
+            if (player != null) player.StepCompleted += OnStepCompleted;
+            if (grassByCell.Count > 0 && !player.IsMoving)
+                ShowFrontAt(player.Cell);
         }
 
         private void OnDisable()
         {
             if (player != null) player.StepStarted -= OnStepStarted;
+            if (player != null) player.StepCompleted -= OnStepCompleted;
             foreach (var state in active.Values) state.Renderer.sprite = idleSprite;
             active.Clear();
             if (frontOverlay != null)
@@ -77,11 +87,16 @@ namespace Halka.Game.World
 
         private void OnStepStarted(Vector2Int targetCell)
         {
-            ShowFrontAt(targetCell);
+            frontCell = null;
+            frontOverlay.enabled = false;
             if (!grassByCell.TryGetValue(targetCell, out var renderer)) return;
             renderer.sprite = rustleFrames[0];
             active[targetCell] = new ActiveRustle { Renderer = renderer };
-            frontOverlay.sprite = rustleFrontFrames[0];
+        }
+
+        private void OnStepCompleted(Vector2Int cell)
+        {
+            ShowFrontAt(cell);
         }
 
         private void ShowFrontAt(Vector2Int cell)
@@ -93,7 +108,7 @@ namespace Halka.Game.World
                 return;
             }
             frontCell = cell;
-            frontOverlay.transform.position = world.CellToWorld(cell);
+            frontOverlay.transform.parent.position = world.CellToWorld(cell);
             frontOverlay.sprite = active.TryGetValue(cell, out var state)
                 ? rustleFrontFrames[state.Frame] : idleFrontSprite;
             frontOverlay.enabled = true;

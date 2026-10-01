@@ -27,7 +27,11 @@ namespace Halka.Game.Editor
         private const string GrassPrefabPath = "Assets/Content/World/GrassDecoration.prefab";
         private const string GridPath = "Assets/Content/World/grid.png";
         private const float SpritePixelsPerUnit = 64f;
-        private const float ArtworkFootOffset = 0.5f;
+        internal const float PlayerVisualOffsetPixelsY = -3f;
+        internal const float GrassVisualOffsetPixelsY = -3f;
+        internal const float ArtworkFootOffset = 0.5f + PlayerVisualOffsetPixelsY / SpritePixelsPerUnit;
+        private static readonly Vector3 GrassVisualOffset =
+            Vector3.up * (GrassVisualOffsetPixelsY / SpritePixelsPerUnit);
         private const float GrassBasePixelsFromBottom = 5f;
         private static readonly Vector2 GrassPivot = new Vector2(
             0.5f, GrassBasePixelsFromBottom / GridWorld2D.TilePixels);
@@ -125,7 +129,10 @@ namespace Halka.Game.Editor
             var grassField = grassGroup.AddComponent<GrassField2D>();
             var grassFront = new GameObject("Grass Front Overlay");
             grassFront.transform.position = world.CellToWorld(Vector2Int.zero);
-            var frontRenderer = grassFront.AddComponent<SpriteRenderer>();
+            var grassFrontArtwork = new GameObject("Grass front artwork");
+            grassFrontArtwork.transform.SetParent(grassFront.transform, false);
+            grassFrontArtwork.transform.localPosition = GrassVisualOffset;
+            var frontRenderer = grassFrontArtwork.AddComponent<SpriteRenderer>();
             frontRenderer.sprite = grassFrontSprite;
             frontRenderer.sortingOrder = 20;
             SetReference(grassField, "world", world);
@@ -237,7 +244,10 @@ namespace Halka.Game.Editor
             var root = new GameObject("GrassDecoration");
             try
             {
-                var renderer = root.AddComponent<SpriteRenderer>();
+                var artwork = new GameObject("Grass artwork");
+                artwork.transform.SetParent(root.transform, false);
+                artwork.transform.localPosition = GrassVisualOffset;
+                var renderer = artwork.AddComponent<SpriteRenderer>();
                 renderer.sprite = sprite;
                 renderer.sortingOrder = 0;
                 return PrefabUtility.SaveAsPrefabAsset(root, GrassPrefabPath);

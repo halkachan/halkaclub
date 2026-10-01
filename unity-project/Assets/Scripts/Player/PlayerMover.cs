@@ -19,6 +19,7 @@ namespace Halka.Game.Player
         public FacingDirection Facing { get; private set; } = FacingDirection.Down;
         public bool IsMoving => motion != null && motion.IsMoving;
         public event Action<Vector2Int> StepStarted;
+        public event Action<Vector2Int> StepCompleted;
 
         private void Awake()
         {
@@ -28,11 +29,20 @@ namespace Halka.Game.Player
 
         private void Update()
         {
-            if (!motion.IsMoving) ApplyDirection(input.Direction);
+            Tick(Time.deltaTime, input.Direction);
+        }
+
+        private void Tick(float deltaTime, Vector2Int direction)
+        {
+            if (!motion.IsMoving) ApplyDirection(direction);
             var wasMoving = motion.IsMoving;
-            motion.Advance(Time.deltaTime);
-            if (wasMoving && !motion.IsMoving) ApplyDirection(input.Direction);
+            motion.Advance(deltaTime);
             transform.position = world.CellToWorld(motion.Position);
+            if (wasMoving && !motion.IsMoving)
+            {
+                StepCompleted?.Invoke(motion.Cell);
+                ApplyDirection(direction);
+            }
         }
 
         public void ApplyDirection(Vector2Int direction)
