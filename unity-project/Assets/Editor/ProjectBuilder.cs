@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Halka.Game.CameraControl;
 using Halka.Game.Core;
 using Halka.Game.Input;
@@ -21,9 +22,8 @@ namespace Halka.Game.Editor
         private const string PixelPath = "Assets/Content/World/pixel.png";
         private const string StonePath = "Assets/Content/World/stone.png";
         private const string GrassPath = "Assets/Content/World/grass.png";
-        private const string GrassFrontPath = "Assets/Content/World/grass_front.png";
         private const string GrassRustlePath = "Assets/Content/World/grass_rustle";
-        private const string GrassRustleFrontPath = "Assets/Content/World/grass_rustle_front";
+        private const string PlayerGrassMaskPath = "Assets/Content/World/player_grass_mask.png";
         private const string GrassPrefabPath = "Assets/Content/World/GrassDecoration.prefab";
         private const string GridPath = "Assets/Content/World/grid.png";
         private const float SpritePixelsPerUnit = 64f;
@@ -45,14 +45,9 @@ namespace Halka.Game.Editor
             ConfigureSpriteImport(GrassPath, SpritePixelsPerUnit);
             var grassSprite = AssetDatabase.LoadAssetAtPath<Sprite>(GrassPath);
             if (grassSprite == null) throw new InvalidOperationException("Grass sprite import failed");
-            ConfigureSpriteImport(GrassFrontPath, SpritePixelsPerUnit);
-            var grassFrontSprite = AssetDatabase.LoadAssetAtPath<Sprite>(GrassFrontPath);
-            if (grassFrontSprite == null) throw new InvalidOperationException("Grass front sprite import failed");
             var rustleFrames = LoadFramesFromFolder(GrassRustlePath);
             if (rustleFrames.Length == 0) throw new InvalidOperationException("Grass rustle frames are missing");
-            var rustleFrontFrames = LoadFramesFromFolder(GrassRustleFrontPath);
-            if (rustleFrontFrames.Length != rustleFrames.Length)
-                throw new InvalidOperationException("Grass rustle front frame count differs from back");
+            var maskSprite = CreatePlayerGrassMask();
             var grassPrefab = CreateGrassPrefab(grassSprite);
 
             Directory.CreateDirectory("Assets/Scenes");
@@ -69,6 +64,10 @@ namespace Halka.Game.Editor
             var playerRenderer = artwork.AddComponent<SpriteRenderer>();
             playerRenderer.sprite = frames[0];
             playerRenderer.sortingOrder = 10;
+            var maskObject = new GameObject("Player grass foot mask");
+            maskObject.transform.SetParent(artwork.transform, false);
+            var spriteMask = maskObject.AddComponent<SpriteMask>();
+            spriteMask.sprite = maskSprite;
             var mover = player.AddComponent<PlayerMover>();
             var visual = player.AddComponent<CharacterVisual>();
 
@@ -120,21 +119,15 @@ namespace Halka.Game.Editor
                 grassCount++;
             }
             var grassField = grassGroup.AddComponent<GrassField2D>();
-            var grassFront = new GameObject("Grass Front Overlay");
-            grassFront.transform.position = world.CellToWorld(Vector2Int.zero);
-            var grassFrontArtwork = new GameObject("Grass front artwork");
-            grassFrontArtwork.transform.SetParent(grassFront.transform, false);
-            grassFrontArtwork.transform.localPosition = Vector3.zero;
-            var frontRenderer = grassFrontArtwork.AddComponent<SpriteRenderer>();
-            frontRenderer.sprite = grassFrontSprite;
-            frontRenderer.sortingOrder = 20;
             SetReference(grassField, "world", world);
             SetReference(grassField, "player", mover);
             SetReference(grassField, "idleSprite", grassSprite);
             SetSprites(grassField, "rustleFrames", rustleFrames);
-            SetReference(grassField, "frontOverlay", frontRenderer);
-            SetReference(grassField, "idleFrontSprite", grassFrontSprite);
-            SetSprites(grassField, "rustleFrontFrames", rustleFrontFrames);
+            var grassOcclusion = player.AddComponent<PlayerGrassOcclusion>();
+            SetReference(grassOcclusion, "mover", mover);
+            SetReference(grassOcclusion, "grassField", grassField);
+            SetReference(grassOcclusion, "playerRenderer", playerRenderer);
+            SetReference(grassOcclusion, "spriteMask", spriteMask);
 
             var hudObject = new GameObject("UI - minimal HUD");
             hudObject.AddComponent<GameHud>();
@@ -232,6 +225,33 @@ namespace Halka.Game.Editor
             return sprite;
         }
 
+        private static Sprite CreatePlayerGrassMask()
+        {
+            const int spritePixels = 64;
+            var hiddenPixels = PlayerGrassOcclusion.GrassPlayerOcclusionPixels;
+            if (hiddenPixels <= 0 || hiddenPixels >= spritePixels)
+                throw new InvalidOperationException("Player grass mask height is invalid");
+            var texture = new Texture2D(spritePixels, spritePixels, TextureFormat.RGBA32, false);
+            var pixels = new Color32[spritePixels * spritePixels];
+            for (var y = 0; y < spritePixels; y++)
+            for (var x = 0; x < spritePixels; x++)
+                pixels[y * spritePixels + x] = y < hiddenPixels
+                    ? new Color32(0, 0, 0, 0) : new Color32(255, 255, 255, 255);
+            texture.SetPixels32(pixels);
+            texture.Apply();
+            var png = texture.EncodeToPNG();
+            UnityEngine.Object.DestroyImmediate(texture);
+            if (!File.Exists(PlayerGrassMaskPath) || !File.ReadAllBytes(PlayerGrassMaskPath).SequenceEqual(png))
+            {
+                File.WriteAllBytes(PlayerGrassMaskPath, png);
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            }
+            ConfigureSpriteImport(PlayerGrassMaskPath, SpritePixelsPerUnit);
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(PlayerGrassMaskPath);
+            if (sprite == null) throw new InvalidOperationException("Player grass mask import failed");
+            return sprite;
+        }
+
         private static GameObject CreateGrassPrefab(Sprite sprite)
         {
             var root = new GameObject("GrassDecoration");
@@ -264,6 +284,7 @@ namespace Halka.Game.Editor
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
             PlayerSettings.WebGL.decompressionFallback = false;
             PlayerSettings.WebGL.nameFilesAsHashes = true;
+            PlayerSettings.stripEngineCode = false;
             EditorUserBuildSettings.development = false;
             EditorUserBuildSettings.allowDebugging = false;
         }
@@ -281,6 +302,9 @@ namespace Halka.Game.Editor
                 importer.npotScale == TextureImporterNPOTScale.None &&
                 settings.spriteAlignment == (int)SpriteAlignment.Center &&
                 settings.spritePivot == new Vector2(0.5f, 0.5f)) return;
+            settings.spriteAlignment = (int)SpriteAlignment.Center;
+            settings.spritePivot = new Vector2(0.5f, 0.5f);
+            importer.SetTextureSettings(settings);
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.spritePixelsPerUnit = pixelsPerUnit;
@@ -288,9 +312,6 @@ namespace Halka.Game.Editor
             importer.mipmapEnabled = false;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.npotScale = TextureImporterNPOTScale.None;
-            settings.spriteAlignment = (int)SpriteAlignment.Center;
-            settings.spritePivot = new Vector2(0.5f, 0.5f);
-            importer.SetTextureSettings(settings);
             importer.SaveAndReimport();
         }
 

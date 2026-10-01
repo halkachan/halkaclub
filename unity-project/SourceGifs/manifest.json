@@ -76,7 +76,7 @@
     ]
   },
   "walk_left": {
-    "source_sha256": "19bed16e464ed1330d6215e42efd94c6203584ec1028396788b3fc6a7761ae1d",
+    "source_sha256": "635dadb1304a41fa749417d2c886a1252acd20820645e1c5080b72f3613f8610",
     "size": [
       64,
       64
@@ -90,7 +90,7 @@
     ]
   },
   "walk_right": {
-    "source_sha256": "d6289e728596bc6a4233c290ae7ec0bfc4d614dd450a81fb61f392b33fc892c7",
+    "source_sha256": "ac115e7d1af1aafd9e24bb8f1fbca7e8c8943bdd6f5f5a65e9c0883d149483ae",
     "size": [
       64,
       64
@@ -161,7 +161,6 @@
       90,
       90,
       420
-    ],
-    "front_pixels": 10
+    ]
   }
 }

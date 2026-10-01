@@ -11,15 +11,11 @@ namespace Halka.Game.World
         [SerializeField] private PlayerMover player;
         [SerializeField] private Sprite idleSprite;
         [SerializeField] private Sprite[] rustleFrames;
-        [SerializeField] private SpriteRenderer frontOverlay;
-        [SerializeField] private Sprite idleFrontSprite;
-        [SerializeField] private Sprite[] rustleFrontFrames;
         [SerializeField] private float[] frameSeconds = { 0.09f, 0.09f, 0.09f, 0.09f, 0.42f };
 
         private readonly Dictionary<Vector2Int, SpriteRenderer> grassByCell = new Dictionary<Vector2Int, SpriteRenderer>();
         private readonly Dictionary<Vector2Int, ActiveRustle> active = new Dictionary<Vector2Int, ActiveRustle>();
         private readonly List<Vector2Int> completed = new List<Vector2Int>();
-        private Vector2Int? frontCell;
 
         private sealed class ActiveRustle
         {
@@ -28,6 +24,8 @@ namespace Halka.Game.World
             public float Elapsed;
         }
 
+        public bool HasGrass(Vector2Int cell) => grassByCell.ContainsKey(cell);
+
         private void Awake()
         {
             Initialize();
@@ -35,15 +33,12 @@ namespace Halka.Game.World
 
         private void Initialize()
         {
-            if (world == null || player == null || idleSprite == null || frontOverlay == null ||
-                idleFrontSprite == null || rustleFrames == null || rustleFrontFrames == null ||
-                frameSeconds == null || rustleFrames.Length == 0 ||
-                rustleFrames.Length != frameSeconds.Length ||
-                rustleFrames.Length != rustleFrontFrames.Length)
+            if (world == null || player == null || idleSprite == null || rustleFrames == null ||
+                frameSeconds == null || rustleFrames.Length == 0 || rustleFrames.Length != frameSeconds.Length)
                 throw new InvalidOperationException("Grass field sprites and frame times must match");
 
             for (var i = 0; i < rustleFrames.Length; i++)
-                if (rustleFrames[i] == null || rustleFrontFrames[i] == null || frameSeconds[i] <= 0f)
+                if (rustleFrames[i] == null || frameSeconds[i] <= 0f)
                     throw new InvalidOperationException("Grass rustle has an invalid frame");
 
             active.Clear();
@@ -55,63 +50,25 @@ namespace Halka.Game.World
                 if (!grassByCell.TryAdd(cell, renderer))
                     throw new InvalidOperationException($"Duplicate grass cell: {cell}");
             }
-            if (player.IsMoving)
-            {
-                frontCell = null;
-                frontOverlay.enabled = false;
-            }
-            else ShowFrontAt(player.Cell);
         }
 
         private void OnEnable()
         {
             if (player != null) player.StepStarted += OnStepStarted;
-            if (player != null) player.StepCompleted += OnStepCompleted;
-            if (grassByCell.Count > 0 && !player.IsMoving)
-                ShowFrontAt(player.Cell);
         }
 
         private void OnDisable()
         {
             if (player != null) player.StepStarted -= OnStepStarted;
-            if (player != null) player.StepCompleted -= OnStepCompleted;
             foreach (var state in active.Values) state.Renderer.sprite = idleSprite;
             active.Clear();
-            if (frontOverlay != null)
-            {
-                frontOverlay.sprite = idleFrontSprite;
-                frontOverlay.enabled = false;
-            }
-            frontCell = null;
         }
 
         private void OnStepStarted(Vector2Int targetCell)
         {
-            frontCell = null;
-            frontOverlay.enabled = false;
             if (!grassByCell.TryGetValue(targetCell, out var renderer)) return;
             renderer.sprite = rustleFrames[0];
             active[targetCell] = new ActiveRustle { Renderer = renderer };
-        }
-
-        private void OnStepCompleted(Vector2Int cell)
-        {
-            ShowFrontAt(cell);
-        }
-
-        private void ShowFrontAt(Vector2Int cell)
-        {
-            if (!grassByCell.ContainsKey(cell))
-            {
-                frontCell = null;
-                frontOverlay.enabled = false;
-                return;
-            }
-            frontCell = cell;
-            frontOverlay.transform.parent.position = world.CellToWorld(cell);
-            frontOverlay.sprite = active.TryGetValue(cell, out var state)
-                ? rustleFrontFrames[state.Frame] : idleFrontSprite;
-            frontOverlay.enabled = true;
         }
 
         private void Update()
@@ -134,12 +91,10 @@ namespace Halka.Game.World
                     if (state.Frame == rustleFrames.Length)
                     {
                         state.Renderer.sprite = idleSprite;
-                        if (frontCell == pair.Key) frontOverlay.sprite = idleFrontSprite;
                         completed.Add(pair.Key);
                         break;
                     }
                     state.Renderer.sprite = rustleFrames[state.Frame];
-                    if (frontCell == pair.Key) frontOverlay.sprite = rustleFrontFrames[state.Frame];
                 }
             }
             foreach (var cell in completed) active.Remove(cell);

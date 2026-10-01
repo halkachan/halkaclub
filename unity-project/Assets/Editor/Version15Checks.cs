@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Halka.Game.Core;
@@ -132,50 +133,39 @@ namespace Halka.Game.Editor
                 !actualGrassCells.Contains(new Vector2Int(1, 1)) &&
                 actualGrassCells.Count == 21 * 13 - 1,
                 "start cell covered and stone cell excluded");
-            var frontRoot = GameObject.Find("Grass Front Overlay").transform;
-            var frontOverlay = frontRoot.GetComponentInChildren<SpriteRenderer>();
-            Check(frontOverlay != null && frontOverlay.sortingOrder == 20 &&
-                frontRoot.parent == null &&
-                frontOverlay.transform.parent == frontRoot &&
-                frontOverlay.transform.localPosition == Vector3.zero &&
-                frontOverlay.transform.position == world.CellToWorld(Vector2Int.zero) &&
-                frontRoot.position == world.CellToWorld(Vector2Int.zero) &&
-                frontOverlay.GetComponent<Collider2D>() == null &&
+            Check(GameObject.Find("Grass Front Overlay") == null &&
                 UnityEngine.Object.FindObjectsByType<GrassField2D>(FindObjectsSortMode.None).Length == 1 &&
                 UnityEngine.Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None)
-                    .Count(renderer => renderer.sortingOrder == 20) == 1,
-                "one world-space foreground overlay without collider");
+                    .All(renderer => renderer.sortingOrder != 20),
+                "foreground grass overlay removed");
             Check(GameObject.Find("FirstDay - small ground").GetComponent<SpriteRenderer>().sortingOrder == -10 &&
                 grid.sortingOrder == -9 && stone.GetComponent<SpriteRenderer>().sortingOrder == 2 &&
                 artwork.GetComponent<SpriteRenderer>().sortingOrder == 10,
-                "ground grid grass back stone player grass front render order");
+                "ground grid grass stone player render order");
+            var occlusion = player.GetComponent<PlayerGrassOcclusion>();
+            var playerMask = player.GetComponentInChildren<SpriteMask>();
+            Check(occlusion != null && playerMask != null &&
+                playerMask.transform.parent == artwork && playerMask.transform.localPosition == Vector3.zero &&
+                playerMask.sprite.rect.size == new Vector2(64f, 64f) &&
+                playerMask.sprite.pivot == new Vector2(32f, 32f) &&
+                PlayerGrassOcclusion.GrassPlayerOcclusionPixels == 10 &&
+                artwork.GetComponent<SpriteRenderer>().maskInteraction == SpriteMaskInteraction.None,
+                "single player-only ten-pixel foot mask without artwork movement");
+            var maskPixels = new Texture2D(2, 2);
+            maskPixels.LoadImage(File.ReadAllBytes("Assets/Content/World/player_grass_mask.png"));
+            Check(maskPixels.width == 64 && maskPixels.height == 64 &&
+                maskPixels.GetPixel(32, 0).a == 0f && maskPixels.GetPixel(32, 9).a == 0f &&
+                maskPixels.GetPixel(32, 10).a == 1f && maskPixels.GetPixel(32, 63).a == 1f,
+                "mask hides exactly bottom ten canvas pixels");
+            UnityEngine.Object.DestroyImmediate(maskPixels);
             var rustle = new SerializedObject(grassField);
             var rustleFrames = rustle.FindProperty("rustleFrames");
-            var rustleFrontFrames = rustle.FindProperty("rustleFrontFrames");
             var frameTimes = rustle.FindProperty("frameSeconds");
-            var idleFront = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/World/grass_front.png");
-            Check(rustleFrames.arraySize == 5 && rustleFrontFrames.arraySize == 5 &&
+            Check(rustleFrames.arraySize == 5 &&
                 frameTimes.arraySize == 5 &&
                 rustle.FindProperty("idleSprite").objectReferenceValue ==
-                    AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/World/grass.png") &&
-                rustle.FindProperty("frontOverlay").objectReferenceValue == frontOverlay &&
-                rustle.FindProperty("idleFrontSprite").objectReferenceValue == idleFront &&
-                idleFront.texture.width == 32 && idleFront.texture.height == 32 &&
-                Mathf.Approximately(idleFront.pixelsPerUnit, 64f) &&
-                idleFront.pivot == new Vector2(16f, 16f) &&
-                idleFront.pivot == AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/World/grass.png").pivot,
-                "five paired rustle frames and aligned idle grass sprites");
-            var frontImporter = (TextureImporter)AssetImporter.GetAtPath("Assets/Content/World/grass_front.png");
-            var frontSettings = new TextureImporterSettings();
-            frontImporter.ReadTextureSettings(frontSettings);
-            Check(frontImporter.textureType == TextureImporterType.Sprite &&
-                frontImporter.spriteImportMode == SpriteImportMode.Single &&
-                frontImporter.filterMode == FilterMode.Point && !frontImporter.mipmapEnabled &&
-                frontImporter.textureCompression == TextureImporterCompression.Uncompressed &&
-                frontImporter.npotScale == TextureImporterNPOTScale.None &&
-                frontSettings.spriteAlignment == grassSettings.spriteAlignment &&
-                frontSettings.spritePivot == grassSettings.spritePivot,
-                "front sprite pixel import");
+                    AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/World/grass.png"),
+                "five grass rustle frames without front overlay state");
             var expectedMilliseconds = new[] { 90, 90, 90, 90, 420 };
             for (var i = 0; i < rustleFrames.arraySize; i++)
             {
@@ -183,10 +173,6 @@ namespace Halka.Game.Editor
                 var importer = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(sprite));
                 var backSettings = new TextureImporterSettings();
                 importer.ReadTextureSettings(backSettings);
-                var frontSprite = (Sprite)rustleFrontFrames.GetArrayElementAtIndex(i).objectReferenceValue;
-                var pairedImporter = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(frontSprite));
-                var pairedSettings = new TextureImporterSettings();
-                pairedImporter.ReadTextureSettings(pairedSettings);
                 Check(sprite.texture.width == 32 && sprite.texture.height == 32 &&
                     Mathf.Approximately(sprite.pixelsPerUnit, 64f) &&
                     sprite.pivot == new Vector2(16f, 16f) &&
@@ -197,17 +183,8 @@ namespace Halka.Game.Editor
                     importer.textureCompression == TextureImporterCompression.Uncompressed &&
                     importer.npotScale == TextureImporterNPOTScale.None &&
                     Mathf.Approximately(frameTimes.GetArrayElementAtIndex(i).floatValue,
-                        expectedMilliseconds[i] / 1000f) &&
-                    frontSprite.texture.width == 32 && frontSprite.texture.height == 32 &&
-                    Mathf.Approximately(frontSprite.pixelsPerUnit, sprite.pixelsPerUnit) &&
-                    sprite.pivot == idleFront.pivot && frontSprite.pivot == sprite.pivot &&
-                    pairedSettings.spriteAlignment == (int)SpriteAlignment.Center &&
-                    pairedImporter.textureType == TextureImporterType.Sprite &&
-                    pairedImporter.spriteImportMode == SpriteImportMode.Single &&
-                    pairedImporter.filterMode == FilterMode.Point && !pairedImporter.mipmapEnabled &&
-                    pairedImporter.textureCompression == TextureImporterCompression.Uncompressed &&
-                    pairedImporter.npotScale == TextureImporterNPOTScale.None,
-                    "paired rustle frame import and GIF timing");
+                        expectedMilliseconds[i] / 1000f),
+                    "rustle frame import and GIF timing");
             }
             foreach (var clip in new[] { "frontIdle", "backIdle", "leftIdle", "rightIdle",
                 "frontWalk", "backWalk", "leftWalk", "rightWalk" })
@@ -371,76 +348,96 @@ namespace Halka.Game.Editor
             var flags = BindingFlags.NonPublic | BindingFlags.Instance;
             typeof(GrassField2D).GetMethod("Initialize", flags).Invoke(grassField, null);
             var startRustle = typeof(GrassField2D).GetMethod("OnStepStarted", flags);
-            var completeStep = typeof(GrassField2D).GetMethod("OnStepCompleted", flags);
             var advanceRustle = typeof(GrassField2D).GetMethod("AdvanceAnimations", flags);
             var idleGrass = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/World/grass.png");
             var firstGrass = FindGrass(grassGroup.transform, world, Vector2Int.zero);
             var secondGrass = FindGrass(grassGroup.transform, world, Vector2Int.up);
-            Check(frontOverlay.enabled && frontRoot.position == world.CellToWorld(Vector2Int.zero) &&
-                frontOverlay.sprite == idleFront && firstGrass.sprite == idleGrass,
-                "initial grass is behind player with only current cell foot overlay");
+            Check(grassField.HasGrass(Vector2Int.zero) && grassField.HasGrass(Vector2Int.up) &&
+                !grassField.HasGrass(new Vector2Int(1, 1)) && firstGrass.sprite == idleGrass,
+                "occupancy query distinguishes grass from stone without names");
+            typeof(PlayerGrassOcclusion).GetMethod("Awake", flags).Invoke(occlusion, null);
+            var maskStepStart = typeof(PlayerGrassOcclusion).GetMethod("OnStepStarted", flags);
+            var maskStepComplete = typeof(PlayerGrassOcclusion).GetMethod("OnStepCompleted", flags);
+            Check(occlusion.IsMasked && playerMask.enabled &&
+                UnityEngine.Object.FindObjectsByType<SpriteMask>(FindObjectsSortMode.None).Length == 1 &&
+                playerMask.isCustomRangeActive &&
+                playerMask.frontSortingOrder == 11 && playerMask.backSortingOrder == 9 &&
+                playerMask.frontSortingLayerID == artwork.GetComponent<SpriteRenderer>().sortingLayerID &&
+                stone.GetComponent<SpriteRenderer>().maskInteraction == SpriteMaskInteraction.None &&
+                firstGrass.maskInteraction == SpriteMaskInteraction.None,
+                "only player is masked on initial grass cell");
+            var maskedRenderer = artwork.GetComponent<SpriteRenderer>();
+            var originalPlayerFrame = maskedRenderer.sprite;
+            foreach (var clip in new[] { "frontIdle", "backIdle", "leftIdle", "rightIdle",
+                "frontWalk", "backWalk", "leftWalk", "rightWalk" })
+            {
+                var frames = new SerializedObject(visual).FindProperty(clip);
+                for (var i = 0; i < frames.arraySize; i++)
+                {
+                    maskedRenderer.sprite = (Sprite)frames.GetArrayElementAtIndex(i).objectReferenceValue;
+                    Check(occlusion.IsMasked && playerMask.enabled &&
+                        artwork.localPosition == new Vector3(0f, ProjectBuilder.ArtworkFootOffset, 0f),
+                        clip + " mask survives every idle and walk frame");
+                }
+            }
+            maskedRenderer.sprite = originalPlayerFrame;
             startRustle.Invoke(grassField, new object[] { Vector2Int.up });
-            Check(!frontOverlay.enabled && secondGrass.sprite ==
+            maskStepStart.Invoke(occlusion, new object[] { Vector2Int.up });
+            Check(occlusion.IsMasked && secondGrass.sprite ==
                 rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
                 firstGrass.sprite == idleGrass,
-                "departure hides front while only target back begins rustling");
+                "grass-to-grass step retains foot mask and starts only target rustle");
             advanceRustle.Invoke(grassField, new object[] { 0.09f });
-            Check(!frontOverlay.enabled && secondGrass.sprite ==
+            Check(occlusion.IsMasked && secondGrass.sprite ==
                 rustleFrames.GetArrayElementAtIndex(1).objectReferenceValue,
-                "front remains hidden during step even as back animates");
-            completeStep.Invoke(grassField, new object[] { Vector2Int.up });
-            Check(frontOverlay.enabled && frontRoot.position == world.CellToWorld(Vector2Int.up) &&
-                frontOverlay.sprite == rustleFrontFrames.GetArrayElementAtIndex(1).objectReferenceValue,
-                "arrival shows matching current back frame at destination");
+                "foot mask remains on during rustle frame changes");
+            maskStepComplete.Invoke(occlusion, new object[] { Vector2Int.up });
+            Check(occlusion.IsMasked, "grass arrival remains masked");
             startRustle.Invoke(grassField, new object[] { Vector2Int.zero });
-            Check(!frontOverlay.enabled && firstGrass.sprite ==
+            maskStepStart.Invoke(occlusion, new object[] { Vector2Int.zero });
+            Check(occlusion.IsMasked && firstGrass.sprite ==
                 rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
                 secondGrass.sprite == rustleFrames.GetArrayElementAtIndex(1).objectReferenceValue,
-                "next departure clears previous front while old back continues");
-            completeStep.Invoke(grassField, new object[] { Vector2Int.zero });
-            Check(frontOverlay.enabled && frontRoot.position == world.CellToWorld(Vector2Int.zero) &&
-                frontOverlay.sprite == rustleFrontFrames.GetArrayElementAtIndex(0).objectReferenceValue,
-                "next arrival shows only destination front");
+                "consecutive grass step stays masked while prior back continues");
+            maskStepComplete.Invoke(occlusion, new object[] { Vector2Int.zero });
             advanceRustle.Invoke(grassField, new object[] { 1f });
-            Check(firstGrass.sprite == idleGrass && secondGrass.sprite == idleGrass &&
-                frontOverlay.enabled && frontOverlay.sprite == idleFront,
-                "one-shot animations return to original grass while occupied front remains");
+            Check(firstGrass.sprite == idleGrass && secondGrass.sprite == idleGrass && occlusion.IsMasked,
+                "one-shot rustle returns to idle while foot mask stays on");
             startRustle.Invoke(grassField, new object[] { Vector2Int.zero });
-            Check(!frontOverlay.enabled && firstGrass.sprite ==
+            Check(occlusion.IsMasked && firstGrass.sprite ==
                 rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue,
-                "re-entering grass restarts one-shot back without early front");
-            completeStep.Invoke(grassField, new object[] { Vector2Int.zero });
-            Check(frontOverlay.enabled &&
-                frontOverlay.sprite == rustleFrontFrames.GetArrayElementAtIndex(0).objectReferenceValue,
-                "re-entering grass shows matched front after arrival");
+                "re-entering grass restarts one-shot back with foot mask");
             advanceRustle.Invoke(grassField, new object[] { 1f });
             var playerPosition = player.transform.position;
             foreach (var direction in new[] { Vector2Int.up, Vector2Int.down,
                 Vector2Int.left, Vector2Int.right })
             {
                 startRustle.Invoke(grassField, new object[] { direction });
-                Check(!frontOverlay.enabled, "four-direction entry has no in-flight foreground");
-                completeStep.Invoke(grassField, new object[] { direction });
-                Check(frontOverlay.enabled && frontRoot.position == world.CellToWorld(direction) &&
-                    frontOverlay.sprite == rustleFrontFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
-                    player.transform.position == playerPosition &&
+                maskStepStart.Invoke(occlusion, new object[] { direction });
+                Check(occlusion.IsMasked && player.transform.position == playerPosition &&
                     artwork.localPosition == new Vector3(0f, ProjectBuilder.ArtworkFootOffset, 0f),
-                    "four-direction entry keeps overlay cell-aligned and player transform fixed");
+                    "four-direction rustle keeps mask on and player transform fixed");
+                maskStepComplete.Invoke(occlusion, new object[] { direction });
+                Check(occlusion.IsMasked, "four-direction grass arrival remains masked");
             }
             foreach (var cell in new[] { new Vector2Int(-1, 0), new Vector2Int(-2, 0),
                 new Vector2Int(-3, 0), new Vector2Int(-4, 0), new Vector2Int(-5, 0) })
             {
                 startRustle.Invoke(grassField, new object[] { cell });
-                Check(!frontOverlay.enabled, "consecutive departure removes last front");
-                completeStep.Invoke(grassField, new object[] { cell });
-                Check(frontOverlay.enabled && frontRoot.position == world.CellToWorld(cell) &&
-                    UnityEngine.Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None)
-                        .Count(renderer => renderer.sortingOrder == 20) == 1,
-                    "five consecutive grass cells keep one current front overlay");
+                maskStepStart.Invoke(occlusion, new object[] { cell });
+                Check(occlusion.IsMasked, "five consecutive grass steps never unmask");
+                maskStepComplete.Invoke(occlusion, new object[] { cell });
+                Check(occlusion.IsMasked, "five consecutive grass arrivals stay masked");
             }
-            startRustle.Invoke(grassField, new object[] { new Vector2Int(1, 1) });
-            completeStep.Invoke(grassField, new object[] { new Vector2Int(1, 1) });
-            Check(!frontOverlay.enabled, "stone cell has no grass front");
+            maskStepStart.Invoke(occlusion, new object[] { new Vector2Int(1, 1) });
+            Check(occlusion.IsMasked, "grass-to-non-grass step stays masked until arrival");
+            maskStepComplete.Invoke(occlusion, new object[] { new Vector2Int(1, 1) });
+            Check(!occlusion.IsMasked && !playerMask.enabled,
+                "non-grass destination restores complete player sprite");
+            maskStepStart.Invoke(occlusion, new object[] { Vector2Int.zero });
+            Check(occlusion.IsMasked, "non-grass-to-grass step masks from departure");
+            maskStepComplete.Invoke(occlusion, new object[] { Vector2Int.zero });
+            Check(occlusion.IsMasked, "grass destination remains masked");
             advanceRustle.Invoke(grassField, new object[] { 1f });
             Debug.Log("HALKA ver1.5 checks passed.");
         }
