@@ -288,13 +288,19 @@ namespace Halka.Game.Editor
             var report = BuildPipeline.BuildPlayer(options);
             if (report.summary.result != BuildResult.Succeeded)
                 throw new InvalidOperationException($"WebGL build failed: {report.summary.result}, {report.summary.totalErrors} errors");
+            var wasmFiles = Directory.GetFiles(Path.Combine(output, "Build"), "*.wasm");
+            var dataFiles = Directory.GetFiles(Path.Combine(output, "Build"), "*.data");
+            if (wasmFiles.Length != 1 || dataFiles.Length != 1)
+                throw new InvalidOperationException("Expected one WebGL wasm and data file for cache refresh");
+            var buildId = Path.GetFileNameWithoutExtension(wasmFiles[0]) + "-" +
+                Path.GetFileNameWithoutExtension(dataFiles[0]);
             var gamePagePath = Path.GetFullPath(Path.Combine(output, "..", "index.html"));
             var page = File.ReadAllText(gamePagePath);
             const string framePattern = "(<iframe\\s+src=\"webgl/)(?:\\?[^\"]*)?(\")";
             if (!Regex.IsMatch(page, framePattern))
                 throw new InvalidOperationException("HALKA WORLD iframe was not found for cache refresh");
             File.WriteAllText(gamePagePath, Regex.Replace(page, framePattern,
-                "$1?v=" + GameVersion.Value + "$2"));
+                "$1?v=" + GameVersion.Value + "&build=" + buildId + "$2"));
             Debug.Log($"HALKA WebGL build succeeded: {output}");
         }
 

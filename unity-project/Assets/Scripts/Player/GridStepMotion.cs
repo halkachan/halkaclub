@@ -11,8 +11,11 @@ namespace Halka.Game.Player
 
         public Vector2Int Cell { get; private set; }
         public bool IsMoving { get; private set; }
+        public Vector2Int StepFromCell => Cell;
+        public Vector2Int StepToCell => IsMoving ? target : Cell;
+        public float StepProgressNormalized => IsMoving ? elapsed / duration : 1f;
         public Vector2 Position => IsMoving
-            ? Vector2.Lerp(Cell, target, elapsed / duration)
+            ? Vector2.Lerp(Cell, target, StepProgressNormalized)
             : Cell;
 
         public GridStepMotion(Vector2Int startingCell)

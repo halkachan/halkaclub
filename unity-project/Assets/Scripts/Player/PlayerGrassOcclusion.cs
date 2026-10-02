@@ -27,39 +27,30 @@ namespace Halka.Game.Player
             spriteMask.backSortingLayerID = playerRenderer.sortingLayerID;
             spriteMask.frontSortingOrder = playerRenderer.sortingOrder + 1;
             spriteMask.backSortingOrder = playerRenderer.sortingOrder - 1;
-            SetMasked(grassField.HasGrass(mover.Cell));
+            RefreshMask();
         }
 
-        private void OnEnable()
+        private void LateUpdate()
         {
-            if (mover == null) return;
-            mover.StepStarted += OnStepStarted;
-            mover.StepCompleted += OnStepCompleted;
+            RefreshMask();
         }
 
         private void OnDisable()
         {
-            if (mover != null)
-            {
-                mover.StepStarted -= OnStepStarted;
-                mover.StepCompleted -= OnStepCompleted;
-            }
             if (playerRenderer != null) playerRenderer.maskInteraction = SpriteMaskInteraction.None;
             if (spriteMask != null) spriteMask.enabled = false;
         }
 
-        private void OnStepStarted(Vector2Int destinationCell)
+        private void RefreshMask()
         {
-            SetMasked(grassField.HasGrass(mover.Cell) || grassField.HasGrass(destinationCell));
-        }
-
-        private void OnStepCompleted(Vector2Int cell)
-        {
-            SetMasked(grassField.HasGrass(cell));
+            var visualCell = mover.IsMoving && mover.StepProgressNormalized >= 0.5f
+                ? mover.StepToCell : mover.Cell;
+            SetMasked(grassField.HasGrass(visualCell));
         }
 
         private void SetMasked(bool masked)
         {
+            if (spriteMask.enabled == masked && IsMasked == masked) return;
             spriteMask.enabled = masked;
             playerRenderer.maskInteraction = masked
                 ? SpriteMaskInteraction.VisibleInsideMask : SpriteMaskInteraction.None;

@@ -643,8 +643,8 @@ namespace Halka.Game.Editor
                 !grassField.HasGrass(dirtCell) && firstGrass.sprite == idleGrass,
                 "occupancy query excludes three obstacle roots and dirt without names");
             typeof(PlayerGrassOcclusion).GetMethod("Awake", flags).Invoke(occlusion, null);
-            var maskStepStart = typeof(PlayerGrassOcclusion).GetMethod("OnStepStarted", flags);
-            var maskStepComplete = typeof(PlayerGrassOcclusion).GetMethod("OnStepCompleted", flags);
+            var refreshMask = typeof(PlayerGrassOcclusion).GetMethod("LateUpdate", flags);
+            Check(refreshMask != null, "mask refreshes after the player's interpolated movement");
             Check(occlusion.IsMasked && playerMask.enabled &&
                 UnityEngine.Object.FindObjectsByType<SpriteMask>(FindObjectsSortMode.None).Length == 1 &&
                 playerMask.isCustomRangeActive &&
@@ -669,79 +669,73 @@ namespace Halka.Game.Editor
             }
             maskedRenderer.sprite = originalPlayerFrame;
             startRustle.Invoke(grassField, new object[] { Vector2Int.up });
-            maskStepStart.Invoke(occlusion, new object[] { Vector2Int.up });
-            Check(occlusion.IsMasked && secondGrass.sprite ==
+            Check(secondGrass.sprite ==
                 rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
                 firstGrass.sprite == idleGrass,
-                "grass-to-grass step retains foot mask and starts only target rustle");
+                "grass step starts only destination rustle independently of the mask");
+            VerifyMaskStep(world, player, occlusion, grassField, Vector2Int.zero,
+                Vector2Int.up, true, true, refreshMask);
             advanceRustle.Invoke(grassField, new object[] { 0.09f });
             Check(occlusion.IsMasked && secondGrass.sprite ==
                 rustleFrames.GetArrayElementAtIndex(1).objectReferenceValue,
                 "foot mask remains on during rustle frame changes");
-            maskStepComplete.Invoke(occlusion, new object[] { Vector2Int.up });
-            Check(occlusion.IsMasked, "grass arrival remains masked");
-            startRustle.Invoke(grassField, new object[] { Vector2Int.zero });
-            maskStepStart.Invoke(occlusion, new object[] { Vector2Int.zero });
-            Check(occlusion.IsMasked && firstGrass.sprite ==
-                rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
-                secondGrass.sprite == rustleFrames.GetArrayElementAtIndex(1).objectReferenceValue,
-                "consecutive grass step stays masked while prior back continues");
-            maskStepComplete.Invoke(occlusion, new object[] { Vector2Int.zero });
             advanceRustle.Invoke(grassField, new object[] { 1f });
-            Check(firstGrass.sprite == idleGrass && secondGrass.sprite == idleGrass && occlusion.IsMasked,
-                "one-shot rustle returns to idle while foot mask stays on");
-            startRustle.Invoke(grassField, new object[] { Vector2Int.zero });
-            Check(occlusion.IsMasked && firstGrass.sprite ==
-                rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue,
-                "re-entering grass restarts one-shot back with foot mask");
-            advanceRustle.Invoke(grassField, new object[] { 1f });
-            var playerPosition = player.transform.position;
-            foreach (var direction in new[] { Vector2Int.up,
-                Vector2Int.left, Vector2Int.right })
+            Check(secondGrass.sprite == idleGrass && occlusion.IsMasked,
+                "one-shot grass rustle returns to idle without changing mask rules");
+
+            // In each direction the moving foot changes surface only at the half-step boundary.
+            foreach (var neighbor in new[] { dirtCell + Vector2Int.up,
+                dirtCell + Vector2Int.down, dirtCell + Vector2Int.left,
+                dirtCell + Vector2Int.right })
             {
-                startRustle.Invoke(grassField, new object[] { direction });
-                maskStepStart.Invoke(occlusion, new object[] { direction });
-                Check(occlusion.IsMasked && player.transform.position == playerPosition &&
-                    artwork.localPosition == new Vector3(0f, ProjectBuilder.ArtworkFootOffset, 0f),
-                    "four-direction rustle keeps mask on and player transform fixed");
-                maskStepComplete.Invoke(occlusion, new object[] { direction });
-                Check(occlusion.IsMasked, "four-direction grass arrival remains masked");
+                VerifyMaskStep(world, player, occlusion, grassField, dirtCell,
+                    neighbor, false, true, refreshMask);
+                VerifyMaskStep(world, player, occlusion, grassField, neighbor,
+                    dirtCell, true, false, refreshMask);
             }
-            foreach (var cell in new[] { new Vector2Int(-1, 0), new Vector2Int(-2, 0),
-                new Vector2Int(-3, 0), new Vector2Int(-4, 0), new Vector2Int(-5, 0) })
-            {
-                startRustle.Invoke(grassField, new object[] { cell });
-                maskStepStart.Invoke(occlusion, new object[] { cell });
-                Check(occlusion.IsMasked, "five consecutive grass steps never unmask");
-                maskStepComplete.Invoke(occlusion, new object[] { cell });
-                Check(occlusion.IsMasked, "five consecutive grass arrivals stay masked");
-            }
-            maskStepStart.Invoke(occlusion, new object[] { new Vector2Int(1, 1) });
-            Check(occlusion.IsMasked, "grass-to-non-grass step stays masked until arrival");
-            maskStepComplete.Invoke(occlusion, new object[] { new Vector2Int(1, 1) });
-            Check(!occlusion.IsMasked && !playerMask.enabled,
-                "non-grass destination restores complete player sprite");
-            maskStepStart.Invoke(occlusion, new object[] { Vector2Int.zero });
-            Check(occlusion.IsMasked, "non-grass-to-grass step masks from departure");
-            maskStepComplete.Invoke(occlusion, new object[] { Vector2Int.zero });
-            Check(occlusion.IsMasked, "grass destination remains masked");
+
+            // Grass A -> dirt -> Grass B has a sustained unmasked interval over dirt.
+            var grassBelowDirt = dirtCell + Vector2Int.down;
+            VerifyMaskStep(world, player, occlusion, grassField, Vector2Int.zero,
+                dirtCell, true, false, refreshMask);
             startRustle.Invoke(grassField, new object[] { dirtCell });
-            maskStepStart.Invoke(occlusion, new object[] { dirtCell });
-            Check(occlusion.IsMasked && !grassField.HasGrass(dirtCell),
-                "grass-to-dirt step remains masked and does not rustle dirt");
-            maskStepComplete.Invoke(occlusion, new object[] { dirtCell });
-            Check(!occlusion.IsMasked && !playerMask.enabled,
-                "dirt arrival restores the complete player sprite");
-            typeof(PlayerMover).GetField("motion", flags)
-                .SetValue(player, new GridStepMotion(dirtCell));
-            startRustle.Invoke(grassField, new object[] { Vector2Int.zero });
-            maskStepStart.Invoke(occlusion, new object[] { Vector2Int.zero });
-            Check(occlusion.IsMasked && firstGrass.sprite ==
-                rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue,
-                "dirt-to-grass step masks and rustles only destination grass");
-            maskStepComplete.Invoke(occlusion, new object[] { Vector2Int.zero });
-            Check(occlusion.IsMasked, "return to grass remains masked");
+            Check(!occlusion.IsMasked && !grassField.HasGrass(dirtCell),
+                "arriving on dirt is unmasked and dirt never rustles");
+            startRustle.Invoke(grassField, new object[] { grassBelowDirt });
+            Check(FindGrass(grassGroup.transform, world, grassBelowDirt).sprite ==
+                rustleFrames.GetArrayElementAtIndex(0).objectReferenceValue &&
+                !occlusion.IsMasked,
+                "destination grass rustles at step start while dirt foot is still visible");
+            VerifyMaskStep(world, player, occlusion, grassField, dirtCell,
+                grassBelowDirt, false, true, refreshMask);
             advanceRustle.Invoke(grassField, new object[] { 1f });
+
+            var grassRun = new[] { new Vector2Int(-5, 0), new Vector2Int(-4, 0),
+                new Vector2Int(-3, 0), new Vector2Int(-2, 0), new Vector2Int(-1, 0),
+                Vector2Int.zero };
+            for (var i = 0; i < grassRun.Length - 1; i++)
+            {
+                VerifyMaskStep(world, player, occlusion, grassField,
+                    grassRun[i], grassRun[i + 1], true, true, refreshMask);
+            }
+
+            // A temporary second non-grass cell models the next dirt tile without
+            // adding it to the published scene or changing the final grass count.
+            var grassCells = (System.Collections.Generic.Dictionary<Vector2Int, SpriteRenderer>)
+                typeof(GrassField2D).GetField("grassByCell", flags).GetValue(grassField);
+            var temporaryGrass = grassCells[grassBelowDirt];
+            grassCells.Remove(grassBelowDirt);
+            try
+            {
+                VerifyMaskStep(world, player, occlusion, grassField, dirtCell,
+                    grassBelowDirt, false, false, refreshMask);
+            }
+            finally
+            {
+                grassCells.Add(grassBelowDirt, temporaryGrass);
+            }
+            Check(grassField.HasGrass(grassBelowDirt),
+                "temporary second dirt simulation restored published grass");
             Debug.Log("HALKA ver1.9 checks passed.");
         }
 
@@ -751,6 +745,63 @@ namespace Halka.Game.Editor
                 if (world.WorldToCell(child.position) == cell)
                     return child.GetComponentInChildren<SpriteRenderer>();
             throw new InvalidOperationException($"Missing grass cell: {cell}");
+        }
+
+        private static void VerifyMaskStep(GridWorld2D world, PlayerMover player,
+            PlayerGrassOcclusion occlusion, GrassField2D grassField,
+            Vector2Int source, Vector2Int destination, bool sourceGrass,
+            bool destinationGrass, MethodInfo refreshMask)
+        {
+            Check(grassField.HasGrass(source) == sourceGrass &&
+                grassField.HasGrass(destination) == destinationGrass,
+                "test surface matches the step endpoints");
+            var motion = new GridStepMotion(source);
+            typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(player, motion);
+            player.transform.position = world.CellToWorld(source);
+            refreshMask.Invoke(occlusion, null);
+            Check(occlusion.IsMasked == sourceGrass,
+                "stationary foot mask follows the current cell");
+            Check(motion.TryBegin(destination - source, world.CanEnter,
+                PlayerMover.DefaultStepSeconds), "mask test begins an adjacent step");
+            Check(player.StepFromCell == source && player.StepToCell == destination &&
+                Mathf.Approximately(player.StepProgressNormalized, 0f),
+                "mover exposes source, destination and normalized progress");
+            refreshMask.Invoke(occlusion, null);
+            Check(occlusion.IsMasked == sourceGrass,
+                "step start retains the source surface");
+            motion.Advance(PlayerMover.DefaultStepSeconds * 0.49f);
+            player.transform.position = world.CellToWorld(motion.Position);
+            refreshMask.Invoke(occlusion, null);
+            Check(player.StepProgressNormalized < 0.5f &&
+                occlusion.IsMasked == sourceGrass,
+                "progress 0.49 retains the source surface");
+            motion.Advance(PlayerMover.DefaultStepSeconds * 0.02f);
+            player.transform.position = world.CellToWorld(motion.Position);
+            refreshMask.Invoke(occlusion, null);
+            Check(player.StepProgressNormalized >= 0.5f &&
+                occlusion.IsMasked == destinationGrass,
+                "progress 0.51 uses the destination surface");
+            motion.Advance(PlayerMover.DefaultStepSeconds);
+            player.transform.position = world.CellToWorld(motion.Position);
+            refreshMask.Invoke(occlusion, null);
+            Check(!player.IsMoving && player.Cell == destination &&
+                occlusion.IsMasked == destinationGrass &&
+                player.transform.position == world.CellToWorld(destination) &&
+                player.GetComponentInChildren<SpriteRenderer>().transform.localPosition ==
+                    new Vector3(0f, ProjectBuilder.ArtworkFootOffset, 0f),
+                "arrival keeps destination mask and fixed artwork anchor");
+            motion = new GridStepMotion(source);
+            Check(motion.TryBegin(destination - source, world.CanEnter,
+                PlayerMover.DefaultStepSeconds), "exact-boundary step begins");
+            typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(player, motion);
+            motion.Advance(PlayerMover.DefaultStepSeconds * 0.5f);
+            player.transform.position = world.CellToWorld(motion.Position);
+            refreshMask.Invoke(occlusion, null);
+            Check(Mathf.Approximately(player.StepProgressNormalized, 0.5f) &&
+                occlusion.IsMasked == destinationGrass,
+                "progress exactly 0.5 belongs to the destination");
         }
 
         private static void Check(bool condition, string label)

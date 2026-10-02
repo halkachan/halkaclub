@@ -18,6 +18,9 @@ namespace Halka.Game.Player
         public Vector2Int Cell => motion != null ? motion.Cell : Vector2Int.zero;
         public FacingDirection Facing { get; private set; } = FacingDirection.Down;
         public bool IsMoving => motion != null && motion.IsMoving;
+        public Vector2Int StepFromCell => motion != null ? motion.StepFromCell : Cell;
+        public Vector2Int StepToCell => motion != null ? motion.StepToCell : Cell;
+        public float StepProgressNormalized => motion != null ? motion.StepProgressNormalized : 1f;
         public event Action<Vector2Int> StepStarted;
         public event Action<Vector2Int> StepCompleted;
 
