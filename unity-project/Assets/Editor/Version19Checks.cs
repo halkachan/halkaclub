@@ -708,6 +708,8 @@ namespace Halka.Game.Editor
                 "destination grass rustles at step start while dirt foot is still visible");
             VerifyMaskStep(world, player, occlusion, grassField, dirtCell,
                 grassBelowDirt, false, true, refreshMask);
+            VerifyContinuousMaskRun(world, player, occlusion, grassField,
+                new[] { Vector2Int.zero, dirtCell, grassBelowDirt }, refreshMask);
             advanceRustle.Invoke(grassField, new object[] { 1f });
 
             var grassRun = new[] { new Vector2Int(-5, 0), new Vector2Int(-4, 0),
@@ -718,6 +720,8 @@ namespace Halka.Game.Editor
                 VerifyMaskStep(world, player, occlusion, grassField,
                     grassRun[i], grassRun[i + 1], true, true, refreshMask);
             }
+            VerifyContinuousMaskRun(world, player, occlusion, grassField,
+                grassRun, refreshMask);
 
             // A temporary second non-grass cell models the next dirt tile without
             // adding it to the published scene or changing the final grass count.
@@ -729,6 +733,8 @@ namespace Halka.Game.Editor
             {
                 VerifyMaskStep(world, player, occlusion, grassField, dirtCell,
                     grassBelowDirt, false, false, refreshMask);
+                VerifyContinuousMaskRun(world, player, occlusion, grassField,
+                    new[] { dirtCell, grassBelowDirt }, refreshMask);
             }
             finally
             {
@@ -745,6 +751,37 @@ namespace Halka.Game.Editor
                 if (world.WorldToCell(child.position) == cell)
                     return child.GetComponentInChildren<SpriteRenderer>();
             throw new InvalidOperationException($"Missing grass cell: {cell}");
+        }
+
+        private static void VerifyContinuousMaskRun(GridWorld2D world, PlayerMover player,
+            PlayerGrassOcclusion occlusion, GrassField2D grassField,
+            Vector2Int[] path, MethodInfo refreshMask)
+        {
+            var motion = new GridStepMotion(path[0]);
+            typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(player, motion);
+            for (var i = 1; i < path.Length; i++)
+            {
+                var from = path[i - 1];
+                var to = path[i];
+                Check(motion.Cell == from && motion.TryBegin(to - from,
+                    world.CanEnter, PlayerMover.DefaultStepSeconds),
+                    "continuous mask run begins each adjacent step without resetting motion");
+                foreach (var progress in new[] { 0f, 0.49f, 0.51f, 1f })
+                {
+                    var advance = progress == 0f ? 0f :
+                        progress == 0.49f ? 0.49f :
+                        progress == 0.51f ? 0.02f : 0.49f;
+                    motion.Advance(PlayerMover.DefaultStepSeconds * advance);
+                    player.transform.position = world.CellToWorld(motion.Position);
+                    refreshMask.Invoke(occlusion, null);
+                    var visualCell = progress < 0.5f ? from : to;
+                    Check(occlusion.IsMasked == grassField.HasGrass(visualCell),
+                        "continuous mask run follows the visual foot cell at each frame sample");
+                }
+                Check(!motion.IsMoving && motion.Cell == to,
+                    "continuous mask run arrives before immediately starting the next step");
+            }
         }
 
         private static void VerifyMaskStep(GridWorld2D world, PlayerMover player,
