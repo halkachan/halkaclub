@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Halka.Game.CameraControl;
 using Halka.Game.Core;
 using Halka.Game.Input;
@@ -23,6 +24,7 @@ namespace Halka.Game.Editor
         private const string StonePath = "Assets/Content/World/stone.png";
         private const string FlowerPath = "Assets/Content/World/flower.png";
         private const string TreePath = "Assets/Content/World/tree.png";
+        private const string DirtPath = "Assets/Content/World/dirt.png";
         private const string GrassPath = "Assets/Content/World/grass.png";
         private const string GrassRustlePath = "Assets/Content/World/grass_rustle";
         private const string FootstepPath = "Assets/Content/Audio/footstep_one_step.wav";
@@ -34,9 +36,10 @@ namespace Halka.Game.Editor
         internal const float ArtworkFootOffset = GridWorld2D.TileWorldSize / 2f;
         internal static readonly Vector2Int FlowerCell = new Vector2Int(-3, 1);
         internal static readonly Vector2Int TreeRootCell = new Vector2Int(5, 1);
+        internal static readonly Vector2Int[] DirtCells = { new Vector2Int(0, -1) };
         private static readonly Vector2 StoneOpaquePixels = new Vector2(28f, 20f);
 
-        [MenuItem("HALKA/Prepare ver1.8 scene")]
+        [MenuItem("HALKA/Prepare ver1.9 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -56,6 +59,10 @@ namespace Halka.Game.Editor
             var treeSprite = AssetDatabase.LoadAssetAtPath<Sprite>(TreePath);
             if (treeSprite == null || treeSprite.rect.size != new Vector2(96f, 128f))
                 throw new InvalidOperationException("Tree must be an unchanged 96x128 sprite");
+            ConfigureSpriteImport(DirtPath, SpritePixelsPerUnit);
+            var dirtSprite = AssetDatabase.LoadAssetAtPath<Sprite>(DirtPath);
+            if (dirtSprite == null || dirtSprite.rect.size != new Vector2(32f, 32f))
+                throw new InvalidOperationException("Dirt must be an unchanged 32x32 sprite");
             ConfigureSpriteImport(GrassPath, SpritePixelsPerUnit);
             var grassSprite = AssetDatabase.LoadAssetAtPath<Sprite>(GrassPath);
             if (grassSprite == null) throw new InvalidOperationException("Grass sprite import failed");
@@ -115,11 +122,26 @@ namespace Halka.Game.Editor
             groundRenderer.sortingOrder = -10;
             ground.transform.localScale = new Vector3(12f, 8f, 1f);
 
+            var surfaceGroup = new GameObject("Ground surface overrides");
+            var surfaceField = surfaceGroup.AddComponent<GroundSurfaceField2D>();
+            foreach (var cell in DirtCells)
+            {
+                if (!world.CanEnter(cell))
+                    throw new InvalidOperationException($"Ground override must be on a walkable cell: {cell}");
+                surfaceField.AddSurface(cell, dirtSprite);
+                var tile = new GameObject($"Ground tile {cell.x},{cell.y}");
+                tile.transform.SetParent(surfaceGroup.transform, false);
+                tile.transform.position = world.CellToWorld(cell);
+                var tileRenderer = tile.AddComponent<SpriteRenderer>();
+                tileRenderer.sprite = dirtSprite;
+                tileRenderer.sortingOrder = -9;
+            }
+
             var gridSprite = CreateGridOverlay(world);
             var gridObject = new GameObject("FirstDay - 32px cell boundaries");
             var gridRenderer = gridObject.AddComponent<SpriteRenderer>();
             gridRenderer.sprite = gridSprite;
-            gridRenderer.sortingOrder = -9;
+            gridRenderer.sortingOrder = -8;
 
             var stone = new GameObject("Stone - first world object");
             stone.transform.position = world.CellToWorld(new Vector2Int(1, 1));
@@ -169,7 +191,7 @@ namespace Halka.Game.Editor
             for (var x = world.MinCell.x; x <= world.MaxCell.x; x++)
             {
                 var cell = new Vector2Int(x, y);
-                if (!world.CanEnter(cell)) continue;
+                if (!world.CanEnter(cell) || surfaceField.HasGroundOverride(cell)) continue;
                 var grass = (GameObject)PrefabUtility.InstantiatePrefab(grassPrefab);
                 grass.transform.SetParent(grassGroup.transform);
                 grass.transform.position = world.CellToWorld(cell);
@@ -246,7 +268,7 @@ namespace Halka.Game.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.SaveAssets();
-            Debug.Log($"HALKA ver1.8 scene prepared with {grassCount} grass cells.");
+            Debug.Log($"HALKA ver1.9 scene prepared with {surfaceField.Count} ground overrides and {grassCount} grass cells.");
         }
 
         [MenuItem("HALKA/Build WebGL for HP")]
@@ -266,6 +288,13 @@ namespace Halka.Game.Editor
             var report = BuildPipeline.BuildPlayer(options);
             if (report.summary.result != BuildResult.Succeeded)
                 throw new InvalidOperationException($"WebGL build failed: {report.summary.result}, {report.summary.totalErrors} errors");
+            var gamePagePath = Path.GetFullPath(Path.Combine(output, "..", "index.html"));
+            var page = File.ReadAllText(gamePagePath);
+            const string framePattern = "(<iframe\\s+src=\"webgl/)(?:\\?[^\"]*)?(\")";
+            if (!Regex.IsMatch(page, framePattern))
+                throw new InvalidOperationException("HALKA WORLD iframe was not found for cache refresh");
+            File.WriteAllText(gamePagePath, Regex.Replace(page, framePattern,
+                "$1?v=" + GameVersion.Value + "$2"));
             Debug.Log($"HALKA WebGL build succeeded: {output}");
         }
 
