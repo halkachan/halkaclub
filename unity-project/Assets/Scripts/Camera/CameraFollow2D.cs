@@ -12,6 +12,16 @@ namespace Halka.Game.CameraControl
 
         private Vector3 velocity;
 
+        public Vector2 WorldMin => worldMin;
+        public Vector2 WorldMax => worldMax;
+
+        public void SetBounds(Vector2 minimum, Vector2 maximum)
+        {
+            worldMin = minimum;
+            worldMax = maximum;
+            velocity = Vector3.zero;
+        }
+
         private void LateUpdate()
         {
             var halfHeight = cameraComponent.orthographicSize;

@@ -15,6 +15,14 @@ namespace Halka.Game.World
         public Vector2Int MinCell => minCell;
         public Vector2Int MaxCell => maxCell;
 
+        public void SetBounds(Vector2Int minimum, Vector2Int maximum)
+        {
+            if (minimum.x > maximum.x || minimum.y > maximum.y)
+                throw new System.ArgumentException("Grid bounds are reversed");
+            minCell = minimum;
+            maxCell = maximum;
+        }
+
         public Vector2Int WorldToCell(Vector3 position) => new Vector2Int(
             Mathf.RoundToInt((position.x - transform.position.x) / cellSize),
             Mathf.RoundToInt((position.y - transform.position.y) / cellSize));

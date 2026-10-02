@@ -1,4 +1,6 @@
+using System;
 using Halka.Game.Interaction;
+using Halka.Game.Player;
 using UnityEngine;
 
 namespace Halka.Game.Input
@@ -9,6 +11,7 @@ namespace Halka.Game.Input
         [SerializeField] private InteractionRouter interaction;
         [SerializeField] private TouchDpad dpad;
         [SerializeField] private TouchActionButton actionButton;
+        [SerializeField] private AutoModeController autoMode;
         [SerializeField, Min(1f)] private float clickMovementLimit = 24f;
 
         private Vector2 mouseStart;
@@ -19,6 +22,7 @@ namespace Halka.Game.Input
         private float lastTouchAt = -10f;
 
         public Vector2Int Direction { get; private set; }
+        public event Action UserActed;
 
         private void Update()
         {
@@ -29,6 +33,9 @@ namespace Halka.Game.Input
                 UnityEngine.Input.GetKey(KeyCode.A) || UnityEngine.Input.GetKey(KeyCode.LeftArrow),
                 UnityEngine.Input.GetKey(KeyCode.D) || UnityEngine.Input.GetKey(KeyCode.RightArrow),
                 dpad.Direction);
+            if (Direction != Vector2Int.zero || actionButton.JustPressed || pendingClick ||
+                UnityEngine.Input.GetMouseButtonDown(0) || UnityEngine.Input.touchCount > 0)
+                UserActed?.Invoke();
             if (actionButton.JustPressed && Direction == Vector2Int.zero)
                 interaction.TryInteractAhead();
             if (pendingClick)
@@ -39,7 +46,8 @@ namespace Halka.Game.Input
         }
 
         private bool IsOverControls(Vector2 position) =>
-            dpad.IsOverControls(position) || actionButton.IsOverControls(position);
+            dpad.IsOverControls(position) || actionButton.IsOverControls(position) ||
+            autoMode != null && autoMode.IsOverControls(position);
 
         private void OnGUI()
         {

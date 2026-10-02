@@ -48,13 +48,32 @@ namespace Halka.Game.Player
             }
         }
 
-        public void ApplyDirection(Vector2Int direction)
+        public void ApplyDirection(Vector2Int direction) => TryStep(direction);
+
+        public bool TryStep(Vector2Int direction)
         {
-            if (motion.IsMoving || Mathf.Abs(direction.x) + Mathf.Abs(direction.y) != 1) return;
+            if (motion.IsMoving || Mathf.Abs(direction.x) + Mathf.Abs(direction.y) != 1) return false;
             Facing = FacingDirectionExtensions.FromVector(direction);
             var target = motion.Cell + direction;
             if (motion.TryBegin(direction, world.CanEnter, stepSeconds))
+            {
                 StepStarted?.Invoke(target);
+                return true;
+            }
+            return false;
+        }
+
+        public void CancelStep()
+        {
+            if (!IsMoving) return;
+            var cell = StepProgressNormalized < 0.5f ? StepFromCell : StepToCell;
+            TeleportTo(cell);
+        }
+
+        public void TeleportTo(Vector2Int cell)
+        {
+            motion = new GridStepMotion(cell);
+            transform.position = world.CellToWorld(cell);
         }
     }
 }
