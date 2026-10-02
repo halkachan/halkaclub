@@ -22,6 +22,7 @@ namespace Halka.Game.Editor
         private const string PixelPath = "Assets/Content/World/pixel.png";
         private const string StonePath = "Assets/Content/World/stone.png";
         private const string FlowerPath = "Assets/Content/World/flower.png";
+        private const string TreePath = "Assets/Content/World/tree.png";
         private const string GrassPath = "Assets/Content/World/grass.png";
         private const string GrassRustlePath = "Assets/Content/World/grass_rustle";
         private const string FootstepPath = "Assets/Content/Audio/footstep_one_step.wav";
@@ -32,9 +33,10 @@ namespace Halka.Game.Editor
         private const float SpritePixelsPerUnit = 64f;
         internal const float ArtworkFootOffset = GridWorld2D.TileWorldSize / 2f;
         internal static readonly Vector2Int FlowerCell = new Vector2Int(-3, 1);
+        internal static readonly Vector2Int TreeRootCell = new Vector2Int(5, 1);
         private static readonly Vector2 StoneOpaquePixels = new Vector2(28f, 20f);
 
-        [MenuItem("HALKA/Prepare ver1.7 scene")]
+        [MenuItem("HALKA/Prepare ver1.8 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -50,6 +52,10 @@ namespace Halka.Game.Editor
             var flowerSprite = AssetDatabase.LoadAssetAtPath<Sprite>(FlowerPath);
             if (flowerSprite == null || flowerSprite.rect.size != new Vector2(32f, 32f))
                 throw new InvalidOperationException("Flower must be an unchanged 32x32 sprite");
+            ConfigureSpriteImport(TreePath, SpritePixelsPerUnit);
+            var treeSprite = AssetDatabase.LoadAssetAtPath<Sprite>(TreePath);
+            if (treeSprite == null || treeSprite.rect.size != new Vector2(96f, 128f))
+                throw new InvalidOperationException("Tree must be an unchanged 96x128 sprite");
             ConfigureSpriteImport(GrassPath, SpritePixelsPerUnit);
             var grassSprite = AssetDatabase.LoadAssetAtPath<Sprite>(GrassPath);
             if (grassSprite == null) throw new InvalidOperationException("Grass sprite import failed");
@@ -135,6 +141,28 @@ namespace Halka.Game.Editor
             flower.AddComponent<GridObstacle>();
             var flowerExamine = flower.AddComponent<ExamineInteractable>();
 
+            var tree = new GameObject("Tree - first tree");
+            tree.transform.position = world.CellToWorld(TreeRootCell);
+            var treeExamine = tree.AddComponent<ExamineInteractable>();
+            var treeRoot = new GameObject("Tree root obstacle");
+            treeRoot.transform.SetParent(tree.transform, false);
+            var treeRootCollider = treeRoot.AddComponent<BoxCollider2D>();
+            treeRootCollider.size = Vector2.one * GridWorld2D.TileWorldSize;
+            treeRoot.AddComponent<GridObstacle>();
+            var treeArtwork = new GameObject("Tree artwork");
+            treeArtwork.transform.SetParent(tree.transform, false);
+            treeArtwork.transform.localPosition = RootedSpriteLayout2D.OffsetFromBottomCenter(treeSprite);
+            var treeRenderer = treeArtwork.AddComponent<SpriteRenderer>();
+            treeRenderer.sprite = treeSprite;
+            treeRenderer.sortingOrder = playerRenderer.sortingOrder - 1;
+            var treeClickCollider = treeArtwork.AddComponent<BoxCollider2D>();
+            treeClickCollider.size = treeSprite.bounds.size;
+            var treeDepth = tree.AddComponent<RootedWorldObjectDepth2D>();
+            SetReference(treeDepth, "world", world);
+            SetReference(treeDepth, "player", mover);
+            SetReference(treeDepth, "playerRenderer", playerRenderer);
+            SetReference(treeDepth, "objectRenderer", treeRenderer);
+
             var grassGroup = new GameObject("Grass decorations");
             var grassCount = 0;
             for (var y = world.MinCell.y; y <= world.MaxCell.y; y++)
@@ -202,6 +230,10 @@ namespace Halka.Game.Editor
             SetReference(flowerExamine, "world", world);
             SetReference(flowerExamine, "hud", hud);
             SetString(flowerExamine, "message", "はな。");
+            SetReference(treeExamine, "player", mover);
+            SetReference(treeExamine, "world", world);
+            SetReference(treeExamine, "hud", hud);
+            SetString(treeExamine, "message", "き。");
             SetSprites(visual, "frontIdle", frames);
             SetSprites(visual, "backIdle", LoadFrames("back_idle"));
             SetSprites(visual, "leftIdle", LoadFrames("left_idle"));
@@ -214,7 +246,7 @@ namespace Halka.Game.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.SaveAssets();
-            Debug.Log($"HALKA ver1.7 scene prepared with {grassCount} grass cells.");
+            Debug.Log($"HALKA ver1.8 scene prepared with {grassCount} grass cells.");
         }
 
         [MenuItem("HALKA/Build WebGL for HP")]
