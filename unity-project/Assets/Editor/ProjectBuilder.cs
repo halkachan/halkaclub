@@ -22,10 +22,7 @@ namespace Halka.Game.Editor
     {
         private const string ScenePath = "Assets/Scenes/FirstDay.unity";
         private const string PixelPath = "Assets/Content/World/pixel.png";
-        private const string StonePath = "Assets/Content/World/stone.png";
-        private const string FlowerPath = "Assets/Content/World/flower.png";
-        private const string TreePath = "Assets/Content/World/tree.png";
-        private const string DirtPath = "Assets/Content/World/dirt.png";
+        private const string MapPath = "Assets/Content/Maps/first_field.asset";
         private const string HouseExteriorPath = "Assets/Content/World/house_exterior.png";
         private const string HouseFloorPath = "Assets/Content/World/house_floor.png";
         private const string HouseWallPath = "Assets/Content/World/house_wall.png";
@@ -41,86 +38,21 @@ namespace Halka.Game.Editor
         private const string GridPath = "Assets/Content/World/grid.png";
         private const float SpritePixelsPerUnit = 64f;
         internal const float ArtworkFootOffset = GridWorld2D.TileWorldSize / 2f;
-        internal static readonly Vector2Int FlowerCell = new Vector2Int(-3, 1);
-        internal static readonly Vector2Int TreeRootCell = new Vector2Int(5, 1);
-        internal static readonly Vector2Int[] FlowerCells =
-            { FlowerCell, new Vector2Int(-5, 2), new Vector2Int(2, 3), new Vector2Int(6, -1) };
-        internal static readonly Vector2Int[] StoneCells =
-            { new Vector2Int(1, 1), new Vector2Int(-2, 4),
-                new Vector2Int(3, -4), new Vector2Int(9, 3) };
-        internal static readonly Vector2Int[] TreeCells =
-            { TreeRootCell, new Vector2Int(-7, 2), new Vector2Int(8, -3) };
-        internal static readonly Vector2Int[] HouseRoadCells =
-        {
-            new Vector2Int(-8, -5), new Vector2Int(-7, -5), new Vector2Int(-6, -5),
-            new Vector2Int(-5, -5), new Vector2Int(-4, -5), new Vector2Int(-3, -5),
-            new Vector2Int(-3, -4), new Vector2Int(-2, -4), new Vector2Int(-2, -3),
-            new Vector2Int(-1, -3), new Vector2Int(-1, -2), new Vector2Int(0, -2),
-            new Vector2Int(0, -1)
-        };
-        internal static readonly Vector2Int[] NorthRoadCells =
-        {
-            new Vector2Int(0, -1), new Vector2Int(0, 0), new Vector2Int(0, 1),
-            new Vector2Int(0, 2), new Vector2Int(1, 2), new Vector2Int(1, 3),
-            new Vector2Int(1, 4), new Vector2Int(0, 4), new Vector2Int(0, 5),
-            new Vector2Int(0, 6)
-        };
-        internal static readonly Vector2Int[] EastRoadCells =
-        {
-            new Vector2Int(0, -1), new Vector2Int(1, -1), new Vector2Int(2, -1),
-            new Vector2Int(3, -1), new Vector2Int(3, 0), new Vector2Int(4, 0),
-            new Vector2Int(5, 0), new Vector2Int(6, 0), new Vector2Int(7, 0),
-            new Vector2Int(8, 0), new Vector2Int(8, -1), new Vector2Int(9, -1),
-            new Vector2Int(10, -1)
-        };
-        internal static readonly Vector2Int[] SouthRoadCells =
-        {
-            new Vector2Int(0, -1), new Vector2Int(0, -2), new Vector2Int(1, -2),
-            new Vector2Int(1, -3), new Vector2Int(1, -4), new Vector2Int(2, -4),
-            new Vector2Int(2, -5), new Vector2Int(2, -6)
-        };
-        internal static readonly Vector2Int[] WestRoadCells =
-        {
-            new Vector2Int(0, -1), new Vector2Int(-1, -1), new Vector2Int(-2, -1),
-            new Vector2Int(-3, -1), new Vector2Int(-3, 0), new Vector2Int(-4, 0),
-            new Vector2Int(-5, 0), new Vector2Int(-6, 0), new Vector2Int(-7, 0),
-            new Vector2Int(-8, 0), new Vector2Int(-9, 0), new Vector2Int(-10, 0)
-        };
-        internal static readonly Vector2Int[] RoadCells = HouseRoadCells
-            .Concat(NorthRoadCells).Concat(EastRoadCells).Concat(SouthRoadCells)
-            .Concat(WestRoadCells).Distinct().ToArray();
-        internal static readonly Vector2Int[] HouseVisualCells =
-            (from y in Enumerable.Range(-4, 4)
-                from x in Enumerable.Range(-9, 5)
-                select new Vector2Int(x, y)).ToArray();
-        internal static readonly Vector2Int[] DirtCells =
-            RoadCells.Concat(new[] { HouseArea2D.HouseDoorCell }).Distinct().ToArray();
-        private static readonly Vector2 StoneOpaquePixels = new Vector2(28f, 20f);
 
         [MenuItem("HALKA/Prepare ver2.0 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
+            var map = AssetDatabase.LoadAssetAtPath<MapDefinition>(MapPath);
+            if (map == null) throw new InvalidOperationException("first_field MapDefinition is missing");
+            var mapProblems = MapPlacementRules.Validate(map);
+            if (mapProblems.Count != 0)
+                throw new InvalidOperationException("Invalid MapDefinition: " + string.Join("; ", mapProblems));
             var frames = LoadFrames("front_idle");
             if (frames.Length == 0) throw new InvalidOperationException("front_idle needs at least one PNG frame");
             ConfigureSpriteImport(PixelPath, 1f);
             var pixel = AssetDatabase.LoadAssetAtPath<Sprite>(PixelPath);
             if (pixel == null) throw new InvalidOperationException("World pixel import failed");
-            ConfigureSpriteImport(StonePath, SpritePixelsPerUnit);
-            var stoneSprite = AssetDatabase.LoadAssetAtPath<Sprite>(StonePath);
-            if (stoneSprite == null) throw new InvalidOperationException("Stone sprite import failed");
-            ConfigureSpriteImport(FlowerPath, SpritePixelsPerUnit);
-            var flowerSprite = AssetDatabase.LoadAssetAtPath<Sprite>(FlowerPath);
-            if (flowerSprite == null || flowerSprite.rect.size != new Vector2(32f, 32f))
-                throw new InvalidOperationException("Flower must be an unchanged 32x32 sprite");
-            ConfigureSpriteImport(TreePath, SpritePixelsPerUnit);
-            var treeSprite = AssetDatabase.LoadAssetAtPath<Sprite>(TreePath);
-            if (treeSprite == null || treeSprite.rect.size != new Vector2(96f, 128f))
-                throw new InvalidOperationException("Tree must be an unchanged 96x128 sprite");
-            ConfigureSpriteImport(DirtPath, SpritePixelsPerUnit);
-            var dirtSprite = AssetDatabase.LoadAssetAtPath<Sprite>(DirtPath);
-            if (dirtSprite == null || dirtSprite.rect.size != new Vector2(32f, 32f))
-                throw new InvalidOperationException("Dirt must be an unchanged 32x32 sprite");
             var houseSprite = LoadWorldSprite(HouseExteriorPath, new Vector2(160f, 128f));
             var floorSprite = LoadWorldSprite(HouseFloorPath, new Vector2(32f, 32f));
             var wallSprite = LoadWorldSprite(HouseWallPath, new Vector2(32f, 32f));
@@ -153,9 +85,10 @@ namespace Halka.Game.Editor
 
             var worldObject = new GameObject("World - first day grid");
             var world = worldObject.AddComponent<GridWorld2D>();
+            world.SetBounds(map.MinCell, map.MaxCell);
 
             var player = new GameObject("Player - HarukaChan");
-            player.transform.position = Vector3.zero;
+            player.transform.position = world.CellToWorld(map.PlayerSpawnCell);
             var artwork = new GameObject("Player artwork");
             artwork.transform.SetParent(player.transform, false);
             artwork.transform.localPosition = Vector3.up * ArtworkFootOffset;
@@ -198,16 +131,6 @@ namespace Halka.Game.Editor
 
             var surfaceGroup = new GameObject("Ground surface overrides");
             var surfaceField = surfaceGroup.AddComponent<GroundSurfaceField2D>();
-            foreach (var cell in DirtCells)
-            {
-                surfaceField.AddSurface(cell, dirtSprite);
-                var tile = new GameObject($"Ground tile {cell.x},{cell.y}");
-                tile.transform.SetParent(surfaceGroup.transform, false);
-                tile.transform.position = world.CellToWorld(cell);
-                var tileRenderer = tile.AddComponent<SpriteRenderer>();
-                tileRenderer.sprite = dirtSprite;
-                tileRenderer.sortingOrder = -9;
-            }
 
             var gridSprite = CreateGridOverlay(world);
             var gridObject = new GameObject("FirstDay - 32px cell boundaries");
@@ -215,78 +138,15 @@ namespace Halka.Game.Editor
             gridRenderer.sprite = gridSprite;
             gridRenderer.sortingOrder = -8;
 
-            var addedObjects = new List<GameObject>();
-            var addedExamines = new List<(ExamineInteractable Examine, string Message)>();
-            var stone = new GameObject("Stone - first world object");
-            stone.transform.position = world.CellToWorld(new Vector2Int(1, 1));
-            var stoneRenderer = stone.AddComponent<SpriteRenderer>();
-            stoneRenderer.sprite = stoneSprite;
-            stoneRenderer.sortingOrder = 2;
-            var stoneCollider = stone.AddComponent<BoxCollider2D>();
-            stoneCollider.size = StoneOpaquePixels / SpritePixelsPerUnit;
-            stone.AddComponent<GridObstacle>();
-            var examine = stone.AddComponent<ExamineInteractable>();
-            for (var i = 1; i < StoneCells.Length; i++)
-            {
-                var extra = CreateSmallObject(world, StoneCells[i], stoneSprite,
-                    StoneOpaquePixels / SpritePixelsPerUnit, 2, $"Stone {i + 1}");
-                addedObjects.Add(extra);
-                addedExamines.Add((extra.GetComponent<ExamineInteractable>(), "いし。"));
-            }
-
-            var flower = new GameObject("Flower - first bloom");
-            flower.transform.position = world.CellToWorld(FlowerCell);
-            var flowerRenderer = flower.AddComponent<SpriteRenderer>();
-            flowerRenderer.sprite = flowerSprite;
-            flowerRenderer.sortingOrder = stoneRenderer.sortingOrder;
-            var flowerCollider = flower.AddComponent<BoxCollider2D>();
-            flowerCollider.size = Vector2.one * GridWorld2D.TileWorldSize;
-            flower.AddComponent<GridObstacle>();
-            var flowerExamine = flower.AddComponent<ExamineInteractable>();
-            for (var i = 1; i < FlowerCells.Length; i++)
-            {
-                var extra = CreateSmallObject(world, FlowerCells[i], flowerSprite,
-                    Vector2.one * GridWorld2D.TileWorldSize, 2, $"Flower {i + 1}");
-                addedObjects.Add(extra);
-                addedExamines.Add((extra.GetComponent<ExamineInteractable>(), "はな。"));
-            }
-
-            var tree = new GameObject("Tree - first tree");
-            tree.transform.position = world.CellToWorld(TreeRootCell);
-            var treeExamine = tree.AddComponent<ExamineInteractable>();
-            var treeRoot = new GameObject("Tree root obstacle");
-            treeRoot.transform.SetParent(tree.transform, false);
-            var treeRootCollider = treeRoot.AddComponent<BoxCollider2D>();
-            treeRootCollider.size = Vector2.one * GridWorld2D.TileWorldSize;
-            treeRoot.AddComponent<GridObstacle>();
-            var treeArtwork = new GameObject("Tree artwork");
-            treeArtwork.transform.SetParent(tree.transform, false);
-            treeArtwork.transform.localPosition = RootedSpriteLayout2D.OffsetFromBottomCenter(treeSprite);
-            var treeRenderer = treeArtwork.AddComponent<SpriteRenderer>();
-            treeRenderer.sprite = treeSprite;
-            treeRenderer.sortingOrder = playerRenderer.sortingOrder - 1;
-            var treeClickCollider = treeArtwork.AddComponent<BoxCollider2D>();
-            treeClickCollider.size = treeSprite.bounds.size;
-            var treeDepth = tree.AddComponent<RootedWorldObjectDepth2D>();
-            SetReference(treeDepth, "world", world);
-            SetReference(treeDepth, "player", mover);
-            SetReference(treeDepth, "playerRenderer", playerRenderer);
-            SetReference(treeDepth, "objectRenderer", treeRenderer);
-            for (var i = 1; i < TreeCells.Length; i++)
-            {
-                var extra = CreateTreeObject(world, TreeCells[i], treeSprite,
-                    mover, playerRenderer, $"Tree {i + 1}");
-                addedObjects.Add(extra);
-                addedExamines.Add((extra.GetComponent<ExamineInteractable>(), "き。"));
-            }
+            var objectGroup = new GameObject("Map world objects");
 
             var house = new GameObject("House - HarukaChan home");
-            house.transform.position = world.CellToWorld(HouseArea2D.HouseDoorCell);
-            for (var y = -4; y <= -3; y++)
-            for (var x = -9; x <= -5; x++)
+            house.transform.position = world.CellToWorld(map.HouseDoorCell);
+            for (var y = map.HouseDoorCell.y; y <= map.HouseDoorCell.y + 1; y++)
+            for (var x = map.HouseDoorCell.x - 2; x <= map.HouseDoorCell.x + 2; x++)
             {
                 var cell = new Vector2Int(x, y);
-                if (cell == HouseArea2D.HouseDoorCell) continue;
+                if (cell == map.HouseDoorCell) continue;
                 var footprint = new GameObject($"House footprint {x},{y}");
                 footprint.transform.SetParent(house.transform, false);
                 footprint.transform.position = world.CellToWorld(cell);
@@ -311,7 +171,9 @@ namespace Halka.Game.Editor
             SetReference(occupancy, "player", mover);
             SetReference(mover, "occupancy", occupancy);
             var crow = new GameObject("Crow - first neighbor");
-            crow.transform.position = world.CellToWorld(CrowWander2D.InitialCell);
+            if (!map.TryGetEntitySpawn("crow", out var crowSpawn))
+                throw new InvalidOperationException("Map has no locked crow spawn");
+            crow.transform.position = world.CellToWorld(crowSpawn);
             var crowRenderer = crow.AddComponent<SpriteRenderer>();
             crowRenderer.sprite = crowIdleRight;
             crowRenderer.sortingOrder = 3;
@@ -345,17 +207,6 @@ namespace Halka.Game.Editor
             crowSpriteMask.sprite = crowMaskSprite;
 
             var grassGroup = new GameObject("Grass decorations");
-            var grassCount = 0;
-            for (var y = world.MinCell.y; y <= world.MaxCell.y; y++)
-            for (var x = world.MinCell.x; x <= world.MaxCell.x; x++)
-            {
-                var cell = new Vector2Int(x, y);
-                if (!world.CanEnter(cell) || surfaceField.HasGroundOverride(cell)) continue;
-                var grass = (GameObject)PrefabUtility.InstantiatePrefab(grassPrefab);
-                grass.transform.SetParent(grassGroup.transform);
-                grass.transform.position = world.CellToWorld(cell);
-                grassCount++;
-            }
             var grassField = grassGroup.AddComponent<GrassField2D>();
             SetReference(grassField, "world", world);
             SetReference(grassField, "player", mover);
@@ -409,31 +260,12 @@ namespace Halka.Game.Editor
             SetReference(mover, "world", world);
             SetReference(visual, "mover", mover);
             SetReference(visual, "spriteRenderer", playerRenderer);
-            SetReference(examine, "player", mover);
-            SetReference(examine, "world", world);
-            SetReference(examine, "hud", hud);
-            SetString(examine, "message", "いし。");
-            SetReference(flowerExamine, "player", mover);
-            SetReference(flowerExamine, "world", world);
-            SetReference(flowerExamine, "hud", hud);
-            SetString(flowerExamine, "message", "はな。");
-            SetReference(treeExamine, "player", mover);
-            SetReference(treeExamine, "world", world);
-            SetReference(treeExamine, "hud", hud);
-            SetString(treeExamine, "message", "き。");
             SetReference(crowExamine, "player", mover);
             SetReference(crowExamine, "world", world);
             SetReference(crowExamine, "hud", hud);
             SetString(crowExamine, "message", "カァ。");
             SetReference(crowExamine, "availability", crowWander);
             SetReference(crowExamine, "interactionAudio", crowVoice);
-            foreach (var pair in addedExamines)
-            {
-                SetReference(pair.Examine, "player", mover);
-                SetReference(pair.Examine, "world", world);
-                SetReference(pair.Examine, "hud", hud);
-                SetString(pair.Examine, "message", pair.Message);
-            }
             SetSprites(visual, "frontIdle", frames);
             SetSprites(visual, "backIdle", LoadFrames("back_idle"));
             SetSprites(visual, "leftIdle", LoadFrames("left_idle"));
@@ -445,10 +277,22 @@ namespace Halka.Game.Editor
 
             var exteriorRoot = new GameObject("Exterior - first field");
             foreach (var objectInField in new[] { ground, surfaceGroup, gridObject,
-                stone, flower, tree, house, crow, grassGroup })
+                objectGroup, house, crow, grassGroup })
                 objectInField.transform.SetParent(exteriorRoot.transform, true);
-            foreach (var extra in addedObjects)
-                extra.transform.SetParent(exteriorRoot.transform, true);
+            var loaderObject = new GameObject("Map runtime loader");
+            var loader = loaderObject.AddComponent<MapRuntimeLoader2D>();
+            loader.SetMap(AssetDatabase.LoadAssetAtPath<MapDefinition>(MapPath));
+            if (loader.Map == null)
+                throw new InvalidOperationException("Could not serialize first_field on runtime loader");
+            SetReference(loader, "world", world);
+            SetReference(loader, "surfaceField", surfaceField);
+            SetReference(loader, "grassField", grassField);
+            SetReference(loader, "surfaceRoot", surfaceGroup.transform);
+            SetReference(loader, "objectRoot", objectGroup.transform);
+            SetReference(loader, "grassPrefab", grassPrefab);
+            SetReference(loader, "player", mover);
+            SetReference(loader, "playerRenderer", playerRenderer);
+            SetReference(loader, "hud", hud);
             var interiorRoot = CreateHouseInterior(world, pixel, floorSprite, wallSprite,
                 bedSprite);
             interiorRoot.SetActive(false);
@@ -475,7 +319,8 @@ namespace Halka.Game.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.SaveAssets();
-            Debug.Log($"HALKA ver2.0 scene prepared with {surfaceField.Count} ground overrides and {grassCount} grass cells.");
+            Debug.Log($"HALKA ver2.0 scene prepared from {map.MapId}: " +
+                $"{map.Surfaces.Count} ground overrides and {map.Objects.Count} objects.");
         }
 
         [MenuItem("HALKA/Build WebGL for HP")]
@@ -618,46 +463,6 @@ namespace Halka.Game.Editor
             {
                 UnityEngine.Object.DestroyImmediate(root);
             }
-        }
-
-        private static GameObject CreateSmallObject(GridWorld2D world, Vector2Int cell,
-            Sprite sprite, Vector2 colliderSize, int sortingOrder, string name)
-        {
-            var result = new GameObject(name);
-            result.transform.position = world.CellToWorld(cell);
-            var renderer = result.AddComponent<SpriteRenderer>();
-            renderer.sprite = sprite;
-            renderer.sortingOrder = sortingOrder;
-            result.AddComponent<BoxCollider2D>().size = colliderSize;
-            result.AddComponent<GridObstacle>();
-            result.AddComponent<ExamineInteractable>();
-            return result;
-        }
-
-        private static GameObject CreateTreeObject(GridWorld2D world, Vector2Int cell,
-            Sprite sprite, PlayerMover player, SpriteRenderer playerRenderer, string name)
-        {
-            var root = new GameObject(name);
-            root.transform.position = world.CellToWorld(cell);
-            root.AddComponent<ExamineInteractable>();
-            var obstacle = new GameObject("Tree root obstacle");
-            obstacle.transform.SetParent(root.transform, false);
-            obstacle.AddComponent<BoxCollider2D>().size =
-                Vector2.one * GridWorld2D.TileWorldSize;
-            obstacle.AddComponent<GridObstacle>();
-            var artwork = new GameObject("Tree artwork");
-            artwork.transform.SetParent(root.transform, false);
-            artwork.transform.localPosition = RootedSpriteLayout2D.OffsetFromBottomCenter(sprite);
-            var renderer = artwork.AddComponent<SpriteRenderer>();
-            renderer.sprite = sprite;
-            renderer.sortingOrder = playerRenderer.sortingOrder - 1;
-            artwork.AddComponent<BoxCollider2D>().size = sprite.bounds.size;
-            var depth = root.AddComponent<RootedWorldObjectDepth2D>();
-            SetReference(depth, "world", world);
-            SetReference(depth, "player", player);
-            SetReference(depth, "playerRenderer", playerRenderer);
-            SetReference(depth, "objectRenderer", renderer);
-            return root;
         }
 
         private static GameObject CreateHouseInterior(GridWorld2D world, Sprite pixel,

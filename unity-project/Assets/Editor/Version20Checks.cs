@@ -29,6 +29,10 @@ namespace Halka.Game.Editor
         public static void Run()
         {
             EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
+            var loader = UnityEngine.Object.FindFirstObjectByType<MapRuntimeLoader2D>();
+            Check(loader != null && loader.Map != null, "scene uses MapRuntimeLoader2D");
+            loader.Build();
+            var map = loader.Map;
             var world = UnityEngine.Object.FindFirstObjectByType<GridWorld2D>();
             var player = UnityEngine.Object.FindFirstObjectByType<PlayerMover>();
             var area = UnityEngine.Object.FindFirstObjectByType<HouseArea2D>();
@@ -79,65 +83,71 @@ namespace Halka.Game.Editor
             Check(houseObstacles.Length == 9 && world.CanEnter(HouseArea2D.HouseDoorCell) &&
                 !house.GetComponents<MonoBehaviour>().Any(component => component is IInteractable),
                 "only nine footprint cells block; entrance has no interaction");
-            foreach (var cell in ProjectBuilder.HouseVisualCells)
-                Check(surface.HasGroundOverride(cell) == (cell == HouseArea2D.HouseDoorCell),
+            Check(map.MapId == "first_field" && map.DataVersion == 1 &&
+                map.MinCell == new Vector2Int(-10, -6) &&
+                map.MaxCell == new Vector2Int(10, 6) &&
+                MapPlacementRules.Validate(map).Count == 0,
+                "first_field data and validation are sound");
+            Check(map.HouseDoorCell == HouseArea2D.HouseDoorCell &&
+                map.OutsideEntryCell == HouseArea2D.OutsideEntryCell &&
+                map.PlayerSpawnCell == Vector2Int.zero &&
+                map.TryGetEntitySpawn("crow", out var crowSpawn) &&
+                crowSpawn == CrowWander2D.InitialCell,
+                "locked house, player and crow markers match the original field");
+            for (var y = map.HouseDoorCell.y; y < map.HouseDoorCell.y + 4; y++)
+            for (var x = map.HouseDoorCell.x - 2; x <= map.HouseDoorCell.x + 2; x++)
+            {
+                var cell = new Vector2Int(x, y);
+                Check(surface.HasGroundOverride(cell) == (cell == map.HouseDoorCell),
                     $"house art has plain ground behind it except the entry at {cell}");
-            CheckRoad(world, surface, ProjectBuilder.HouseRoadCells,
-                new Vector2Int(0, -1), "existing house road");
-            CheckRoad(world, surface, ProjectBuilder.NorthRoadCells,
-                new Vector2Int(0, world.MaxCell.y), "north road");
-            CheckRoad(world, surface, ProjectBuilder.EastRoadCells,
-                new Vector2Int(world.MaxCell.x, -1), "east road");
-            CheckRoad(world, surface, ProjectBuilder.SouthRoadCells,
-                new Vector2Int(2, world.MinCell.y), "south road");
-            CheckRoad(world, surface, ProjectBuilder.WestRoadCells,
-                new Vector2Int(world.MinCell.x, 0), "west road");
-            Check(ProjectBuilder.RoadCells.Length ==
-                    ProjectBuilder.RoadCells.Distinct().Count() &&
-                ProjectBuilder.NorthRoadCells[0] == new Vector2Int(0, -1) &&
-                ProjectBuilder.EastRoadCells[0] == new Vector2Int(0, -1) &&
-                ProjectBuilder.SouthRoadCells[0] == new Vector2Int(0, -1) &&
-                ProjectBuilder.WestRoadCells[0] == new Vector2Int(0, -1),
-                "all four road branches connect to the central junction");
-            Check(surface.Count == ProjectBuilder.DirtCells.Length &&
-                ProjectBuilder.DirtCells.Length == ProjectBuilder.RoadCells.Length + 1,
-                "only the expanded road and single entry have dirt");
+            }
+            Check(surface.Count == map.Surfaces.Count &&
+                map.Surfaces.All(item => item.Definition != null &&
+                    surface.GetSurface(item.Cell) == item.Definition.Sprite),
+                "runtime surfaces exactly match MapDefinition");
+            foreach (var endpoint in new[] { map.NorthRoadEnd, map.EastRoadEnd,
+                map.SouthRoadEnd, map.WestRoadEnd })
+                Check(world.CanEnter(endpoint) && surface.HasGroundOverride(endpoint) &&
+                    HasSurfacePath(map, new Vector2Int(0, -1), endpoint),
+                    "MapData road reaches its edge at " + endpoint);
 
             typeof(GrassField2D).GetMethod("Initialize", Hidden).Invoke(grass, null);
-            foreach (var cell in ProjectBuilder.DirtCells)
-                Check(!grass.HasGrass(cell), $"dirt excludes grass at {cell}");
-            foreach (var cell in ProjectBuilder.HouseVisualCells)
-                Check(grass.HasGrass(cell) ==
-                    (world.CanEnter(cell) && !surface.HasGroundOverride(cell)),
-                    $"visible former underlay returns to ordinary grass at {cell}");
+            foreach (var placement in map.Surfaces)
+                Check(!grass.HasGrass(placement.Cell),
+                    $"surface excludes grass at {placement.Cell}");
+            for (var y = map.HouseDoorCell.y; y < map.HouseDoorCell.y + 4; y++)
+            for (var x = map.HouseDoorCell.x - 2; x <= map.HouseDoorCell.x + 2; x++)
+            {
+                var cell = new Vector2Int(x, y);
+                Check(grass.HasGrass(cell) == MapPlacementRules.HasGrass(map, cell),
+                    $"visible former underlay follows shared grass rule at {cell}");
+            }
             var obstacles = UnityEngine.Object.FindObjectsByType<GridObstacle>(
                 FindObjectsInactive.Include, FindObjectsSortMode.None)
                 .Where(item => item.gameObject.activeInHierarchy).ToArray();
             foreach (var obstacle in obstacles)
                 Check(!grass.HasGrass(world.WorldToCell(obstacle.transform.position)),
                     "outdoor obstacle excludes grass");
-            Check(ProjectBuilder.StoneCells.Length == 4 &&
-                ProjectBuilder.FlowerCells.Length == 4 &&
-                ProjectBuilder.TreeCells.Length == 3,
-                "four stones, four flowers and three trees are fixed");
-            foreach (var cell in ProjectBuilder.StoneCells.Concat(ProjectBuilder.FlowerCells)
-                .Concat(ProjectBuilder.TreeCells))
-                Check(!world.CanEnter(cell) && !grass.HasGrass(cell) &&
-                    !surface.HasGroundOverride(cell),
-                    $"world object at {cell} blocks and excludes grass");
+            foreach (var placement in map.Objects)
+                Check(!world.CanEnter(placement.RootCell) &&
+                    !grass.HasGrass(placement.RootCell),
+                    $"runtime object at {placement.RootCell} blocks and excludes grass");
             var expectedGrass = 0;
             for (var y = world.MinCell.y; y <= world.MaxCell.y; y++)
             for (var x = world.MinCell.x; x <= world.MaxCell.x; x++)
             {
                 var cell = new Vector2Int(x, y);
-                if (!world.CanEnter(cell) || surface.HasGroundOverride(cell)) continue;
-                expectedGrass++;
-                Check(grass.HasGrass(cell), $"eligible field cell has grass at {cell}");
+                var expected = MapPlacementRules.HasGrass(map, cell);
+                if (expected) expectedGrass++;
+                Check(grass.HasGrass(cell) == expected &&
+                    expected == (world.CanEnter(cell) && !surface.HasGroundOverride(cell)),
+                    $"shared grass rule matches runtime at {cell}");
             }
             Check(grass.transform.childCount == expectedGrass,
                 "grass count is derived from walkable cells minus surface overrides");
-            foreach (var cell in ProjectBuilder.RoadCells)
-                Check(!grass.HasGrass(cell), $"expanded road has no grass at {cell}");
+            foreach (var placement in map.Surfaces)
+                Check(!grass.HasGrass(placement.Cell),
+                    $"editable road has no grass at {placement.Cell}");
 
             Check(HouseArea2D.InsideMinCell == new Vector2Int(-6, -4) &&
                 HouseArea2D.InsideMaxCell == new Vector2Int(6, 4) &&
@@ -357,20 +367,28 @@ namespace Halka.Game.Editor
                 "Player mask uses the destination surface at progress 0.51");
         }
 
-        private static void CheckRoad(GridWorld2D world, GroundSurfaceField2D surface,
-            Vector2Int[] cells, Vector2Int endpoint, string label)
+        private static bool HasSurfacePath(MapDefinition map, Vector2Int start,
+            Vector2Int endpoint)
         {
-            Check(cells.Length > 1 && cells[cells.Length - 1] == endpoint,
-                label + " reaches its field endpoint");
-            for (var i = 0; i < cells.Length; i++)
+            if (map.SurfaceAt(start) == null || map.SurfaceAt(endpoint) == null)
+                return false;
+            var queue = new System.Collections.Generic.Queue<Vector2Int>();
+            var visited = new System.Collections.Generic.HashSet<Vector2Int>();
+            queue.Enqueue(start);
+            visited.Add(start);
+            while (queue.Count > 0)
             {
-                Check(world.CanEnter(cells[i]) && surface.HasGroundOverride(cells[i]),
-                    label + " is walkable dirt at " + cells[i]);
-                if (i == 0) continue;
-                var delta = cells[i] - cells[i - 1];
-                Check(Mathf.Abs(delta.x) + Mathf.Abs(delta.y) == 1,
-                    label + " stays connected by one-cell steps");
+                var current = queue.Dequeue();
+                if (current == endpoint) return true;
+                foreach (var direction in new[] { Vector2Int.up, Vector2Int.down,
+                    Vector2Int.left, Vector2Int.right })
+                {
+                    var next = current + direction;
+                    if (map.SurfaceAt(next) == null || !visited.Add(next)) continue;
+                    queue.Enqueue(next);
+                }
             }
+            return false;
         }
 
         private static Color32[] ImagePixels(string fileName)

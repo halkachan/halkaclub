@@ -102,12 +102,12 @@ namespace Halka.Game.Editor
                 flowerSprite.texture.width == 32 && flowerSprite.texture.height == 32 &&
                 flowerSprite.pivot == new Vector2(16f, 16f),
                 "flower is a sharp centered 32-pixel RGBA sprite");
-            Check(ProjectBuilder.FlowerCell == new Vector2Int(-3, 1) &&
-                flower.transform.position == world.CellToWorld(ProjectBuilder.FlowerCell) &&
+            Check(LegacyMapCheckCells.FlowerCell == new Vector2Int(-3, 1) &&
+                flower.transform.position == world.CellToWorld(LegacyMapCheckCells.FlowerCell) &&
                 flower.transform.localScale == Vector3.one &&
                 flowerCollider != null && flowerCollider.size == Vector2.one * GridWorld2D.TileWorldSize &&
-                flowerExamine is IInteractable && world.HasObstacle(ProjectBuilder.FlowerCell) &&
-                !world.CanEnter(ProjectBuilder.FlowerCell) &&
+                flowerExamine is IInteractable && world.HasObstacle(LegacyMapCheckCells.FlowerCell) &&
+                !world.CanEnter(LegacyMapCheckCells.FlowerCell) &&
                 router.IsInteractableAt(worldCamera.WorldToScreenPoint(flower.transform.position)),
                 "flower occupies one exact blocking and clickable cell");
             Check(new SerializedObject(flowerExamine).FindProperty("message").stringValue == "はな。",
@@ -127,12 +127,12 @@ namespace Halka.Game.Editor
                 treeSprite.rect.size == new Vector2(96f, 128f) &&
                 treeSprite.pivot == new Vector2(48f, 64f),
                 "tree uses the unchanged sharp 96x128 centered sprite");
-            Check(ProjectBuilder.TreeRootCell == new Vector2Int(5, 1) &&
-                tree.transform.position == world.CellToWorld(ProjectBuilder.TreeRootCell) &&
+            Check(LegacyMapCheckCells.TreeRootCell == new Vector2Int(5, 1) &&
+                tree.transform.position == world.CellToWorld(LegacyMapCheckCells.TreeRootCell) &&
                 tree.transform.localScale == Vector3.one && treeArtwork.localScale == Vector3.one &&
                 RootedSpriteLayout2D.OffsetFromBottomCenter(treeSprite) == Vector3.up * 0.75f &&
                 treeArtwork.localPosition == Vector3.up * 0.75f &&
-                treeArtwork.position == world.CellToWorld(ProjectBuilder.TreeRootCell) + Vector3.up * 0.75f &&
+                treeArtwork.position == world.CellToWorld(LegacyMapCheckCells.TreeRootCell) + Vector3.up * 0.75f &&
                 Mathf.Approximately(treeSprite.bounds.size.x, 1.5f) &&
                 Mathf.Approximately(treeSprite.bounds.size.y, 2f),
                 "three-by-four tree art is centered over its bottom-middle root cell");
@@ -144,12 +144,12 @@ namespace Halka.Game.Editor
                 treeArtwork.GetComponent<GridObstacle>() == null &&
                 treeClickCollider.size == new Vector2(1.5f, 2f) &&
                 treeExamine is IInteractable &&
-                world.HasObstacle(ProjectBuilder.TreeRootCell) &&
-                !world.CanEnter(ProjectBuilder.TreeRootCell) &&
-                world.CanEnter(ProjectBuilder.TreeRootCell + Vector2Int.left) &&
-                world.CanEnter(ProjectBuilder.TreeRootCell + Vector2Int.right) &&
-                world.CanEnter(ProjectBuilder.TreeRootCell + Vector2Int.up) &&
-                world.CanEnter(ProjectBuilder.TreeRootCell + Vector2Int.up * 3),
+                world.HasObstacle(LegacyMapCheckCells.TreeRootCell) &&
+                !world.CanEnter(LegacyMapCheckCells.TreeRootCell) &&
+                world.CanEnter(LegacyMapCheckCells.TreeRootCell + Vector2Int.left) &&
+                world.CanEnter(LegacyMapCheckCells.TreeRootCell + Vector2Int.right) &&
+                world.CanEnter(LegacyMapCheckCells.TreeRootCell + Vector2Int.up) &&
+                world.CanEnter(LegacyMapCheckCells.TreeRootCell + Vector2Int.up * 3),
                 "only the tree root blocks walking; artwork collider is for clicking");
             Check(new SerializedObject(treeExamine).FindProperty("message").stringValue == "き。" &&
                 router.IsInteractableAt(worldCamera.WorldToScreenPoint(
@@ -157,9 +157,9 @@ namespace Halka.Game.Editor
                 "tree canopy click resolves its root-cell examine component");
             var playerRenderer = artwork.GetComponent<SpriteRenderer>();
             var originalPlayerPosition = player.transform.position;
-            foreach (var cell in new[] { ProjectBuilder.TreeRootCell + Vector2Int.down,
-                ProjectBuilder.TreeRootCell + Vector2Int.left,
-                ProjectBuilder.TreeRootCell + Vector2Int.right })
+            foreach (var cell in new[] { LegacyMapCheckCells.TreeRootCell + Vector2Int.down,
+                LegacyMapCheckCells.TreeRootCell + Vector2Int.left,
+                LegacyMapCheckCells.TreeRootCell + Vector2Int.right })
             {
                 player.transform.position = world.CellToWorld(cell);
                 treeDepth.UpdateSorting();
@@ -167,7 +167,7 @@ namespace Halka.Game.Editor
                     artwork.localPosition == new Vector3(0f, 0.25f, 0f),
                     "player stays in front below or beside tree without moving artwork");
             }
-            player.transform.position = world.CellToWorld(ProjectBuilder.TreeRootCell + Vector2Int.up);
+            player.transform.position = world.CellToWorld(LegacyMapCheckCells.TreeRootCell + Vector2Int.up);
             treeDepth.UpdateSorting();
             Check(treeRenderer.sortingOrder > playerRenderer.sortingOrder &&
                 artwork.localPosition == new Vector3(0f, 0.25f, 0f),
@@ -229,8 +229,8 @@ namespace Halka.Game.Editor
             }
             Check(actualGrassCells.Contains(Vector2Int.zero) &&
                 !actualGrassCells.Contains(new Vector2Int(1, 1)) &&
-                !actualGrassCells.Contains(ProjectBuilder.FlowerCell) &&
-                !actualGrassCells.Contains(ProjectBuilder.TreeRootCell) &&
+                !actualGrassCells.Contains(LegacyMapCheckCells.FlowerCell) &&
+                !actualGrassCells.Contains(LegacyMapCheckCells.TreeRootCell) &&
                 actualGrassCells.Count == 21 * 13 - 3,
                 "start cell covered; stone, flower, and tree root cells excluded");
             Check(GameObject.Find("Grass Front Overlay") == null &&
@@ -373,14 +373,14 @@ namespace Halka.Game.Editor
             Check(string.IsNullOrEmpty(activeMessage.TextAt(Time.unscaledTime)),
                 "action does not auto-turn toward adjacent stone");
             typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
-                .SetValue(player, new GridStepMotion(ProjectBuilder.FlowerCell + Vector2Int.left));
+                .SetValue(player, new GridStepMotion(LegacyMapCheckCells.FlowerCell + Vector2Int.left));
             hud.ShowMessage(string.Empty);
             router.TryInteract(worldCamera.WorldToScreenPoint(flower.transform.position));
             Check(string.IsNullOrEmpty(activeMessage.TextAt(Time.unscaledTime)),
                 "clicking flower does not auto-turn");
             player.ApplyDirection(Vector2Int.right);
             Check(player.Facing == FacingDirection.Right && !player.IsMoving &&
-                player.Cell == ProjectBuilder.FlowerCell + Vector2Int.left,
+                player.Cell == LegacyMapCheckCells.FlowerCell + Vector2Int.left,
                 "blocked flower input turns without entering");
             router.TryInteractAhead();
             Check(activeMessage.TextAt(Time.unscaledTime) == "はな。",
@@ -402,7 +402,7 @@ namespace Halka.Game.Editor
             Check(string.IsNullOrEmpty(activeMessage.TextAt(Time.unscaledTime)),
                 "distant tree canopy click cannot examine");
             typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
-                .SetValue(player, new GridStepMotion(ProjectBuilder.TreeRootCell + Vector2Int.left));
+                .SetValue(player, new GridStepMotion(LegacyMapCheckCells.TreeRootCell + Vector2Int.left));
             typeof(PlayerMover).GetField("<Facing>k__BackingField",
                 BindingFlags.NonPublic | BindingFlags.Instance).SetValue(player, FacingDirection.Up);
             router.TryInteract(leafScreen);
@@ -410,7 +410,7 @@ namespace Halka.Game.Editor
                 "adjacent tree click does not auto-turn");
             player.ApplyDirection(Vector2Int.right);
             Check(player.Facing == FacingDirection.Right && !player.IsMoving &&
-                player.Cell == ProjectBuilder.TreeRootCell + Vector2Int.left,
+                player.Cell == LegacyMapCheckCells.TreeRootCell + Vector2Int.left,
                 "blocked tree input changes only facing");
             router.TryInteractAhead();
             Check(activeMessage.TextAt(Time.unscaledTime) == "き。",
@@ -527,16 +527,16 @@ namespace Halka.Game.Editor
             Check(startedCells.Count == 0 && enteredCells.Count == 0 && !player.IsMoving,
                 "blocked stone step does not announce entry");
             typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
-                .SetValue(player, new GridStepMotion(ProjectBuilder.FlowerCell + Vector2Int.left));
+                .SetValue(player, new GridStepMotion(LegacyMapCheckCells.FlowerCell + Vector2Int.left));
             player.ApplyDirection(Vector2Int.right);
             Check(startedCells.Count == 0 && enteredCells.Count == 0 && !player.IsMoving &&
-                !grassField.HasGrass(ProjectBuilder.FlowerCell),
+                !grassField.HasGrass(LegacyMapCheckCells.FlowerCell),
                 "blocked flower step triggers neither footstep event nor grass rustle");
             typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
-                .SetValue(player, new GridStepMotion(ProjectBuilder.TreeRootCell + Vector2Int.left));
+                .SetValue(player, new GridStepMotion(LegacyMapCheckCells.TreeRootCell + Vector2Int.left));
             player.ApplyDirection(Vector2Int.right);
             Check(startedCells.Count == 0 && enteredCells.Count == 0 && !player.IsMoving &&
-                !grassField.HasGrass(ProjectBuilder.TreeRootCell),
+                !grassField.HasGrass(LegacyMapCheckCells.TreeRootCell),
                 "blocked tree root triggers no footstep event or grass rustle");
             typeof(PlayerMover).GetField("motion", BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(player, new GridStepMotion(new Vector2Int(-10, 1)));
@@ -584,8 +584,8 @@ namespace Halka.Game.Editor
             var secondGrass = FindGrass(grassGroup.transform, world, Vector2Int.up);
             Check(grassField.HasGrass(Vector2Int.zero) && grassField.HasGrass(Vector2Int.up) &&
                 !grassField.HasGrass(new Vector2Int(1, 1)) &&
-                !grassField.HasGrass(ProjectBuilder.FlowerCell) &&
-                !grassField.HasGrass(ProjectBuilder.TreeRootCell) && firstGrass.sprite == idleGrass,
+                !grassField.HasGrass(LegacyMapCheckCells.FlowerCell) &&
+                !grassField.HasGrass(LegacyMapCheckCells.TreeRootCell) && firstGrass.sprite == idleGrass,
                 "occupancy query excludes all three obstacle roots without names");
             typeof(PlayerGrassOcclusion).GetMethod("Awake", flags).Invoke(occlusion, null);
             var maskStepStart = typeof(PlayerGrassOcclusion).GetMethod("OnStepStarted", flags);

@@ -14,6 +14,15 @@ namespace Halka.Game.Interaction
         [SerializeField] private MonoBehaviour availability;
         [SerializeField] private InteractionAudio interactionAudio;
 
+        public void Configure(PlayerMover actor, GridWorld2D grid, GameHud messageHud,
+            string text)
+        {
+            player = actor;
+            world = grid;
+            hud = messageHud;
+            message = text;
+        }
+
         public static bool IsInRange(Vector2Int playerCell, bool isMoving,
             FacingDirection facing, Vector2Int targetCell)
         {

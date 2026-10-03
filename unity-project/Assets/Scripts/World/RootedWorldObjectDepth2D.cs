@@ -11,6 +11,15 @@ namespace Halka.Game.World
         [SerializeField] private SpriteRenderer playerRenderer;
         [SerializeField] private SpriteRenderer objectRenderer;
 
+        public void Configure(GridWorld2D grid, PlayerMover actor,
+            SpriteRenderer actorRenderer, SpriteRenderer artworkRenderer)
+        {
+            world = grid;
+            player = actor;
+            playerRenderer = actorRenderer;
+            objectRenderer = artworkRenderer;
+        }
+
         private void LateUpdate() => UpdateSorting();
 
         public void UpdateSorting()
