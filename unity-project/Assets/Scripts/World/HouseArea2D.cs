@@ -9,10 +9,10 @@ namespace Halka.Game.World
     {
         public static readonly Vector2Int HouseDoorCell = new Vector2Int(-7, -4);
         public static readonly Vector2Int OutsideEntryCell = new Vector2Int(-7, -5);
-        public static readonly Vector2Int InsideEntryCell = new Vector2Int(0, -2);
-        public static readonly Vector2Int InsideDoorCell = new Vector2Int(0, -3);
-        public static readonly Vector2Int InsideMinCell = new Vector2Int(-4, -3);
-        public static readonly Vector2Int InsideMaxCell = new Vector2Int(4, 3);
+        public static readonly Vector2Int InsideEntryCell = new Vector2Int(0, -3);
+        public static readonly Vector2Int InsideExitCell = new Vector2Int(0, -4);
+        public static readonly Vector2Int InsideMinCell = new Vector2Int(-6, -4);
+        public static readonly Vector2Int InsideMaxCell = new Vector2Int(6, 4);
 
         [SerializeField] private GridWorld2D world;
         [SerializeField] private PlayerMover player;
@@ -40,6 +40,22 @@ namespace Halka.Game.World
             interiorRoot.SetActive(false);
         }
 
+        private void OnEnable()
+        {
+            if (player != null) player.StepCompleted += OnStepCompleted;
+        }
+
+        private void OnDisable()
+        {
+            if (player != null) player.StepCompleted -= OnStepCompleted;
+        }
+
+        private void OnStepCompleted(Vector2Int cell)
+        {
+            if (!IsInside && cell == HouseDoorCell) Enter();
+            else if (IsInside && cell == InsideExitCell) Exit();
+        }
+
         public void Enter()
         {
             if (IsInside) return;
@@ -49,8 +65,9 @@ namespace Halka.Game.World
             interiorRoot.SetActive(true);
             world.SetBounds(InsideMinCell, InsideMaxCell);
             player.TeleportTo(InsideEntryCell);
-            worldCamera.orthographicSize = 2.4f;
-            cameraFollow.SetBounds(new Vector2(-2.5f, -2f), new Vector2(2.5f, 2f));
+            player.SetFacing(FacingDirection.Up);
+            worldCamera.orthographicSize = 3.4f;
+            cameraFollow.SetBounds(new Vector2(-3.8f, -2.8f), new Vector2(3.8f, 2.8f));
             worldCamera.transform.position = new Vector3(0f, 0f, -10f);
             IsInside = true;
         }
@@ -63,6 +80,7 @@ namespace Halka.Game.World
             exteriorRoot.SetActive(true);
             world.SetBounds(outsideMin, outsideMax);
             player.TeleportTo(OutsideEntryCell);
+            player.SetFacing(FacingDirection.Down);
             grassOcclusion.enabled = true;
             worldCamera.orthographicSize = outsideCameraSize;
             cameraFollow.SetBounds(outsideCameraMin, outsideCameraMax);

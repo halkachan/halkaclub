@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,10 +10,11 @@ namespace Halka.Game.World
             { Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left };
 
         public static bool TryFind(GridWorld2D world, Vector2Int start, Vector2Int goal,
-            List<Vector2Int> path)
+            List<Vector2Int> path, Func<Vector2Int, bool> canEnter = null)
         {
             path.Clear();
-            if (start == goal || !world.CanEnter(goal)) return false;
+            canEnter ??= world.CanEnter;
+            if (start == goal || !canEnter(goal)) return false;
             var queue = new Queue<Vector2Int>();
             var parents = new Dictionary<Vector2Int, Vector2Int> { [start] = start };
             queue.Enqueue(start);
@@ -23,7 +25,7 @@ namespace Halka.Game.World
                 foreach (var direction in Directions)
                 {
                     var next = cell + direction;
-                    if (parents.ContainsKey(next) || !world.CanEnter(next)) continue;
+                    if (parents.ContainsKey(next) || !canEnter(next)) continue;
                     parents.Add(next, cell);
                     queue.Enqueue(next);
                 }

@@ -14,6 +14,7 @@ namespace Halka.Game.Player
         [SerializeField] private PlayerMover player;
         [SerializeField] private GridWorld2D world;
         [SerializeField] private HouseArea2D house;
+        [SerializeField] private DynamicGridOccupancy2D occupancy;
         [SerializeField] private bool enabledByDefault = true;
 
         private readonly List<Vector2Int> route = new List<Vector2Int>();
@@ -90,9 +91,14 @@ namespace Halka.Game.Player
             {
                 var goal = attempt < 5 ? interests[Random.Range(0, interests.Length)] :
                     player.Cell + new Vector2Int(Random.Range(-4, 5), Random.Range(-4, 5));
-                if (GridPathfinder2D.TryFind(world, player.Cell, goal, route)) return;
+                if (GridPathfinder2D.TryFind(world, player.Cell, goal, route,
+                    CanAutoEnter)) return;
             }
         }
+
+        public bool CanAutoEnter(Vector2Int cell) =>
+            cell != HouseArea2D.HouseDoorCell && world.CanEnter(cell) &&
+            (occupancy == null || occupancy.CanPlayerEnter(cell));
 
         private void OnUserActed() => RecordUserAction(Time.unscaledTime);
 

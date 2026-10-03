@@ -11,6 +11,7 @@ namespace Halka.Game.Player
 
         [SerializeField] private GameInput input;
         [SerializeField] private GridWorld2D world;
+        [SerializeField] private DynamicGridOccupancy2D occupancy;
         [SerializeField, Min(0.05f)] private float stepSeconds = DefaultStepSeconds;
 
         private GridStepMotion motion;
@@ -43,7 +44,10 @@ namespace Halka.Game.Player
             transform.position = world.CellToWorld(motion.Position);
             if (wasMoving && !motion.IsMoving)
             {
+                var completedMotion = motion;
                 StepCompleted?.Invoke(motion.Cell);
+                // A cell transition can replace the motion with a new area's cell.
+                if (motion != completedMotion) return;
                 ApplyDirection(direction);
             }
         }
@@ -55,7 +59,9 @@ namespace Halka.Game.Player
             if (motion.IsMoving || Mathf.Abs(direction.x) + Mathf.Abs(direction.y) != 1) return false;
             Facing = FacingDirectionExtensions.FromVector(direction);
             var target = motion.Cell + direction;
-            if (motion.TryBegin(direction, world.CanEnter, stepSeconds))
+            if (motion.TryBegin(direction,
+                cell => world.CanEnter(cell) && (occupancy == null || occupancy.CanPlayerEnter(cell)),
+                stepSeconds))
             {
                 StepStarted?.Invoke(target);
                 return true;
@@ -75,5 +81,7 @@ namespace Halka.Game.Player
             motion = new GridStepMotion(cell);
             transform.position = world.CellToWorld(cell);
         }
+
+        public void SetFacing(FacingDirection facing) => Facing = facing;
     }
 }

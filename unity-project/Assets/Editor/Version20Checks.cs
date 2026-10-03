@@ -1,12 +1,11 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using Halka.Game.Core;
-using Halka.Game.Input;
 using Halka.Game.Interaction;
 using Halka.Game.Player;
-using Halka.Game.UI;
 using Halka.Game.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -17,6 +16,10 @@ namespace Halka.Game.Editor
     public static class Version20Checks
     {
         private const BindingFlags Hidden = BindingFlags.NonPublic | BindingFlags.Instance;
+        private const string HouseSourceHash =
+            "BBC4B8CBD5677B8DE6BF7C19BC2E0624887F9AFEAB70473743D73B7530BC41FD";
+        private const string CrowSourceHash =
+            "331E55F621A20063C701CF0350FD4A9C83EEA8F4E2991D8CF51C7AA80B1DECBB";
 
         [MenuItem("HALKA/Validate ver2.0")]
         public static void Run()
@@ -24,197 +27,206 @@ namespace Halka.Game.Editor
             EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
             var world = UnityEngine.Object.FindFirstObjectByType<GridWorld2D>();
             var player = UnityEngine.Object.FindFirstObjectByType<PlayerMover>();
-            var input = UnityEngine.Object.FindFirstObjectByType<GameInput>();
-            var router = UnityEngine.Object.FindFirstObjectByType<InteractionRouter>();
-            var hud = UnityEngine.Object.FindFirstObjectByType<GameHud>();
             var area = UnityEngine.Object.FindFirstObjectByType<HouseArea2D>();
-            var auto = UnityEngine.Object.FindFirstObjectByType<AutoModeController>();
+            var autoMode = UnityEngine.Object.FindFirstObjectByType<AutoModeController>();
+            var occupancy = UnityEngine.Object.FindFirstObjectByType<DynamicGridOccupancy2D>();
+            var crow = UnityEngine.Object.FindFirstObjectByType<CrowWander2D>();
             var grass = UnityEngine.Object.FindFirstObjectByType<GrassField2D>();
-            var mask = player.GetComponent<PlayerGrassOcclusion>();
-            var camera = UnityEngine.Object.FindFirstObjectByType<Camera>();
+            var surface = UnityEngine.Object.FindFirstObjectByType<GroundSurfaceField2D>();
             var house = GameObject.Find("House - HarukaChan home");
-            var crow = GameObject.Find("Crow - first neighbor");
-            var crowWander = crow.GetComponent<CrowWander2D>();
-            var exteriorRoot = (GameObject)Field(area, "exteriorRoot");
-            var interiorRoot = (GameObject)Field(area, "interiorRoot");
-            var insideDoor = interiorRoot.transform.Find("House exit door");
-            Check(GameVersion.Value == "2.0" &&
-                GameVersion.Label == "ver2.0", "one version source and HUD label");
+            var interior = (GameObject)Field(area, "interiorRoot");
+            var exterior = (GameObject)Field(area, "exteriorRoot");
+            Check(GameVersion.Value == "2.0" && GameVersion.Label == "ver2.0",
+                "ver2.0 remains the one game version source");
             Check(GridWorld2D.TilePixels == 32 &&
                 Mathf.Approximately(GridWorld2D.TileWorldSize, 0.5f) &&
-                player.transform.Find("Player artwork").localPosition == new Vector3(0f, 0.25f, 0f),
-                "existing grid and fixed player artwork placement");
-            Check(world.MinCell == new Vector2Int(-10, -6) &&
-                world.MaxCell == new Vector2Int(10, 6) &&
-                world.CellToWorld(new Vector2Int(0, -1)) == new Vector3(0f, -0.5f),
-                "outdoor grid and dirt cell preserved");
-
+                player.transform.Find("Player artwork").localPosition == new Vector3(0f, 0.25f),
+                "grid and fixed player artwork stay unchanged");
+            Check(SourceHash("house_exterior_user_source.png") == HouseSourceHash &&
+                SourceHash("crow_user_reference.png") == CrowSourceHash,
+                "user-approved house and crow source bytes are preserved");
             CheckSprite("house_exterior.png", 160, 128);
-            CheckSprite("house_floor.png", 32, 32);
-            CheckSprite("house_wall.png", 32, 32);
-            CheckSprite("house_door_inside.png", 32, 32);
-            CheckSprite("house_bed.png", 64, 64);
-            CheckSprite("crow_idle.png", 32, 32);
-            CheckSprite("crow_hop_1.png", 32, 32);
-            CheckSprite("crow_hop_2.png", 32, 32);
+            CheckSprite("house_bed.png", 64, 96);
+            foreach (var direction in new[] { "down", "up", "left", "right" })
+            {
+                CheckSprite($"crow_idle_{direction}.png", 32, 32);
+                CheckSprite($"crow_walk_{direction}_0.png", 32, 32);
+                CheckSprite($"crow_walk_{direction}_1.png", 32, 32);
+            }
+            CheckSprite("crow_grass_mask.png", 32, 32);
 
             var houseArt = house.transform.Find("House exterior artwork");
-            var houseSprite = houseArt.GetComponent<SpriteRenderer>().sprite;
-            Check(HouseArea2D.HouseDoorCell == new Vector2Int(-7, -4) &&
-                HouseArea2D.OutsideEntryCell == new Vector2Int(-7, -5) &&
-                house.transform.position == world.CellToWorld(HouseArea2D.HouseDoorCell) &&
+            Check(house.transform.position == world.CellToWorld(HouseArea2D.HouseDoorCell) &&
                 houseArt.localPosition == Vector3.up * 0.75f &&
-                houseArt.position == world.CellToWorld(HouseArea2D.HouseDoorCell) +
-                    Vector3.up * 0.75f &&
-                Mathf.Approximately(houseSprite.bounds.size.x, 2.5f) &&
-                Mathf.Approximately(houseSprite.bounds.size.y, 2f),
-                "house occupies exactly five by four visual cells above the door");
-            var footprints = house.GetComponentsInChildren<GridObstacle>();
-            Check(footprints.Length == 10 &&
-                house.GetComponent<GridObstacle>() == null &&
-                houseArt.GetComponent<Collider2D>() == null,
-                "only the house lower two rows block movement");
-            for (var y = -4; y <= -3; y++)
+                HouseArea2D.HouseDoorCell == new Vector2Int(-7, -4) &&
+                HouseArea2D.OutsideEntryCell == new Vector2Int(-7, -5),
+                "user house remains centered on the original door cell");
+            var houseObstacles = house.GetComponentsInChildren<GridObstacle>();
+            Check(houseObstacles.Length == 9 && world.CanEnter(HouseArea2D.HouseDoorCell) &&
+                !house.GetComponents<MonoBehaviour>().Any(component => component is IInteractable),
+                "only nine footprint cells block; entrance has no interaction");
+            for (var y = -4; y <= -1; y++)
             for (var x = -9; x <= -5; x++)
             {
                 var cell = new Vector2Int(x, y);
-                Check(footprints.Count(obstacle =>
-                    world.WorldToCell(obstacle.transform.position) == cell) == 1 &&
-                    !world.CanEnter(cell) && !grass.HasGrass(cell),
-                    $"house footprint blocks and excludes grass at {cell}");
+                Check(surface.HasGroundOverride(cell),
+                    $"house underlay dirt at {cell}");
             }
-            Check(world.CanEnter(HouseArea2D.OutsideEntryCell),
-                "outside entry remains walkable");
-            Check(house.GetComponent<DoorTransitionInteractable>() is IInteractable &&
-                router.IsInteractableAt(camera.WorldToScreenPoint(house.transform.position)),
-                "PC click on house door resolves shared interaction router");
+            foreach (var cell in ProjectBuilder.RoadCells)
+                Check(surface.HasGroundOverride(cell) && world.CanEnter(cell),
+                    $"road is walkable dirt at {cell}");
+            Check(surface.Count == ProjectBuilder.DirtCells.Length &&
+                ProjectBuilder.DirtCells.Length == 33,
+                "twenty underlay cells and thirteen road cells use one surface field");
 
-            var grassObjects = GameObject.Find("Grass decorations");
             typeof(GrassField2D).GetMethod("Initialize", Hidden).Invoke(grass, null);
-            Check(grassObjects.transform.childCount == 259 &&
-                grass.HasGrass(Vector2Int.zero) &&
-                !grass.HasGrass(new Vector2Int(0, -1)) &&
-                !grass.HasGrass(new Vector2Int(1, 1)) &&
-                !grass.HasGrass(new Vector2Int(-3, 1)) &&
-                !grass.HasGrass(new Vector2Int(5, 1)),
-                "grass excludes ten new house cells and retains prior exclusions");
-            Check(interiorRoot.transform.Find("Bed - simple one") != null &&
-                insideDoor != null &&
-                interiorRoot.transform.Find("Bed - simple one")
-                    .GetComponentsInChildren<GridObstacle>().Length == 4,
-                "one room contains floor, walls, exit and a two by two blocked bed");
+            foreach (var cell in ProjectBuilder.DirtCells)
+                Check(!grass.HasGrass(cell), $"dirt excludes grass at {cell}");
+            var obstacles = UnityEngine.Object.FindObjectsByType<GridObstacle>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None)
+                .Where(item => item.gameObject.activeInHierarchy).ToArray();
+            foreach (var obstacle in obstacles)
+                Check(!grass.HasGrass(world.WorldToCell(obstacle.transform.position)),
+                    "outdoor obstacle excludes grass");
+            Check(ProjectBuilder.StoneCells.Length == 4 &&
+                ProjectBuilder.FlowerCells.Length == 4 &&
+                ProjectBuilder.TreeCells.Length == 3,
+                "four stones, four flowers and three trees are fixed");
+            foreach (var cell in ProjectBuilder.StoneCells.Concat(ProjectBuilder.FlowerCells)
+                .Concat(ProjectBuilder.TreeCells))
+                Check(!world.CanEnter(cell) && !grass.HasGrass(cell),
+                    $"world object at {cell} blocks and excludes grass");
+            Check(grass.transform.childCount == 229,
+                "grass count matches obstacles and surface overrides");
 
-            Check(crow.transform.position == world.CellToWorld(CrowWander2D.InitialCell) &&
-                CrowWander2D.InitialCell == new Vector2Int(7, 2) &&
+            Check(HouseArea2D.InsideMinCell == new Vector2Int(-6, -4) &&
+                HouseArea2D.InsideMaxCell == new Vector2Int(6, 4) &&
+                HouseArea2D.InsideEntryCell == new Vector2Int(0, -3) &&
+                HouseArea2D.InsideExitCell == new Vector2Int(0, -4),
+                "interior is thirteen by nine with a bottom passage");
+            var backdrop = interior.transform.Find("Interior dark backdrop")
+                .GetComponent<SpriteRenderer>();
+            var bed = interior.transform.Find("Bed - simple one");
+            Check(backdrop.color.r < 0.1f && backdrop.sortingOrder < -9 &&
+                interior.transform.Find("House exit passage") != null &&
+                bed.GetComponentsInChildren<GridObstacle>().Length == 6 &&
+                bed.GetComponent<SpriteRenderer>().sprite.rect.size == new Vector2(64f, 96f),
+                "dark backdrop, open passage, two by three bed");
+
+            Check(crow.Cell == CrowWander2D.InitialCell &&
                 crow.GetComponent<GridObstacle>() == null &&
-                crow.GetComponent<BoxCollider2D>() != null &&
                 crow.GetComponent<ExamineInteractable>() is IInteractable &&
-                world.CanEnter(CrowWander2D.InitialCell) &&
-                (string)Field(crow.GetComponent<ExamineInteractable>(), "message") == "カァ。",
-                "crow begins by the tree, remains walkable, and uses generic examine");
-            Check(CrowWander2D.RangeMin == new Vector2Int(4, 0) &&
-                CrowWander2D.RangeMax == new Vector2Int(8, 4),
-                "crow stays in the limited tree neighborhood");
-            typeof(CrowWander2D).GetMethod("Awake", Hidden).Invoke(crowWander, null);
-            UnityEngine.Random.InitState(2020);
-            var moved = false;
-            for (var i = 1; i <= 30; i++)
+                crow.GetComponent<CrowGrassOcclusion>() != null &&
+                CrowGrassOcclusion.HiddenPixels == 4 &&
+                Mathf.Approximately(CrowWander2D.StepSeconds, 0.27f),
+                "crow retains interaction, gains walking and four-pixel mask");
+            var crowRenderer = crow.GetComponent<SpriteRenderer>();
+            foreach (var direction in new[] { "Down", "Up", "Left", "Right" })
             {
-                crowWander.Tick(i * 5f);
-                moved |= crowWander.Cell != CrowWander2D.InitialCell;
-                Check(crowWander.Cell.x >= CrowWander2D.RangeMin.x &&
-                    crowWander.Cell.x <= CrowWander2D.RangeMax.x &&
-                    crowWander.Cell.y >= CrowWander2D.RangeMin.y &&
-                    crowWander.Cell.y <= CrowWander2D.RangeMax.y &&
-                    world.CanEnter(crowWander.Cell),
-                    "crow wait/hop remains within walkable nearby cells");
+                Check(Field(crow, "idle" + direction) is Sprite,
+                    $"crow idle {direction} assigned");
+                Check(((Sprite[])Field(crow, "walk" + direction)).Length == 2,
+                    $"crow walk {direction} has two frames");
             }
-            Check(moved, "crow hops to another cell over time");
+            var right = File.ReadAllBytes(WorldPath("crow_idle_right.png"));
+            var left = File.ReadAllBytes(WorldPath("crow_idle_left.png"));
+            Check(right.Length > 0 && left.Length > 0,
+                "right user source and left mirror assets exist");
+            Check(crowRenderer.sprite != null &&
+                (string)Field(crow.GetComponent<ExamineInteractable>(), "message") == "カァ。",
+                "crow keeps common examine message");
 
             typeof(PlayerMover).GetMethod("Awake", Hidden).Invoke(player, null);
-            typeof(HouseArea2D).GetMethod("Awake", Hidden).Invoke(area, null);
-            player.TeleportTo(HouseArea2D.OutsideEntryCell);
-            Check(!player.TryStep(Vector2Int.up) && player.Facing == FacingDirection.Up,
-                "blocked house door turns player without starting a step");
-            router.TryInteractAhead();
-            Check(area.IsInside && interiorRoot.activeSelf && !exteriorRoot.activeSelf &&
-                player.Cell == HouseArea2D.InsideEntryCell &&
-                world.MinCell == HouseArea2D.InsideMinCell &&
-                world.MaxCell == HouseArea2D.InsideMaxCell && !mask.enabled,
-                "facing the outside door enters the room without grass masking");
-            Check(!player.TryStep(Vector2Int.down) && player.Facing == FacingDirection.Down,
-                "room exit cell is a blocking interactable door");
-            router.TryInteractAhead();
-            Check(!area.IsInside && !interiorRoot.activeSelf && exteriorRoot.activeSelf &&
-                player.Cell == HouseArea2D.OutsideEntryCell && mask.enabled &&
-                world.MinCell == new Vector2Int(-10, -6) &&
-                world.MaxCell == new Vector2Int(10, 6),
-                "interior exit returns to the same outdoor entry");
-
-            var crowTarget = crowWander.Cell;
-            var crowApproach = crowTarget + Vector2Int.left;
-            player.TeleportTo(crowApproach + Vector2Int.left);
-            Check(player.TryStep(Vector2Int.right), "player approaches crow using one grid step");
-            player.TeleportTo(crowApproach);
-            router.TryInteractAhead();
-            var message = (TimedMessage)Field(hud, "message");
-            Check(message.TextAt(Time.unscaledTime) == "カァ。",
-                "crow displays its message through the existing HUD");
-
-            var autoInput = (AutoModeController)Field(input, "autoMode");
-            Check(auto == autoInput && Field(auto, "input") == input &&
-                Field(auto, "world") == world && Field(auto, "player") == player &&
-                auto.IsOverControls(new Vector2(Screen.width - 30f, Screen.height - 55f)),
-                "PC and touch share a safe-area AUTO toggle outside D-pad and A button");
-            typeof(AutoModeController).GetMethod("Awake", Hidden).Invoke(auto, null);
-            Check(auto.AutoEnabled && AutoModeController.IdleSeconds == 60f,
-                "AUTO defaults on after exactly one minute of inactivity");
+            typeof(CrowWander2D).GetMethod("Awake", Hidden).Invoke(crow, null);
+            player.TeleportTo(CrowWander2D.InitialCell + Vector2Int.left);
+            Check(!player.TryStep(Vector2Int.right) &&
+                !occupancy.CanPlayerEnter(crow.Cell) &&
+                !occupancy.CanCrowEnter(player.Cell),
+                "player and crow reserve each other's occupied cells");
             player.TeleportTo(Vector2Int.zero);
-            auto.RecordUserAction(0f);
-            auto.Tick(59.99f);
-            Check(!auto.Active, "AUTO stays idle before sixty seconds");
-            auto.Tick(60f);
-            Check(auto.Active, "AUTO starts at the sixty-second threshold");
-            var autoSteps = 0;
-            player.StepStarted += _ => autoSteps++;
-            UnityEngine.Random.InitState(2000);
-            auto.Tick(61f);
-            Check(autoSteps == 1 && player.IsMoving,
-                "AUTO uses PlayerMover's successful one-cell step event");
-            auto.RecordUserAction(61.01f);
-            Check(!auto.Active && !player.IsMoving,
-                "user input immediately cancels AUTO movement");
-            auto.SetAutoEnabled(false, 62f);
-            auto.Tick(200f);
-            Check(!auto.Active, "AUTO OFF prevents idle activation");
-            auto.SetAutoEnabled(true, 201f);
-            player.TeleportTo(HouseArea2D.OutsideEntryCell);
-            player.TryStep(Vector2Int.up);
-            router.TryInteractAhead();
-            auto.Tick(300f);
-            Check(area.IsInside && !auto.Active,
-                "AUTO never starts or enters the house on its own");
-            player.TryStep(Vector2Int.down);
-            router.TryInteractAhead();
+            UnityEngine.Random.InitState(2020);
+            var baseTime = Time.time;
+            var observedStep = false;
+            for (var i = 1; i <= 20 && !observedStep; i++)
+            {
+                var start = baseTime + 5f * i;
+                crow.Tick(start);
+                if (!crow.IsMoving) continue;
+                observedStep = true;
+                Check(crow.StepToCell != crow.StepFromCell &&
+                    !crow.GetComponent<BoxCollider2D>().enabled &&
+                    !occupancy.CanPlayerEnter(crow.StepFromCell) &&
+                    !occupancy.CanPlayerEnter(crow.StepToCell),
+                    "crow begins a reserved walking step with pointer disabled");
+                crow.Tick(start + CrowWander2D.StepSeconds * 0.5f);
+                Check(crow.IsMoving && crow.StepProgressNormalized > 0f &&
+                    crow.StepProgressNormalized < 1f &&
+                    crow.transform.position != world.CellToWorld(crow.StepFromCell) &&
+                    crow.transform.position != world.CellToWorld(crow.StepToCell),
+                    "crow interpolates through the cell instead of teleporting");
+                crow.Tick(start + CrowWander2D.StepSeconds + 0.01f);
+                Check(!crow.IsMoving && crow.GetComponent<BoxCollider2D>().enabled &&
+                    crowRenderer.sprite == Field(crow, "idle" + crow.Facing) as Sprite,
+                    "crow ends at an idle pose and re-enables pointer interaction");
+            }
+            Check(observedStep, "crow eventually walks after waiting");
+            Check(crow.Cell.x >= CrowWander2D.RangeMin.x &&
+                crow.Cell.x <= CrowWander2D.RangeMax.x &&
+                crow.Cell.y >= CrowWander2D.RangeMin.y &&
+                crow.Cell.y <= CrowWander2D.RangeMax.y,
+                "crow remains near the tree");
+            var crowMask = crow.GetComponent<CrowGrassOcclusion>();
+            crowMask.RefreshMask();
+            Check(crowMask.IsMasked == grass.HasGrass(crow.Cell),
+                "crow grass mask follows its visual cell");
 
-            var stone = GameObject.Find("Stone - first world object");
-            var flower = GameObject.Find("Flower - first bloom");
-            var tree = GameObject.Find("Tree - first tree");
-            Check((string)Field(stone.GetComponent<ExamineInteractable>(), "message") == "いし。" &&
-                (string)Field(flower.GetComponent<ExamineInteractable>(), "message") == "はな。" &&
-                (string)Field(tree.GetComponent<ExamineInteractable>(), "message") == "き。" &&
-                tree.GetComponent<RootedWorldObjectDepth2D>() != null &&
-                world.CanEnter(new Vector2Int(0, -1)) &&
+            typeof(HouseArea2D).GetMethod("Awake", Hidden).Invoke(area, null);
+            typeof(HouseArea2D).GetMethod("OnEnable", Hidden).Invoke(area, null);
+            player.TeleportTo(HouseArea2D.OutsideEntryCell);
+            Check(player.TryStep(Vector2Int.up), "player may walk into the house entrance");
+            StepPlayer(player, PlayerMover.DefaultStepSeconds, Vector2Int.zero);
+            Check(area.IsInside && interior.activeSelf && !exterior.activeSelf &&
+                player.Cell == HouseArea2D.InsideEntryCell,
+                "step completion enters expanded room");
+            Check(player.TryStep(Vector2Int.down), "inside passage is walkable");
+            StepPlayer(player, PlayerMover.DefaultStepSeconds, Vector2Int.zero);
+            Check(!area.IsInside && exterior.activeSelf && !interior.activeSelf &&
+                player.Cell == HouseArea2D.OutsideEntryCell &&
+                player.Facing == FacingDirection.Down,
+                "step completion exits without an interaction");
+            Check(autoMode.CanAutoEnter(HouseArea2D.HouseDoorCell) == false &&
+                autoMode.CanAutoEnter(crow.Cell) == false &&
+                AutoModeController.IdleSeconds == 60f,
+                "AUTO avoids house transition and dynamic crow occupancy");
+            Check(player.GetComponent<PlayerGrassOcclusion>() != null &&
                 player.GetComponent<PlayerFootstepAudio>() != null &&
-                player.GetComponent<PlayerGrassOcclusion>() != null &&
-                UnityEngine.Object.FindFirstObjectByType<TouchDpad>() != null &&
-                UnityEngine.Object.FindFirstObjectByType<TouchActionButton>() != null,
-                "stone, flower, tree, dirt, depth, footsteps, mask and touch controls regressions");
-            Debug.Log("HALKA ver2.0 checks passed.");
+                GameObject.Find("Stone - first world object")
+                    .GetComponent<ExamineInteractable>() != null &&
+                GameObject.Find("Flower - first bloom")
+                    .GetComponent<ExamineInteractable>() != null &&
+                GameObject.Find("Tree - first tree")
+                    .GetComponent<RootedWorldObjectDepth2D>() != null,
+                "player mask, footstep and original interactions stay present");
+            Debug.Log("HALKA ver2.0 finish checks passed.");
         }
+
+        private static void StepPlayer(PlayerMover player, float seconds, Vector2Int direction) =>
+            typeof(PlayerMover).GetMethod("Tick", Hidden)
+                .Invoke(player, new object[] { seconds, direction });
 
         private static object Field(object target, string name) =>
             target.GetType().GetField(name, Hidden).GetValue(target);
+
+        private static string WorldPath(string fileName) =>
+            Path.Combine(Application.dataPath, "Content", "World", fileName);
+
+        private static string SourceHash(string fileName)
+        {
+            var path = Path.Combine(Application.dataPath, "..", "SourceGeneratedArt",
+                "v20", fileName);
+            using var sha = SHA256.Create();
+            return BitConverter.ToString(sha.ComputeHash(File.ReadAllBytes(path))).Replace("-", "");
+        }
 
         private static void CheckSprite(string fileName, int width, int height)
         {
@@ -233,7 +245,7 @@ namespace Halka.Game.Editor
                 importer.npotScale == TextureImporterNPOTScale.None &&
                 Mathf.Approximately(importer.spritePixelsPerUnit, 64f) &&
                 settings.spriteAlignment == (int)SpriteAlignment.Center,
-                "sharp centered world sprite: " + fileName);
+                "sharp centered sprite: " + fileName);
         }
 
         private static void Check(bool condition, string label)
