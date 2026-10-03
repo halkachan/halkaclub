@@ -1,0 +1,71 @@
+{
+  "format": "halka-world-catalog",
+  "formatVersion": 1,
+  "surfaces": [
+    {
+      "definitionId": "dirt",
+      "displayName": "土",
+      "category": "surface",
+      "previewSpritePath": "Assets/Content/World/dirt.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "editorSelectable": true
+    }
+  ],
+  "objects": [
+    {
+      "definitionId": "stone_basic",
+      "displayName": "石",
+      "category": "world-object",
+      "previewSpritePath": "Assets/Content/World/stone.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true
+    },
+    {
+      "definitionId": "flower_basic",
+      "displayName": "花",
+      "category": "world-object",
+      "previewSpritePath": "Assets/Content/World/flower.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true
+    },
+    {
+      "definitionId": "tree_basic",
+      "displayName": "木",
+      "category": "world-object",
+      "previewSpritePath": "Assets/Content/World/tree.png",
+      "visualWidthPixels": 96,
+      "visualHeightPixels": 128,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true
+    }
+  ],
+  "visuals": {
+    "grassSpritePath": "Assets/Content/World/grass.png",
+    "houseSpritePath": "Assets/Content/World/house_exterior.png",
+    "crowSpritePath": "Assets/Content/World/crow_idle_right.png",
+    "playerSpritePath": "Assets/Content/Character/front_idle/00.png"
+  }
+}

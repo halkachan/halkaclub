@@ -1,0 +1,508 @@
+{
+  "format": "halka-world-map",
+  "formatVersion": 1,
+  "mapId": "first_field",
+  "displayName": "First Field",
+  "bounds": {
+    "minX": -10,
+    "maxX": 10,
+    "minY": -6,
+    "maxY": 6
+  },
+  "surfaces": [
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 2,
+        "y": -6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -8,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -7,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -6,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -5,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -4,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -3,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 2,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -7,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -3,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -2,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 1,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 2,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -2,
+        "y": -3
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -1,
+        "y": -3
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 1,
+        "y": -3
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -1,
+        "y": -2
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 0,
+        "y": -2
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 1,
+        "y": -2
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -3,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -2,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -1,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 0,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 1,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 2,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 3,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 8,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 9,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -10,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -9,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -8,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -7,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -6,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -5,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -4,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -3,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 3,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 4,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 5,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 6,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 7,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 8,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 0,
+        "y": 1
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 0,
+        "y": 2
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 1,
+        "y": 2
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 1,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 0,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 1,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 0,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 0,
+        "y": 6
+      }
+    }
+  ],
+  "objects": [
+    {
+      "instanceId": "obj_3420672f46af5b9ba3d44af98a19925a",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 6,
+        "y": -1
+      }
+    },
+    {
+      "instanceId": "obj_233d1ca59f445f8a92a6641167b3d78a",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": -3,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_086314e510a15c41bd6693248dbab167",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": -5,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_fadd9ea16d185d9ca4e16a8b6b17d04c",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 2,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_7e49f7553a825d00b3129c4474906dfb",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 3,
+        "y": -4
+      }
+    },
+    {
+      "instanceId": "obj_b44948f3a19d5295a1092049156cd5e6",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 1,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_08973c34e708520f81aa843efd4e00c3",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 9,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_36867ec94b7559c59aa31d96d0608460",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": -2,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_73336cc2f30a5b03b80a9aea27e2355b",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 8,
+        "y": -3
+      }
+    },
+    {
+      "instanceId": "obj_b8083b939c355574929e534054d4ad43",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 5,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_27e1ad8c53db59f1a79895f66ae43951",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": -7,
+        "y": 2
+      }
+    }
+  ],
+  "markers": {
+    "playerSpawn": {
+      "x": 0,
+      "y": 0
+    },
+    "crowSpawn": {
+      "x": 7,
+      "y": 2
+    },
+    "houseDoor": {
+      "x": -7,
+      "y": -4
+    },
+    "outsideEntry": {
+      "x": -7,
+      "y": -5
+    },
+    "houseFootprint": {
+      "width": 5,
+      "height": 2
+    },
+    "roadEnds": {
+      "north": {
+        "x": 0,
+        "y": 6
+      },
+      "east": {
+        "x": 10,
+        "y": -1
+      },
+      "south": {
+        "x": 2,
+        "y": -6
+      },
+      "west": {
+        "x": -10,
+        "y": 0
+      }
+    }
+  }
+}

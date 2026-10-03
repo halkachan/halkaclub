@@ -28,6 +28,7 @@ namespace Halka.Game.Editor
         [MenuItem("HALKA/Validate ver2.0")]
         public static void Run()
         {
+            MapAuthoringImporter.SyncAll();
             EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
             var loader = UnityEngine.Object.FindFirstObjectByType<MapRuntimeLoader2D>();
             Check(loader != null && loader.Map != null, "scene uses MapRuntimeLoader2D");

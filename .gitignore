@@ -11,3 +11,10 @@ unity-project/*.sln
 unity-project/*.slnx
 unity-project/.gradle/
 unity-*.log
+tools/HalkaWorldMapEditor/**/bin/
+tools/HalkaWorldMapEditor/**/obj/
+tools/HalkaWorldMapEditor/dist/
+standalone-*.log
+*.hwmap.json.bak
+*.hwmap.json.bak.meta
+*.hwmap.json.tmp

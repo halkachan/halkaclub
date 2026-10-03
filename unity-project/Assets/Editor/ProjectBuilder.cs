@@ -43,6 +43,7 @@ namespace Halka.Game.Editor
         public static void PrepareScene()
         {
             ConfigureProject();
+            MapAuthoringImporter.SyncAll();
             var map = AssetDatabase.LoadAssetAtPath<MapDefinition>(MapPath);
             if (map == null) throw new InvalidOperationException("first_field MapDefinition is missing");
             var mapProblems = MapPlacementRules.Validate(map);
@@ -327,6 +328,7 @@ namespace Halka.Game.Editor
         public static void BuildWeb()
         {
             ConfigureProject();
+            MapAuthoringImporter.SyncAll();
             if (!File.Exists(ScenePath)) PrepareScene();
             var output = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "halkaworld", "webgl"));
             Directory.CreateDirectory(output);

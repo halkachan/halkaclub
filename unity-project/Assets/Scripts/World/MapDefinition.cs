@@ -14,6 +14,7 @@ namespace Halka.Game.World
     [Serializable]
     public struct WorldObjectPlacement
     {
+        public string InstanceId;
         public Vector2Int RootCell;
         public WorldObjectDefinition Definition;
     }
@@ -25,7 +26,6 @@ namespace Halka.Game.World
         public Vector2Int Cell;
     }
 
-    [CreateAssetMenu(menuName = "HALKA WORLD/Map Definition")]
     public sealed class MapDefinition : ScriptableObject
     {
         [SerializeField] private int dataVersion = 1;
@@ -113,12 +113,38 @@ namespace Halka.Game.World
                 {
                     if (objects[i].Definition == definition) return false;
                     if (definition == null) objects.RemoveAt(i);
-                    else objects[i] = new WorldObjectPlacement { RootCell = cell, Definition = definition };
+                    else objects[i] = new WorldObjectPlacement {
+                        InstanceId = objects[i].InstanceId, RootCell = cell, Definition = definition };
                     return true;
                 }
             if (definition == null) return false;
-            objects.Add(new WorldObjectPlacement { RootCell = cell, Definition = definition });
+            objects.Add(new WorldObjectPlacement {
+                InstanceId = "obj_" + Guid.NewGuid().ToString("N"), RootCell = cell, Definition = definition });
             return true;
+        }
+
+        // Called only by the Unity authoring importer. The JSON is the editable source.
+        public void ReplaceFromAuthoring(string id, string title, Vector2Int minimum,
+            Vector2Int maximum, List<SurfacePlacement> surfacePlacements,
+            List<WorldObjectPlacement> objectPlacements, Vector2Int playerSpawn,
+            List<LockedMapMarker> spawns, Vector2Int door, Vector2Int entry,
+            Vector2Int north, Vector2Int east, Vector2Int south, Vector2Int west)
+        {
+            dataVersion = 1;
+            mapId = id;
+            displayName = title;
+            minCell = minimum;
+            maxCell = maximum;
+            surfaces = surfacePlacements;
+            objects = objectPlacements;
+            playerSpawnCell = playerSpawn;
+            entitySpawns = spawns;
+            houseDoorCell = door;
+            outsideEntryCell = entry;
+            northRoadEnd = north;
+            eastRoadEnd = east;
+            southRoadEnd = south;
+            westRoadEnd = west;
         }
     }
 }

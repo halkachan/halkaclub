@@ -82,9 +82,10 @@ namespace Halka.Game.World
                 foreach (var placement in map.Objects)
                     if (placement.Definition != null && placement.RootCell != ignore &&
                         Covers(placement, occupied)) otherObject = true;
-                if (!map.Contains(occupied) || IsProtected(map, occupied) || otherObject)
+                if (!map.Contains(occupied) || IsProtected(map, occupied) || otherObject ||
+                    map.SurfaceAt(occupied) != null)
                 {
-                    reason = "Footprint overlaps a protected or occupied cell.";
+                    reason = "Footprint overlaps a protected cell, Surface or Object.";
                     return false;
                 }
             }
@@ -106,9 +107,13 @@ namespace Halka.Game.World
                 if (!surfaceCells.Add(surface.Cell)) problems.Add("ERROR: Duplicate Surface at " + surface.Cell);
             }
             var objectCells = new HashSet<Vector2Int>();
+            var instanceIds = new HashSet<string>();
             var occupiedCells = new HashSet<Vector2Int>();
             foreach (var placement in map.Objects)
             {
+                if (string.IsNullOrWhiteSpace(placement.InstanceId) ||
+                    !instanceIds.Add(placement.InstanceId))
+                    problems.Add("ERROR: Empty or duplicate instanceId at " + placement.RootCell);
                 if (placement.Definition == null) problems.Add("ERROR: Null Object Definition at " + placement.RootCell);
                 if (!map.Contains(placement.RootCell)) problems.Add("ERROR: Object out of bounds at " + placement.RootCell);
                 if (!objectCells.Add(placement.RootCell)) problems.Add("ERROR: Duplicate Object at " + placement.RootCell);
@@ -122,6 +127,7 @@ namespace Halka.Game.World
                     var cell = placement.RootCell + new Vector2Int(x, y);
                     if (!map.Contains(cell)) problems.Add("ERROR: Object footprint out of bounds at " + cell);
                     if (IsProtected(map, cell)) problems.Add("ERROR: Object blocks protected cell " + cell);
+                    if (surfaceCells.Contains(cell)) problems.Add("ERROR: Object overlaps Surface at " + cell);
                     if (!occupiedCells.Add(cell)) problems.Add("ERROR: Overlapping Object footprint at " + cell);
                 }
             }

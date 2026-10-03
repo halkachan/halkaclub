@@ -1,38 +1,42 @@
-# HALKA WORLD MAP EDITOR v0.1
+# HALKA WORLD MAP EDITOR v0.2 Standalone Edition
 
-ゲーム本編のバージョンは **ver2.0** のままです。このツールはUnity Editor専用で、WebGL画面には表示されません。
+ゲーム本編は **ver2.0** のままです。このツールは開発専用Windowsアプリで、ゲーム画面には出ません。
 
-## 開き方
+## 起動と保存
 
-Unityで `unity-project` を開き、メニュー **HALKA WORLD > Map Editor** を選びます。上部の `Map` で `Assets/Content/Maps/first_field.asset` を選びます。v0.1で編集できるのはこの屋外マップです。
+`tools/HalkaWorldMapEditor/scripts/publish-win-x64.ps1` でwin-x64の自己完結版を作り、`tools/HalkaWorldMapEditor/dist/win-x64/HALKA WORLD MAP EDITOR.exe` を起動します。EXEと同じフォルダーのDLL群をまとめて保持してください。Unityを起動しなくてもマップを編集できます。
 
-## 基本画面と操作
+初回起動時はEXEの親ディレクトリから `unity-project` を探索します。見つからない場合はUnity Projectフォルダーを選択します。前回のProject、Map、Zoom、Pan、Overlay設定は `%LOCALAPPDATA%/HALKA WORLD MAP EDITOR/settings.json` に保存します。
 
-- 左パレット: `Surface` のDirt、`Object` のStone・Flower・Tree。新しい同型のObject Definition assetも自動で候補に出ます。
-- 中央: 実Spriteを使った2Dマップ。GridはEditorにだけ表示されます。マウス位置の `Cell (x,y)` は下のStatusに表示されます。
-- 下部: 選択ObjectのType、Root Cell、Definition ID、Footprint、Move To Cell、状態とValidation結果。
-- マウスホイール: カーソル位置を中心にZoom。中ボタンドラッグ: Pan。Spaceを押しながら左ドラッグでもPan。
-- `1` Select、`2` Paint、`3` Erase、`G` Grid切替。左のToggleでGrass、Surface、Object、Collision、Coordinatesの重ね表示を切り替えます。
-- `Select`: Objectを選択。Treeは3×4の見た目範囲から選べ、Root Cellは黄色枠と `R` で表示します。House、Crow spawn、Player spawnはLOCKEDです。
-- `Paint`: パレットでDirtまたはObjectを選び、セルを左クリック。Dirtは左ドラッグで連続塗りできます。Objectは同じRoot Cellへ重複配置できません。
-- `Erase`: 現在のLayer（SurfaceまたはObject）のみ削除します。右クリックも同じLayerを消します。Dirtを消すと歩ける非Objectセルでは草が戻ります。
-- 選択Objectの座標修正: 下部の `Move To Cell` と `Move`。House footprint、入口、Crow/Player spawn、四方のRoad EndはObject配置を拒否します。
-- `Ctrl+Z` / `Ctrl+Y`: Unity Undo/Redo。`Delete`: 選択Objectを削除。
-- `Save Map` / `Ctrl+S`: 明示保存。編集時には `DIRTY` を表示し、1クリックごとの自動保存はしません。Map切替時に未保存なら確認します。
-- `Validate Map`: 範囲外、Definition欠損、重複Surface/Object、家入口・道終端の閉塞、不正なboundsを表示します。問題がない場合は `VALID`。
+正式な編集元は `Assets/Content/Maps/Authoring/first_field.hwmap.json` です。`object_catalog.hwcatalog.json` はPaletteとSpriteプレビューのカタログです。`Assets/Content/Maps/first_field.asset` はUnityがJSONから生成するRuntime用キャッシュで、直接編集しません。
 
-## データとゲームへの反映
+## 操作
 
-`MapDefinition` ScriptableObject（`first_field.asset`）が配置の唯一の元データです。Map ID、Display Name、DataVersion、bounds、Surface Override、World ObjectのDefinitionとRoot Cell、Player Spawn、Entity Spawn、家入口、四方のRoad Endを保持します。Base GroundとGrassをセルごとに保存しません。Grassの表示条件はEditorとRuntimeが共通の `MapPlacementRules.HasGrass` を使います。
+| 操作 | 内容 |
+|---|---|
+| 左Palette + 配置 `[2]` | DirtまたはStone/Flower/Treeを配置。Dirtはドラッグで連続塗り。 |
+| 選択 `[1]` | Objectを選択し、右InspectorでInstance IDとRoot Cellを確認。座標へ移動。 |
+| 消去 `[3]` / 右クリック | セル上のObject、なければSurfaceを消去。Dirt削除後は通常Grassが自動で戻る。 |
+| `Ctrl+Z` / `Ctrl+Y` | Undo / Redo。Dirtドラッグは1操作。 |
+| `Ctrl+C` / `Ctrl+V` | 選択Objectの型をコピー。空セルを選択して貼り付けると新しいInstance ID。 |
+| `Delete` | 選択Objectを削除。 |
+| ホイール | カーソル中心Zoom。 |
+| 中ボタン、Space+左ドラッグ | Pan。 |
+| `F` / `G` | 全体表示 / Grid切替。 |
+| `Ctrl+S` | 検証後にJSONを原子的に保存。前版は `.bak` へ退避。 |
 
-`SurfaceDefinition` はID・表示名・Spriteを持ちます。`WorldObjectDefinition` は安定ID、表示名、Sprite、調査メッセージ、Collider、footprint、Rooted Sprite配置、通行・草除外、Sorting Orderを持ちます。Stone/Flower/Treeはそれぞれassetです。新しい同型Objectを追加する場合、SpriteとDefinition assetを作り、ID、見た目、調査文、Colliderなどを設定すればPaletteに出ます。新しい固有挙動が必要なObjectはRuntime Loader側の機能追加が必要です。
+Grid、Grass、Collision、座標、Markersは画面上部で切り替えられます。House、Player、Crow、道路終端はPreviewと保護セルです。House・室内・AIなどの自由編集は対象外です。検証結果をダブルクリックすると該当セルへ移動します。
 
-`MapRuntimeLoader2D` はシーン起動時にMapDataから土・Object・Grassを生成します。Scene自体には屋外マップの大量の配置Objectを永続保存しません。Mapを編集して保存すれば次のPlayで反映され、WebGLはビルドし直すと反映されます。既存の家、室内、カラス、Player、AUTOのロジックはSceneのSystem Root側にあります。
+## データ契約
 
-## 注意事項
+JSON Schemaは `tools/HalkaWorldMapEditor/halka-world-map.schema.json`。座標は `{ "x": 0, "y": 0 }`、地面は `definitionId` と `cell`、Objectは `instanceId`、`definitionId`、`rootCell` を持ちます。ObjectのInstance IDは移動や再保存で保持し、コピー時だけ新規発行します。Grassは保存せず、Surface overrideと障害物から派生します。
 
-- v0.1の編集対象は屋外のDirt・Stone・Flower・Treeです。House、Crow、Player spawnや室内は表示のみ／編集対象外です。
-- World ObjectはDirtと同じセルへ配置可能です。そのセルにはGrassは出ません。
-- `Validate Map`のERRORを修正してから保存・Buildしてください。自由編集後のGrass数は変化するため、201という数字は移行時点だけの値です。
-- `HALKA WORLD > Validate Map Editor v0.1` は一時Map assetで編集・Undo/Redo・Save/Reloadを検証し、`first_field.asset` は変更しません。
-- Play中のLive Edit、範囲選択、複数Mapの室内編集、Area Transition編集はv0.1にはありません。
+カタログの `definitionId` はUnityの `SurfaceDefinition.StableId` / `WorldObjectDefinition.StableId` と一致させます。Unity Importerは全カタログ項目のSpriteパス・サイズ・footprint・通行とGrass除外設定を検証します。将来Objectを追加する場合はSprite、Unity Definition asset、Catalog entryを同じIDで追加してください。
+
+UnityのAssetPostprocessorはAuthoring JSONの変更を検知して生成キャッシュを同期します。`ProjectBuilder.PrepareScene`、`ProjectBuilder.BuildWeb`、`Version20Checks`も開始時に強制同期します。JSONが壊れている場合はエラーとなり、正常なMapDefinitionを上書きしません。旧Unity Editor Windowの編集UIは撤去し、生成MapDefinitionのInspectorを読み取り専用にしました。
+
+## 検証と配布
+
+`dotnet run --project tools/HalkaWorldMapEditor/HalkaWorldMapEditor.Tests -c Release` でCoreの契約テストを実行します。Unity側は `HALKA WORLD > Validate Standalone Map Contract v0.2` またはバッチ `-executeMethod Halka.Game.Editor.MapAuthoringChecks.Run`。このテストは一時fixtureを使用し、正式Mapを変更しません。
+
+配布時は `dist/win-x64` フォルダー全体をコピーしてください。JSONとSpriteはUnity Project内に残り、EXEがProjectを検出または選択して編集します。Map変更をWebGLへ反映するにはUnityで本番Buildとサイト公開が必要です。
