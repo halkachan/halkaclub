@@ -14,6 +14,7 @@ namespace Halka.Game.CameraControl
 
         public Vector2 WorldMin => worldMin;
         public Vector2 WorldMax => worldMax;
+        public Vector3 TargetPosition => DesiredPosition();
 
         public void SetBounds(Vector2 minimum, Vector2 maximum)
         {
@@ -22,7 +23,17 @@ namespace Halka.Game.CameraControl
             velocity = Vector3.zero;
         }
 
-        private void LateUpdate()
+        public void SnapToTarget()
+        {
+            velocity = Vector3.zero;
+            transform.position = DesiredPosition();
+        }
+
+        private void LateUpdate() =>
+            transform.position = Vector3.SmoothDamp(transform.position,
+                DesiredPosition(), ref velocity, smoothTime);
+
+        private Vector3 DesiredPosition()
         {
             var halfHeight = cameraComponent.orthographicSize;
             var halfWidth = halfHeight * cameraComponent.aspect;
@@ -34,7 +45,7 @@ namespace Halka.Game.CameraControl
                 Mathf.Clamp(target.position.x, centerX - rangeX, centerX + rangeX),
                 Mathf.Clamp(target.position.y, centerY - rangeY, centerY + rangeY),
                 transform.position.z);
-            transform.position = Vector3.SmoothDamp(transform.position, desired, ref velocity, smoothTime);
+            return desired;
         }
     }
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Halka.Game.World
 {
     // A small walker: one interpolated grid step, then a few seconds of rest.
-    public sealed class CrowWander2D : MonoBehaviour
+    public sealed class CrowWander2D : MonoBehaviour, Halka.Game.Interaction.IInteractionAvailability
     {
         public static readonly Vector2Int InitialCell = new Vector2Int(7, 2);
         public static readonly Vector2Int RangeMin = new Vector2Int(4, 0);
@@ -14,6 +14,7 @@ namespace Halka.Game.World
 
         [SerializeField] private GridWorld2D world;
         [SerializeField] private DynamicGridOccupancy2D occupancy;
+        [SerializeField] private GrassField2D grassField;
         [SerializeField] private SpriteRenderer artwork;
         [SerializeField] private BoxCollider2D clickCollider;
         [SerializeField] private Sprite idleDown;
@@ -33,6 +34,7 @@ namespace Halka.Game.World
         public Vector2Int StepFromCell => motion != null ? motion.StepFromCell : Cell;
         public Vector2Int StepToCell => motion != null ? motion.StepToCell : Cell;
         public bool IsMoving => motion != null && motion.IsMoving;
+        public bool CanInteract => !IsMoving;
         public float StepProgressNormalized => motion != null ? motion.StepProgressNormalized : 1f;
         public FacingDirection Facing { get; private set; } = FacingDirection.Right;
 
@@ -84,6 +86,7 @@ namespace Halka.Game.World
                     StepSeconds)) continue;
                 Facing = FacingDirectionExtensions.FromVector(direction);
                 clickCollider.enabled = false; // Pointer interaction only while stopped.
+                grassField.RustleAt(target);
                 break;
             }
         }

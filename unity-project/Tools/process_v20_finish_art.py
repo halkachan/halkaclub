@@ -48,7 +48,7 @@ def save(name: str, image: Image.Image) -> None:
 
 # The user's exact approved house is the only source of exterior design.
 save("house_exterior.png", fit(rgba(SOURCE / "house_exterior_user_source.png"), (160, 128)))
-save("house_bed.png", fit(rgba(SOURCE / "house_bed_yellow_source.png"), (64, 96)))
+save("house_bed.png", fit(rgba(SOURCE / "house_bed_simple_source.png"), (64, 96)))
 
 # Use one crop for both frames of a direction. This keeps body/feet from
 # jumping as the walking sprite changes. Frame zero is the idle image.

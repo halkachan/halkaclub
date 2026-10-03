@@ -68,7 +68,7 @@ namespace Halka.Game.World
             player.SetFacing(FacingDirection.Up);
             worldCamera.orthographicSize = 3.4f;
             cameraFollow.SetBounds(new Vector2(-3.8f, -2.8f), new Vector2(3.8f, 2.8f));
-            worldCamera.transform.position = new Vector3(0f, 0f, -10f);
+            cameraFollow.SnapToTarget();
             IsInside = true;
         }
 
@@ -84,8 +84,7 @@ namespace Halka.Game.World
             grassOcclusion.enabled = true;
             worldCamera.orthographicSize = outsideCameraSize;
             cameraFollow.SetBounds(outsideCameraMin, outsideCameraMax);
-            worldCamera.transform.position = new Vector3(player.transform.position.x,
-                player.transform.position.y, -10f);
+            cameraFollow.SnapToTarget();
             IsInside = false;
         }
     }

@@ -1,9 +1,11 @@
 using System;
+using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using Halka.Game.Core;
+using Halka.Game.CameraControl;
 using Halka.Game.Interaction;
 using Halka.Game.Player;
 using Halka.Game.World;
@@ -20,6 +22,8 @@ namespace Halka.Game.Editor
             "BBC4B8CBD5677B8DE6BF7C19BC2E0624887F9AFEAB70473743D73B7530BC41FD";
         private const string CrowSourceHash =
             "331E55F621A20063C701CF0350FD4A9C83EEA8F4E2991D8CF51C7AA80B1DECBB";
+        private const string CrowVoiceHash =
+            "A94B18E8F33EAA48194E1115128B348CBAD4CE4CF8378A00BCE02CA146BC50E7";
 
         [MenuItem("HALKA/Validate ver2.0")]
         public static void Run()
@@ -29,6 +33,7 @@ namespace Halka.Game.Editor
             var player = UnityEngine.Object.FindFirstObjectByType<PlayerMover>();
             var area = UnityEngine.Object.FindFirstObjectByType<HouseArea2D>();
             var autoMode = UnityEngine.Object.FindFirstObjectByType<AutoModeController>();
+            var cameraFollow = UnityEngine.Object.FindFirstObjectByType<CameraFollow2D>();
             var occupancy = UnityEngine.Object.FindFirstObjectByType<DynamicGridOccupancy2D>();
             var crow = UnityEngine.Object.FindFirstObjectByType<CrowWander2D>();
             var grass = UnityEngine.Object.FindFirstObjectByType<GrassField2D>();
@@ -47,6 +52,9 @@ namespace Halka.Game.Editor
                 "user-approved house and crow source bytes are preserved");
             CheckSprite("house_exterior.png", 160, 128);
             CheckSprite("house_bed.png", 64, 96);
+            Check(File.Exists(Path.Combine(Application.dataPath, "..", "SourceGeneratedArt",
+                "v20", "house_bed_simple_source.png")),
+                "simplified bed retains its GPT Image source");
             foreach (var direction in new[] { "down", "up", "left", "right" })
             {
                 CheckSprite($"crow_idle_{direction}.png", 32, 32);
@@ -65,23 +73,21 @@ namespace Halka.Game.Editor
             Check(houseObstacles.Length == 9 && world.CanEnter(HouseArea2D.HouseDoorCell) &&
                 !house.GetComponents<MonoBehaviour>().Any(component => component is IInteractable),
                 "only nine footprint cells block; entrance has no interaction");
-            for (var y = -4; y <= -1; y++)
-            for (var x = -9; x <= -5; x++)
-            {
-                var cell = new Vector2Int(x, y);
-                Check(surface.HasGroundOverride(cell),
-                    $"house underlay dirt at {cell}");
-            }
+            foreach (var cell in ProjectBuilder.HouseVisualCells)
+                Check(surface.HasGroundOverride(cell) == (cell == HouseArea2D.HouseDoorCell),
+                    $"house art has plain ground behind it except the entry at {cell}");
             foreach (var cell in ProjectBuilder.RoadCells)
                 Check(surface.HasGroundOverride(cell) && world.CanEnter(cell),
                     $"road is walkable dirt at {cell}");
             Check(surface.Count == ProjectBuilder.DirtCells.Length &&
-                ProjectBuilder.DirtCells.Length == 33,
-                "twenty underlay cells and thirteen road cells use one surface field");
+                ProjectBuilder.DirtCells.Length == 14,
+                "only the road and single entry have dirt");
 
             typeof(GrassField2D).GetMethod("Initialize", Hidden).Invoke(grass, null);
             foreach (var cell in ProjectBuilder.DirtCells)
                 Check(!grass.HasGrass(cell), $"dirt excludes grass at {cell}");
+            foreach (var cell in ProjectBuilder.HouseVisualCells)
+                Check(!grass.HasGrass(cell), $"house artwork has no grass behind it at {cell}");
             var obstacles = UnityEngine.Object.FindObjectsByType<GridObstacle>(
                 FindObjectsInactive.Include, FindObjectsSortMode.None)
                 .Where(item => item.gameObject.activeInHierarchy).ToArray();
@@ -121,6 +127,25 @@ namespace Halka.Game.Editor
                 Mathf.Approximately(CrowWander2D.StepSeconds, 0.27f),
                 "crow retains interaction, gains walking and four-pixel mask");
             var crowRenderer = crow.GetComponent<SpriteRenderer>();
+            var crowExamine = crow.GetComponent<ExamineInteractable>();
+            var crowAudio = crow.GetComponent<InteractionAudio>();
+            var crowClip = AssetDatabase.LoadAssetAtPath<AudioClip>(
+                "Assets/Content/Audio/crow_voice.mp3");
+            var crowVoicePath = Path.Combine(Application.dataPath, "Content", "Audio",
+                "crow_voice.mp3");
+            using (var sha = SHA256.Create())
+                Check(File.Exists(crowVoicePath) &&
+                    BitConverter.ToString(sha.ComputeHash(File.ReadAllBytes(crowVoicePath)))
+                        .Replace("-", "") == CrowVoiceHash,
+                    "crow voice asset is byte identical to the supplied MP3");
+            Check(crowClip != null && crowAudio != null &&
+                Field(crowAudio, "clip") == crowClip &&
+                Field(crowExamine, "interactionAudio") == crowAudio &&
+                Field(crowExamine, "availability") == crow &&
+                crow.GetComponent<AudioSource>().playOnAwake == false &&
+                crow.GetComponent<AudioSource>().spatialBlend == 0f &&
+                crowClip.channels == 2 && crowClip.frequency == 44100,
+                "original crow MP3 is wired to successful examine only");
             foreach (var direction in new[] { "Down", "Up", "Left", "Right" })
             {
                 Check(Field(crow, "idle" + direction) is Sprite,
@@ -133,7 +158,7 @@ namespace Halka.Game.Editor
             Check(right.Length > 0 && left.Length > 0,
                 "right user source and left mirror assets exist");
             Check(crowRenderer.sprite != null &&
-                (string)Field(crow.GetComponent<ExamineInteractable>(), "message") == "カァ。",
+                (string)Field(crowExamine, "message") == "カァ。",
                 "crow keeps common examine message");
 
             typeof(PlayerMover).GetMethod("Awake", Hidden).Invoke(player, null);
@@ -143,10 +168,30 @@ namespace Halka.Game.Editor
                 !occupancy.CanPlayerEnter(crow.Cell) &&
                 !occupancy.CanCrowEnter(player.Cell),
                 "player and crow reserve each other's occupied cells");
+            var playRequests = crowAudio.PlayRequestCount;
+            crowExamine.Interact();
+            Check(crowAudio.PlayRequestCount == playRequests + 1,
+                "one successful crow examine requests one voice playback");
+            player.SetFacing(FacingDirection.Up);
+            crowExamine.Interact();
+            Check(crowAudio.PlayRequestCount == playRequests + 1,
+                "wrong facing does not request crow voice");
             player.TeleportTo(Vector2Int.zero);
+            crowExamine.Interact();
+            Check(crowAudio.PlayRequestCount == playRequests + 1,
+                "distant examine does not request crow voice");
+            player.TeleportTo(CrowWander2D.InitialCell + Vector2Int.left);
+            Check(player.TryStep(Vector2Int.left), "player can start a step beside crow");
+            crowExamine.Interact();
+            Check(crowAudio.PlayRequestCount == playRequests + 1,
+                "moving player does not request crow voice");
+            player.CancelStep();
+            player.TeleportTo(Vector2Int.zero);
+            typeof(GrassField2D).GetMethod("Initialize", Hidden).Invoke(grass, null);
             UnityEngine.Random.InitState(2020);
             var baseTime = Time.time;
             var observedStep = false;
+            var activeRustles = (IDictionary)Field(grass, "active");
             for (var i = 1; i <= 20 && !observedStep; i++)
             {
                 var start = baseTime + 5f * i;
@@ -158,6 +203,16 @@ namespace Halka.Game.Editor
                     !occupancy.CanPlayerEnter(crow.StepFromCell) &&
                     !occupancy.CanPlayerEnter(crow.StepToCell),
                     "crow begins a reserved walking step with pointer disabled");
+                Check(grass.HasGrass(crow.StepToCell) &&
+                    activeRustles.Contains(crow.StepToCell) &&
+                    activeRustles.Count == 1,
+                    "crow successful step rustles only destination grass");
+                player.TeleportTo(crow.StepFromCell + Vector2Int.left);
+                player.SetFacing(FacingDirection.Right);
+                crowExamine.Interact();
+                Check(crowAudio.PlayRequestCount == playRequests + 1,
+                    "moving crow cannot be examined or voiced");
+                player.TeleportTo(Vector2Int.zero);
                 crow.Tick(start + CrowWander2D.StepSeconds * 0.5f);
                 Check(crow.IsMoving && crow.StepProgressNormalized > 0f &&
                     crow.StepProgressNormalized < 1f &&
@@ -179,21 +234,45 @@ namespace Halka.Game.Editor
             crowMask.RefreshMask();
             Check(crowMask.IsMasked == grass.HasGrass(crow.Cell),
                 "crow grass mask follows its visual cell");
+            var grassCell = new Vector2Int(0, 0);
+            var dirtCell = new Vector2Int(0, -1);
+            Check(grass.HasGrass(grassCell) && !grass.HasGrass(dirtCell) &&
+                grass.HasGrass(CrowGrassOcclusion.VisualCell(grassCell, dirtCell, true, 0.49f)) &&
+                !grass.HasGrass(CrowGrassOcclusion.VisualCell(grassCell, dirtCell, true, 0.5f)) &&
+                !grass.HasGrass(CrowGrassOcclusion.VisualCell(grassCell, dirtCell, true, 0.51f)) &&
+                !grass.HasGrass(CrowGrassOcclusion.VisualCell(dirtCell, grassCell, true, 0.49f)) &&
+                grass.HasGrass(CrowGrassOcclusion.VisualCell(dirtCell, grassCell, true, 0.5f)) &&
+                grass.HasGrass(CrowGrassOcclusion.VisualCell(dirtCell, grassCell, true, 0.51f)),
+                "crow mask uses source before halfway and destination from halfway");
+            var rustlesBeforeDirt = activeRustles.Count;
+            Check(!grass.RustleAt(dirtCell) && activeRustles.Count == rustlesBeforeDirt &&
+                grass.RustleAt(grassCell) && activeRustles.Contains(grassCell),
+                "grass rustles on destination only, never on dirt or failed step");
 
             typeof(HouseArea2D).GetMethod("Awake", Hidden).Invoke(area, null);
             typeof(HouseArea2D).GetMethod("OnEnable", Hidden).Invoke(area, null);
             player.TeleportTo(HouseArea2D.OutsideEntryCell);
             Check(player.TryStep(Vector2Int.up), "player may walk into the house entrance");
+            typeof(CameraFollow2D).GetField("velocity", Hidden)
+                .SetValue(cameraFollow, new Vector3(1f, 1f));
             StepPlayer(player, PlayerMover.DefaultStepSeconds, Vector2Int.zero);
             Check(area.IsInside && interior.activeSelf && !exterior.activeSelf &&
                 player.Cell == HouseArea2D.InsideEntryCell,
                 "step completion enters expanded room");
+            Check(cameraFollow.transform.position == cameraFollow.TargetPosition &&
+                (Vector3)Field(cameraFollow, "velocity") == Vector3.zero,
+                "entry cuts immediately to indoor camera without old smoothing velocity");
             Check(player.TryStep(Vector2Int.down), "inside passage is walkable");
+            typeof(CameraFollow2D).GetField("velocity", Hidden)
+                .SetValue(cameraFollow, new Vector3(-1f, -1f));
             StepPlayer(player, PlayerMover.DefaultStepSeconds, Vector2Int.zero);
             Check(!area.IsInside && exterior.activeSelf && !interior.activeSelf &&
                 player.Cell == HouseArea2D.OutsideEntryCell &&
                 player.Facing == FacingDirection.Down,
                 "step completion exits without an interaction");
+            Check(cameraFollow.transform.position == cameraFollow.TargetPosition &&
+                (Vector3)Field(cameraFollow, "velocity") == Vector3.zero,
+                "exit cuts immediately to outdoor camera without old smoothing velocity");
             Check(autoMode.CanAutoEnter(HouseArea2D.HouseDoorCell) == false &&
                 autoMode.CanAutoEnter(crow.Cell) == false &&
                 AutoModeController.IdleSeconds == 60f,

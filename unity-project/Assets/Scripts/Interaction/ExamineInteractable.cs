@@ -11,6 +11,8 @@ namespace Halka.Game.Interaction
         [SerializeField] private PlayerMover player;
         [SerializeField] private GridWorld2D world;
         [SerializeField] private GameHud hud;
+        [SerializeField] private MonoBehaviour availability;
+        [SerializeField] private InteractionAudio interactionAudio;
 
         public static bool IsInRange(Vector2Int playerCell, bool isMoving,
             FacingDirection facing, Vector2Int targetCell)
@@ -25,7 +27,9 @@ namespace Halka.Game.Interaction
         {
             if (!IsInRange(player.Cell, player.IsMoving, player.Facing,
                 world.WorldToCell(transform.position))) return;
+            if (availability is IInteractionAvailability state && !state.CanInteract) return;
             hud.ShowMessage(message);
+            if (interactionAudio != null) interactionAudio.Play();
         }
     }
 }

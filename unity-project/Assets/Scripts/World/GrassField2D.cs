@@ -64,11 +64,14 @@ namespace Halka.Game.World
             active.Clear();
         }
 
-        private void OnStepStarted(Vector2Int targetCell)
+        private void OnStepStarted(Vector2Int targetCell) => RustleAt(targetCell);
+
+        public bool RustleAt(Vector2Int targetCell)
         {
-            if (!grassByCell.TryGetValue(targetCell, out var renderer)) return;
+            if (!grassByCell.TryGetValue(targetCell, out var renderer)) return false;
             renderer.sprite = rustleFrames[0];
             active[targetCell] = new ActiveRustle { Renderer = renderer };
+            return true;
         }
 
         private void Update()

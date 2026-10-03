@@ -34,6 +34,7 @@ namespace Halka.Game.Editor
         private const string GrassPath = "Assets/Content/World/grass.png";
         private const string GrassRustlePath = "Assets/Content/World/grass_rustle";
         private const string FootstepPath = "Assets/Content/Audio/footstep_one_step.wav";
+        private const string CrowVoicePath = "Assets/Content/Audio/crow_voice.mp3";
         private const string MessageFontPath = "Assets/Content/Fonts/k8x12L.ttf";
         private const string PlayerGrassMaskPath = "Assets/Content/World/player_grass_mask.png";
         private const string GrassPrefabPath = "Assets/Content/World/GrassDecoration.prefab";
@@ -57,11 +58,12 @@ namespace Halka.Game.Editor
             new Vector2Int(-1, -3), new Vector2Int(-1, -2), new Vector2Int(0, -2),
             new Vector2Int(0, -1)
         };
-        internal static readonly Vector2Int[] DirtCells =
+        internal static readonly Vector2Int[] HouseVisualCells =
             (from y in Enumerable.Range(-4, 4)
                 from x in Enumerable.Range(-9, 5)
-                select new Vector2Int(x, y))
-            .Concat(RoadCells).Distinct().ToArray();
+                select new Vector2Int(x, y)).ToArray();
+        internal static readonly Vector2Int[] DirtCells =
+            RoadCells.Concat(new[] { HouseArea2D.HouseDoorCell }).Distinct().ToArray();
         private static readonly Vector2 StoneOpaquePixels = new Vector2(28f, 20f);
 
         [MenuItem("HALKA/Prepare ver2.0 scene")]
@@ -107,9 +109,12 @@ namespace Halka.Game.Editor
             if (rustleFrames.Length == 0) throw new InvalidOperationException("Grass rustle frames are missing");
             var maskSprite = CreatePlayerGrassMask();
             var crowMaskSprite = CreateCrowGrassMask();
-            ConfigureFootstepImport();
+            ConfigureAudioImport(FootstepPath);
+            ConfigureAudioImport(CrowVoicePath);
             var footstepClip = AssetDatabase.LoadAssetAtPath<AudioClip>(FootstepPath);
             if (footstepClip == null) throw new InvalidOperationException("Single-step audio import failed");
+            var crowVoiceClip = AssetDatabase.LoadAssetAtPath<AudioClip>(CrowVoicePath);
+            if (crowVoiceClip == null) throw new InvalidOperationException("Crow voice import failed");
             var grassPrefab = CreateGrassPrefab(grassSprite);
 
             Directory.CreateDirectory("Assets/Scenes");
@@ -283,6 +288,13 @@ namespace Halka.Game.Editor
             crowCollider.size = Vector2.one * GridWorld2D.TileWorldSize;
             var crowExamine = crow.AddComponent<ExamineInteractable>();
             var crowWander = crow.AddComponent<CrowWander2D>();
+            var crowAudioSource = crow.AddComponent<AudioSource>();
+            crowAudioSource.playOnAwake = false;
+            crowAudioSource.spatialBlend = 0f;
+            crowAudioSource.volume = 0.55f;
+            var crowVoice = crow.AddComponent<InteractionAudio>();
+            SetReference(crowVoice, "audioSource", crowAudioSource);
+            SetReference(crowVoice, "clip", crowVoiceClip);
             SetReference(crowWander, "world", world);
             SetReference(crowWander, "occupancy", occupancy);
             SetReference(crowWander, "artwork", crowRenderer);
@@ -307,7 +319,8 @@ namespace Halka.Game.Editor
             for (var x = world.MinCell.x; x <= world.MaxCell.x; x++)
             {
                 var cell = new Vector2Int(x, y);
-                if (!world.CanEnter(cell) || surfaceField.HasGroundOverride(cell)) continue;
+                if (!world.CanEnter(cell) || surfaceField.HasGroundOverride(cell) ||
+                    HouseVisualCells.Contains(cell)) continue;
                 var grass = (GameObject)PrefabUtility.InstantiatePrefab(grassPrefab);
                 grass.transform.SetParent(grassGroup.transform);
                 grass.transform.position = world.CellToWorld(cell);
@@ -318,6 +331,7 @@ namespace Halka.Game.Editor
             SetReference(grassField, "player", mover);
             SetReference(grassField, "idleSprite", grassSprite);
             SetSprites(grassField, "rustleFrames", rustleFrames);
+            SetReference(crowWander, "grassField", grassField);
             var grassOcclusion = player.AddComponent<PlayerGrassOcclusion>();
             SetReference(grassOcclusion, "mover", mover);
             SetReference(grassOcclusion, "grassField", grassField);
@@ -381,6 +395,8 @@ namespace Halka.Game.Editor
             SetReference(crowExamine, "world", world);
             SetReference(crowExamine, "hud", hud);
             SetString(crowExamine, "message", "カァ。");
+            SetReference(crowExamine, "availability", crowWander);
+            SetReference(crowExamine, "interactionAudio", crowVoice);
             foreach (var pair in addedExamines)
             {
                 SetReference(pair.Examine, "player", mover);
@@ -719,10 +735,10 @@ namespace Halka.Game.Editor
             importer.SaveAndReimport();
         }
 
-        private static void ConfigureFootstepImport()
+        private static void ConfigureAudioImport(string path)
         {
-            var importer = AssetImporter.GetAtPath(FootstepPath) as AudioImporter;
-            if (importer == null) throw new InvalidOperationException("Single-step audio is missing");
+            var importer = AssetImporter.GetAtPath(path) as AudioImporter;
+            if (importer == null) throw new InvalidOperationException("Audio asset is missing: " + path);
             var settings = importer.defaultSampleSettings;
             var importerObject = new SerializedObject(importer);
             var normalize = importerObject.FindProperty("m_Normalize");

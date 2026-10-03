@@ -15,6 +15,10 @@ namespace Halka.Game.World
 
         public bool IsMasked => artwork.maskInteraction == SpriteMaskInteraction.VisibleInsideMask;
 
+        public static Vector2Int VisualCell(Vector2Int source, Vector2Int destination,
+            bool isMoving, float progress) =>
+            isMoving && progress >= 0.5f ? destination : source;
+
         private void Awake()
         {
             if (crow == null || grassField == null || artwork == null ||
@@ -38,8 +42,8 @@ namespace Halka.Game.World
 
         public void RefreshMask()
         {
-            var visualCell = crow.IsMoving && crow.StepProgressNormalized >= 0.5f
-                ? crow.StepToCell : crow.Cell;
+            var visualCell = VisualCell(crow.StepFromCell, crow.StepToCell,
+                crow.IsMoving, crow.StepProgressNormalized);
             var masked = grassField.HasGrass(visualCell);
             if (spriteMask.enabled == masked && IsMasked == masked) return;
             spriteMask.enabled = masked;
