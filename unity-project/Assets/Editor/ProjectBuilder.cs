@@ -50,7 +50,7 @@ namespace Halka.Game.Editor
                 new Vector2Int(3, -4), new Vector2Int(9, 3) };
         internal static readonly Vector2Int[] TreeCells =
             { TreeRootCell, new Vector2Int(-7, 2), new Vector2Int(8, -3) };
-        internal static readonly Vector2Int[] RoadCells =
+        internal static readonly Vector2Int[] HouseRoadCells =
         {
             new Vector2Int(-8, -5), new Vector2Int(-7, -5), new Vector2Int(-6, -5),
             new Vector2Int(-5, -5), new Vector2Int(-4, -5), new Vector2Int(-3, -5),
@@ -58,6 +58,37 @@ namespace Halka.Game.Editor
             new Vector2Int(-1, -3), new Vector2Int(-1, -2), new Vector2Int(0, -2),
             new Vector2Int(0, -1)
         };
+        internal static readonly Vector2Int[] NorthRoadCells =
+        {
+            new Vector2Int(0, -1), new Vector2Int(0, 0), new Vector2Int(0, 1),
+            new Vector2Int(0, 2), new Vector2Int(1, 2), new Vector2Int(1, 3),
+            new Vector2Int(1, 4), new Vector2Int(0, 4), new Vector2Int(0, 5),
+            new Vector2Int(0, 6)
+        };
+        internal static readonly Vector2Int[] EastRoadCells =
+        {
+            new Vector2Int(0, -1), new Vector2Int(1, -1), new Vector2Int(2, -1),
+            new Vector2Int(3, -1), new Vector2Int(3, 0), new Vector2Int(4, 0),
+            new Vector2Int(5, 0), new Vector2Int(6, 0), new Vector2Int(7, 0),
+            new Vector2Int(8, 0), new Vector2Int(8, -1), new Vector2Int(9, -1),
+            new Vector2Int(10, -1)
+        };
+        internal static readonly Vector2Int[] SouthRoadCells =
+        {
+            new Vector2Int(0, -1), new Vector2Int(0, -2), new Vector2Int(1, -2),
+            new Vector2Int(1, -3), new Vector2Int(1, -4), new Vector2Int(2, -4),
+            new Vector2Int(2, -5), new Vector2Int(2, -6)
+        };
+        internal static readonly Vector2Int[] WestRoadCells =
+        {
+            new Vector2Int(0, -1), new Vector2Int(-1, -1), new Vector2Int(-2, -1),
+            new Vector2Int(-3, -1), new Vector2Int(-3, 0), new Vector2Int(-4, 0),
+            new Vector2Int(-5, 0), new Vector2Int(-6, 0), new Vector2Int(-7, 0),
+            new Vector2Int(-8, 0), new Vector2Int(-9, 0), new Vector2Int(-10, 0)
+        };
+        internal static readonly Vector2Int[] RoadCells = HouseRoadCells
+            .Concat(NorthRoadCells).Concat(EastRoadCells).Concat(SouthRoadCells)
+            .Concat(WestRoadCells).Distinct().ToArray();
         internal static readonly Vector2Int[] HouseVisualCells =
             (from y in Enumerable.Range(-4, 4)
                 from x in Enumerable.Range(-9, 5)
@@ -319,8 +350,7 @@ namespace Halka.Game.Editor
             for (var x = world.MinCell.x; x <= world.MaxCell.x; x++)
             {
                 var cell = new Vector2Int(x, y);
-                if (!world.CanEnter(cell) || surfaceField.HasGroundOverride(cell) ||
-                    HouseVisualCells.Contains(cell)) continue;
+                if (!world.CanEnter(cell) || surfaceField.HasGroundOverride(cell)) continue;
                 var grass = (GameObject)PrefabUtility.InstantiatePrefab(grassPrefab);
                 grass.transform.SetParent(grassGroup.transform);
                 grass.transform.position = world.CellToWorld(cell);

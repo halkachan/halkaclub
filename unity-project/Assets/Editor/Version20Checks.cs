@@ -52,6 +52,12 @@ namespace Halka.Game.Editor
                 "user-approved house and crow source bytes are preserved");
             CheckSprite("house_exterior.png", 160, 128);
             CheckSprite("house_bed.png", 64, 96);
+            CheckSprite("house_wall.png", 32, 32);
+            Check(MaxChannel("house_wall.png") <= 80 &&
+                AverageBrightness("house_wall.png") < 0.20f &&
+                AverageBrightness("house_floor.png") >
+                    AverageBrightness("house_wall.png") * 2f,
+                "the actual room wall is dark while the original wood floor remains bright");
             Check(File.Exists(Path.Combine(Application.dataPath, "..", "SourceGeneratedArt",
                 "v20", "house_bed_simple_source.png")),
                 "simplified bed retains its GPT Image source");
@@ -76,18 +82,34 @@ namespace Halka.Game.Editor
             foreach (var cell in ProjectBuilder.HouseVisualCells)
                 Check(surface.HasGroundOverride(cell) == (cell == HouseArea2D.HouseDoorCell),
                     $"house art has plain ground behind it except the entry at {cell}");
-            foreach (var cell in ProjectBuilder.RoadCells)
-                Check(surface.HasGroundOverride(cell) && world.CanEnter(cell),
-                    $"road is walkable dirt at {cell}");
+            CheckRoad(world, surface, ProjectBuilder.HouseRoadCells,
+                new Vector2Int(0, -1), "existing house road");
+            CheckRoad(world, surface, ProjectBuilder.NorthRoadCells,
+                new Vector2Int(0, world.MaxCell.y), "north road");
+            CheckRoad(world, surface, ProjectBuilder.EastRoadCells,
+                new Vector2Int(world.MaxCell.x, -1), "east road");
+            CheckRoad(world, surface, ProjectBuilder.SouthRoadCells,
+                new Vector2Int(2, world.MinCell.y), "south road");
+            CheckRoad(world, surface, ProjectBuilder.WestRoadCells,
+                new Vector2Int(world.MinCell.x, 0), "west road");
+            Check(ProjectBuilder.RoadCells.Length ==
+                    ProjectBuilder.RoadCells.Distinct().Count() &&
+                ProjectBuilder.NorthRoadCells[0] == new Vector2Int(0, -1) &&
+                ProjectBuilder.EastRoadCells[0] == new Vector2Int(0, -1) &&
+                ProjectBuilder.SouthRoadCells[0] == new Vector2Int(0, -1) &&
+                ProjectBuilder.WestRoadCells[0] == new Vector2Int(0, -1),
+                "all four road branches connect to the central junction");
             Check(surface.Count == ProjectBuilder.DirtCells.Length &&
-                ProjectBuilder.DirtCells.Length == 14,
-                "only the road and single entry have dirt");
+                ProjectBuilder.DirtCells.Length == ProjectBuilder.RoadCells.Length + 1,
+                "only the expanded road and single entry have dirt");
 
             typeof(GrassField2D).GetMethod("Initialize", Hidden).Invoke(grass, null);
             foreach (var cell in ProjectBuilder.DirtCells)
                 Check(!grass.HasGrass(cell), $"dirt excludes grass at {cell}");
             foreach (var cell in ProjectBuilder.HouseVisualCells)
-                Check(!grass.HasGrass(cell), $"house artwork has no grass behind it at {cell}");
+                Check(grass.HasGrass(cell) ==
+                    (world.CanEnter(cell) && !surface.HasGroundOverride(cell)),
+                    $"visible former underlay returns to ordinary grass at {cell}");
             var obstacles = UnityEngine.Object.FindObjectsByType<GridObstacle>(
                 FindObjectsInactive.Include, FindObjectsSortMode.None)
                 .Where(item => item.gameObject.activeInHierarchy).ToArray();
@@ -100,10 +122,22 @@ namespace Halka.Game.Editor
                 "four stones, four flowers and three trees are fixed");
             foreach (var cell in ProjectBuilder.StoneCells.Concat(ProjectBuilder.FlowerCells)
                 .Concat(ProjectBuilder.TreeCells))
-                Check(!world.CanEnter(cell) && !grass.HasGrass(cell),
+                Check(!world.CanEnter(cell) && !grass.HasGrass(cell) &&
+                    !surface.HasGroundOverride(cell),
                     $"world object at {cell} blocks and excludes grass");
-            Check(grass.transform.childCount == 229,
-                "grass count matches obstacles and surface overrides");
+            var expectedGrass = 0;
+            for (var y = world.MinCell.y; y <= world.MaxCell.y; y++)
+            for (var x = world.MinCell.x; x <= world.MaxCell.x; x++)
+            {
+                var cell = new Vector2Int(x, y);
+                if (!world.CanEnter(cell) || surface.HasGroundOverride(cell)) continue;
+                expectedGrass++;
+                Check(grass.HasGrass(cell), $"eligible field cell has grass at {cell}");
+            }
+            Check(grass.transform.childCount == expectedGrass,
+                "grass count is derived from walkable cells minus surface overrides");
+            foreach (var cell in ProjectBuilder.RoadCells)
+                Check(!grass.HasGrass(cell), $"expanded road has no grass at {cell}");
 
             Check(HouseArea2D.InsideMinCell == new Vector2Int(-6, -4) &&
                 HouseArea2D.InsideMaxCell == new Vector2Int(6, 4) &&
@@ -115,6 +149,8 @@ namespace Halka.Game.Editor
             var bed = interior.transform.Find("Bed - simple one");
             Check(backdrop.color.r < 0.1f && backdrop.sortingOrder < -9 &&
                 interior.transform.Find("House exit passage") != null &&
+                interior.transform.Find("Room wall 0,-4") == null &&
+                interior.transform.Find("Room floor 0,-4") != null &&
                 bed.GetComponentsInChildren<GridObstacle>().Length == 6 &&
                 bed.GetComponent<SpriteRenderer>().sprite.rect.size == new Vector2(64f, 96f),
                 "dark backdrop, open passage, two by three bed");
@@ -203,10 +239,10 @@ namespace Halka.Game.Editor
                     !occupancy.CanPlayerEnter(crow.StepFromCell) &&
                     !occupancy.CanPlayerEnter(crow.StepToCell),
                     "crow begins a reserved walking step with pointer disabled");
-                Check(grass.HasGrass(crow.StepToCell) &&
-                    activeRustles.Contains(crow.StepToCell) &&
-                    activeRustles.Count == 1,
-                    "crow successful step rustles only destination grass");
+                var crowDestinationGrass = grass.HasGrass(crow.StepToCell);
+                Check(activeRustles.Contains(crow.StepToCell) == crowDestinationGrass &&
+                    activeRustles.Count == (crowDestinationGrass ? 1 : 0),
+                    "crow successful step rustles its destination only when grass exists");
                 player.TeleportTo(crow.StepFromCell + Vector2Int.left);
                 player.SetFacing(FacingDirection.Right);
                 crowExamine.Interact();
@@ -234,8 +270,8 @@ namespace Halka.Game.Editor
             crowMask.RefreshMask();
             Check(crowMask.IsMasked == grass.HasGrass(crow.Cell),
                 "crow grass mask follows its visual cell");
-            var grassCell = new Vector2Int(0, 0);
-            var dirtCell = new Vector2Int(0, -1);
+            var grassCell = new Vector2Int(2, 0);
+            var dirtCell = new Vector2Int(2, -1);
             Check(grass.HasGrass(grassCell) && !grass.HasGrass(dirtCell) &&
                 grass.HasGrass(CrowGrassOcclusion.VisualCell(grassCell, dirtCell, true, 0.49f)) &&
                 !grass.HasGrass(CrowGrassOcclusion.VisualCell(grassCell, dirtCell, true, 0.5f)) &&
@@ -273,6 +309,11 @@ namespace Halka.Game.Editor
             Check(cameraFollow.transform.position == cameraFollow.TargetPosition &&
                 (Vector3)Field(cameraFollow, "velocity") == Vector3.zero,
                 "exit cuts immediately to outdoor camera without old smoothing velocity");
+            var playerMask = player.GetComponent<PlayerGrassOcclusion>();
+            typeof(PlayerGrassOcclusion).GetMethod("Awake", Hidden).Invoke(playerMask, null);
+            CheckPlayerMaskStep(world, player, playerMask, grass, grassCell, dirtCell);
+            CheckPlayerMaskStep(world, player, playerMask, grass, dirtCell, grassCell);
+            player.TeleportTo(HouseArea2D.OutsideEntryCell);
             Check(autoMode.CanAutoEnter(HouseArea2D.HouseDoorCell) == false &&
                 autoMode.CanAutoEnter(crow.Cell) == false &&
                 AutoModeController.IdleSeconds == 60f,
@@ -292,6 +333,69 @@ namespace Halka.Game.Editor
         private static void StepPlayer(PlayerMover player, float seconds, Vector2Int direction) =>
             typeof(PlayerMover).GetMethod("Tick", Hidden)
                 .Invoke(player, new object[] { seconds, direction });
+
+        private static void CheckPlayerMaskStep(GridWorld2D world, PlayerMover player,
+            PlayerGrassOcclusion mask, GrassField2D grass, Vector2Int source,
+            Vector2Int destination)
+        {
+            var refresh = typeof(PlayerGrassOcclusion).GetMethod("RefreshMask", Hidden);
+            var motion = new GridStepMotion(source);
+            typeof(PlayerMover).GetField("motion", Hidden).SetValue(player, motion);
+            player.transform.position = world.CellToWorld(source);
+            refresh.Invoke(mask, null);
+            Check(mask.IsMasked == grass.HasGrass(source),
+                "stationary Player mask follows the current surface");
+            Check(motion.TryBegin(destination - source, world.CanEnter,
+                PlayerMover.DefaultStepSeconds), "Player mask road boundary step starts");
+            motion.Advance(PlayerMover.DefaultStepSeconds * 0.49f);
+            refresh.Invoke(mask, null);
+            Check(mask.IsMasked == grass.HasGrass(source),
+                "Player mask retains the source surface at progress 0.49");
+            motion.Advance(PlayerMover.DefaultStepSeconds * 0.02f);
+            refresh.Invoke(mask, null);
+            Check(mask.IsMasked == grass.HasGrass(destination),
+                "Player mask uses the destination surface at progress 0.51");
+        }
+
+        private static void CheckRoad(GridWorld2D world, GroundSurfaceField2D surface,
+            Vector2Int[] cells, Vector2Int endpoint, string label)
+        {
+            Check(cells.Length > 1 && cells[cells.Length - 1] == endpoint,
+                label + " reaches its field endpoint");
+            for (var i = 0; i < cells.Length; i++)
+            {
+                Check(world.CanEnter(cells[i]) && surface.HasGroundOverride(cells[i]),
+                    label + " is walkable dirt at " + cells[i]);
+                if (i == 0) continue;
+                var delta = cells[i] - cells[i - 1];
+                Check(Mathf.Abs(delta.x) + Mathf.Abs(delta.y) == 1,
+                    label + " stays connected by one-cell steps");
+            }
+        }
+
+        private static Color32[] ImagePixels(string fileName)
+        {
+            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            try
+            {
+                Check(ImageConversion.LoadImage(texture, File.ReadAllBytes(WorldPath(fileName))),
+                    "PNG decoded: " + fileName);
+                return texture.GetPixels32();
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(texture);
+            }
+        }
+
+        private static int MaxChannel(string fileName) => ImagePixels(fileName)
+            .Max(pixel => Math.Max(pixel.r, Math.Max(pixel.g, pixel.b)));
+
+        private static float AverageBrightness(string fileName)
+        {
+            var pixels = ImagePixels(fileName);
+            return pixels.Average(pixel => (pixel.r + pixel.g + pixel.b) / (3f * 255f));
+        }
 
         private static object Field(object target, string name) =>
             target.GetType().GetField(name, Hidden).GetValue(target);
