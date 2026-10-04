@@ -14,6 +14,8 @@ EXEの近くにある `unity-project` を自動探索します。見つからな
 
 操作は [Unity側ドキュメント](../../unity-project/Docs/HALKA_WORLD_MAP_EDITOR.md) に記載しました。JSON Schemaは `halka-world-map.schema.json` です。
 
+Paletteの「地面」には「草」と「土」が並びます。「草」はDirtなどのSurfaceを消して通常の草地へ戻すツール、「土」はDirt Surfaceを配置するツールです。どちらも左ドラッグで連続編集でき、1回のドラッグを1回のUndoで戻せます。右クリックのEraseはショートカットとして残ります。草はJSONへ配置データとして保存されません。
+
 ## 開発とテスト
 
 `dotnet build HalkaWorldMapEditor.sln -c Release`

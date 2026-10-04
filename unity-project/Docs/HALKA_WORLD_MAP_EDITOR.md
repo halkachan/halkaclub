@@ -14,10 +14,11 @@
 
 | 操作 | 内容 |
 |---|---|
-| 左Palette + 配置 `[2]` | DirtまたはStone/Flower/Treeを配置。Dirtはドラッグで連続塗り。 |
+| 地面Palette「草」/「土」 | 選択すると配置ツールの地面レイヤーになる。「草」は通常の草地へ戻し、「土」はDirt Surfaceを配置。どちらも左ドラッグで連続塗りでき、1回のドラッグはUndo 1回。 |
+| オブジェクトPalette「石」/「花」/「木」 | 選択すると配置ツールのオブジェクトレイヤーになり、左クリックで配置。 |
 | 選択 `[1]` | Objectを選択し、右InspectorでInstance IDとRoot Cellを確認。座標へ移動。 |
-| 消去 `[3]` / 右クリック | セル上のObject、なければSurfaceを消去。Dirt削除後は通常Grassが自動で戻る。 |
-| `Ctrl+Z` / `Ctrl+Y` | Undo / Redo。Dirtドラッグは1操作。 |
+| 消去 `[3]` / 右クリック | セル上のObject、なければSurfaceを消去するショートカット。「草」を左クリックしてDirtを消す操作も使える。 |
+| `Ctrl+Z` / `Ctrl+Y` | Undo / Redo。草・土のドラッグはそれぞれ1操作。 |
 | `Ctrl+C` / `Ctrl+V` | 選択Objectの型をコピー。空セルを選択して貼り付けると新しいInstance ID。 |
 | `Delete` | 選択Objectを削除。 |
 | ホイール | カーソル中心Zoom。 |

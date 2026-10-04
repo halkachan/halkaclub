@@ -63,6 +63,9 @@ public sealed class MapSession
         return true;
     }
 
+    // Grass is derived from the absence of a surface override, never serialized.
+    public bool RestoreGrass(GridCell cell) => EraseSurface(cell);
+
     public bool PlaceObject(string definitionId, GridCell cell, out string reason)
     {
         if (!MapRules.CanPlace(Map, Catalog, definitionId, cell, out reason)) return false;

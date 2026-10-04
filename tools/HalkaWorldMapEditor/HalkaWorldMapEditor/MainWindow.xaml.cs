@@ -3,7 +3,9 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using HalkaWorldMapEditor.Core;
 using Microsoft.Win32;
 using SkiaSharp;
@@ -15,7 +17,11 @@ public partial class MainWindow : Window
 {
     private static readonly SKTypeface MarkerTypeface = SKTypeface.FromFamilyName("Yu Gothic UI") ?? SKTypeface.Default;
     private enum EditorTool { Select, Paint, Erase }
-    private sealed record PaletteEntry(string DefinitionId, string DisplayName, bool IsSurface);
+    private sealed record PaletteEntry(string DefinitionId, string DisplayName, bool IsSurface,
+        bool IsGrass, BitmapImage? PreviewIcon, string Tooltip)
+    {
+        public string GroupName => IsSurface ? "地面" : "オブジェクト";
+    }
     private sealed class LocalSettings
     {
         public string ProjectRoot { get; set; } = "";
@@ -43,6 +49,7 @@ public partial class MainWindow : Window
     private DateTime knownMapWriteTime;
     private bool externalChangePending;
     private bool dragPaint;
+    private GridCell? lastPaintCell;
     private bool dragPan;
     private bool rightErase;
     private Point lastPointer;
@@ -127,11 +134,19 @@ public partial class MainWindow : Window
         spriteCache.Clear();
         loading = true;
         MapPicker.ItemsSource = maps.Select(Path.GetFileName).ToArray();
-        PaletteList.ItemsSource = catalog.Surfaces.Where(item => item.EditorSelectable).Select(item =>
-            new PaletteEntry(item.DefinitionId, $"地面  {item.DisplayName}", true)).Concat(
+        var paletteEntries = new[] {
+            new PaletteEntry("", "草", true, true, LoadPaletteIcon(catalog.Visuals.GrassSpritePath),
+                "通常の草地に戻します")
+        }.Concat(catalog.Surfaces.Where(item => item.EditorSelectable).Select(item =>
+            new PaletteEntry(item.DefinitionId, item.DisplayName, true, false,
+                LoadPaletteIcon(item.PreviewSpritePath), item.DisplayName + "を配置します"))).Concat(
             catalog.Objects.Where(item => item.EditorSelectable).Select(item =>
-                new PaletteEntry(item.DefinitionId, $"Object  {item.DisplayName}", false))).ToArray();
-        PaletteList.SelectedIndex = 0;
+                new PaletteEntry(item.DefinitionId, item.DisplayName, false, false,
+                    LoadPaletteIcon(item.PreviewSpritePath), item.DisplayName + "を配置します"))).ToArray();
+        var paletteView = CollectionViewSource.GetDefaultView(paletteEntries);
+        paletteView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(PaletteEntry.GroupName)));
+        PaletteList.ItemsSource = paletteView;
+        PaletteList.SelectedIndex = -1;
         var choice = maps.FirstOrDefault(item => string.Equals(item, preferredMap, StringComparison.OrdinalIgnoreCase)) ?? maps[0];
         MapPicker.SelectedItem = Path.GetFileName(choice);
         loading = false;
@@ -160,6 +175,14 @@ public partial class MainWindow : Window
         var map = session.Map;
         Title = "HALKA WORLD MAP EDITOR v0.2 — " + map.MapId + (session.IsDirty ? " *" : "");
         DirtyText.Text = session.IsDirty ? "● 未保存" : "保存済み";
+        ActivePaletteText.Text = tool switch
+        {
+            EditorTool.Select => "選択",
+            EditorTool.Erase => "消去",
+            _ when PaletteList.SelectedItem is PaletteEntry palette =>
+                $"配置: {palette.DisplayName}  |  {(palette.IsSurface ? "地面" : "オブジェクト")}",
+            _ => "配置: 未選択"
+        };
         MapInfo.Text = $"{map.DisplayName}\nBounds: X {map.Bounds.MinX}..{map.Bounds.MaxX}, Y {map.Bounds.MinY}..{map.Bounds.MaxY}\nSurface: {map.Surfaces.Count}\nObject: {map.Objects.Count}\nGrass: {CountGrass()}\nTool: {tool}";
         var selected = SelectedObject();
         SelectedKind.Text = selected == null ? selectedCell.HasValue ? $"Cell {selectedCell.Value}" : "セルを選択してください" :
@@ -219,11 +242,35 @@ public partial class MainWindow : Window
     private void DeleteClick(object sender, RoutedEventArgs e) { if (session != null && selectedInstanceId != null && session.DeleteObject(selectedInstanceId)) { selectedInstanceId = null; RefreshView(); } }
     private void ValidateClick(object sender, RoutedEventArgs e) => ValidateNow();
     private void AboutClick(object sender, RoutedEventArgs e) => MessageBox.Show(this, "HALKA WORLD MAP EDITOR v0.2\nStandalone Edition\nMap JSONを編集します。UnityのMapDefinitionは生成キャッシュです。", "このツールについて");
-    private void SelectToolClick(object sender, RoutedEventArgs e) { tool = EditorTool.Select; RefreshView(); }
-    private void PaintToolClick(object sender, RoutedEventArgs e) { tool = EditorTool.Paint; RefreshView(); }
-    private void EraseToolClick(object sender, RoutedEventArgs e) { tool = EditorTool.Erase; RefreshView(); }
+    private void SelectToolClick(object sender, RoutedEventArgs e) { tool = EditorTool.Select; PaletteList.SelectedIndex = -1; RefreshView(); }
+    private void PaintToolClick(object sender, RoutedEventArgs e) { tool = EditorTool.Paint; if (PaletteList.SelectedIndex < 0) PaletteList.SelectedIndex = 0; RefreshView(); }
+    private void EraseToolClick(object sender, RoutedEventArgs e) { tool = EditorTool.Erase; PaletteList.SelectedIndex = -1; RefreshView(); }
     private void FitClick(object sender, RoutedEventArgs e) { FitMap(); MapCanvas.InvalidateVisual(); }
-    private void PaletteChanged(object sender, SelectionChangedEventArgs e) { if (!loading && PaletteList.SelectedItem != null) { tool = EditorTool.Paint; RefreshView(); } }
+    private void PaletteChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (loading || PaletteList.SelectedItem is not PaletteEntry entry) return;
+        tool = EditorTool.Paint;
+        StatusText.Text = $"配置: {entry.DisplayName}";
+        RefreshView();
+    }
+
+    private BitmapImage? LoadPaletteIcon(string relative)
+    {
+        if (projectRoot == null) return null;
+        try
+        {
+            var path = ProjectPaths.SpritePath(projectRoot, relative);
+            if (!File.Exists(path)) return null;
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.UriSource = new Uri(path);
+            image.EndInit();
+            image.Freeze();
+            return image;
+        }
+        catch { return null; }
+    }
     private void OverlayChanged(object sender, RoutedEventArgs e) => MapCanvas?.InvalidateVisual();
     private void MapPickerChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -261,9 +308,9 @@ public partial class MainWindow : Window
             e.Handled = true; return;
         }
         if (Keyboard.FocusedElement is TextBox) return;
-        if (e.Key == Key.D1) tool = EditorTool.Select;
-        else if (e.Key == Key.D2) tool = EditorTool.Paint;
-        else if (e.Key == Key.D3) tool = EditorTool.Erase;
+        if (e.Key == Key.D1) { tool = EditorTool.Select; PaletteList.SelectedIndex = -1; }
+        else if (e.Key == Key.D2) { tool = EditorTool.Paint; if (PaletteList.SelectedIndex < 0) PaletteList.SelectedIndex = 0; }
+        else if (e.Key == Key.D3) { tool = EditorTool.Erase; PaletteList.SelectedIndex = -1; }
         else if (e.Key == Key.F) FitMap();
         else if (e.Key == Key.G) GridCheck.IsChecked = GridCheck.IsChecked != true;
         else if (e.Key == Key.Delete) DeleteClick(sender, e);
@@ -307,10 +354,15 @@ public partial class MainWindow : Window
         else if (PaletteList.SelectedItem is PaletteEntry entry)
         {
             session.BeginStroke(); dragPaint = entry.IsSurface;
-            if (entry.IsSurface && !session.PaintSurface(entry.DefinitionId, cell) &&
-                session.Map.Objects.Any(item => catalog.ObjectById.TryGetValue(item.DefinitionId, out var definition) &&
-                    MapRules.FootprintCells(item, definition).Contains(cell)))
-                StatusText.Text = "Objectの占有セルには地面を配置できません。";
+            if (dragPaint) lastPaintCell = cell;
+            if (entry.IsGrass) session.RestoreGrass(cell);
+            else if (entry.IsSurface)
+            {
+                if (!session.PaintSurface(entry.DefinitionId, cell) &&
+                    session.Map.Objects.Any(item => catalog.ObjectById.TryGetValue(item.DefinitionId, out var definition) &&
+                        MapRules.FootprintCells(item, definition).Contains(cell)))
+                    StatusText.Text = "Objectの占有セルには地面を配置できません。";
+            }
             else if (!session.PlaceObject(entry.DefinitionId, cell, out var reason)) StatusText.Text = reason;
         }
         MapCanvas.CaptureMouse(); RefreshView();
@@ -349,14 +401,42 @@ public partial class MainWindow : Window
         if (dragPaint && session.Map.Bounds.Contains(cell))
         {
             if (rightErase || tool == EditorTool.Erase) EraseCell(point, cell);
-            else if (PaletteList.SelectedItem is PaletteEntry { IsSurface: true } entry) session.PaintSurface(entry.DefinitionId, cell);
+            else if (PaletteList.SelectedItem is PaletteEntry { IsSurface: true } entry)
+            {
+                foreach (var crossed in StrokeCells(lastPaintCell ?? cell, cell))
+                {
+                    if (!session.Map.Bounds.Contains(crossed)) continue;
+                    if (entry.IsGrass) session.RestoreGrass(crossed);
+                    else session.PaintSurface(entry.DefinitionId, crossed);
+                }
+                lastPaintCell = cell;
+            }
             RefreshView();
+        }
+    }
+
+    private static IEnumerable<GridCell> StrokeCells(GridCell from, GridCell to)
+    {
+        var x = from.X;
+        var y = from.Y;
+        var dx = Math.Abs(to.X - x);
+        var dy = -Math.Abs(to.Y - y);
+        var sx = x < to.X ? 1 : -1;
+        var sy = y < to.Y ? 1 : -1;
+        var error = dx + dy;
+        while (true)
+        {
+            yield return new GridCell(x, y);
+            if (x == to.X && y == to.Y) yield break;
+            var twice = 2 * error;
+            if (twice >= dy) { error += dy; x += sx; }
+            if (twice <= dx) { error += dx; y += sy; }
         }
     }
 
     private void CanvasMouseUp(object sender, MouseButtonEventArgs e)
     {
-        dragPan = false; dragPaint = false; rightErase = false;
+        dragPan = false; dragPaint = false; rightErase = false; lastPaintCell = null;
         session?.EndStroke(); MapCanvas.ReleaseMouseCapture(); RefreshView();
     }
     private void CanvasMouseLeave(object sender, MouseEventArgs e) { if (!MapCanvas.IsMouseCaptured) session?.EndStroke(); }

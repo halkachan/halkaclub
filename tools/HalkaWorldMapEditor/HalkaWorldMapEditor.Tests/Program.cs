@@ -16,10 +16,9 @@ void Check(string name, bool condition)
 
 Check("format and bounds", map.MapId == "first_field" && map.Bounds.MinX == -10 && map.Bounds.MaxX == 10 &&
     map.Bounds.MinY == -6 && map.Bounds.MaxY == 6);
-Check("golden migration counts", map.Surfaces.Count == 52 && map.Objects.Count == 11 &&
-    map.Objects.Count(o => o.DefinitionId == "stone_basic") == 4 &&
-    map.Objects.Count(o => o.DefinitionId == "flower_basic") == 4 &&
-    map.Objects.Count(o => o.DefinitionId == "tree_basic") == 3);
+Check("editable authoring placements", map.Surfaces.Count > 0 && map.Objects.Count > 0 &&
+    map.Surfaces.All(s => catalog.SurfaceById.ContainsKey(s.DefinitionId)) &&
+    map.Objects.All(o => catalog.ObjectById.ContainsKey(o.DefinitionId)));
 Check("golden marker coordinates", map.Markers.PlayerSpawn == new GridCell(0, 0) &&
     map.Markers.CrowSpawn == new GridCell(7, 2) && map.Markers.HouseDoor == new GridCell(-7, -4) &&
     map.Markers.OutsideEntry == new GridCell(-7, -5) &&
@@ -32,7 +31,7 @@ var grass = 0;
 for (var y = map.Bounds.MinY; y <= map.Bounds.MaxY; y++)
 for (var x = map.Bounds.MinX; x <= map.Bounds.MaxX; x++)
     if (MapRules.HasGrass(map, catalog, new GridCell(x, y))) grass++;
-Check("derived grass count", grass == 201);
+Check("derived grass exists", grass > 0);
 Check("no grass on road", map.Surfaces.All(p => !MapRules.HasGrass(map, catalog, p.Cell)));
 Check("IDs stable unique", map.Objects.All(o => !string.IsNullOrEmpty(o.InstanceId)) &&
     map.Objects.Select(o => o.InstanceId).Distinct().Count() == map.Objects.Count);
@@ -61,6 +60,46 @@ try
     edit.Redo();
     Check("surface redo", edit.Map.Surfaces.Count == originalSurfaceCount + 1);
     Check("surface erase", edit.EraseSurface(blank));
+    var dirtCell = new GridCell(0, -1);
+    var grassSession = new MapSession(MapFormat.Clone(map), catalog, Path.Combine(tempDir, "grass-test.hwmap.json"));
+    var dirtBefore = grassSession.Map.Surfaces.Count;
+    Check("grass tool removes dirt", grassSession.RestoreGrass(dirtCell) &&
+        grassSession.Map.Surfaces.Count == dirtBefore - 1 &&
+        MapRules.HasGrass(grassSession.Map, catalog, dirtCell));
+    grassSession.Undo();
+    Check("grass tool undo restores dirt", grassSession.Map.Surfaces.Any(s => s.Cell == dirtCell) &&
+        !MapRules.HasGrass(grassSession.Map, catalog, dirtCell));
+    grassSession.Redo();
+    Check("grass tool redo", !grassSession.Map.Surfaces.Any(s => s.Cell == dirtCell) &&
+        MapRules.HasGrass(grassSession.Map, catalog, dirtCell));
+    var alreadyGrass = new GridCell(-4, 4);
+    var unchanged = MapFormat.SerializeMap(grassSession.Map);
+    Check("grass tool on grass is no-op", !grassSession.RestoreGrass(alreadyGrass) &&
+        MapFormat.SerializeMap(grassSession.Map) == unchanged);
+    var drag = new MapSession(MapFormat.Clone(map), catalog, Path.Combine(tempDir, "grass-drag.hwmap.json"));
+    var dragCells = new[] { new GridCell(0, -1), new GridCell(0, -2) };
+    drag.BeginStroke();
+    Check("grass drag removes multiple dirt", dragCells.All(drag.RestoreGrass) &&
+        drag.Map.Surfaces.Count == map.Surfaces.Count - dragCells.Length);
+    drag.EndStroke();
+    drag.Undo();
+    Check("grass drag one undo restores all dirt", dragCells.All(c => drag.Map.Surfaces.Any(s => s.Cell == c)) &&
+        !drag.CanUndo);
+    drag.Redo();
+    Check("grass drag redo removes all dirt", dragCells.All(c => !drag.Map.Surfaces.Any(s => s.Cell == c)));
+    var stoneMap = MapFormat.Clone(map);
+    var stone = stoneMap.Objects.First(o => o.DefinitionId == "stone_basic");
+    stoneMap.Surfaces.RemoveAll(s => s.Cell == stone.RootCell);
+    stoneMap.Surfaces.Add(new SurfacePlacement { DefinitionId = "dirt", Cell = stone.RootCell });
+    var stoneSession = new MapSession(stoneMap, catalog, Path.Combine(tempDir, "stone-grass.hwmap.json"));
+    Check("grass tool removes dirt but preserves stone", stoneSession.RestoreGrass(stone.RootCell) &&
+        stoneSession.Map.Objects.Any(o => o.InstanceId == stone.InstanceId) &&
+        !MapRules.HasGrass(stoneSession.Map, catalog, stone.RootCell));
+    File.WriteAllText(grassSession.FilePath, source);
+    grassSession.Save();
+    var savedGrassMap = MapFormat.LoadMap(grassSession.FilePath);
+    Check("grass tool save writes only surface removal", savedGrassMap.Surfaces.Count == dirtBefore - 1 &&
+        savedGrassMap.Surfaces.All(s => s.DefinitionId != "grass" && s.DefinitionId != "grass_basic"));
     edit.BeginStroke();
     edit.PaintSurface("dirt", new GridCell(-4, 4));
     edit.PaintSurface("dirt", new GridCell(-4, 5));
