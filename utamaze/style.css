@@ -259,6 +259,10 @@ h1{margin:18px 0 20px;line-height:.9}
 .pro-card .price{background:var(--mint);color:#10221d;white-space:nowrap}
 .price small{font-size:10px;font-weight:700;margin-left:2px}
 .plan-terms{margin:-8px 0 18px;color:#a7edd9;font-size:13px;font-weight:700;letter-spacing:.02em}
+.pro-price{margin:-6px 0 14px;display:flex;align-items:baseline;gap:10px}
+.pro-price strong{font-size:40px;letter-spacing:-.02em;color:var(--mint);line-height:1}
+.pro-price span{font-size:15px;font-weight:800;color:#e9ecef}
+.note + .note{margin-top:4px}
 .plan-card ul{margin:0;padding:0;list-style:none}
 .plan-card li{padding:9px 0;border-bottom:1px solid #eaedef;font-size:13px}
 .pro-card li{border-color:#2c3035}
@@ -298,6 +302,13 @@ h1{margin:18px 0 20px;line-height:.9}
 .closing h2{margin:4px 0 7px;font-size:clamp(42px,7vw,86px);letter-spacing:-.07em;line-height:1}
 .closing p:not(.kicker){color:#7e848b;font-size:13px}
 .closing-links{display:flex;justify-content:center;gap:9px;margin-top:20px}
+.contact-box{
+  background:white;border:1px solid #d9dcdf;border-radius:var(--radius);padding:34px;
+  display:grid;grid-template-columns:1fr auto;gap:30px;align-items:center;
+}
+.contact-box h2{margin:3px 0 6px;font-size:32px}
+.contact-box p:not(.kicker){margin:0;color:#5d6664;font-size:13px;line-height:1.8}
+.faq-item p a{color:#1f8f71;font-weight:700}
 .faq-list{display:grid;gap:10px}
 .faq-item{background:white;border:1px solid #d9dcdf;border-radius:16px;padding:0 22px}
 .faq-item summary{cursor:pointer;padding:18px 0;font-size:14px;font-weight:800;list-style:none;position:relative;padding-right:28px}
@@ -342,4 +353,5 @@ footer{background:var(--bg);color:#767d85;border-top:1px solid #2b2e33}
   .plan-card{padding:26px 22px}
   .plan-card h3{font-size:24px}
   .faq-item{padding:0 16px}
+  .contact-box{grid-template-columns:1fr;padding:26px 22px}
 }
