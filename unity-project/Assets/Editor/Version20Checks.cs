@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Halka.Game.CameraControl;
@@ -8,6 +9,7 @@ using Halka.Game.Interaction;
 using Halka.Game.Player;
 using Halka.Game.World;
 using UnityEditor;
+using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
@@ -181,6 +183,65 @@ namespace Halka.Game.Editor
             {
                 UnityEngine.Object.DestroyImmediate(shifted);
                 EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
+            }
+        }
+
+        [MenuItem("HALKA/Build v0.3 moved house fixture")]
+        public static void BuildMovedHouseFixture()
+        {
+            MapAuthoringImporter.SyncAll();
+            const string scenePath = "Assets/Scenes/V03MovedHouseFixture.unity";
+            const string mapPath = "Assets/Editor/V03MovedHouseFixture.asset";
+            Check(AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(scenePath) == null &&
+                AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(mapPath) == null,
+                "moved house temporary assets do not already exist");
+            var official = AssetDatabase.LoadAssetAtPath<MapDefinition>("Assets/Content/Maps/first_field.asset");
+            var shifted = UnityEngine.Object.Instantiate(official);
+            var objects = official.Objects.Select(item =>
+                item.Definition.Behavior == WorldObjectBehavior.HouseTransition
+                    ? new WorldObjectPlacement { InstanceId = item.InstanceId,
+                        Definition = item.Definition, RootCell = new Vector2Int(-6, -4) }
+                    : item).ToList();
+            shifted.ReplaceFromAuthoring(official.MapId, official.DisplayName, official.MapType,
+                official.BaseSurface, official.GrassMode, official.BackdropColor,
+                official.MinCell, official.MaxCell, official.Surfaces.ToList(), objects,
+                official.Markers.ToList());
+            Check(MapPlacementRules.Validate(shifted).Count == 0, "moved house test map validates");
+            try
+            {
+                AssetDatabase.CreateAsset(shifted, mapPath);
+                Check(AssetDatabase.CopyAsset("Assets/Scenes/FirstDay.unity", scenePath),
+                    "temporary scene copied");
+                var scene = EditorSceneManager.OpenScene(scenePath);
+                var controller = UnityEngine.Object.FindFirstObjectByType<MapWorldController2D>();
+                var loader = UnityEngine.Object.FindObjectsByType<MapRuntimeLoader2D>(
+                    FindObjectsInactive.Include, FindObjectsSortMode.None)
+                    .Single(item => item.Map == official);
+                ((MapDefinition[])Field(controller, "maps"))[0] = shifted;
+                loader.SetMap(shifted);
+                EditorUtility.SetDirty(controller);
+                EditorUtility.SetDirty(loader);
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+                AssetDatabase.SaveAssets();
+                var output = Path.Combine(Path.GetTempPath(),
+                    "HalkaV03HouseMoveWebGL-" + DateTime.UtcNow.ToString("yyyyMMddHHmmss"));
+                var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions {
+                    scenes = new[] { scenePath },
+                    locationPathName = output,
+                    target = BuildTarget.WebGL,
+                    options = BuildOptions.None
+                });
+                Check(report.summary.result == BuildResult.Succeeded,
+                    "moved house WebGL test build succeeded");
+                Debug.Log("HALKA v0.3 moved house WebGL fixture: " + output);
+            }
+            finally
+            {
+                EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
+                AssetDatabase.DeleteAsset(scenePath);
+                AssetDatabase.DeleteAsset(mapPath);
+                AssetDatabase.SaveAssets();
             }
         }
 
