@@ -18,10 +18,11 @@ public partial class MainWindow : Window
     private static readonly SKTypeface MarkerTypeface = SKTypeface.FromFamilyName("Yu Gothic UI") ?? SKTypeface.Default;
     private enum EditorTool { Select, Paint, Erase }
     private sealed record PaletteEntry(string DefinitionId, string DisplayName, bool IsSurface,
-        bool IsGrass, BitmapImage? PreviewIcon, string Tooltip)
+        bool RestoresBase, BitmapImage? PreviewIcon, string Tooltip)
     {
         public string GroupName => IsSurface ? "地面" : "オブジェクト";
     }
+    private sealed record MapChoice(string Path, string MapId, string DisplayName);
     private sealed class LocalSettings
     {
         public string ProjectRoot { get; set; } = "";
@@ -133,24 +134,42 @@ public partial class MainWindow : Window
         foreach (var image in spriteCache.Values) image?.Dispose();
         spriteCache.Clear();
         loading = true;
-        MapPicker.ItemsSource = maps.Select(Path.GetFileName).ToArray();
-        var paletteEntries = new[] {
-            new PaletteEntry("", "草", true, true, LoadPaletteIcon(catalog.Visuals.GrassSpritePath),
-                "通常の草地に戻します")
-        }.Concat(catalog.Surfaces.Where(item => item.EditorSelectable).Select(item =>
+        var choices = maps.Select(path => {
+            var document = MapFormat.LoadMap(path);
+            return new MapChoice(path, document.MapId, document.DisplayName);
+        }).ToArray();
+        if (choices.Select(item => item.MapId).Distinct(StringComparer.Ordinal).Count() != choices.Length)
+            throw new InvalidDataException("Map IDが重複しています。");
+        MapPicker.DisplayMemberPath = nameof(MapChoice.DisplayName);
+        MapPicker.ItemsSource = choices;
+        var choice = choices.FirstOrDefault(item => string.Equals(item.Path, preferredMap, StringComparison.OrdinalIgnoreCase)) ?? choices[0];
+        MapPicker.SelectedItem = choice;
+        loading = false;
+        LoadMap(choice.Path, fit);
+    }
+
+    private void PopulatePalette(MapDocument map)
+    {
+        if (catalog == null) return;
+        loading = true;
+        var restoresBase = map.MapType == "outdoor"
+            ? new PaletteEntry("", "草", true, true, LoadPaletteIcon(catalog.Visuals.GrassSpritePath), "通常の草地に戻します")
+            : new PaletteEntry("", "木床", true, true,
+                LoadPaletteIcon(catalog.SurfaceById[map.BaseSurfaceDefinitionId].PreviewSpritePath), "壁を消して木床に戻します");
+        var paletteEntries = new[] { restoresBase }.Concat(catalog.Surfaces.Where(item =>
+            item.EditorSelectable && item.DefinitionId != map.BaseSurfaceDefinitionId &&
+            MapRules.Allowed(item.AllowedMapTypes, map.MapType)).Select(item =>
             new PaletteEntry(item.DefinitionId, item.DisplayName, true, false,
                 LoadPaletteIcon(item.PreviewSpritePath), item.DisplayName + "を配置します"))).Concat(
-            catalog.Objects.Where(item => item.EditorSelectable).Select(item =>
+            catalog.Objects.Where(item => item.EditorSelectable &&
+                MapRules.Allowed(item.AllowedMapTypes, map.MapType)).Select(item =>
                 new PaletteEntry(item.DefinitionId, item.DisplayName, false, false,
                     LoadPaletteIcon(item.PreviewSpritePath), item.DisplayName + "を配置します"))).ToArray();
         var paletteView = CollectionViewSource.GetDefaultView(paletteEntries);
         paletteView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(PaletteEntry.GroupName)));
         PaletteList.ItemsSource = paletteView;
         PaletteList.SelectedIndex = -1;
-        var choice = maps.FirstOrDefault(item => string.Equals(item, preferredMap, StringComparison.OrdinalIgnoreCase)) ?? maps[0];
-        MapPicker.SelectedItem = Path.GetFileName(choice);
         loading = false;
-        LoadMap(choice, fit);
     }
 
     private void LoadMap(string path, bool fit)
@@ -159,6 +178,7 @@ public partial class MainWindow : Window
         var loaded = MapSession.Open(path, catalog);
         var issues = MapRules.Validate(loaded.Map, catalog);
         session = loaded;
+        PopulatePalette(loaded.Map);
         selectedInstanceId = null; selectedCell = null;
         knownMapWriteTime = File.GetLastWriteTimeUtc(path);
         externalChangePending = false;
@@ -173,7 +193,7 @@ public partial class MainWindow : Window
     {
         if (session == null || catalog == null) return;
         var map = session.Map;
-        Title = "HALKA WORLD MAP EDITOR v0.2 — " + map.MapId + (session.IsDirty ? " *" : "");
+        Title = "HALKA WORLD MAP EDITOR v0.3 — " + map.MapId + (session.IsDirty ? " *" : "");
         DirtyText.Text = session.IsDirty ? "● 未保存" : "保存済み";
         ActivePaletteText.Text = tool switch
         {
@@ -183,10 +203,12 @@ public partial class MainWindow : Window
                 $"配置: {palette.DisplayName}  |  {(palette.IsSurface ? "地面" : "オブジェクト")}",
             _ => "配置: 未選択"
         };
-        MapInfo.Text = $"{map.DisplayName}\nBounds: X {map.Bounds.MinX}..{map.Bounds.MaxX}, Y {map.Bounds.MinY}..{map.Bounds.MaxY}\nSurface: {map.Surfaces.Count}\nObject: {map.Objects.Count}\nGrass: {CountGrass()}\nTool: {tool}";
+        MapInfo.Text = $"{map.DisplayName} ({map.MapId})\nType: {map.MapType}  Base: {map.BaseSurfaceDefinitionId}  Grass: {map.GrassMode}\nBounds: X {map.Bounds.MinX}..{map.Bounds.MaxX}, Y {map.Bounds.MinY}..{map.Bounds.MaxY}\nSurface: {map.Surfaces.Count}\nObject: {map.Objects.Count}\nDerived Grass: {CountGrass()}\nTool: {tool}";
         var selected = SelectedObject();
         SelectedKind.Text = selected == null ? selectedCell.HasValue ? $"Cell {selectedCell.Value}" : "セルを選択してください" :
-            $"{catalog.ObjectById.GetValueOrDefault(selected.DefinitionId)?.DisplayName ?? selected.DefinitionId}  {selected.RootCell}";
+            catalog.ObjectById.TryGetValue(selected.DefinitionId, out var definition)
+                ? $"{definition.DisplayName} ({selected.DefinitionId})\nMap: {map.MapId}\nRoot: {selected.RootCell}\nVisual: {definition.VisualWidthPixels / 32}×{definition.VisualHeightPixels / 32} cells\nBlocked: {MapRules.FootprintCells(selected, definition).Count()} cells"
+                : selected.DefinitionId;
         InstanceText.Text = selected?.InstanceId ?? "";
         RootX.Text = selected?.RootCell.X.ToString() ?? selectedCell?.X.ToString() ?? "";
         RootY.Text = selected?.RootCell.Y.ToString() ?? selectedCell?.Y.ToString() ?? "";
@@ -241,7 +263,7 @@ public partial class MainWindow : Window
     private void RedoClick(object sender, RoutedEventArgs e) { session?.Redo(); RefreshView(); }
     private void DeleteClick(object sender, RoutedEventArgs e) { if (session != null && selectedInstanceId != null && session.DeleteObject(selectedInstanceId)) { selectedInstanceId = null; RefreshView(); } }
     private void ValidateClick(object sender, RoutedEventArgs e) => ValidateNow();
-    private void AboutClick(object sender, RoutedEventArgs e) => MessageBox.Show(this, "HALKA WORLD MAP EDITOR v0.2\nStandalone Edition\nMap JSONを編集します。UnityのMapDefinitionは生成キャッシュです。", "このツールについて");
+    private void AboutClick(object sender, RoutedEventArgs e) => MessageBox.Show(this, "HALKA WORLD MAP EDITOR v0.3\nStandalone Edition\nMap JSONを編集します。UnityのMapDefinitionは生成キャッシュです。", "このツールについて");
     private void SelectToolClick(object sender, RoutedEventArgs e) { tool = EditorTool.Select; PaletteList.SelectedIndex = -1; RefreshView(); }
     private void PaintToolClick(object sender, RoutedEventArgs e) { tool = EditorTool.Paint; if (PaletteList.SelectedIndex < 0) PaletteList.SelectedIndex = 0; RefreshView(); }
     private void EraseToolClick(object sender, RoutedEventArgs e) { tool = EditorTool.Erase; PaletteList.SelectedIndex = -1; RefreshView(); }
@@ -274,11 +296,27 @@ public partial class MainWindow : Window
     private void OverlayChanged(object sender, RoutedEventArgs e) => MapCanvas?.InvalidateVisual();
     private void MapPickerChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (loading || projectRoot == null || MapPicker.SelectedItem is not string name) return;
-        var path = Path.Combine(ProjectPaths.AuthoringFolder(projectRoot), name);
+        if (loading || projectRoot == null || MapPicker.SelectedItem is not MapChoice choice) return;
+        var path = choice.Path;
         if (session?.FilePath == path) return;
-        if (!ConfirmDiscard()) { loading = true; MapPicker.SelectedItem = Path.GetFileName(session?.FilePath); loading = false; return; }
+        if (!ConfirmMapSwitch())
+        {
+            loading = true;
+            MapPicker.SelectedItem = MapPicker.Items.OfType<MapChoice>().FirstOrDefault(item => item.Path == session?.FilePath);
+            loading = false;
+            return;
+        }
         try { LoadMap(path, true); } catch (Exception error) { ShowError("Map切替", error); }
+    }
+
+    private bool ConfirmMapSwitch()
+    {
+        if (session?.IsDirty != true) return true;
+        var answer = MessageBox.Show(this, "未保存の変更があります。保存してMapを切り替えますか？\nはい: 保存 / いいえ: 破棄 / キャンセル: 切替を中止",
+            "未保存のMap", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+        if (answer == MessageBoxResult.Cancel) return false;
+        if (answer == MessageBoxResult.Yes) { SaveMap(this, new RoutedEventArgs()); return !session.IsDirty; }
+        return true;
     }
     private void MoveObjectClick(object sender, RoutedEventArgs e)
     {
@@ -355,7 +393,7 @@ public partial class MainWindow : Window
         {
             session.BeginStroke(); dragPaint = entry.IsSurface;
             if (dragPaint) lastPaintCell = cell;
-            if (entry.IsGrass) session.RestoreGrass(cell);
+            if (entry.RestoresBase) session.RestoreBaseSurface(cell);
             else if (entry.IsSurface)
             {
                 if (!session.PaintSurface(entry.DefinitionId, cell) &&
@@ -371,15 +409,22 @@ public partial class MainWindow : Window
     private ObjectPlacement? HitObject(Point point)
     {
         if (session == null || catalog == null) return null;
-        foreach (var item in session.Map.Objects.AsEnumerable().Reverse())
+        foreach (var item in session.Map.Objects.OrderBy(item =>
+            catalog.ObjectById.TryGetValue(item.DefinitionId, out var kind)
+                ? kind.VisualWidthPixels * kind.VisualHeightPixels : int.MaxValue))
         {
             if (!catalog.ObjectById.TryGetValue(item.DefinitionId, out var definition)) continue;
-            var anchor = CellRect(item.RootCell);
-            var width = zoom * definition.VisualWidthPixels / 32.0;
-            var height = zoom * definition.VisualHeightPixels / 32.0;
-            if (new Rect(anchor.Left + (zoom - width) / 2, anchor.Bottom - height, width, height).Contains(point)) return item;
+            if (VisualRect(item, definition).Contains(point)) return item;
         }
         return null;
+    }
+
+    private Rect VisualRect(ObjectPlacement item, CatalogObject definition)
+    {
+        var bounds = MapRules.VisualBounds(item, definition);
+        var low = CellRect(bounds.Minimum);
+        var high = CellRect(bounds.Maximum);
+        return new Rect(low.Left, high.Top, high.Right - low.Left, low.Bottom - high.Top);
     }
 
     private void EraseCell(Point point, GridCell cell)
@@ -397,7 +442,7 @@ public partial class MainWindow : Window
         if (dragPan)
         { panX += point.X - lastPointer.X; panY += point.Y - lastPointer.Y; lastPointer = point; MapCanvas.InvalidateVisual(); return; }
         var cell = CellAt(point);
-        StatusText.Text = session.Map.Bounds.Contains(cell) ? $"Cell {cell}   Surface: {(session.Map.Surfaces.FirstOrDefault(item => item.Cell == cell)?.DefinitionId ?? "grass")}   Zoom {zoom:0.#} px/cell" : "Map範囲外";
+        StatusText.Text = session.Map.Bounds.Contains(cell) ? $"Cell {cell}   Surface: {(session.Map.Surfaces.FirstOrDefault(item => item.Cell == cell)?.DefinitionId ?? session.Map.BaseSurfaceDefinitionId)}   Zoom {zoom:0.#} px/cell" : "Map範囲外";
         if (dragPaint && session.Map.Bounds.Contains(cell))
         {
             if (rightErase || tool == EditorTool.Erase) EraseCell(point, cell);
@@ -406,7 +451,7 @@ public partial class MainWindow : Window
                 foreach (var crossed in StrokeCells(lastPaintCell ?? cell, cell))
                 {
                     if (!session.Map.Bounds.Contains(crossed)) continue;
-                    if (entry.IsGrass) session.RestoreGrass(crossed);
+                    if (entry.RestoresBase) session.RestoreBaseSurface(crossed);
                     else session.PaintSurface(entry.DefinitionId, crossed);
                 }
                 lastPaintCell = cell;
@@ -483,7 +528,7 @@ public partial class MainWindow : Window
     private void MapCanvasPaint(object? sender, SKPaintSurfaceEventArgs e)
     {
         var canvas = e.Surface.Canvas;
-        canvas.Clear(new SKColor(19, 25, 25));
+        canvas.Clear(session?.Map.MapType == "interior" ? new SKColor(16, 16, 20) : new SKColor(19, 25, 25));
         if (session == null || catalog == null) return;
         var sx = (float)(e.Info.Width / Math.Max(1, MapCanvas.ActualWidth));
         var sy = (float)(e.Info.Height / Math.Max(1, MapCanvas.ActualHeight));
@@ -498,13 +543,13 @@ public partial class MainWindow : Window
         for (var y = minY; y <= maxY; y++) for (var x = minX; x <= maxX; x++)
         {
             var cell = new GridCell(x, y); var rect = ToSkia(CellRect(cell));
-            Fill(canvas, rect, new SKColor(130, 151, 89));
+            if (map.MapType == "interior" && catalog.SurfaceById.TryGetValue(map.BaseSurfaceDefinitionId, out var baseSurface))
+                DrawSprite(canvas, baseSurface.PreviewSpritePath, rect, new SKColor(86, 68, 52));
+            else Fill(canvas, rect, new SKColor(130, 151, 89));
             if (surfaceLookup.TryGetValue(cell, out var surface) && catalog.SurfaceById.TryGetValue(surface.DefinitionId, out var sdef))
                 DrawSprite(canvas, sdef.PreviewSpritePath, rect, new SKColor(125, 101, 75));
             else if (GrassCheck.IsChecked == true && MapRules.HasGrass(map, catalog, cell))
                 DrawSprite(canvas, catalog.Visuals.GrassSpritePath, rect, new SKColor(60, 117, 43));
-            if (CollisionCheck.IsChecked == true && MapRules.BlocksMovement(map, catalog, cell))
-                Fill(canvas, rect, new SKColor(255, 55, 55, 100));
             if (GridCheck.IsChecked == true)
             { using var line = new SKPaint { Color = new SKColor(15, 28, 14, 110), StrokeWidth = 1, Style = SKPaintStyle.Stroke, IsAntialias = false }; canvas.DrawRect(rect, line); }
             if (CoordCheck.IsChecked == true && zoom >= 25) Text(canvas, $"{x},{y}", rect.Left + 2, rect.Top + Math.Min(12, (float)zoom / 3), SKColors.Black, Math.Clamp((float)zoom / 4, 8, 12));
@@ -512,24 +557,38 @@ public partial class MainWindow : Window
         foreach (var item in map.Objects)
         {
             if (!catalog.ObjectById.TryGetValue(item.DefinitionId, out var def)) continue;
-            var root = CellRect(item.RootCell);
-            var width = zoom * def.VisualWidthPixels / 32.0;
-            var height = zoom * def.VisualHeightPixels / 32.0;
-            var imageRect = new Rect(root.Left + (zoom - width) / 2, root.Bottom - height, width, height);
+            var imageRect = VisualRect(item, def);
             DrawSprite(canvas, def.PreviewSpritePath, ToSkia(imageRect), SKColors.DarkSlateGray);
             if (item.InstanceId == selectedInstanceId)
-            { using var line = new SKPaint { Color = SKColors.Yellow, Style = SKPaintStyle.Stroke, StrokeWidth = 2 }; canvas.DrawRect(ToSkia(imageRect), line); }
+            {
+                using var line = new SKPaint { Color = SKColors.Yellow, Style = SKPaintStyle.Stroke, StrokeWidth = 2 };
+                canvas.DrawRect(ToSkia(imageRect), line);
+                foreach (var blocked in MapRules.FootprintCells(item, def))
+                    Fill(canvas, ToSkia(CellRect(blocked)), new SKColor(255, 70, 40, 85));
+                var root = ToSkia(CellRect(item.RootCell));
+                Text(canvas, "R", root.MidX - 5, root.MidY + 5, SKColors.Yellow, 16);
+            }
         }
-        DrawLargeMarker(canvas, map.Markers.HouseDoor, 5, 4, catalog.Visuals.HouseSpritePath);
-        DrawLargeMarker(canvas, map.Markers.PlayerSpawn, 2, 2, catalog.Visuals.PlayerSpritePath);
-        DrawLargeMarker(canvas, map.Markers.CrowSpawn, 1, 1, catalog.Visuals.CrowSpritePath);
+        if (CollisionCheck.IsChecked == true)
+            for (var y = minY; y <= maxY; y++) for (var x = minX; x <= maxX; x++)
+            {
+                var cell = new GridCell(x, y);
+                if (MapRules.BlocksMovement(map, catalog, cell))
+                    Fill(canvas, ToSkia(CellRect(cell)), new SKColor(255, 55, 55, 75));
+            }
+        if (map.MapType == "outdoor")
+        {
+            if (map.Marker("player_start") is { } playerSpawn)
+                DrawLargeMarker(canvas, playerSpawn, 2, 2, catalog.Visuals.PlayerSpritePath);
+            if (map.Marker("crow_spawn") is { } crowSpawn)
+                DrawLargeMarker(canvas, crowSpawn, 1, 1, catalog.Visuals.CrowSpritePath);
+        }
         if (MarkerCheck.IsChecked == true)
         {
-            Marker(canvas, map.Markers.HouseDoor, "家入口", SKColors.Gold);
-            Marker(canvas, map.Markers.OutsideEntry, "家前", SKColors.Gold);
-            Marker(canvas, map.Markers.PlayerSpawn, "P", SKColors.White);
-            Marker(canvas, map.Markers.CrowSpawn, "C", SKColors.White);
-            foreach (var cell in MapRules.RoadEndCells(map)) Marker(canvas, cell, "出口予定", SKColors.Cyan);
+            foreach (var marker in map.Markers)
+                Marker(canvas, marker.Cell, marker.Id, marker.Id.StartsWith("road_") ? SKColors.Cyan : SKColors.White);
+            if (MapRules.HouseRoot(map) is { } door) Marker(canvas, door, "家入口", SKColors.Gold);
+            if (MapRules.OutsideEntry(map) is { } entry) Marker(canvas, entry, "家前", SKColors.Gold);
         }
         if (selectedCell is { } active)
         { using var outline = new SKPaint { Color = SKColors.Yellow, Style = SKPaintStyle.Stroke, StrokeWidth = 2 }; canvas.DrawRect(ToSkia(CellRect(active)), outline); }

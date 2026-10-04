@@ -23,6 +23,7 @@ namespace Halka.Game.Editor
         private const string ScenePath = "Assets/Scenes/FirstDay.unity";
         private const string PixelPath = "Assets/Content/World/pixel.png";
         private const string MapPath = "Assets/Content/Maps/first_field.asset";
+        private const string HouseMapPath = "Assets/Content/Maps/halka_house.asset";
         private const string HouseExteriorPath = "Assets/Content/World/house_exterior.png";
         private const string HouseFloorPath = "Assets/Content/World/house_floor.png";
         private const string HouseWallPath = "Assets/Content/World/house_wall.png";
@@ -45,10 +46,15 @@ namespace Halka.Game.Editor
             ConfigureProject();
             MapAuthoringImporter.SyncAll();
             var map = AssetDatabase.LoadAssetAtPath<MapDefinition>(MapPath);
+            var houseMap = AssetDatabase.LoadAssetAtPath<MapDefinition>(HouseMapPath);
             if (map == null) throw new InvalidOperationException("first_field MapDefinition is missing");
+            if (houseMap == null) throw new InvalidOperationException("halka_house MapDefinition is missing");
             var mapProblems = MapPlacementRules.Validate(map);
             if (mapProblems.Count != 0)
                 throw new InvalidOperationException("Invalid MapDefinition: " + string.Join("; ", mapProblems));
+            var houseProblems = MapPlacementRules.Validate(houseMap);
+            if (houseProblems.Count != 0)
+                throw new InvalidOperationException("Invalid halka_house: " + string.Join("; ", houseProblems));
             var frames = LoadFrames("front_idle");
             if (frames.Length == 0) throw new InvalidOperationException("front_idle needs at least one PNG frame");
             ConfigureSpriteImport(PixelPath, 1f);
@@ -141,38 +147,12 @@ namespace Halka.Game.Editor
 
             var objectGroup = new GameObject("Map world objects");
 
-            var house = new GameObject("House - HarukaChan home");
-            house.transform.position = world.CellToWorld(map.HouseDoorCell);
-            for (var y = map.HouseDoorCell.y; y <= map.HouseDoorCell.y + 1; y++)
-            for (var x = map.HouseDoorCell.x - 2; x <= map.HouseDoorCell.x + 2; x++)
-            {
-                var cell = new Vector2Int(x, y);
-                if (cell == map.HouseDoorCell) continue;
-                var footprint = new GameObject($"House footprint {x},{y}");
-                footprint.transform.SetParent(house.transform, false);
-                footprint.transform.position = world.CellToWorld(cell);
-                footprint.AddComponent<BoxCollider2D>().size =
-                    Vector2.one * GridWorld2D.TileWorldSize;
-                footprint.AddComponent<GridObstacle>();
-            }
-            var houseArtwork = new GameObject("House exterior artwork");
-            houseArtwork.transform.SetParent(house.transform, false);
-            houseArtwork.transform.localPosition = RootedSpriteLayout2D.OffsetFromBottomCenter(houseSprite);
-            var houseRenderer = houseArtwork.AddComponent<SpriteRenderer>();
-            houseRenderer.sprite = houseSprite;
-            houseRenderer.sortingOrder = playerRenderer.sortingOrder - 1;
-            var houseDepth = house.AddComponent<RootedWorldObjectDepth2D>();
-            SetReference(houseDepth, "world", world);
-            SetReference(houseDepth, "player", mover);
-            SetReference(houseDepth, "playerRenderer", playerRenderer);
-            SetReference(houseDepth, "objectRenderer", houseRenderer);
-
             var occupancyObject = new GameObject("Dynamic grid occupancy");
             var occupancy = occupancyObject.AddComponent<DynamicGridOccupancy2D>();
             SetReference(occupancy, "player", mover);
             SetReference(mover, "occupancy", occupancy);
             var crow = new GameObject("Crow - first neighbor");
-            if (!map.TryGetEntitySpawn("crow", out var crowSpawn))
+            if (!map.TryGetMarker("crow_spawn", out var crowSpawn))
                 throw new InvalidOperationException("Map has no locked crow spawn");
             crow.transform.position = world.CellToWorld(crowSpawn);
             var crowRenderer = crow.AddComponent<SpriteRenderer>();
@@ -278,7 +258,7 @@ namespace Halka.Game.Editor
 
             var exteriorRoot = new GameObject("Exterior - first field");
             foreach (var objectInField in new[] { ground, surfaceGroup, gridObject,
-                objectGroup, house, crow, grassGroup })
+                objectGroup, crow, grassGroup })
                 objectInField.transform.SetParent(exteriorRoot.transform, true);
             var loaderObject = new GameObject("Map runtime loader");
             var loader = loaderObject.AddComponent<MapRuntimeLoader2D>();
@@ -294,17 +274,45 @@ namespace Halka.Game.Editor
             SetReference(loader, "player", mover);
             SetReference(loader, "playerRenderer", playerRenderer);
             SetReference(loader, "hud", hud);
-            var interiorRoot = CreateHouseInterior(world, pixel, floorSprite, wallSprite,
-                bedSprite);
+            var interiorRoot = new GameObject("Interior - halka_house");
             interiorRoot.SetActive(false);
+            var backdrop = new GameObject("Interior dark backdrop");
+            backdrop.transform.SetParent(interiorRoot.transform, false);
+            backdrop.transform.localScale = new Vector3(20f, 14f, 1f);
+            var backdropRenderer = backdrop.AddComponent<SpriteRenderer>();
+            backdropRenderer.sprite = pixel;
+            backdropRenderer.color = houseMap.BackdropColor;
+            backdropRenderer.sortingOrder = -20;
+            var interiorSurfaces = new GameObject("Interior surfaces");
+            interiorSurfaces.transform.SetParent(interiorRoot.transform, false);
+            var interiorSurfaceField = interiorSurfaces.AddComponent<GroundSurfaceField2D>();
+            var interiorObjects = new GameObject("Interior objects");
+            interiorObjects.transform.SetParent(interiorRoot.transform, false);
+            var interiorLoaderObject = new GameObject("Interior map loader");
+            interiorLoaderObject.transform.SetParent(interiorRoot.transform, false);
+            var interiorLoader = interiorLoaderObject.AddComponent<MapRuntimeLoader2D>();
+            interiorLoader.SetMap(houseMap);
+            SetReference(interiorLoader, "world", world);
+            SetReference(interiorLoader, "surfaceField", interiorSurfaceField);
+            SetReference(interiorLoader, "surfaceRoot", interiorSurfaces.transform);
+            SetReference(interiorLoader, "objectRoot", interiorObjects.transform);
+            SetReference(interiorLoader, "player", mover);
+            SetReference(interiorLoader, "playerRenderer", playerRenderer);
+            SetReference(interiorLoader, "hud", hud);
+
+            var mapControllerObject = new GameObject("Map runtime controller");
+            var mapController = mapControllerObject.AddComponent<MapWorldController2D>();
+            SetReferences(mapController, "maps", map, houseMap);
+            SetReferences(mapController, "loaders", loader, interiorLoader);
+            SetReferences(mapController, "roots", exteriorRoot, interiorRoot);
+            SetReference(mapController, "player", mover);
 
             var areaObject = new GameObject("House area switch");
             var houseArea = areaObject.AddComponent<HouseArea2D>();
             SetReference(houseArea, "world", world);
             SetReference(houseArea, "player", mover);
             SetReference(houseArea, "grassOcclusion", grassOcclusion);
-            SetReference(houseArea, "exteriorRoot", exteriorRoot);
-            SetReference(houseArea, "interiorRoot", interiorRoot);
+            SetReference(houseArea, "maps", mapController);
             SetReference(houseArea, "worldCamera", camera);
             SetReference(houseArea, "cameraFollow", follow);
 
@@ -328,8 +336,9 @@ namespace Halka.Game.Editor
         public static void BuildWeb()
         {
             ConfigureProject();
-            MapAuthoringImporter.SyncAll();
-            if (!File.Exists(ScenePath)) PrepareScene();
+            // The Scene is generated from Map JSON. Rebuild it on every release build so
+            // edits made in the standalone editor cannot be shadowed by an older Scene.
+            PrepareScene();
             var output = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "halkaworld", "webgl"));
             Directory.CreateDirectory(output);
             var options = new BuildPlayerOptions
@@ -467,67 +476,6 @@ namespace Halka.Game.Editor
             }
         }
 
-        private static GameObject CreateHouseInterior(GridWorld2D world, Sprite pixel,
-            Sprite floor, Sprite wall, Sprite bedSprite)
-        {
-            var root = new GameObject("House interior - one room");
-            var backdrop = new GameObject("Interior dark backdrop");
-            backdrop.transform.SetParent(root.transform, false);
-            backdrop.transform.localScale = new Vector3(20f, 14f, 1f);
-            var backdropRenderer = backdrop.AddComponent<SpriteRenderer>();
-            backdropRenderer.sprite = pixel;
-            backdropRenderer.color = new Color(0.063f, 0.063f, 0.078f);
-            backdropRenderer.sortingOrder = -20;
-            for (var y = HouseArea2D.InsideMinCell.y; y <= HouseArea2D.InsideMaxCell.y; y++)
-            for (var x = HouseArea2D.InsideMinCell.x; x <= HouseArea2D.InsideMaxCell.x; x++)
-            {
-                var cell = new Vector2Int(x, y);
-                var tile = new GameObject($"Room floor {x},{y}");
-                tile.transform.SetParent(root.transform, false);
-                tile.transform.position = world.CellToWorld(cell);
-                var floorRenderer = tile.AddComponent<SpriteRenderer>();
-                floorRenderer.sprite = floor;
-                floorRenderer.sortingOrder = -9;
-                var boundary = x == HouseArea2D.InsideMinCell.x ||
-                    x == HouseArea2D.InsideMaxCell.x || y == HouseArea2D.InsideMinCell.y ||
-                    y >= 3;
-                if (cell == HouseArea2D.InsideExitCell) continue;
-                if (!boundary) continue;
-                var wallTile = new GameObject($"Room wall {x},{y}");
-                wallTile.transform.SetParent(root.transform, false);
-                wallTile.transform.position = world.CellToWorld(cell);
-                var wallRenderer = wallTile.AddComponent<SpriteRenderer>();
-                wallRenderer.sprite = wall;
-                wallRenderer.sortingOrder = -7;
-                wallTile.AddComponent<BoxCollider2D>().size =
-                    Vector2.one * GridWorld2D.TileWorldSize;
-                wallTile.AddComponent<GridObstacle>();
-            }
-
-            var passage = new GameObject("House exit passage");
-            passage.transform.SetParent(root.transform, false);
-            passage.transform.position = world.CellToWorld(HouseArea2D.InsideExitCell);
-
-            var bed = new GameObject("Bed - simple one");
-            bed.transform.SetParent(root.transform, false);
-            bed.transform.position = world.CellToWorld(new Vector2(-4.5f, 1f));
-            var bedRenderer = bed.AddComponent<SpriteRenderer>();
-            bedRenderer.sprite = bedSprite;
-            bedRenderer.sortingOrder = 3;
-            for (var y = 0; y <= 2; y++)
-            for (var x = -5; x <= -4; x++)
-            {
-                var cell = new Vector2Int(x, y);
-                var obstacle = new GameObject($"Bed footprint {x},{y}");
-                obstacle.transform.SetParent(bed.transform, false);
-                obstacle.transform.position = world.CellToWorld(cell);
-                obstacle.AddComponent<BoxCollider2D>().size =
-                    Vector2.one * GridWorld2D.TileWorldSize;
-                obstacle.AddComponent<GridObstacle>();
-            }
-            return root;
-        }
-
         private static void ConfigureProject()
         {
             PlayerSettings.companyName = "HALKA";
@@ -637,6 +585,20 @@ namespace Halka.Game.Editor
             var serialized = new SerializedObject(target);
             serialized.FindProperty(field).objectReferenceValue = value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void SetReferences(UnityEngine.Object target, string field, params UnityEngine.Object[] values)
+        {
+            var member = target.GetType().GetField(field,
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            if (member == null || !member.FieldType.IsArray)
+                throw new InvalidOperationException("Reference array not found: " + field);
+            var elementType = member.FieldType.GetElementType();
+            var array = Array.CreateInstance(elementType, values.Length);
+            for (var i = 0; i < values.Length; i++)
+                array.SetValue(values[i], i);
+            member.SetValue(target, array);
+            EditorUtility.SetDirty(target);
         }
 
         private static void SetSprites(UnityEngine.Object target, string field, Sprite[] sprites)

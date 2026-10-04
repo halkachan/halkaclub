@@ -1,8 +1,12 @@
 {
   "format": "halka-world-map",
-  "formatVersion": 1,
+  "formatVersion": 2,
   "mapId": "first_field",
   "displayName": "First Field",
+  "mapType": "outdoor",
+  "baseSurfaceDefinitionId": "base_ground",
+  "grassMode": "auto",
+  "backdropColor": "#101014",
   "bounds": {
     "minX": -10,
     "maxX": 10,
@@ -15,6 +19,13 @@
       "cell": {
         "x": 2,
         "y": -6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -9,
+        "y": -5
       }
     },
     {
@@ -69,7 +80,35 @@
     {
       "definitionId": "dirt",
       "cell": {
+        "x": -9,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -8,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
         "x": -7,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -6,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -5,
         "y": -4
       }
     },
@@ -99,6 +138,41 @@
       "cell": {
         "x": 2,
         "y": -4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -9,
+        "y": -3
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -8,
+        "y": -3
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -7,
+        "y": -3
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -6,
+        "y": -3
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": -5,
+        "y": -3
       }
     },
     {
@@ -463,46 +537,58 @@
         "x": -7,
         "y": 2
       }
+    },
+    {
+      "instanceId": "obj_house_main_v03_migration",
+      "definitionId": "house_main",
+      "rootCell": {
+        "x": -7,
+        "y": -4
+      }
     }
   ],
-  "markers": {
-    "playerSpawn": {
-      "x": 0,
-      "y": 0
+  "markers": [
+    {
+      "id": "player_start",
+      "cell": {
+        "x": 0,
+        "y": 0
+      }
     },
-    "crowSpawn": {
-      "x": 7,
-      "y": 2
+    {
+      "id": "crow_spawn",
+      "cell": {
+        "x": 7,
+        "y": 2
+      }
     },
-    "houseDoor": {
-      "x": -7,
-      "y": -4
-    },
-    "outsideEntry": {
-      "x": -7,
-      "y": -5
-    },
-    "houseFootprint": {
-      "width": 5,
-      "height": 2
-    },
-    "roadEnds": {
-      "north": {
+    {
+      "id": "road_north",
+      "cell": {
         "x": 0,
         "y": 6
-      },
-      "east": {
+      }
+    },
+    {
+      "id": "road_east",
+      "cell": {
         "x": 10,
         "y": -1
-      },
-      "south": {
+      }
+    },
+    {
+      "id": "road_south",
+      "cell": {
         "x": 2,
         "y": -6
-      },
-      "west": {
+      }
+    },
+    {
+      "id": "road_west",
+      "cell": {
         "x": -10,
         "y": 0
       }
     }
-  }
+  ]
 }

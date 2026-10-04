@@ -1,43 +1,45 @@
-# HALKA WORLD MAP EDITOR v0.2 Standalone Edition
+# HALKA WORLD MAP EDITOR v0.3
 
-ゲーム本編は **ver2.0** のままです。このツールは開発専用Windowsアプリで、ゲーム画面には出ません。
+ゲーム本編は **ver2.0** のままです。開発専用の .NET 8 / WPF / SkiaSharp Windows アプリで、ゲーム画面には出ません。
 
 ## 起動と保存
 
-`tools/HalkaWorldMapEditor/scripts/publish-win-x64.ps1` でwin-x64の自己完結版を作り、`tools/HalkaWorldMapEditor/dist/win-x64/HALKA WORLD MAP EDITOR.exe` を起動します。EXEと同じフォルダーのDLL群をまとめて保持してください。Unityを起動しなくてもマップを編集できます。
+`tools/HalkaWorldMapEditor/scripts/publish-win-x64.ps1` で `dist/win-x64/HALKA WORLD MAP EDITOR.exe` を作ります。EXE と同じフォルダーの DLL と native ファイルも必要です。Unity Project を自動検出できないときは `Project...` で選択します。
 
-初回起動時はEXEの親ディレクトリから `unity-project` を探索します。見つからない場合はUnity Projectフォルダーを選択します。前回のProject、Map、Zoom、Pan、Overlay設定は `%LOCALAPPDATA%/HALKA WORLD MAP EDITOR/settings.json` に保存します。
+`Assets/Content/Maps/Authoring/*.hwmap.json` からマップ一覧を作ります。正式な Map ID は `first_field`（屋外）と `halka_house`（室内）です。選択中のMapに未保存の変更があると、切替前に保存・破棄・キャンセルを選べます。MapごとのZoom/Panを保持します。
 
-正式な編集元は `Assets/Content/Maps/Authoring/first_field.hwmap.json` です。`object_catalog.hwcatalog.json` はPaletteとSpriteプレビューのカタログです。`Assets/Content/Maps/first_field.asset` はUnityがJSONから生成するRuntime用キャッシュで、直接編集しません。
+JSONが唯一の編集元です。Unityの `Assets/Content/Maps/*.asset` と `FirstDay.unity` は生成結果です。Map JSONを保存すると `.bak` を作り、内容を検証してから原子的に更新します。
 
 ## 操作
 
 | 操作 | 内容 |
 |---|---|
-| 地面Palette「草」/「土」 | 選択すると配置ツールの地面レイヤーになる。「草」は通常の草地へ戻し、「土」はDirt Surfaceを配置。どちらも左ドラッグで連続塗りでき、1回のドラッグはUndo 1回。 |
-| オブジェクトPalette「石」/「花」/「木」 | 選択すると配置ツールのオブジェクトレイヤーになり、左クリックで配置。 |
-| 選択 `[1]` | Objectを選択し、右InspectorでInstance IDとRoot Cellを確認。座標へ移動。 |
-| 消去 `[3]` / 右クリック | セル上のObject、なければSurfaceを消去するショートカット。「草」を左クリックしてDirtを消す操作も使える。 |
-| `Ctrl+Z` / `Ctrl+Y` | Undo / Redo。草・土のドラッグはそれぞれ1操作。 |
-| `Ctrl+C` / `Ctrl+V` | 選択Objectの型をコピー。空セルを選択して貼り付けると新しいInstance ID。 |
+| 地面「草」「土」 | 屋外のSurface編集。「草」はSurface overrideを消して通常の草地へ戻します。Grass Placementは保存しません。 |
+| 室内「木床」「壁」 | 「木床」は壁Surfaceを消してBaseの床へ戻し、「壁」は通行不可Surfaceを塗ります。 |
+| Object Palette | Map Typeに合う石・花・木・家・ベッドを選択。左クリックでRoot Cellに配置。 |
+| 選択 `[1]` | Spriteの見た目範囲からObjectを選択。InspectorにInstance ID、Root、Visual、Blocked Cellを表示。 |
+| Paint `[2]` / Erase `[3]` | Surfaceは左ドラッグで連続編集し、1ドラッグをUndo 1回にまとめます。右クリックはErase。 |
+| `Ctrl+Z` / `Ctrl+Y` | Undo / Redo。House移動でもInstance IDは維持します。 |
+| `Ctrl+C` / `Ctrl+V` | 選択Objectの種類をコピーし、新しいInstance IDで配置します。 |
 | `Delete` | 選択Objectを削除。 |
-| ホイール | カーソル中心Zoom。 |
-| 中ボタン、Space+左ドラッグ | Pan。 |
+| ホイール / 中ボタン | Zoom / Pan。Space+左ドラッグでもPan。 |
 | `F` / `G` | 全体表示 / Grid切替。 |
-| `Ctrl+S` | 検証後にJSONを原子的に保存。前版は `.bak` へ退避。 |
+| `Ctrl+S` | 現在のMap JSONを検証して保存。 |
 
-Grid、Grass、Collision、座標、Markersは画面上部で切り替えられます。House、Player、Crow、道路終端はPreviewと保護セルです。House・室内・AIなどの自由編集は対象外です。検証結果をダブルクリックすると該当セルへ移動します。
+Grid、Grass、Collision、座標、Markersの表示を切り替えられます。大型Objectは画像の5×4などの見た目範囲と、通行不可セル群を別々に表示します。HouseのRootはドアの下中央セルで、通行不可はドアを除く9セルです。Houseを移動すると入口前セルはRootから導出されます。ベッドは2×3の通行不可Objectです。
 
-## データ契約
+## Map v2 契約
 
-JSON Schemaは `tools/HalkaWorldMapEditor/halka-world-map.schema.json`。座標は `{ "x": 0, "y": 0 }`、地面は `definitionId` と `cell`、Objectは `instanceId`、`definitionId`、`rootCell` を持ちます。ObjectのInstance IDは移動や再保存で保持し、コピー時だけ新規発行します。Grassは保存せず、Surface overrideと障害物から派生します。
+Schemaは `tools/HalkaWorldMapEditor/halka-world-map.schema.json`。各Mapに `mapId`、`mapType`、`baseSurfaceDefinitionId`、`grassMode`、`backdropColor`、Bounds、Surface overrides、Objects、ID付きMarkersを保存します。Base Surfaceを1セルずつ保存しません。屋外Grassは `grassMode=auto` で派生し、室内は `grassMode=none` です。
 
-カタログの `definitionId` はUnityの `SurfaceDefinition.StableId` / `WorldObjectDefinition.StableId` と一致させます。Unity Importerは全カタログ項目のSpriteパス・サイズ・footprint・通行とGrass除外設定を検証します。将来Objectを追加する場合はSprite、Unity Definition asset、Catalog entryを同じIDで追加してください。
+Objectは `instanceId`、`definitionId`、`rootCell` を保存します。Visualサイズ、Root Anchor、通行不可セルの相対オフセット、Map Type制限はCatalogとUnity Definitionが持ちます。移動・Undo/Redo・再保存でInstance IDを保ちます。回転と自由Scaleはv0.3では扱いません。
 
-UnityのAssetPostprocessorはAuthoring JSONの変更を検知して生成キャッシュを同期します。`ProjectBuilder.PrepareScene`、`ProjectBuilder.BuildWeb`、`Version20Checks`も開始時に強制同期します。JSONが壊れている場合はエラーとなり、正常なMapDefinitionを上書きしません。旧Unity Editor Windowの編集UIは撤去し、生成MapDefinitionのInspectorを読み取り専用にしました。
+古いv1の `first_field` はCoreで読み込み時にv2へ変換できます。正式Mapの移行には `tools/HalkaWorldMapEditor/scripts/migrate-v02-to-v03.py` を用い、元JSONを別途バックアップしてから実行してください。現在の正式JSONはv2へ移行済みです。
 
-## 検証と配布
+Unity Importerが両MapのJSONとCatalogを読み、MapDefinition/Definition assetへ同期します。Runtimeは `MapWorldController2D` のMap IDで屋外と室内を切り替え、家の入退室位置はMarkerとHouse Rootから取得します。SceneとWebGLはMap JSONから再生成します。
 
-`dotnet run --project tools/HalkaWorldMapEditor/HalkaWorldMapEditor.Tests -c Release` でCoreの契約テストを実行します。Unity側は `HALKA WORLD > Validate Standalone Map Contract v0.2` またはバッチ `-executeMethod Halka.Game.Editor.MapAuthoringChecks.Run`。このテストは一時fixtureを使用し、正式Mapを変更しません。
+## 検証
 
-配布時は `dist/win-x64` フォルダー全体をコピーしてください。JSONとSpriteはUnity Project内に残り、EXEがProjectを検出または選択して編集します。Map変更をWebGLへ反映するにはUnityで本番Buildとサイト公開が必要です。
+`dotnet run --project tools/HalkaWorldMapEditor/HalkaWorldMapEditor.Tests -c Release`
+
+Unity側は `Halka.Game.Editor.MapAuthoringChecks.Run` と `Halka.Game.Editor.Version20Checks.Run`。GameVersionは2.0のままです。GUIの破壊操作は正式Mapを直接使わず、コピーで確認してください。

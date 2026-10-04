@@ -1,0 +1,133 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7333b7c63ac1a534d85d98463325eff1, type: 3}
+  m_Name: halka_house
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.MapDefinition
+  dataVersion: 2
+  mapId: halka_house
+  displayName: "\uFF8A\uFF99\uFF76\uFF81\uFF6C\uFF9D\u306E\u5BB6"
+  mapType: interior
+  baseSurface: {fileID: 11400000, guid: 99cebbcbd6bd5e54a8b149efe37b4c22, type: 2}
+  grassMode: none
+  backdropColor: {r: 0.0627451, g: 0.0627451, b: 0.078431375, a: 1}
+  minCell: {x: -6, y: -4}
+  maxCell: {x: 6, y: 4}
+  surfaces:
+  - Cell: {x: -6, y: -4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -5, y: -4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -4, y: -4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -3, y: -4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -2, y: -4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -1, y: -4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 1, y: -4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 2, y: -4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 3, y: -4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 4, y: -4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 5, y: -4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 6, y: -4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -6, y: -3}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 6, y: -3}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -6, y: -2}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 6, y: -2}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -6, y: -1}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 6, y: -1}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -6, y: 0}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 6, y: 0}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -6, y: 1}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 6, y: 1}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -6, y: 2}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 6, y: 2}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -6, y: 3}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -5, y: 3}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -4, y: 3}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -3, y: 3}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -2, y: 3}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -1, y: 3}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 0, y: 3}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 1, y: 3}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 2, y: 3}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 3, y: 3}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 4, y: 3}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 5, y: 3}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 6, y: 3}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -6, y: 4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -5, y: 4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -4, y: 4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -3, y: 4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -2, y: 4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: -1, y: 4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 0, y: 4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 1, y: 4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 2, y: 4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 3, y: 4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 4, y: 4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 5, y: 4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  - Cell: {x: 6, y: 4}
+    Definition: {fileID: 11400000, guid: e953cb931a3f96745b7716c142ba9295, type: 2}
+  objects:
+  - InstanceId: obj_bed_basic_v03_migration
+    RootCell: {x: -5, y: 0}
+    Definition: {fileID: 11400000, guid: 88990215c948f3441931795d2fde4a44, type: 2}
+  markers:
+  - StableId: interior_entry
+    Cell: {x: 0, y: -3}
+  - StableId: interior_exit
+    Cell: {x: 0, y: -4}

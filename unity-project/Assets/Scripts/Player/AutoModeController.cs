@@ -85,7 +85,7 @@ namespace Halka.Game.Player
         {
             route.Clear();
             // Nearby interests remain destinations on the existing outdoor grid.
-            var interests = new[] { new Vector2Int(-7, -5), new Vector2Int(-3, 0),
+            var interests = new[] { house.OutsideEntryCell, new Vector2Int(-3, 0),
                 new Vector2Int(5, 0), new Vector2Int(7, 2), new Vector2Int(0, -1) };
             for (var attempt = 0; attempt < 12; attempt++)
             {
@@ -97,7 +97,7 @@ namespace Halka.Game.Player
         }
 
         public bool CanAutoEnter(Vector2Int cell) =>
-            cell != HouseArea2D.HouseDoorCell && world.CanEnter(cell) &&
+            cell != house.HouseDoorCell && world.CanEnter(cell) &&
             (occupancy == null || occupancy.CanPlayerEnter(cell));
 
         private void OnUserActed() => RecordUserAction(Time.unscaledTime);

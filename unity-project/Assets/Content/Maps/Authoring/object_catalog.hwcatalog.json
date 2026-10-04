@@ -1,7 +1,20 @@
 {
   "format": "halka-world-catalog",
-  "formatVersion": 1,
+  "formatVersion": 2,
   "surfaces": [
+    {
+      "definitionId": "base_ground",
+      "displayName": "通常地面",
+      "category": "base",
+      "previewSpritePath": "Assets/Content/World/pixel.png",
+      "visualWidthPixels": 1,
+      "visualHeightPixels": 1,
+      "blocksMovement": false,
+      "allowedMapTypes": [
+        "outdoor"
+      ],
+      "editorSelectable": false
+    },
     {
       "definitionId": "dirt",
       "displayName": "土",
@@ -9,6 +22,36 @@
       "previewSpritePath": "Assets/Content/World/dirt.png",
       "visualWidthPixels": 32,
       "visualHeightPixels": 32,
+      "editorSelectable": true,
+      "blocksMovement": false,
+      "allowedMapTypes": [
+        "outdoor"
+      ]
+    },
+    {
+      "definitionId": "house_floor",
+      "displayName": "木床",
+      "category": "base",
+      "previewSpritePath": "Assets/Content/World/house_floor.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "blocksMovement": false,
+      "allowedMapTypes": [
+        "interior"
+      ],
+      "editorSelectable": true
+    },
+    {
+      "definitionId": "house_wall",
+      "displayName": "壁",
+      "category": "surface",
+      "previewSpritePath": "Assets/Content/World/house_wall.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "blocksMovement": true,
+      "allowedMapTypes": [
+        "interior"
+      ],
       "editorSelectable": true
     }
   ],
@@ -27,7 +70,16 @@
       },
       "blocksMovement": true,
       "excludeGrass": true,
-      "editorSelectable": true
+      "editorSelectable": true,
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "allowedMapTypes": [
+        "outdoor"
+      ]
     },
     {
       "definitionId": "flower_basic",
@@ -43,7 +95,16 @@
       },
       "blocksMovement": true,
       "excludeGrass": true,
-      "editorSelectable": true
+      "editorSelectable": true,
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "allowedMapTypes": [
+        "outdoor"
+      ]
     },
     {
       "definitionId": "tree_basic",
@@ -59,6 +120,117 @@
       },
       "blocksMovement": true,
       "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "allowedMapTypes": [
+        "outdoor"
+      ]
+    },
+    {
+      "definitionId": "house_main",
+      "displayName": "家",
+      "category": "world-object",
+      "previewSpritePath": "Assets/Content/World/house_exterior.png",
+      "visualWidthPixels": 160,
+      "visualHeightPixels": 128,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 5,
+        "height": 2
+      },
+      "blockedCellOffsets": [
+        {
+          "x": -2,
+          "y": 0
+        },
+        {
+          "x": -1,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        },
+        {
+          "x": 2,
+          "y": 0
+        },
+        {
+          "x": -2,
+          "y": 1
+        },
+        {
+          "x": -1,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": 2,
+          "y": 1
+        }
+      ],
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "allowedMapTypes": [
+        "outdoor"
+      ],
+      "editorSelectable": true
+    },
+    {
+      "definitionId": "bed_basic",
+      "displayName": "ベッド",
+      "category": "world-object",
+      "previewSpritePath": "Assets/Content/World/house_bed.png",
+      "visualWidthPixels": 64,
+      "visualHeightPixels": 96,
+      "rootAnchor": "bottom-left",
+      "footprint": {
+        "width": 2,
+        "height": 3
+      },
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": 2
+        },
+        {
+          "x": 1,
+          "y": 2
+        }
+      ],
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "allowedMapTypes": [
+        "interior"
+      ],
       "editorSelectable": true
     }
   ],

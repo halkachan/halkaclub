@@ -13,12 +13,16 @@ MonoBehaviour:
   m_Name: flower_basic
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.WorldObjectDefinition
   stableId: flower_basic
-  displayName: Flower
+  displayName: "\u82B1"
   previewSprite: {fileID: 21300000, guid: 9d0968761c11f2746b2ae27522020286, type: 3}
   examineMessage: "\u306F\u306A\u3002"
   rootedArtwork: 0
   clickColliderSize: {x: 0.5, y: 0.5}
   footprint: {x: 1, y: 1}
+  blockedCellOffsets:
+  - {x: 0, y: 0}
+  rootAnchor: bottom-center
+  behavior: 0
   blocksMovement: 1
   excludesGrass: 1
   sortingOrder: 2

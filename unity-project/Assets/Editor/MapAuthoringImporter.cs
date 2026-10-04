@@ -31,6 +31,7 @@ namespace Halka.Game.Editor
                 if (files.Length == 0) throw new InvalidDataException("No *.hwmap.json found in " + folder);
                 Array.Sort(files, StringComparer.Ordinal);
                 var catalog = ParseCatalog();
+                EnsureCatalogDefinitions(catalog);
                 foreach (var file in files)
                     SyncMapFromFile(file, catalog);
                 AssetDatabase.SaveAssets();
@@ -40,7 +41,9 @@ namespace Halka.Game.Editor
 
         public static MapDefinition SyncMapFromFile(string fullPath)
         {
-            var result = SyncMapFromFile(fullPath, ParseCatalog());
+            var catalog = ParseCatalog();
+            EnsureCatalogDefinitions(catalog);
+            var result = SyncMapFromFile(fullPath, catalog);
             AssetDatabase.SaveAssets();
             return result;
         }
@@ -53,19 +56,23 @@ namespace Halka.Game.Editor
             try { source = JsonUtility.FromJson<MapDto>(File.ReadAllText(fullPath)); }
             catch (Exception error)
             { throw new InvalidDataException("Map " + expectedId + " JSON parse error: " + error.Message, error); }
-            if (source == null || source.format != "halka-world-map" || source.formatVersion != 1 ||
+            if (source == null || source.format != "halka-world-map" || source.formatVersion != 2 ||
                 source.mapId != expectedId || !Regex.IsMatch(source.mapId ?? "", "^[a-z0-9_-]+$") ||
-                source.bounds == null || source.markers == null || source.markers.roadEnds == null ||
-                source.markers.houseFootprint == null || source.surfaces == null || source.objects == null)
+                source.bounds == null || source.markers == null || source.surfaces == null || source.objects == null ||
+                (source.mapType != "outdoor" && source.mapType != "interior") ||
+                (source.grassMode != "auto" && source.grassMode != "none"))
                 throw new InvalidDataException("Map " + expectedId + " JSON parse error: missing or invalid format, mapId, bounds, placements or markers.");
-            var markers = source.markers;
-            if (markers.playerSpawn == null || markers.crowSpawn == null || markers.houseDoor == null ||
-                markers.outsideEntry == null || markers.roadEnds.north == null ||
-                markers.roadEnds.east == null || markers.roadEnds.south == null ||
-                markers.roadEnds.west == null)
-                throw new InvalidDataException("Map " + expectedId + ": required marker cell is missing.");
-            if (source.markers.houseFootprint.width != 5 || source.markers.houseFootprint.height != 2)
-                throw new InvalidDataException("Map " + expectedId + ": current House footprint must remain 5x2.");
+            var baseSurface = FindSurface(source.baseSurfaceDefinitionId);
+            if (baseSurface == null || !ColorUtility.TryParseHtmlString(source.backdropColor, out var backdrop))
+                throw new InvalidDataException("Map " + expectedId + ": invalid base surface or backdrop.");
+            var markers = new List<LockedMapMarker>();
+            foreach (var marker in source.markers)
+            {
+                if (marker == null || string.IsNullOrWhiteSpace(marker.id) || marker.cell == null ||
+                    markers.Any(item => item.StableId == marker.id))
+                    throw new InvalidDataException("Map " + expectedId + ": invalid or duplicate marker.");
+                markers.Add(new LockedMapMarker { StableId = marker.id, Cell = marker.cell.ToVector() });
+            }
 
             var surfaces = new List<SurfacePlacement>();
             foreach (var item in source.surfaces)
@@ -91,17 +98,12 @@ namespace Halka.Game.Editor
             ValidateCatalog(catalog, surfaces, objects);
             var minimum = new Vector2Int(source.bounds.minX, source.bounds.minY);
             var maximum = new Vector2Int(source.bounds.maxX, source.bounds.maxY);
-            var spawns = new List<LockedMapMarker> {
-                new LockedMapMarker { StableId = "crow", Cell = markers.crowSpawn.ToVector() }
-            };
             var temporary = ScriptableObject.CreateInstance<MapDefinition>();
             try
             {
-                temporary.ReplaceFromAuthoring(source.mapId, source.displayName, minimum, maximum,
-                    surfaces, objects, markers.playerSpawn.ToVector(), spawns,
-                    markers.houseDoor.ToVector(), markers.outsideEntry.ToVector(),
-                    markers.roadEnds.north.ToVector(), markers.roadEnds.east.ToVector(),
-                    markers.roadEnds.south.ToVector(), markers.roadEnds.west.ToVector());
+                temporary.ReplaceFromAuthoring(source.mapId, source.displayName, source.mapType,
+                    baseSurface, source.grassMode, backdrop, minimum, maximum,
+                    surfaces, objects, markers);
                 var errors = MapPlacementRules.Validate(temporary);
                 if (errors.Count != 0)
                     throw new InvalidDataException("Map " + expectedId + " validation error: " + string.Join("; ", errors));
@@ -115,11 +117,9 @@ namespace Halka.Game.Editor
                 }
                 if (JsonUtility.ToJson(asset) != JsonUtility.ToJson(temporary))
                 {
-                    asset.ReplaceFromAuthoring(source.mapId, source.displayName, minimum, maximum,
-                        surfaces, objects, markers.playerSpawn.ToVector(), spawns,
-                        markers.houseDoor.ToVector(), markers.outsideEntry.ToVector(),
-                        markers.roadEnds.north.ToVector(), markers.roadEnds.east.ToVector(),
-                        markers.roadEnds.south.ToVector(), markers.roadEnds.west.ToVector());
+                    asset.ReplaceFromAuthoring(source.mapId, source.displayName, source.mapType,
+                        baseSurface, source.grassMode, backdrop, minimum, maximum,
+                        surfaces, objects, markers);
                     EditorUtility.SetDirty(asset);
                 }
                 return asset;
@@ -144,18 +144,23 @@ namespace Halka.Game.Editor
                 if (definition == null || definition.Sprite == null ||
                     AssetDatabase.GetAssetPath(definition.Sprite) != match.previewSpritePath ||
                     definition.Sprite.rect.width != match.visualWidthPixels ||
-                    definition.Sprite.rect.height != match.visualHeightPixels)
+                    definition.Sprite.rect.height != match.visualHeightPixels ||
+                    definition.BlocksMovement != match.blocksMovement)
                     throw new InvalidDataException("Catalog mismatch for Surface " + match.definitionId);
             }
             foreach (var match in catalog.objects)
             {
                 var definition = FindObject(match.definitionId);
                 if (definition == null || definition.PreviewSprite == null || match.footprint == null ||
+                    match.blockedCellOffsets == null ||
                     AssetDatabase.GetAssetPath(definition.PreviewSprite) != match.previewSpritePath ||
                     definition.PreviewSprite.rect.width != match.visualWidthPixels ||
                     definition.PreviewSprite.rect.height != match.visualHeightPixels ||
                     definition.Footprint.x != match.footprint.width ||
                     definition.Footprint.y != match.footprint.height ||
+                    definition.RootAnchor != match.rootAnchor ||
+                    !definition.EffectiveBlockedOffsets().SequenceEqual(
+                        match.blockedCellOffsets.Select(item => item.ToVector())) ||
                     definition.BlocksMovement != match.blocksMovement ||
                     definition.ExcludesGrass != match.excludeGrass)
                     throw new InvalidDataException("Catalog mismatch for Object " + match.definitionId);
@@ -172,9 +177,64 @@ namespace Halka.Game.Editor
             catch (Exception error)
             { throw new InvalidDataException("Map catalog JSON parse error: " + error.Message, error); }
             if (catalog == null || catalog.format != "halka-world-catalog" ||
-                catalog.formatVersion != 1 || catalog.surfaces == null || catalog.objects == null)
+                catalog.formatVersion != 2 || catalog.surfaces == null || catalog.objects == null)
                 throw new InvalidDataException("Map catalog format is missing or unsupported.");
             return catalog;
+        }
+
+        private static void EnsureCatalogDefinitions(CatalogDto catalog)
+        {
+            foreach (var entry in catalog.surfaces)
+            {
+                var asset = FindSurface(entry.definitionId);
+                if (asset == null)
+                {
+                    asset = ScriptableObject.CreateInstance<SurfaceDefinition>();
+                    AssetDatabase.CreateAsset(asset, "Assets/Content/Maps/" + entry.definitionId + ".asset");
+                }
+                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(entry.previewSpritePath);
+                if (sprite == null) throw new InvalidDataException("Surface sprite missing: " + entry.previewSpritePath);
+                var serialized = new SerializedObject(asset);
+                serialized.FindProperty("stableId").stringValue = entry.definitionId;
+                serialized.FindProperty("displayName").stringValue = entry.displayName;
+                serialized.FindProperty("sprite").objectReferenceValue = sprite;
+                serialized.FindProperty("blocksMovement").boolValue = entry.blocksMovement;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+            }
+            foreach (var entry in catalog.objects)
+            {
+                var asset = FindObject(entry.definitionId);
+                if (asset == null)
+                {
+                    asset = ScriptableObject.CreateInstance<WorldObjectDefinition>();
+                    AssetDatabase.CreateAsset(asset, "Assets/Content/Maps/" + entry.definitionId + ".asset");
+                }
+                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(entry.previewSpritePath);
+                if (sprite == null) throw new InvalidDataException("Object sprite missing: " + entry.previewSpritePath);
+                var serialized = new SerializedObject(asset);
+                serialized.FindProperty("stableId").stringValue = entry.definitionId;
+                serialized.FindProperty("displayName").stringValue = entry.displayName;
+                serialized.FindProperty("previewSprite").objectReferenceValue = sprite;
+                serialized.FindProperty("footprint").vector2IntValue =
+                    new Vector2Int(entry.footprint.width, entry.footprint.height);
+                serialized.FindProperty("rootAnchor").stringValue = entry.rootAnchor;
+                serialized.FindProperty("blocksMovement").boolValue = entry.blocksMovement;
+                serialized.FindProperty("excludesGrass").boolValue = entry.excludeGrass;
+                var offsets = serialized.FindProperty("blockedCellOffsets");
+                offsets.arraySize = entry.blockedCellOffsets.Length;
+                for (var index = 0; index < entry.blockedCellOffsets.Length; index++)
+                    offsets.GetArrayElementAtIndex(index).vector2IntValue = entry.blockedCellOffsets[index].ToVector();
+                if (entry.definitionId == "house_main" || entry.definitionId == "bed_basic")
+                {
+                    serialized.FindProperty("behavior").enumValueIndex =
+                        entry.definitionId == "house_main" ? (int)WorldObjectBehavior.HouseTransition : (int)WorldObjectBehavior.None;
+                    serialized.FindProperty("rootedArtwork").boolValue = entry.definitionId == "house_main";
+                    serialized.FindProperty("sortingOrder").intValue = entry.definitionId == "bed_basic" ? 3 : 2;
+                    serialized.FindProperty("clickColliderSize").vector2Value = sprite.bounds.size;
+                }
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+            }
+            AssetDatabase.SaveAssets();
         }
 
         private static SurfaceDefinition FindSurface(string id) =>
@@ -202,30 +262,29 @@ namespace Halka.Game.Editor
         [Serializable] private sealed class SurfaceDto { public string definitionId; public CellDto cell; }
         [Serializable] private sealed class ObjectDto
         { public string instanceId, definitionId; public CellDto rootCell; }
-        [Serializable] private sealed class RoadEndsDto
-        { public CellDto north, east, south, west; }
-        [Serializable] private sealed class MarkersDto
-        {
-            public CellDto playerSpawn, crowSpawn, houseDoor, outsideEntry;
-            public SizeDto houseFootprint;
-            public RoadEndsDto roadEnds;
-        }
+        [Serializable] private sealed class MarkerDto { public string id; public CellDto cell; }
         [Serializable] private sealed class MapDto
         {
             public string format, mapId, displayName;
+            public string mapType, baseSurfaceDefinitionId, grassMode, backdropColor;
             public int formatVersion;
             public BoundsDto bounds;
             public SurfaceDto[] surfaces;
             public ObjectDto[] objects;
-            public MarkersDto markers;
+            public MarkerDto[] markers;
         }
         [Serializable] private sealed class CatalogSurfaceDto
-        { public string definitionId, previewSpritePath; public int visualWidthPixels, visualHeightPixels; }
+        {
+            public string definitionId, displayName, previewSpritePath;
+            public int visualWidthPixels, visualHeightPixels;
+            public bool blocksMovement;
+        }
         [Serializable] private sealed class CatalogObjectDto
         {
-            public string definitionId, previewSpritePath;
+            public string definitionId, displayName, previewSpritePath, rootAnchor;
             public int visualWidthPixels, visualHeightPixels;
             public SizeDto footprint;
+            public CellDto[] blockedCellOffsets;
             public bool blocksMovement, excludeGrass;
         }
         [Serializable] private sealed class CatalogDto

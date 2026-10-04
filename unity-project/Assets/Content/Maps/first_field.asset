@@ -12,13 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7333b7c63ac1a534d85d98463325eff1, type: 3}
   m_Name: first_field
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.MapDefinition
-  dataVersion: 1
+  dataVersion: 2
   mapId: first_field
   displayName: First Field
+  mapType: outdoor
+  baseSurface: {fileID: 11400000, guid: 0db760ea3a4879a479bdb2cc6cfd8c4d, type: 2}
+  grassMode: auto
+  backdropColor: {r: 0.0627451, g: 0.0627451, b: 0.078431375, a: 1}
   minCell: {x: -10, y: -6}
   maxCell: {x: 10, y: 6}
   surfaces:
   - Cell: {x: 2, y: -6}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: -9, y: -5}
     Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
   - Cell: {x: -8, y: -5}
     Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
@@ -34,7 +40,15 @@ MonoBehaviour:
     Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
   - Cell: {x: 2, y: -5}
     Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: -9, y: -4}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: -8, y: -4}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
   - Cell: {x: -7, y: -4}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: -6, y: -4}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: -5, y: -4}
     Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
   - Cell: {x: -3, y: -4}
     Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
@@ -43,6 +57,16 @@ MonoBehaviour:
   - Cell: {x: 1, y: -4}
     Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
   - Cell: {x: 2, y: -4}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: -9, y: -3}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: -8, y: -3}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: -7, y: -3}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: -6, y: -3}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: -5, y: -3}
     Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
   - Cell: {x: -2, y: -3}
     Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
@@ -156,13 +180,19 @@ MonoBehaviour:
   - InstanceId: obj_27e1ad8c53db59f1a79895f66ae43951
     RootCell: {x: -7, y: 2}
     Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
-  playerSpawnCell: {x: 0, y: 0}
-  entitySpawns:
-  - StableId: crow
+  - InstanceId: obj_house_main_v03_migration
+    RootCell: {x: -7, y: -4}
+    Definition: {fileID: 11400000, guid: 44fd5b0701e1a854799c458ef559905a, type: 2}
+  markers:
+  - StableId: player_start
+    Cell: {x: 0, y: 0}
+  - StableId: crow_spawn
     Cell: {x: 7, y: 2}
-  houseDoorCell: {x: -7, y: -4}
-  outsideEntryCell: {x: -7, y: -5}
-  northRoadEnd: {x: 0, y: 6}
-  eastRoadEnd: {x: 10, y: -1}
-  southRoadEnd: {x: 2, y: -6}
-  westRoadEnd: {x: -10, y: 0}
+  - StableId: road_north
+    Cell: {x: 0, y: 6}
+  - StableId: road_east
+    Cell: {x: 10, y: -1}
+  - StableId: road_south
+    Cell: {x: 2, y: -6}
+  - StableId: road_west
+    Cell: {x: -10, y: 0}

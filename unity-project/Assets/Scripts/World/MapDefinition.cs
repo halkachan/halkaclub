@@ -28,37 +28,56 @@ namespace Halka.Game.World
 
     public sealed class MapDefinition : ScriptableObject
     {
-        [SerializeField] private int dataVersion = 1;
+        [SerializeField] private int dataVersion = 2;
         [SerializeField] private string mapId;
         [SerializeField] private string displayName;
+        [SerializeField] private string mapType = "outdoor";
+        [SerializeField] private SurfaceDefinition baseSurface;
+        [SerializeField] private string grassMode = "auto";
+        [SerializeField] private Color backdropColor = new Color(0.063f, 0.063f, 0.078f);
         [SerializeField] private Vector2Int minCell = new Vector2Int(-10, -6);
         [SerializeField] private Vector2Int maxCell = new Vector2Int(10, 6);
         [SerializeField] private List<SurfacePlacement> surfaces = new List<SurfacePlacement>();
         [SerializeField] private List<WorldObjectPlacement> objects = new List<WorldObjectPlacement>();
-        [SerializeField] private Vector2Int playerSpawnCell;
-        [SerializeField] private List<LockedMapMarker> entitySpawns = new List<LockedMapMarker>();
-        [SerializeField] private Vector2Int houseDoorCell = new Vector2Int(-7, -4);
-        [SerializeField] private Vector2Int outsideEntryCell = new Vector2Int(-7, -5);
-        [SerializeField] private Vector2Int northRoadEnd = new Vector2Int(0, 6);
-        [SerializeField] private Vector2Int eastRoadEnd = new Vector2Int(10, -1);
-        [SerializeField] private Vector2Int southRoadEnd = new Vector2Int(2, -6);
-        [SerializeField] private Vector2Int westRoadEnd = new Vector2Int(-10, 0);
+        [SerializeField] private List<LockedMapMarker> markers = new List<LockedMapMarker>();
 
         public int DataVersion => dataVersion;
         public string MapId => mapId;
         public string DisplayName => displayName;
+        public string MapType => mapType;
+        public SurfaceDefinition BaseSurface => baseSurface;
+        public string GrassMode => grassMode;
+        public Color BackdropColor => backdropColor;
         public Vector2Int MinCell => minCell;
         public Vector2Int MaxCell => maxCell;
         public IReadOnlyList<SurfacePlacement> Surfaces => surfaces;
         public IReadOnlyList<WorldObjectPlacement> Objects => objects;
-        public Vector2Int PlayerSpawnCell => playerSpawnCell;
-        public IReadOnlyList<LockedMapMarker> EntitySpawns => entitySpawns;
-        public Vector2Int HouseDoorCell => houseDoorCell;
-        public Vector2Int OutsideEntryCell => outsideEntryCell;
-        public Vector2Int NorthRoadEnd => northRoadEnd;
-        public Vector2Int EastRoadEnd => eastRoadEnd;
-        public Vector2Int SouthRoadEnd => southRoadEnd;
-        public Vector2Int WestRoadEnd => westRoadEnd;
+        public IReadOnlyList<LockedMapMarker> Markers => markers;
+        public Vector2Int PlayerSpawnCell => TryGetMarker("player_start", out var cell) ? cell : default;
+        public Vector2Int HouseDoorCell => TryGetHouseRoot(out var cell) ? cell : default;
+        public Vector2Int OutsideEntryCell => HouseDoorCell + Vector2Int.down;
+        public Vector2Int NorthRoadEnd => TryGetMarker("road_north", out var cell) ? cell : default;
+        public Vector2Int EastRoadEnd => TryGetMarker("road_east", out var cell) ? cell : default;
+        public Vector2Int SouthRoadEnd => TryGetMarker("road_south", out var cell) ? cell : default;
+        public Vector2Int WestRoadEnd => TryGetMarker("road_west", out var cell) ? cell : default;
+
+        public bool TryGetHouseRoot(out Vector2Int cell)
+        {
+            foreach (var placement in objects)
+                if (placement.Definition != null && placement.Definition.Behavior == WorldObjectBehavior.HouseTransition)
+                { cell = placement.RootCell; return true; }
+            cell = default;
+            return false;
+        }
+
+        public bool TryGetMarker(string stableId, out Vector2Int cell)
+        {
+            foreach (var marker in markers)
+                if (marker.StableId == stableId)
+                { cell = marker.Cell; return true; }
+            cell = default;
+            return false;
+        }
 
         public bool Contains(Vector2Int cell) => cell.x >= minCell.x && cell.x <= maxCell.x &&
             cell.y >= minCell.y && cell.y <= maxCell.y;
@@ -79,14 +98,7 @@ namespace Halka.Game.World
 
         public bool TryGetEntitySpawn(string stableId, out Vector2Int cell)
         {
-            foreach (var marker in entitySpawns)
-                if (marker.StableId == stableId)
-                {
-                    cell = marker.Cell;
-                    return true;
-                }
-            cell = default;
-            return false;
+            return TryGetMarker(stableId == "crow" ? "crow_spawn" : stableId, out cell);
         }
 
         public bool SetSurface(Vector2Int cell, SurfaceDefinition definition)
@@ -124,27 +136,23 @@ namespace Halka.Game.World
         }
 
         // Called only by the Unity authoring importer. The JSON is the editable source.
-        public void ReplaceFromAuthoring(string id, string title, Vector2Int minimum,
+        public void ReplaceFromAuthoring(string id, string title, string type,
+            SurfaceDefinition baseDefinition, string grass, Color backdrop, Vector2Int minimum,
             Vector2Int maximum, List<SurfacePlacement> surfacePlacements,
-            List<WorldObjectPlacement> objectPlacements, Vector2Int playerSpawn,
-            List<LockedMapMarker> spawns, Vector2Int door, Vector2Int entry,
-            Vector2Int north, Vector2Int east, Vector2Int south, Vector2Int west)
+            List<WorldObjectPlacement> objectPlacements, List<LockedMapMarker> mapMarkers)
         {
-            dataVersion = 1;
+            dataVersion = 2;
             mapId = id;
             displayName = title;
+            mapType = type;
+            baseSurface = baseDefinition;
+            grassMode = grass;
+            backdropColor = backdrop;
             minCell = minimum;
             maxCell = maximum;
             surfaces = surfacePlacements;
             objects = objectPlacements;
-            playerSpawnCell = playerSpawn;
-            entitySpawns = spawns;
-            houseDoorCell = door;
-            outsideEntryCell = entry;
-            northRoadEnd = north;
-            eastRoadEnd = east;
-            southRoadEnd = south;
-            westRoadEnd = west;
+            markers = mapMarkers;
         }
     }
 }

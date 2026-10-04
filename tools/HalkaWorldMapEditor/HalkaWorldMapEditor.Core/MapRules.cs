@@ -2,80 +2,100 @@ namespace HalkaWorldMapEditor.Core;
 
 public static class MapRules
 {
-    public static IEnumerable<GridCell> HouseBlockedCells(MapDocument map)
-    {
-        var door = map.Markers.HouseDoor;
-        var size = map.Markers.HouseFootprint;
-        var left = door.X - size.Width / 2;
-        for (var y = 0; y < size.Height; y++)
-        for (var x = 0; x < size.Width; x++)
-        {
-            var cell = new GridCell(left + x, door.Y + y);
-            if (cell != door) yield return cell;
-        }
-    }
+    public static GridCell? HouseRoot(MapDocument map) =>
+        map.Objects.FirstOrDefault(item => item.DefinitionId == "house_main")?.RootCell;
+
+    public static GridCell? OutsideEntry(MapDocument map) => HouseRoot(map) is { } root
+        ? new GridCell(root.X, root.Y - 1) : null;
+
+    public static IEnumerable<GridCell> RoadEndCells(MapDocument map) => map.Markers
+        .Where(item => item.Id.StartsWith("road_", StringComparison.Ordinal)).Select(item => item.Cell);
 
     public static bool IsProtected(MapDocument map, GridCell cell) =>
-        HouseBlockedCells(map).Contains(cell) || cell == map.Markers.HouseDoor ||
-        cell == map.Markers.OutsideEntry || cell == map.Markers.PlayerSpawn ||
-        cell == map.Markers.CrowSpawn || RoadEndCells(map).Contains(cell);
-
-    public static IEnumerable<GridCell> RoadEndCells(MapDocument map)
-    {
-        yield return map.Markers.RoadEnds.North;
-        yield return map.Markers.RoadEnds.East;
-        yield return map.Markers.RoadEnds.South;
-        yield return map.Markers.RoadEnds.West;
-    }
+        map.Markers.Any(item => item.Cell == cell) || OutsideEntry(map) == cell || HouseRoot(map) == cell;
 
     public static IEnumerable<GridCell> FootprintCells(ObjectPlacement placement, CatalogObject definition)
     {
-        for (var y = 0; y < definition.Footprint.Height; y++)
-        for (var x = 0; x < definition.Footprint.Width; x++)
-            yield return new GridCell(placement.RootCell.X + x, placement.RootCell.Y + y);
+        var offsets = definition.BlockedCellOffsets.Count > 0 ? definition.BlockedCellOffsets :
+            (from y in Enumerable.Range(0, Math.Max(0, definition.Footprint.Height))
+             from x in Enumerable.Range(0, Math.Max(0, definition.Footprint.Width))
+             select new GridCell(x, y));
+        foreach (var offset in offsets)
+            yield return new GridCell(placement.RootCell.X + offset.X, placement.RootCell.Y + offset.Y);
+    }
+
+    public static (GridCell Minimum, GridCell Maximum) VisualBounds(ObjectPlacement placement, CatalogObject definition)
+    {
+        var width = Math.Max(1, definition.VisualWidthPixels / 32);
+        var height = Math.Max(1, definition.VisualHeightPixels / 32);
+        var left = definition.RootAnchor == "bottom-left" ? placement.RootCell.X :
+            placement.RootCell.X - width / 2;
+        return (new GridCell(left, placement.RootCell.Y),
+            new GridCell(left + width - 1, placement.RootCell.Y + height - 1));
     }
 
     public static bool BlocksMovement(MapDocument map, CatalogDocument catalog, GridCell cell)
     {
-        if (HouseBlockedCells(map).Contains(cell)) return true;
-        var definitions = catalog.ObjectById;
-        return map.Objects.Any(item => definitions.TryGetValue(item.DefinitionId, out var definition) &&
+        if (map.Surfaces.Any(item => item.Cell == cell &&
+            catalog.SurfaceById.TryGetValue(item.DefinitionId, out var surface) && surface.BlocksMovement)) return true;
+        return map.Objects.Any(item => catalog.ObjectById.TryGetValue(item.DefinitionId, out var definition) &&
             definition.BlocksMovement && FootprintCells(item, definition).Contains(cell));
     }
 
     public static bool HasGrass(MapDocument map, CatalogDocument catalog, GridCell cell)
     {
-        if (!map.Bounds.Contains(cell) || map.Surfaces.Any(item => item.Cell == cell) ||
-            BlocksMovement(map, catalog, cell)) return false;
-        var definitions = catalog.ObjectById;
-        return !map.Objects.Any(item => item.RootCell == cell &&
-            definitions.TryGetValue(item.DefinitionId, out var definition) && definition.ExcludeGrass);
+        if (map.GrassMode != "auto" || !map.Bounds.Contains(cell) ||
+            map.Surfaces.Any(item => item.Cell == cell) || BlocksMovement(map, catalog, cell)) return false;
+        return !map.Objects.Any(item => catalog.ObjectById.TryGetValue(item.DefinitionId, out var definition) &&
+            definition.ExcludeGrass && FootprintCells(item, definition).Contains(cell));
     }
+
+    public static bool Allowed(IReadOnlyCollection<string> types, string mapType) =>
+        types.Count == 0 || types.Contains(mapType);
 
     public static bool CanPlace(MapDocument map, CatalogDocument catalog, string definitionId,
         GridCell root, out string reason, string? ignoreInstanceId = null)
     {
         if (!catalog.ObjectById.TryGetValue(definitionId, out var definition) ||
-            !definition.EditorSelectable)
-        { reason = "このオブジェクトはPaletteにありません。"; return false; }
-        if (definition.Footprint.Width < 1 || definition.Footprint.Height < 1)
-        { reason = "Footprintが不正です。"; return false; }
+            !definition.EditorSelectable || !Allowed(definition.AllowedMapTypes, map.MapType))
+        { reason = "このMapでは配置できないオブジェクトです。"; return false; }
+        if (definition.VisualWidthPixels < 1 || definition.VisualHeightPixels < 1 ||
+            definition.BlockedCellOffsets.Count == 0)
+        { reason = "VisualまたはBlocked Footprintが不正です。"; return false; }
         var candidate = new ObjectPlacement { DefinitionId = definitionId, RootCell = root };
+        var visual = VisualBounds(candidate, definition);
+        if (!map.Bounds.Contains(visual.Minimum) || !map.Bounds.Contains(visual.Maximum))
+        { reason = "見た目がマップ範囲外です。"; return false; }
+        if (definitionId == "house_main" && map.Objects.Any(item =>
+            item.DefinitionId == "house_main" && item.InstanceId != ignoreInstanceId))
+        { reason = "家は1つだけ配置できます。"; return false; }
+        if (definitionId == "house_main" &&
+            (map.Markers.Any(item => item.Cell == root) ||
+             map.Objects.Any(item => item.InstanceId != ignoreInstanceId &&
+                 catalog.ObjectById.TryGetValue(item.DefinitionId, out var other) &&
+                 FootprintCells(item, other).Contains(root))))
+        { reason = "家の入口セルが使用できません。"; return false; }
+        var oldEntry = OutsideEntry(map);
+        var candidateEntry = definitionId == "house_main" ? new GridCell(root.X, root.Y - 1) : (GridCell?)null;
+        if (candidateEntry is { } entry && (!map.Bounds.Contains(entry) ||
+            map.Markers.Any(item => item.Cell == entry) ||
+            map.Objects.Any(item => item.InstanceId != ignoreInstanceId &&
+                catalog.ObjectById.TryGetValue(item.DefinitionId, out var other) &&
+                FootprintCells(item, other).Contains(entry))))
+        { reason = "家の入口前が使用できません。"; return false; }
         foreach (var cell in FootprintCells(candidate, definition))
         {
-            if (!map.Bounds.Contains(cell))
-            { reason = "マップ範囲外です。"; return false; }
-            if (IsProtected(map, cell))
-            { reason = "家・Spawn・将来のエリア接続用セルは保護されています。"; return false; }
-            if (map.Surfaces.Any(item => item.Cell == cell))
-            { reason = "地面SurfaceとObjectのFootprintは重ねられません。"; return false; }
-            foreach (var existing in map.Objects)
-            {
-                if (existing.InstanceId == ignoreInstanceId) continue;
-                if (!catalog.ObjectById.TryGetValue(existing.DefinitionId, out var other)) continue;
-                if (FootprintCells(existing, other).Contains(cell))
-                { reason = "既存ObjectのFootprintと重なります。"; return false; }
-            }
+            if (!map.Bounds.Contains(cell)) { reason = "Blocked Footprintが範囲外です。"; return false; }
+            if (map.Markers.Any(item => item.Cell == cell) ||
+                (definitionId != "house_main" && (oldEntry == cell || HouseRoot(map) == cell)))
+            { reason = "Spawn・道路終端・入口前の保護セルです。"; return false; }
+            if (map.Surfaces.Any(item => item.Cell == cell &&
+                catalog.SurfaceById.TryGetValue(item.DefinitionId, out var surface) && surface.BlocksMovement))
+            { reason = "通行不可Surfaceと重なります。"; return false; }
+            if (map.Objects.Any(item => item.InstanceId != ignoreInstanceId &&
+                catalog.ObjectById.TryGetValue(item.DefinitionId, out var other) &&
+                FootprintCells(item, other).Contains(cell)))
+            { reason = "既存Objectと重なります。"; return false; }
         }
         reason = "";
         return true;
@@ -84,55 +104,84 @@ public static class MapRules
     public static IReadOnlyList<MapIssue> Validate(MapDocument map, CatalogDocument catalog)
     {
         var issues = new List<MapIssue>();
-        if (map.Format != "halka-world-map" || map.FormatVersion != 1)
+        if (map.Format != "halka-world-map" || map.FormatVersion != 2)
             issues.Add(new("format", "Map format/versionが未対応です。"));
         if (string.IsNullOrWhiteSpace(map.MapId) ||
             !System.Text.RegularExpressions.Regex.IsMatch(map.MapId, "^[a-z0-9_-]+$"))
             issues.Add(new("mapId", "Map IDは小文字英数字、_、-のみです。"));
+        if (map.MapType != "outdoor" && map.MapType != "interior")
+            issues.Add(new("mapType", "Map Typeが不正です。"));
+        if (!catalog.SurfaceById.ContainsKey(map.BaseSurfaceDefinitionId) && map.BaseSurfaceDefinitionId != "base_ground")
+            issues.Add(new("baseSurface", "Base Surfaceが不明です。"));
+        if (map.GrassMode != "auto" && map.GrassMode != "none")
+            issues.Add(new("grassMode", "Grass Modeが不正です。"));
         if (map.Bounds.MinX > map.Bounds.MaxX || map.Bounds.MinY > map.Bounds.MaxY)
             issues.Add(new("bounds", "Boundsが逆転しています。"));
-        if (map.Markers.HouseFootprint.Width != 5 || map.Markers.HouseFootprint.Height != 2)
-            issues.Add(new("houseFootprint", "現在のRuntimeでは家のFootprintは5×2固定です。"));
-        var surfaceIds = catalog.SurfaceById;
-        var objectIds = catalog.ObjectById;
-        var seenSurface = new HashSet<GridCell>();
+        var markerIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var marker in map.Markers)
+        {
+            if (string.IsNullOrWhiteSpace(marker.Id) || !markerIds.Add(marker.Id))
+                issues.Add(new("markerId", "Marker IDが空または重複しています。", marker.Cell));
+            if (!map.Bounds.Contains(marker.Cell)) issues.Add(new("markerBounds", "Markerが範囲外です。", marker.Cell));
+        }
+        var surfaceCells = new HashSet<GridCell>();
         foreach (var placement in map.Surfaces)
         {
-            if (!map.Bounds.Contains(placement.Cell))
-                issues.Add(new("surfaceBounds", "地面が範囲外です。", placement.Cell));
-            if (!surfaceIds.ContainsKey(placement.DefinitionId))
-                issues.Add(new("surfaceDefinition", "不明な地面ID: " + placement.DefinitionId, placement.Cell));
-            if (!seenSurface.Add(placement.Cell))
-                issues.Add(new("duplicateSurface", "地面が重複しています。", placement.Cell));
+            if (!map.Bounds.Contains(placement.Cell)) issues.Add(new("surfaceBounds", "地面が範囲外です。", placement.Cell));
+            if (!catalog.SurfaceById.TryGetValue(placement.DefinitionId, out var definition) ||
+                !Allowed(definition.AllowedMapTypes, map.MapType))
+                issues.Add(new("surfaceDefinition", "不明またはMap Type非対応の地面ID: " + placement.DefinitionId, placement.Cell));
+            if (!surfaceCells.Add(placement.Cell)) issues.Add(new("duplicateSurface", "地面が重複しています。", placement.Cell));
         }
-        var seenRoot = new HashSet<GridCell>();
         var seenInstance = new HashSet<string>(StringComparer.Ordinal);
         var occupied = new HashSet<GridCell>();
         foreach (var placement in map.Objects)
         {
-            if (!seenRoot.Add(placement.RootCell))
-                issues.Add(new("duplicateRoot", "Object Rootが重複しています。", placement.RootCell));
             if (string.IsNullOrWhiteSpace(placement.InstanceId) || !seenInstance.Add(placement.InstanceId))
                 issues.Add(new("duplicateInstanceId", "instanceIdが空または重複しています。", placement.RootCell));
-            if (!objectIds.TryGetValue(placement.DefinitionId, out var definition))
-            { issues.Add(new("objectDefinition", "不明なObject ID: " + placement.DefinitionId, placement.RootCell)); continue; }
-            if (definition.Footprint.Width < 1 || definition.Footprint.Height < 1)
-            { issues.Add(new("footprint", "Footprintが不正です。", placement.RootCell)); continue; }
+            if (!catalog.ObjectById.TryGetValue(placement.DefinitionId, out var definition) ||
+                !Allowed(definition.AllowedMapTypes, map.MapType))
+            { issues.Add(new("objectDefinition", "不明またはMap Type非対応のObject ID: " + placement.DefinitionId, placement.RootCell)); continue; }
+            if (definition.BlockedCellOffsets.Count == 0 ||
+                definition.BlockedCellOffsets.Distinct().Count() != definition.BlockedCellOffsets.Count)
+                issues.Add(new("footprint", "Blocked Footprintが空または重複しています。", placement.RootCell));
+            var visual = VisualBounds(placement, definition);
+            if (!map.Bounds.Contains(visual.Minimum) || !map.Bounds.Contains(visual.Maximum))
+                issues.Add(new("visualBounds", "Object Visualが範囲外です。", placement.RootCell));
             foreach (var cell in FootprintCells(placement, definition))
             {
-                if (!map.Bounds.Contains(cell)) issues.Add(new("objectBounds", "Objectが範囲外です。", cell));
-                if (IsProtected(map, cell)) issues.Add(new("protected", "保護セルにObjectがあります。", cell));
-                if (seenSurface.Contains(cell)) issues.Add(new("surfaceOverlap", "Objectと地面Surfaceが重なります。", cell));
-                if (!occupied.Add(cell)) issues.Add(new("overlap", "ObjectのFootprintが重なります。", cell));
+                if (!map.Bounds.Contains(cell)) issues.Add(new("objectBounds", "Blocked Cellが範囲外です。", cell));
+                if (map.Markers.Any(marker => marker.Cell == cell)) issues.Add(new("protected", "保護Markerを塞いでいます。", cell));
+                if (map.Surfaces.Any(item => item.Cell == cell &&
+                    catalog.SurfaceById.TryGetValue(item.DefinitionId, out var surface) && surface.BlocksMovement))
+                    issues.Add(new("surfaceOverlap", "通行不可SurfaceとObjectが重なります。", cell));
+                if (!occupied.Add(cell)) issues.Add(new("overlap", "ObjectのBlocked Footprintが重なります。", cell));
             }
         }
-        foreach (var marker in new[] { map.Markers.HouseDoor, map.Markers.OutsideEntry,
-                     map.Markers.PlayerSpawn, map.Markers.CrowSpawn }.Concat(RoadEndCells(map)))
+        if (map.MapType == "outdoor")
         {
-            if (!map.Bounds.Contains(marker)) issues.Add(new("markerBounds", "Markerが範囲外です。", marker));
-            if (BlocksMovement(map, catalog, marker))
-                issues.Add(new("markerBlocked", "入口・Spawn・Road Endが閉塞しています。", marker));
+            if (map.Objects.Count(item => item.DefinitionId == "house_main") != 1)
+                issues.Add(new("house", "屋外Mapには家が1つ必要です。"));
+            if (HouseRoot(map) is { } door &&
+                (map.Markers.Any(item => item.Cell == door) ||
+                 map.Objects.Any(item => item.DefinitionId != "house_main" &&
+                     catalog.ObjectById.TryGetValue(item.DefinitionId, out var other) &&
+                     FootprintCells(item, other).Contains(door))))
+                issues.Add(new("houseDoor", "家の入口セルが閉塞しています。", door));
+            if (map.Marker("player_start") is not { } start || BlocksMovement(map, catalog, start))
+                issues.Add(new("playerStart", "Player Spawnが無いか閉塞しています。"));
+            if (OutsideEntry(map) is not { } entry || !map.Bounds.Contains(entry) || BlocksMovement(map, catalog, entry))
+                issues.Add(new("houseEntry", "家の入口前が使用できません。"));
         }
+        else
+        {
+            foreach (var id in new[] { "interior_entry", "interior_exit" })
+                if (map.Marker(id) is not { } cell || BlocksMovement(map, catalog, cell))
+                    issues.Add(new("interiorMarker", id + "が無いか閉塞しています。"));
+        }
+        foreach (var marker in map.Markers)
+            if (BlocksMovement(map, catalog, marker.Cell))
+                issues.Add(new("markerBlocked", "Markerが閉塞しています。", marker.Cell));
         return issues;
     }
 }

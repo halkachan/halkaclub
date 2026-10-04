@@ -44,9 +44,11 @@ public sealed class MapSession
 
     public bool PaintSurface(string definitionId, GridCell cell)
     {
-        if (!Map.Bounds.Contains(cell) || !Catalog.SurfaceById.ContainsKey(definitionId) ||
-            Map.Objects.Any(item => Catalog.ObjectById.TryGetValue(item.DefinitionId, out var definition) &&
-                MapRules.FootprintCells(item, definition).Contains(cell)) ||
+        if (!Map.Bounds.Contains(cell) || !Catalog.SurfaceById.TryGetValue(definitionId, out var surface) ||
+            !MapRules.Allowed(surface.AllowedMapTypes, Map.MapType) ||
+            (surface.BlocksMovement && (MapRules.IsProtected(Map, cell) ||
+                Map.Objects.Any(item => Catalog.ObjectById.TryGetValue(item.DefinitionId, out var definition) &&
+                    MapRules.FootprintCells(item, definition).Contains(cell)))) ||
             Map.Surfaces.Any(item => item.Cell == cell && item.DefinitionId == definitionId)) return false;
         Change(() =>
         {
@@ -65,6 +67,7 @@ public sealed class MapSession
 
     // Grass is derived from the absence of a surface override, never serialized.
     public bool RestoreGrass(GridCell cell) => EraseSurface(cell);
+    public bool RestoreBaseSurface(GridCell cell) => EraseSurface(cell);
 
     public bool PlaceObject(string definitionId, GridCell cell, out string reason)
     {

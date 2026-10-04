@@ -1,0 +1,394 @@
+{
+  "format": "halka-world-map",
+  "formatVersion": 2,
+  "mapId": "halka_house",
+  "displayName": "ﾊﾙｶﾁｬﾝの家",
+  "mapType": "interior",
+  "baseSurfaceDefinitionId": "house_floor",
+  "grassMode": "none",
+  "backdropColor": "#101014",
+  "bounds": {
+    "minX": -6,
+    "maxX": 6,
+    "minY": -4,
+    "maxY": 4
+  },
+  "surfaces": [
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -6,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -5,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -4,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -3,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -2,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -1,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 1,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 2,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 3,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 4,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 5,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 6,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -6,
+        "y": -3
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 6,
+        "y": -3
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -6,
+        "y": -2
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 6,
+        "y": -2
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -6,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 6,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -6,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 6,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -6,
+        "y": 1
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 6,
+        "y": 1
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -6,
+        "y": 2
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 6,
+        "y": 2
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -6,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -5,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -4,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -3,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -2,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -1,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 0,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 1,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 2,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 3,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 4,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 5,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 6,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -6,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -5,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -4,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -3,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -2,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": -1,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 0,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 1,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 2,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 3,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 4,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 5,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "house_wall",
+      "cell": {
+        "x": 6,
+        "y": 4
+      }
+    }
+  ],
+  "objects": [
+    {
+      "instanceId": "obj_bed_basic_v03_migration",
+      "definitionId": "bed_basic",
+      "rootCell": {
+        "x": -5,
+        "y": 0
+      }
+    }
+  ],
+  "markers": [
+    {
+      "id": "interior_entry",
+      "cell": {
+        "x": 0,
+        "y": -3
+      }
+    },
+    {
+      "id": "interior_exit",
+      "cell": {
+        "x": 0,
+        "y": -4
+      }
+    }
+  ]
+}

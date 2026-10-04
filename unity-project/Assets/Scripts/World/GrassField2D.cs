@@ -52,6 +52,14 @@ namespace Halka.Game.World
             }
         }
 
+        public void Rebuild() => Initialize();
+
+        public void Clear()
+        {
+            active.Clear();
+            grassByCell.Clear();
+        }
+
         private void OnEnable()
         {
             if (player != null) player.StepStarted += OnStepStarted;

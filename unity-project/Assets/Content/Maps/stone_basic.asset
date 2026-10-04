@@ -13,12 +13,16 @@ MonoBehaviour:
   m_Name: stone_basic
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.WorldObjectDefinition
   stableId: stone_basic
-  displayName: Stone
+  displayName: "\u77F3"
   previewSprite: {fileID: 21300000, guid: 58c7027453f0af846815c6302b8b75d7, type: 3}
   examineMessage: "\u3044\u3057\u3002"
   rootedArtwork: 0
   clickColliderSize: {x: 0.4375, y: 0.3125}
   footprint: {x: 1, y: 1}
+  blockedCellOffsets:
+  - {x: 0, y: 0}
+  rootAnchor: bottom-center
+  behavior: 0
   blocksMovement: 1
   excludesGrass: 1
   sortingOrder: 2

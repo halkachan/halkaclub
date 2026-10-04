@@ -38,5 +38,7 @@ namespace Halka.Game.World
                 throw new ArgumentException($"Invalid or duplicate ground surface at {cell}");
             cells.Add(new SurfaceCell { Cell = cell, Sprite = sprite });
         }
+
+        public void Clear() => cells.Clear();
     }
 }

@@ -19,13 +19,13 @@ Check("format and bounds", map.MapId == "first_field" && map.Bounds.MinX == -10 
 Check("editable authoring placements", map.Surfaces.Count > 0 && map.Objects.Count > 0 &&
     map.Surfaces.All(s => catalog.SurfaceById.ContainsKey(s.DefinitionId)) &&
     map.Objects.All(o => catalog.ObjectById.ContainsKey(o.DefinitionId)));
-Check("golden marker coordinates", map.Markers.PlayerSpawn == new GridCell(0, 0) &&
-    map.Markers.CrowSpawn == new GridCell(7, 2) && map.Markers.HouseDoor == new GridCell(-7, -4) &&
-    map.Markers.OutsideEntry == new GridCell(-7, -5) &&
-    map.Markers.RoadEnds.North == new GridCell(0, 6) &&
-    map.Markers.RoadEnds.East == new GridCell(10, -1) &&
-    map.Markers.RoadEnds.South == new GridCell(2, -6) &&
-    map.Markers.RoadEnds.West == new GridCell(-10, 0));
+Check("golden marker coordinates", map.Marker("player_start") == new GridCell(0, 0) &&
+    map.Marker("crow_spawn") == new GridCell(7, 2) && MapRules.HouseRoot(map) == new GridCell(-7, -4) &&
+    MapRules.OutsideEntry(map) == new GridCell(-7, -5) &&
+    map.Marker("road_north") == new GridCell(0, 6) &&
+    map.Marker("road_east") == new GridCell(10, -1) &&
+    map.Marker("road_south") == new GridCell(2, -6) &&
+    map.Marker("road_west") == new GridCell(-10, 0));
 Check("valid official map", MapRules.Validate(map, catalog).Count == 0);
 var grass = 0;
 for (var y = map.Bounds.MinY; y <= map.Bounds.MaxY; y++)
@@ -36,14 +36,54 @@ Check("no grass on road", map.Surfaces.All(p => !MapRules.HasGrass(map, catalog,
 Check("IDs stable unique", map.Objects.All(o => !string.IsNullOrEmpty(o.InstanceId)) &&
     map.Objects.Select(o => o.InstanceId).Distinct().Count() == map.Objects.Count);
 Check("stable ordered roundtrip", MapFormat.SerializeMap(MapFormat.ParseMap(source)) == MapFormat.SerializeMap(map));
-Check("locked cells", MapRules.IsProtected(map, map.Markers.HouseDoor) &&
-    MapRules.IsProtected(map, map.Markers.PlayerSpawn) &&
-    MapRules.IsProtected(map, map.Markers.RoadEnds.North));
-Check("reject protected and outside", !MapRules.CanPlace(map, catalog, "stone_basic", map.Markers.HouseDoor, out _) &&
+Check("locked cells", MapRules.IsProtected(map, MapRules.HouseRoot(map)!.Value) &&
+    MapRules.IsProtected(map, map.Marker("player_start")!.Value) &&
+    MapRules.IsProtected(map, map.Marker("road_north")!.Value));
+Check("reject protected and outside", !MapRules.CanPlace(map, catalog, "stone_basic", MapRules.HouseRoot(map)!.Value, out _) &&
     !MapRules.CanPlace(map, catalog, "stone_basic", new GridCell(100, 100), out _));
 Check("sprite path safety", ProjectPaths.SpritePath(project, "Assets/Content/World/stone.png").EndsWith("stone.png") &&
     Throws(() => ProjectPaths.SpritePath(project, "../other.png")));
 Check("malformed JSON", Throws(() => MapFormat.ParseMap("{not json}")));
+
+var houseMapPath = Path.Combine(ProjectPaths.AuthoringFolder(project), "halka_house.hwmap.json");
+var houseSource = File.ReadAllText(houseMapPath);
+var houseMap = MapFormat.LoadMap(houseMapPath);
+Check("multiple map IDs", map.MapId == "first_field" && houseMap.MapId == "halka_house" &&
+    map.MapType == "outdoor" && houseMap.MapType == "interior" && map.FormatVersion == 2 && houseMap.FormatVersion == 2);
+Check("base surfaces and grass policies", map.BaseSurfaceDefinitionId == "base_ground" &&
+    map.GrassMode == "auto" && houseMap.BaseSurfaceDefinitionId == "house_floor" &&
+    houseMap.GrassMode == "none" && !MapRules.HasGrass(houseMap, catalog, new GridCell(0, 0)));
+Check("interior migration contract", houseMap.Bounds.MinX == -6 && houseMap.Bounds.MaxX == 6 &&
+    houseMap.Bounds.MinY == -4 && houseMap.Bounds.MaxY == 4 &&
+    houseMap.Surfaces.Count == 50 && houseMap.Surfaces.All(s => s.DefinitionId == "house_wall") &&
+    houseMap.Marker("interior_entry") == new GridCell(0, -3) &&
+    houseMap.Marker("interior_exit") == new GridCell(0, -4) &&
+    houseMap.Objects.Single(o => o.DefinitionId == "bed_basic").RootCell == new GridCell(-5, 0) &&
+    MapRules.Validate(houseMap, catalog).Count == 0);
+Check("interior stable roundtrip", MapFormat.SerializeMap(MapFormat.ParseMap(houseSource)) ==
+    MapFormat.SerializeMap(houseMap));
+var house = map.Objects.Single(o => o.DefinitionId == "house_main");
+var houseDefinition = catalog.ObjectById["house_main"];
+var houseBlocked = MapRules.FootprintCells(house, houseDefinition).ToArray();
+Check("house irregular footprint", houseBlocked.Length == 9 && houseBlocked.Distinct().Count() == 9 &&
+    !houseBlocked.Contains(house.RootCell) &&
+    MapRules.OutsideEntry(map) == new GridCell(house.RootCell.X, house.RootCell.Y - 1));
+Check("house visual footprint", MapRules.VisualBounds(house, houseDefinition) ==
+    (new GridCell(-9, -4), new GridCell(-5, -1)));
+Check("house movement collision rules", !MapRules.CanPlace(map, catalog, "stone_basic", houseBlocked[0], out _) &&
+    !MapRules.CanPlace(map, catalog, "house_main", house.RootCell, out _) &&
+    !MapRules.CanPlace(houseMap, catalog, "bed_basic", new GridCell(-6, 0), out _));
+var bed = houseMap.Objects.Single(o => o.DefinitionId == "bed_basic");
+Check("bed two by three", MapRules.FootprintCells(bed, catalog.ObjectById["bed_basic"]).Count() == 6 &&
+    MapRules.BlocksMovement(houseMap, catalog, bed.RootCell));
+var oldJson = """
+    {"format":"halka-world-map","formatVersion":1,"mapId":"legacy_field","displayName":"Legacy","bounds":{"minX":-10,"maxX":10,"minY":-6,"maxY":6},"surfaces":[],"objects":[],"markers":{"playerSpawn":{"x":0,"y":0},"crowSpawn":{"x":7,"y":2},"houseDoor":{"x":-7,"y":-4},"outsideEntry":{"x":-7,"y":-5},"houseFootprint":{"width":5,"height":2},"roadEnds":{"north":{"x":0,"y":6},"east":{"x":10,"y":-1},"south":{"x":2,"y":-6},"west":{"x":-10,"y":0}}}}
+    """;
+var migrated = MapFormat.ParseMap(oldJson);
+Check("v1 to v2 migration", migrated.FormatVersion == 2 && migrated.MapId == "legacy_field" &&
+    migrated.Objects.Single(o => o.DefinitionId == "house_main").RootCell == new GridCell(-7, -4) &&
+    migrated.Marker("player_start") == new GridCell(0, 0) &&
+    migrated.Marker("road_north") == new GridCell(0, 6));
 
 var tempDir = Path.Combine(Path.GetTempPath(), "HalkaMapEditorTests-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(tempDir);
@@ -127,9 +167,31 @@ try
     invalid = MapFormat.Clone(map);
     invalid.Surfaces.Add(new SurfacePlacement { DefinitionId = "dirt", Cell = invalid.Surfaces[0].Cell });
     Check("duplicate surface validation", MapRules.Validate(invalid, catalog).Any(i => i.Code == "duplicateSurface"));
+    var houseEdit = new MapSession(MapFormat.Clone(map), catalog, Path.Combine(tempDir, "house-move.hwmap.json"));
+    var houseId = houseEdit.Map.Objects.Single(o => o.DefinitionId == "house_main").InstanceId;
+    Check("house move keeps ID and derives entry", houseEdit.MoveObject(houseId, new GridCell(-6, -4), out _) &&
+        houseEdit.Map.Objects.Single(o => o.InstanceId == houseId).RootCell == new GridCell(-6, -4) &&
+        MapRules.OutsideEntry(houseEdit.Map) == new GridCell(-6, -5));
+    houseEdit.Undo();
+    Check("house move undo", MapRules.HouseRoot(houseEdit.Map) == new GridCell(-7, -4));
+    houseEdit.Redo();
+    Check("house move redo", MapRules.HouseRoot(houseEdit.Map) == new GridCell(-6, -4));
+    var roomEdit = new MapSession(MapFormat.Clone(houseMap), catalog, Path.Combine(tempDir, "house-room.hwmap.json"));
+    var wall = new GridCell(0, 0);
+    Check("wall paint blocks movement", roomEdit.PaintSurface("house_wall", wall) &&
+        MapRules.BlocksMovement(roomEdit.Map, catalog, wall));
+    Check("floor restore removes wall", roomEdit.RestoreBaseSurface(wall) &&
+        !MapRules.BlocksMovement(roomEdit.Map, catalog, wall));
+    roomEdit.Undo();
+    Check("floor restore undo", MapRules.BlocksMovement(roomEdit.Map, catalog, wall));
+    roomEdit.Redo();
+    Check("floor restore redo", !MapRules.BlocksMovement(roomEdit.Map, catalog, wall));
+    roomEdit.Save();
+    Check("interior save and reload", MapRules.Validate(MapFormat.LoadMap(roomEdit.FilePath), catalog).Count == 0);
 }
 finally { Directory.Delete(tempDir, true); }
 Check("formal map never written", File.ReadAllText(mapPath) == source);
+Check("formal interior never written", File.ReadAllText(houseMapPath) == houseSource);
 Console.WriteLine($"All {passes} checks passed.");
 
 static bool Throws(Action action)

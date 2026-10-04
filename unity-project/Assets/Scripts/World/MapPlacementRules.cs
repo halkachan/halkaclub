@@ -6,55 +6,54 @@ namespace Halka.Game.World
     // Shared by the runtime loader and the Editor preview; grass is derived, not stored.
     public static class MapPlacementRules
     {
-        public static bool IsHouseFootprint(MapDefinition map, Vector2Int cell) =>
-            cell.x >= map.HouseDoorCell.x - 2 && cell.x <= map.HouseDoorCell.x + 2 &&
-            cell.y >= map.HouseDoorCell.y && cell.y <= map.HouseDoorCell.y + 1 &&
-            cell != map.HouseDoorCell;
+        public static bool IsHouseFootprint(MapDefinition map, Vector2Int cell)
+        {
+            foreach (var placement in map.Objects)
+                if (placement.Definition != null &&
+                    placement.Definition.Behavior == WorldObjectBehavior.HouseTransition)
+                    foreach (var offset in placement.Definition.EffectiveBlockedOffsets())
+                        if (placement.RootCell + offset == cell) return true;
+            return false;
+        }
 
         public static bool IsProtected(MapDefinition map, Vector2Int cell) =>
-            IsHouseFootprint(map, cell) || cell == map.HouseDoorCell ||
-            cell == map.OutsideEntryCell || cell == map.NorthRoadEnd ||
-            cell == map.EastRoadEnd || cell == map.SouthRoadEnd ||
-            cell == map.WestRoadEnd || cell == map.PlayerSpawnCell ||
+            (map.TryGetHouseRoot(out var door) && (cell == door || cell == door + Vector2Int.down)) ||
             IsEntitySpawn(map, cell);
 
         public static bool IsEntitySpawn(MapDefinition map, Vector2Int cell)
         {
-            foreach (var spawn in map.EntitySpawns)
+            foreach (var spawn in map.Markers)
                 if (spawn.Cell == cell) return true;
             return false;
         }
 
         public static bool BlocksMovement(MapDefinition map, Vector2Int cell)
         {
-            if (IsHouseFootprint(map, cell)) return true;
+            if (map.SurfaceAt(cell) != null && map.SurfaceAt(cell).BlocksMovement) return true;
             foreach (var placement in map.Objects)
             {
                 var definition = placement.Definition;
                 if (definition == null || !definition.BlocksMovement) continue;
-                for (var y = 0; y < definition.Footprint.y; y++)
-                for (var x = 0; x < definition.Footprint.x; x++)
-                    if (placement.RootCell + new Vector2Int(x, y) == cell) return true;
+                foreach (var offset in definition.EffectiveBlockedOffsets())
+                    if (placement.RootCell + offset == cell) return true;
             }
             return false;
         }
 
         private static bool Covers(WorldObjectPlacement placement, Vector2Int cell)
         {
-            var footprint = placement.Definition.Footprint;
-            return cell.x >= placement.RootCell.x &&
-                cell.x < placement.RootCell.x + footprint.x &&
-                cell.y >= placement.RootCell.y &&
-                cell.y < placement.RootCell.y + footprint.y;
+            foreach (var offset in placement.Definition.EffectiveBlockedOffsets())
+                if (placement.RootCell + offset == cell) return true;
+            return false;
         }
 
         public static bool HasGrass(MapDefinition map, Vector2Int cell)
         {
-            if (!map.Contains(cell) || map.SurfaceAt(cell) != null ||
+            if (map.GrassMode != "auto" || !map.Contains(cell) || map.SurfaceAt(cell) != null ||
                 BlocksMovement(map, cell)) return false;
             foreach (var placement in map.Objects)
                 if (placement.Definition != null && placement.Definition.ExcludesGrass &&
-                    placement.RootCell == cell) return false;
+                    Covers(placement, cell)) return false;
             return true;
         }
 
@@ -63,10 +62,11 @@ namespace Halka.Game.World
         {
             reason = null;
             if (definition == null) { reason = "Choose an Object Definition."; return false; }
-            if (definition.Footprint.x < 1 || definition.Footprint.y < 1)
+            if (definition.PreviewSprite == null)
             { reason = "Definition footprint must be positive."; return false; }
             if (!map.Contains(cell)) { reason = "Outside map bounds."; return false; }
-            if (IsProtected(map, cell)) { reason = "Protected House, spawn or road-end cell."; return false; }
+            if (IsProtected(map, cell) && definition.Behavior != WorldObjectBehavior.HouseTransition)
+            { reason = "Protected House, spawn or road-end cell."; return false; }
             foreach (var placement in map.Objects)
                 if (placement.RootCell == cell && placement.RootCell != ignore)
                 {
@@ -74,16 +74,16 @@ namespace Halka.Game.World
                         (placement.Definition == null ? "an invalid object" : placement.Definition.DisplayName) + ".";
                     return false;
                 }
-            for (var y = 0; y < definition.Footprint.y; y++)
-            for (var x = 0; x < definition.Footprint.x; x++)
+            foreach (var offset in definition.EffectiveBlockedOffsets())
             {
-                var occupied = cell + new Vector2Int(x, y);
+                var occupied = cell + offset;
                 var otherObject = false;
                 foreach (var placement in map.Objects)
                     if (placement.Definition != null && placement.RootCell != ignore &&
                         Covers(placement, occupied)) otherObject = true;
-                if (!map.Contains(occupied) || IsProtected(map, occupied) || otherObject ||
-                    map.SurfaceAt(occupied) != null)
+                if (!map.Contains(occupied) || (IsProtected(map, occupied) &&
+                    definition.Behavior != WorldObjectBehavior.HouseTransition) || otherObject ||
+                    (map.SurfaceAt(occupied) != null && map.SurfaceAt(occupied).BlocksMovement))
                 {
                     reason = "Footprint overlaps a protected cell, Surface or Object.";
                     return false;
@@ -121,21 +121,25 @@ namespace Halka.Game.World
                 var footprint = placement.Definition.Footprint;
                 if (footprint.x < 1 || footprint.y < 1)
                 { problems.Add("ERROR: Invalid footprint at " + placement.RootCell); continue; }
-                for (var y = 0; y < footprint.y; y++)
-                for (var x = 0; x < footprint.x; x++)
+                foreach (var offset in placement.Definition.EffectiveBlockedOffsets())
                 {
-                    var cell = placement.RootCell + new Vector2Int(x, y);
+                    var cell = placement.RootCell + offset;
                     if (!map.Contains(cell)) problems.Add("ERROR: Object footprint out of bounds at " + cell);
-                    if (IsProtected(map, cell)) problems.Add("ERROR: Object blocks protected cell " + cell);
-                    if (surfaceCells.Contains(cell)) problems.Add("ERROR: Object overlaps Surface at " + cell);
+                    if (map.Markers != null && IsEntitySpawn(map, cell))
+                        problems.Add("ERROR: Object blocks protected cell " + cell);
+                    if (surfaceCells.Contains(cell) && map.SurfaceAt(cell).BlocksMovement)
+                        problems.Add("ERROR: Object overlaps blocking Surface at " + cell);
                     if (!occupiedCells.Add(cell)) problems.Add("ERROR: Overlapping Object footprint at " + cell);
                 }
             }
-            if (!map.Contains(map.HouseDoorCell) || !map.Contains(map.OutsideEntryCell))
-                problems.Add("ERROR: House entry out of bounds.");
-            foreach (var cell in new[] { map.HouseDoorCell, map.OutsideEntryCell,
-                map.NorthRoadEnd, map.EastRoadEnd, map.SouthRoadEnd, map.WestRoadEnd })
-                if (BlocksMovement(map, cell)) problems.Add("ERROR: Protected entry or road end blocked at " + cell);
+            if (map.MapType == "outdoor")
+            {
+                if (!map.TryGetHouseRoot(out var door) || !map.Contains(door + Vector2Int.down) ||
+                    BlocksMovement(map, door) || BlocksMovement(map, door + Vector2Int.down))
+                    problems.Add("ERROR: House door or outside entry blocked.");
+            }
+            foreach (var marker in map.Markers)
+                if (BlocksMovement(map, marker.Cell)) problems.Add("ERROR: Protected marker blocked at " + marker.Cell);
             return problems;
         }
     }

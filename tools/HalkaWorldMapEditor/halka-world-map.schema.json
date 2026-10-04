@@ -1,15 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://halkaclub.com/schemas/halka-world-map-v1.json",
-  "title": "HALKA WORLD Map Authoring v1",
+  "$id": "https://halkaclub.com/schemas/halka-world-map-v2.json",
+  "title": "HALKA WORLD Map Authoring v2",
   "type": "object",
   "additionalProperties": false,
-  "required": ["format", "formatVersion", "mapId", "displayName", "bounds", "surfaces", "objects", "markers"],
+  "required": ["format", "formatVersion", "mapId", "displayName", "mapType", "baseSurfaceDefinitionId", "grassMode", "backdropColor", "bounds", "surfaces", "objects", "markers"],
   "properties": {
     "format": { "const": "halka-world-map" },
-    "formatVersion": { "const": 1 },
+    "formatVersion": { "const": 2 },
     "mapId": { "type": "string", "pattern": "^[a-z0-9_-]+$" },
     "displayName": { "type": "string", "minLength": 1 },
+    "mapType": { "enum": ["outdoor", "interior"] },
+    "baseSurfaceDefinitionId": { "type": "string", "minLength": 1 },
+    "grassMode": { "enum": ["auto", "none"] },
+    "backdropColor": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
     "bounds": {
       "type": "object", "additionalProperties": false,
       "required": ["minX", "maxX", "minY", "maxY"],
@@ -18,36 +22,23 @@
     "surfaces": {
       "type": "array", "items": {
         "type": "object", "additionalProperties": false, "required": ["definitionId", "cell"],
-        "properties": { "definitionId": { "type": "string" }, "cell": { "$ref": "#/$defs/cell" } }
+        "properties": { "definitionId": { "type": "string", "minLength": 1 }, "cell": { "$ref": "#/$defs/cell" } }
       }
     },
     "objects": {
       "type": "array", "items": {
-        "type": "object", "additionalProperties": false,
-        "required": ["instanceId", "definitionId", "rootCell"],
+        "type": "object", "additionalProperties": false, "required": ["instanceId", "definitionId", "rootCell"],
         "properties": {
           "instanceId": { "type": "string", "minLength": 1 },
-          "definitionId": { "type": "string" },
+          "definitionId": { "type": "string", "minLength": 1 },
           "rootCell": { "$ref": "#/$defs/cell" }
         }
       }
     },
-    "markers": {
-      "type": "object", "additionalProperties": false,
-      "required": ["playerSpawn", "crowSpawn", "houseDoor", "outsideEntry", "houseFootprint", "roadEnds"],
-      "properties": {
-        "playerSpawn": { "$ref": "#/$defs/cell" },
-        "crowSpawn": { "$ref": "#/$defs/cell" },
-        "houseDoor": { "$ref": "#/$defs/cell" },
-        "outsideEntry": { "$ref": "#/$defs/cell" },
-        "houseFootprint": { "type": "object", "required": ["width", "height"], "properties": { "width": { "const": 5 }, "height": { "const": 2 } } },
-        "roadEnds": { "type": "object", "required": ["north", "east", "south", "west"], "properties": {
-          "north": { "$ref": "#/$defs/cell" }, "east": { "$ref": "#/$defs/cell" }, "south": { "$ref": "#/$defs/cell" }, "west": { "$ref": "#/$defs/cell" }
-        } }
-      }
-    }
+    "markers": { "type": "array", "items": { "$ref": "#/$defs/marker" } }
   },
   "$defs": {
-    "cell": { "type": "object", "additionalProperties": false, "required": ["x", "y"], "properties": { "x": { "type": "integer" }, "y": { "type": "integer" } } }
+    "cell": { "type": "object", "additionalProperties": false, "required": ["x", "y"], "properties": { "x": { "type": "integer" }, "y": { "type": "integer" } } },
+    "marker": { "type": "object", "additionalProperties": false, "required": ["id", "cell"], "properties": { "id": { "type": "string", "minLength": 1 }, "cell": { "$ref": "#/$defs/cell" } } }
   }
 }

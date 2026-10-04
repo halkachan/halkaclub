@@ -12,11 +12,17 @@ namespace Halka.Game.Editor
         private const string OfficialPath = "Assets/Content/Maps/first_field.asset";
         private const string FixtureAssetPath = "Assets/Content/Maps/standalone_contract_fixture.asset";
 
-        [MenuItem("HALKA WORLD/Validate Standalone Map Contract v0.2")]
+        [MenuItem("HALKA WORLD/Validate Standalone Map Contract v0.3")]
         public static void Run()
         {
+            MapAuthoringImporter.SyncAll();
             var official = AssetDatabase.LoadAssetAtPath<MapDefinition>(OfficialPath);
+            var interior = AssetDatabase.LoadAssetAtPath<MapDefinition>(
+                "Assets/Content/Maps/halka_house.asset");
             Check(official != null, "official generated cache exists");
+            Check(interior != null && interior.MapId == "halka_house" &&
+                interior.MapType == "interior" && interior.GrassMode == "none" &&
+                interior.BaseSurface.StableId == "house_floor", "indoor map is imported");
             var before = JsonUtility.ToJson(official);
             var authoringPath = Path.GetFullPath(Path.Combine(Application.dataPath,
                 "Content/Maps/Authoring/first_field.hwmap.json"));
@@ -37,15 +43,23 @@ namespace Halka.Game.Editor
                 Check(imported != null && imported.MapId == "standalone_contract_fixture" &&
                     imported.MinCell == new Vector2Int(-10, -6) &&
                     imported.MaxCell == new Vector2Int(10, 6), "fixture bounds and mapId");
-                Check(imported.Surfaces.Count == 52 && imported.Objects.Count == 11,
+                Check(imported.Surfaces.Count == official.Surfaces.Count &&
+                    imported.Objects.Count == official.Objects.Count,
                     "fixture placement counts");
                 Check(imported.Objects.All(item => !string.IsNullOrWhiteSpace(item.InstanceId)) &&
-                    imported.Objects.Select(item => item.InstanceId).Distinct().Count() == 11,
+                    imported.Objects.Select(item => item.InstanceId).Distinct().Count() == official.Objects.Count,
                     "fixture instance IDs are preserved and unique");
                 Check(imported.PlayerSpawnCell == new Vector2Int(0, 0) &&
                     imported.HouseDoorCell == new Vector2Int(-7, -4) &&
                     imported.NorthRoadEnd == new Vector2Int(0, 6), "fixture markers");
                 Check(MapPlacementRules.Validate(imported).Count == 0, "fixture validates");
+                Check(interior.MinCell == new Vector2Int(-6, -4) &&
+                    interior.MaxCell == new Vector2Int(6, 4) &&
+                    interior.Surfaces.Count == 50 && interior.Objects.Count == 1 &&
+                    interior.TryGetMarker("interior_entry", out var entry) && entry == new Vector2Int(0, -3) &&
+                    interior.TryGetMarker("interior_exit", out var exit) && exit == new Vector2Int(0, -4) &&
+                    MapPlacementRules.Validate(interior).Count == 0,
+                    "indoor bounds, walls, bed and passage match the former room");
                 File.WriteAllText(invalidPath, "{ broken json");
                 var rejected = false;
                 try { MapAuthoringImporter.SyncMapFromFile(invalidPath); }
@@ -53,7 +67,7 @@ namespace Halka.Game.Editor
                 Check(rejected, "invalid JSON rejected");
                 Check(JsonUtility.ToJson(official) == before,
                     "invalid JSON leaves official generated cache unchanged");
-                Debug.Log("HALKA WORLD Standalone Map Contract v0.2: passed.");
+                Debug.Log("HALKA WORLD Standalone Map Contract v0.3: passed.");
             }
             finally
             {

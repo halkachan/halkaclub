@@ -44,6 +44,12 @@ public sealed class RoadEnds
     public GridCell West { get; set; }
 }
 
+public sealed class MapMarker
+{
+    public string Id { get; set; } = "";
+    public GridCell Cell { get; set; }
+}
+
 public sealed class MapMarkers
 {
     public GridCell PlayerSpawn { get; set; }
@@ -57,13 +63,19 @@ public sealed class MapMarkers
 public sealed class MapDocument
 {
     public string Format { get; set; } = "halka-world-map";
-    public int FormatVersion { get; set; } = 1;
+    public int FormatVersion { get; set; } = 2;
     public string MapId { get; set; } = "";
     public string DisplayName { get; set; } = "";
+    public string MapType { get; set; } = "outdoor";
+    public string BaseSurfaceDefinitionId { get; set; } = "base_ground";
+    public string GrassMode { get; set; } = "auto";
+    public string BackdropColor { get; set; } = "#101014";
     public MapBounds Bounds { get; set; } = new();
     public List<SurfacePlacement> Surfaces { get; set; } = [];
     public List<ObjectPlacement> Objects { get; set; } = [];
-    public MapMarkers Markers { get; set; } = new();
+    public List<MapMarker> Markers { get; set; } = [];
+
+    public GridCell? Marker(string id) => Markers.FirstOrDefault(item => item.Id == id)?.Cell;
 }
 
 public sealed class CatalogSurface
@@ -74,6 +86,8 @@ public sealed class CatalogSurface
     public string PreviewSpritePath { get; set; } = "";
     public int VisualWidthPixels { get; set; } = 32;
     public int VisualHeightPixels { get; set; } = 32;
+    public bool BlocksMovement { get; set; }
+    public List<string> AllowedMapTypes { get; set; } = [];
     public bool EditorSelectable { get; set; } = true;
 }
 
@@ -87,6 +101,8 @@ public sealed class CatalogObject
     public int VisualHeightPixels { get; set; } = 32;
     public string RootAnchor { get; set; } = "bottom-center";
     public GridSize Footprint { get; set; } = new();
+    public List<GridCell> BlockedCellOffsets { get; set; } = [];
+    public List<string> AllowedMapTypes { get; set; } = [];
     public bool BlocksMovement { get; set; } = true;
     public bool ExcludeGrass { get; set; } = true;
     public bool EditorSelectable { get; set; } = true;
@@ -103,7 +119,7 @@ public sealed class CatalogVisuals
 public sealed class CatalogDocument
 {
     public string Format { get; set; } = "halka-world-catalog";
-    public int FormatVersion { get; set; } = 1;
+    public int FormatVersion { get; set; } = 2;
     public List<CatalogSurface> Surfaces { get; set; } = [];
     public List<CatalogObject> Objects { get; set; } = [];
     public CatalogVisuals Visuals { get; set; } = new();

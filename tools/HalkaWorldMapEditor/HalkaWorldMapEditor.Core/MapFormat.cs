@@ -6,6 +6,18 @@ namespace HalkaWorldMapEditor.Core;
 
 public static class MapFormat
 {
+    private sealed class LegacyMapDocument
+    {
+        public string Format { get; set; } = "";
+        public int FormatVersion { get; set; }
+        public string MapId { get; set; } = "";
+        public string DisplayName { get; set; } = "";
+        public MapBounds Bounds { get; set; } = new();
+        public List<SurfacePlacement> Surfaces { get; set; } = [];
+        public List<ObjectPlacement> Objects { get; set; } = [];
+        public MapMarkers Markers { get; set; } = new();
+    }
+
     public static readonly JsonSerializerOptions Options = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -21,26 +33,48 @@ public static class MapFormat
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
             Require(root, "format", "formatVersion", "mapId", "displayName", "bounds", "surfaces", "objects", "markers");
+            if (root.GetProperty("formatVersion").GetInt32() == 1)
+            {
+                var legacy = JsonSerializer.Deserialize<LegacyMapDocument>(json, Options) ??
+                    throw new InvalidDataException("Legacy Map JSON is empty.");
+                if (legacy.Format != "halka-world-map" || legacy.Markers == null ||
+                    legacy.Markers.HouseFootprint.Width != 5 || legacy.Markers.HouseFootprint.Height != 2)
+                    throw new InvalidDataException("Unsupported legacy Map format.");
+                var migrated = new MapDocument
+                {
+                    MapId = legacy.MapId, DisplayName = legacy.DisplayName,
+                    Bounds = legacy.Bounds, Surfaces = legacy.Surfaces, Objects = legacy.Objects,
+                    Markers = [
+                        new() { Id = "player_start", Cell = legacy.Markers.PlayerSpawn },
+                        new() { Id = "crow_spawn", Cell = legacy.Markers.CrowSpawn },
+                        new() { Id = "road_north", Cell = legacy.Markers.RoadEnds.North },
+                        new() { Id = "road_east", Cell = legacy.Markers.RoadEnds.East },
+                        new() { Id = "road_south", Cell = legacy.Markers.RoadEnds.South },
+                        new() { Id = "road_west", Cell = legacy.Markers.RoadEnds.West }
+                    ]
+                };
+                if (!migrated.Objects.Any(item => item.DefinitionId == "house_main"))
+                    migrated.Objects.Add(new ObjectPlacement
+                    {
+                        InstanceId = "obj_house_main_v03_migration",
+                        DefinitionId = "house_main", RootCell = legacy.Markers.HouseDoor
+                    });
+                return migrated;
+            }
             Require(root.GetProperty("bounds"), "minX", "maxX", "minY", "maxY");
-            var markers = root.GetProperty("markers");
-            Require(markers, "playerSpawn", "crowSpawn", "houseDoor", "outsideEntry", "houseFootprint", "roadEnds");
-            Require(markers.GetProperty("houseFootprint"), "width", "height");
-            Require(markers.GetProperty("roadEnds"), "north", "east", "south", "west");
-            foreach (var name in new[] { "playerSpawn", "crowSpawn", "houseDoor", "outsideEntry" })
-                Require(markers.GetProperty(name), "x", "y");
-            foreach (var name in new[] { "north", "east", "south", "west" })
-                Require(markers.GetProperty("roadEnds").GetProperty(name), "x", "y");
+            Require(root, "mapType", "baseSurfaceDefinitionId", "grassMode", "backdropColor");
+            foreach (var marker in root.GetProperty("markers").EnumerateArray())
+            { Require(marker, "id", "cell"); Require(marker.GetProperty("cell"), "x", "y"); }
             foreach (var surface in root.GetProperty("surfaces").EnumerateArray())
             { Require(surface, "definitionId", "cell"); Require(surface.GetProperty("cell"), "x", "y"); }
             foreach (var placement in root.GetProperty("objects").EnumerateArray())
             { Require(placement, "instanceId", "definitionId", "rootCell"); Require(placement.GetProperty("rootCell"), "x", "y"); }
             var map = JsonSerializer.Deserialize<MapDocument>(json, Options) ??
                 throw new InvalidDataException("Map JSON is empty.");
-            if (map.Format != "halka-world-map" || map.FormatVersion != 1)
+            if (map.Format != "halka-world-map" || map.FormatVersion != 2)
                 throw new InvalidDataException($"Unsupported map format {map.Format} v{map.FormatVersion}.");
             if (map.Bounds == null || map.Surfaces == null || map.Objects == null ||
-                map.Markers == null || map.Markers.RoadEnds == null ||
-                map.Markers.HouseFootprint == null)
+                map.Markers == null)
                 throw new InvalidDataException("Map JSON is missing a required section.");
             return map;
         }
@@ -60,7 +94,7 @@ public static class MapFormat
         {
             var catalog = JsonSerializer.Deserialize<CatalogDocument>(json, Options) ??
                 throw new InvalidDataException("Catalog JSON is empty.");
-            if (catalog.Format != "halka-world-catalog" || catalog.FormatVersion != 1 ||
+            if (catalog.Format != "halka-world-catalog" || catalog.FormatVersion != 2 ||
                 catalog.Surfaces == null || catalog.Objects == null || catalog.Visuals == null)
                 throw new InvalidDataException("Unsupported or incomplete catalog format.");
             if (catalog.Surfaces.Any(item => string.IsNullOrWhiteSpace(item.DefinitionId)) ||
@@ -95,6 +129,7 @@ public static class MapFormat
         map.Objects = map.Objects.OrderBy(item => item.DefinitionId, StringComparer.Ordinal)
             .ThenBy(item => item.RootCell.Y).ThenBy(item => item.RootCell.X)
             .ThenBy(item => item.InstanceId, StringComparer.Ordinal).ToList();
+        map.Markers = map.Markers.OrderBy(item => item.Id, StringComparer.Ordinal).ToList();
         return JsonSerializer.Serialize(map, Options) + "\n";
     }
 

@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28d38c7f9ee17e04db4e260cc861e578, type: 3}
+  m_Name: house_floor
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.SurfaceDefinition
+  stableId: house_floor
+  displayName: "\u6728\u5E8A"
+  sprite: {fileID: 21300000, guid: 2dd17381791b9694c8b0395e4fbf7616, type: 3}
+  blocksMovement: 0
