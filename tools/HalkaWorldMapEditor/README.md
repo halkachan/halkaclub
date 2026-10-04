@@ -6,6 +6,8 @@
 
 PowerShellで `./scripts/publish-win-x64.ps1` を実行してください。出力は `dist/win-x64/HALKA WORLD MAP EDITOR.exe` です。自己完結版で、同フォルダー内のDLLとnativeファイルも必要です。Unity EditorはEXE起動に必要ありません。
 
+アプリアイコンは `HalkaWorldMapEditor/Assets/map-editor.ico`。変更する場合はPillow入りのPythonで `py scripts/generate-app-icon.py` を実行します。
+
 ## 初回起動
 
 EXEの近くにある `unity-project` を自動探索します。見つからなければ `Project...` でUnity Projectフォルダーを指定します。`Assets/Content/Maps/Authoring/*.hwmap.json` がMap選択に並びます。正式マップは `first_field.hwmap.json`、Paletteは `object_catalog.hwcatalog.json` です。

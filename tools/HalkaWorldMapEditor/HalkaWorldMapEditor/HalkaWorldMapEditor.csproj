@@ -12,10 +12,15 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <AssemblyName>HALKA WORLD MAP EDITOR</AssemblyName>
+    <ApplicationIcon>Assets\map-editor.ico</ApplicationIcon>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\map-editor.ico" />
+  </ItemGroup>
 
 </Project>
