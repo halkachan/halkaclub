@@ -151,16 +151,26 @@ namespace Halka.Game.Editor
             foreach (var match in catalog.objects)
             {
                 var definition = FindObject(match.definitionId);
-                if (definition == null || definition.PreviewSprite == null || match.footprint == null ||
-                    match.blockedCellOffsets == null ||
-                    AssetDatabase.GetAssetPath(definition.PreviewSprite) != match.previewSpritePath ||
-                    definition.PreviewSprite.rect.width != match.visualWidthPixels ||
-                    definition.PreviewSprite.rect.height != match.visualHeightPixels ||
+                if (definition == null || match.footprint == null || match.blockedCellOffsets == null ||
+                    match.actionPoints == null ||
+                    (definition.PreviewSprite == null ? "" : AssetDatabase.GetAssetPath(definition.PreviewSprite)) !=
+                        (match.previewSpritePath ?? "") ||
+                    (definition.PreviewSprite != null && (definition.PreviewSprite.rect.width != match.visualWidthPixels ||
+                    definition.PreviewSprite.rect.height != match.visualHeightPixels)) ||
+                    (definition.PreviewSprite == null && !string.IsNullOrEmpty(match.previewSpritePath)) ||
                     definition.Footprint.x != match.footprint.width ||
                     definition.Footprint.y != match.footprint.height ||
                     definition.RootAnchor != match.rootAnchor ||
                     !definition.EffectiveBlockedOffsets().SequenceEqual(
                         match.blockedCellOffsets.Select(item => item.ToVector())) ||
+                    definition.ActionPoints.Count != match.actionPoints.Length ||
+                    !definition.ActionPoints.Select((point, index) =>
+                        point.Id == match.actionPoints[index].id &&
+                        point.PlayerCellOffset == match.actionPoints[index].playerCellOffset.ToVector() &&
+                        point.PlayerFacing == ParseFacing(match.actionPoints[index].playerFacing) &&
+                        point.ActionType == ParseActionType(match.actionPoints[index].actionType) &&
+                        point.PoseKey == (match.actionPoints[index].poseKey ?? "") &&
+                        point.InteractionText == (match.actionPoints[index].interactionText ?? "")).All(equal => equal) ||
                     definition.BlocksMovement != match.blocksMovement ||
                     definition.ExcludesGrass != match.excludeGrass)
                     throw new InvalidDataException("Catalog mismatch for Object " + match.definitionId);
@@ -177,7 +187,7 @@ namespace Halka.Game.Editor
             catch (Exception error)
             { throw new InvalidDataException("Map catalog JSON parse error: " + error.Message, error); }
             if (catalog == null || catalog.format != "halka-world-catalog" ||
-                catalog.formatVersion != 2 || catalog.surfaces == null || catalog.objects == null)
+                catalog.formatVersion != 3 || catalog.surfaces == null || catalog.objects == null)
                 throw new InvalidDataException("Map catalog format is missing or unsupported.");
             return catalog;
         }
@@ -210,7 +220,10 @@ namespace Halka.Game.Editor
                     AssetDatabase.CreateAsset(asset, "Assets/Content/Maps/" + entry.definitionId + ".asset");
                 }
                 var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(entry.previewSpritePath);
-                if (sprite == null) throw new InvalidDataException("Object sprite missing: " + entry.previewSpritePath);
+                if (sprite == null && !string.IsNullOrWhiteSpace(entry.previewSpritePath))
+                    throw new InvalidDataException("Object sprite missing: " + entry.previewSpritePath);
+                if (entry.actionPoints == null || entry.blockedCellOffsets == null || entry.footprint == null)
+                    throw new InvalidDataException("Incomplete Object metadata: " + entry.definitionId);
                 var serialized = new SerializedObject(asset);
                 serialized.FindProperty("stableId").stringValue = entry.definitionId;
                 serialized.FindProperty("displayName").stringValue = entry.displayName;
@@ -224,13 +237,33 @@ namespace Halka.Game.Editor
                 offsets.arraySize = entry.blockedCellOffsets.Length;
                 for (var index = 0; index < entry.blockedCellOffsets.Length; index++)
                     offsets.GetArrayElementAtIndex(index).vector2IntValue = entry.blockedCellOffsets[index].ToVector();
+                var points = serialized.FindProperty("actionPoints");
+                points.arraySize = entry.actionPoints.Length;
+                var ids = new HashSet<string>(StringComparer.Ordinal);
+                for (var index = 0; index < entry.actionPoints.Length; index++)
+                {
+                    var point = entry.actionPoints[index];
+                    if (point == null || point.playerCellOffset == null ||
+                        string.IsNullOrWhiteSpace(point.id) || !ids.Add(point.id))
+                        throw new InvalidDataException("Invalid Action Point ID: " + entry.definitionId);
+                    var target = points.GetArrayElementAtIndex(index);
+                    target.FindPropertyRelative("id").stringValue = point.id;
+                    target.FindPropertyRelative("playerCellOffset").vector2IntValue = point.playerCellOffset.ToVector();
+                    target.FindPropertyRelative("playerFacing").enumValueIndex = (int)ParseFacing(point.playerFacing);
+                    target.FindPropertyRelative("actionType").enumValueIndex = (int)ParseActionType(point.actionType);
+                    target.FindPropertyRelative("poseKey").stringValue = point.poseKey ?? "";
+                    target.FindPropertyRelative("interactionText").stringValue = point.interactionText ?? "";
+                }
+                var examine = entry.actionPoints.FirstOrDefault(point => point.actionType == "examine");
+                serialized.FindProperty("examineMessage").stringValue = examine?.interactionText ?? "";
+                serialized.FindProperty("behavior").enumValueIndex = entry.definitionId == "house_main"
+                    ? (int)WorldObjectBehavior.HouseTransition
+                    : examine != null && sprite != null ? (int)WorldObjectBehavior.Examine : (int)WorldObjectBehavior.None;
                 if (entry.definitionId == "house_main" || entry.definitionId == "bed_basic")
                 {
-                    serialized.FindProperty("behavior").enumValueIndex =
-                        entry.definitionId == "house_main" ? (int)WorldObjectBehavior.HouseTransition : (int)WorldObjectBehavior.None;
                     serialized.FindProperty("rootedArtwork").boolValue = entry.definitionId == "house_main";
                     serialized.FindProperty("sortingOrder").intValue = entry.definitionId == "bed_basic" ? 3 : 2;
-                    serialized.FindProperty("clickColliderSize").vector2Value = sprite.bounds.size;
+                    if (sprite != null) serialized.FindProperty("clickColliderSize").vector2Value = sprite.bounds.size;
                 }
                 serialized.ApplyModifiedPropertiesWithoutUndo();
             }
@@ -242,6 +275,30 @@ namespace Halka.Game.Editor
                 .Select(guid => AssetDatabase.LoadAssetAtPath<SurfaceDefinition>(
                     AssetDatabase.GUIDToAssetPath(guid)))
                 .FirstOrDefault(item => item != null && item.StableId == id);
+
+        private static WorldFacing ParseFacing(string value)
+        {
+            switch (value)
+            {
+                case "up": return WorldFacing.Up;
+                case "down": return WorldFacing.Down;
+                case "left": return WorldFacing.Left;
+                case "right": return WorldFacing.Right;
+                default: throw new InvalidDataException("Invalid Action Point facing: " + value);
+            }
+        }
+
+        private static WorldActionType ParseActionType(string value)
+        {
+            switch (value)
+            {
+                case "none": return WorldActionType.None;
+                case "examine": return WorldActionType.Examine;
+                case "sit": return WorldActionType.Sit;
+                case "sleep": return WorldActionType.Sleep;
+                default: throw new InvalidDataException("Invalid Action Point type: " + value);
+            }
+        }
 
         private static WorldObjectDefinition FindObject(string id) =>
             AssetDatabase.FindAssets("t:WorldObjectDefinition")
@@ -285,7 +342,13 @@ namespace Halka.Game.Editor
             public int visualWidthPixels, visualHeightPixels;
             public SizeDto footprint;
             public CellDto[] blockedCellOffsets;
+            public ActionPointDto[] actionPoints;
             public bool blocksMovement, excludeGrass;
+        }
+        [Serializable] private sealed class ActionPointDto
+        {
+            public string id, playerFacing, actionType, poseKey, interactionText;
+            public CellDto playerCellOffset;
         }
         [Serializable] private sealed class CatalogDto
         {

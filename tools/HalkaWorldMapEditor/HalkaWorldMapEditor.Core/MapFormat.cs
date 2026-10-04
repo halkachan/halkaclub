@@ -92,9 +92,31 @@ public static class MapFormat
     {
         try
         {
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+            Require(root, "format", "formatVersion", "surfaces", "objects");
+            var version = root.GetProperty("formatVersion").GetInt32();
+            if (version != 2 && version != 3)
+                throw new InvalidDataException("Unsupported catalog version: " + version);
+            if (version == 3)
+                foreach (var entry in root.GetProperty("objects").EnumerateArray())
+                {
+                    Require(entry, "definitionId", "actionPoints");
+                    foreach (var point in entry.GetProperty("actionPoints").EnumerateArray())
+                    {
+                        Require(point, "id", "playerCellOffset", "playerFacing", "actionType");
+                        var offset = point.GetProperty("playerCellOffset");
+                        Require(offset, "x", "y");
+                        if (offset.GetProperty("x").ValueKind != JsonValueKind.Number ||
+                            offset.GetProperty("y").ValueKind != JsonValueKind.Number ||
+                            !offset.GetProperty("x").TryGetInt32(out _) ||
+                            !offset.GetProperty("y").TryGetInt32(out _))
+                            throw new InvalidDataException("Action Point offset must use integer cells.");
+                    }
+                }
             var catalog = JsonSerializer.Deserialize<CatalogDocument>(json, Options) ??
                 throw new InvalidDataException("Catalog JSON is empty.");
-            if (catalog.Format != "halka-world-catalog" || catalog.FormatVersion != 2 ||
+            if (catalog.Format != "halka-world-catalog" || (catalog.FormatVersion != 2 && catalog.FormatVersion != 3) ||
                 catalog.Surfaces == null || catalog.Objects == null || catalog.Visuals == null)
                 throw new InvalidDataException("Unsupported or incomplete catalog format.");
             if (catalog.Surfaces.Any(item => string.IsNullOrWhiteSpace(item.DefinitionId)) ||
@@ -102,6 +124,20 @@ public static class MapFormat
                 catalog.Surfaces.Select(item => item.DefinitionId).Distinct(StringComparer.Ordinal).Count() != catalog.Surfaces.Count ||
                 catalog.Objects.Select(item => item.DefinitionId).Distinct(StringComparer.Ordinal).Count() != catalog.Objects.Count)
                 throw new InvalidDataException("Catalog has an empty or duplicate definitionId.");
+            foreach (var entry in catalog.Objects)
+            {
+                if (entry.ActionPoints == null)
+                    throw new InvalidDataException("Action Points are missing in " + entry.DefinitionId);
+                var ids = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var point in entry.ActionPoints)
+                {
+                    if (string.IsNullOrWhiteSpace(point.Id) || !ids.Add(point.Id) ||
+                        point.PlayerFacing is not ("up" or "down" or "left" or "right") ||
+                        point.ActionType is not ("none" or "examine" or "sit" or "sleep"))
+                        throw new InvalidDataException("Invalid Action Point in " + entry.DefinitionId);
+                }
+            }
+            if (version == 2) catalog.FormatVersion = 3; // In-memory upgrade; never rewrites the source file.
             return catalog;
         }
         catch (JsonException error)

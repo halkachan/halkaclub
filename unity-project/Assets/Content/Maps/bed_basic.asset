@@ -26,6 +26,13 @@ MonoBehaviour:
   - {x: 1, y: 1}
   - {x: 0, y: 2}
   - {x: 1, y: 2}
+  actionPoints:
+  - id: sleep_main
+    playerCellOffset: {x: 0, y: 1}
+    playerFacing: 0
+    actionType: 3
+    poseKey: bed_sleep
+    interactionText:
   rootAnchor: bottom-left
   behavior: 2
   blocksMovement: 1

@@ -125,8 +125,9 @@ public sealed class MapSession
     {
         EndStroke();
         var issues = MapRules.Validate(Map, Catalog);
-        if (issues.Count > 0) throw new InvalidDataException(
-            "Map validation failed: " + string.Join("; ", issues.Take(5).Select(item => item.Message)));
+        var errors = issues.Where(item => !item.IsWarning).ToArray();
+        if (errors.Length > 0) throw new InvalidDataException(
+            "Map validation failed: " + string.Join("; ", errors.Take(5).Select(item => item.Message)));
         MapFormat.SaveAtomic(Map, FilePath);
         savedSnapshot = MapFormat.SerializeMap(Map);
     }

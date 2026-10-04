@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "HALKA WORLD Catalog v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "formatVersion", "surfaces", "objects", "visuals"],
+  "properties": {
+    "format": { "const": "halka-world-catalog" },
+    "formatVersion": { "const": 3 },
+    "surfaces": { "type": "array" },
+    "visuals": { "type": "object" },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["definitionId", "displayName", "previewSpritePath", "visualWidthPixels", "visualHeightPixels", "rootAnchor", "footprint", "blockedCellOffsets", "blocksMovement", "excludeGrass", "allowedMapTypes", "actionPoints"],
+        "properties": {
+          "definitionId": { "type": "string", "minLength": 1 },
+          "displayName": { "type": "string" },
+          "previewSpritePath": { "type": "string" },
+          "visualWidthPixels": { "type": "integer", "minimum": 0 },
+          "visualHeightPixels": { "type": "integer", "minimum": 0 },
+          "rootAnchor": { "enum": ["bottom-center", "bottom-left"] },
+          "footprint": { "type": "object" },
+          "blockedCellOffsets": { "type": "array", "items": { "$ref": "#/$defs/cell" } },
+          "blocksMovement": { "type": "boolean" },
+          "excludeGrass": { "type": "boolean" },
+          "allowedMapTypes": { "type": "array", "items": { "enum": ["outdoor", "interior"] } },
+          "actionPoints": { "type": "array", "items": { "$ref": "#/$defs/actionPoint" } }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "cell": {
+      "type": "object", "additionalProperties": false,
+      "required": ["x", "y"],
+      "properties": { "x": { "type": "integer" }, "y": { "type": "integer" } }
+    },
+    "actionPoint": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "playerCellOffset", "playerFacing", "actionType"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "playerCellOffset": { "$ref": "#/$defs/cell" },
+        "playerFacing": { "enum": ["up", "down", "left", "right"] },
+        "actionType": { "enum": ["none", "examine", "sit", "sleep"] },
+        "poseKey": { "type": ["string", "null"] },
+        "interactionText": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

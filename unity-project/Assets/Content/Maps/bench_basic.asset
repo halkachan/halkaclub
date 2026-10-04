@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7c55d63a6fbaf8488893bfe6c9abf3d, type: 3}
+  m_Name: bench_basic
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.WorldObjectDefinition
+  stableId: bench_basic
+  displayName: "\u30D9\u30F3\u30C1"
+  previewSprite: {fileID: 0}
+  examineMessage:
+  rootedArtwork: 0
+  clickColliderSize: {x: 0.5, y: 0.5}
+  footprint: {x: 0, y: 0}
+  blockedCellOffsets: []
+  actionPoints:
+  - id: seat_left
+    playerCellOffset: {x: -1, y: -1}
+    playerFacing: 0
+    actionType: 2
+    poseKey: bench_sit
+    interactionText:
+  - id: seat_right
+    playerCellOffset: {x: 1, y: -1}
+    playerFacing: 0
+    actionType: 2
+    poseKey: bench_sit
+    interactionText:
+  rootAnchor: bottom-center
+  behavior: 2
+  blocksMovement: 1
+  excludesGrass: 1
+  sortingOrder: 2

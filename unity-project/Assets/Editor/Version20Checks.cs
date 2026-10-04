@@ -15,7 +15,7 @@ using UnityEngine;
 
 namespace Halka.Game.Editor
 {
-    // Game regression checks after moving map authoring to v0.3. The game stays ver2.0.
+    // Game regression checks after map authoring upgrades. The game stays ver2.0.
     public static class Version20Checks
     {
         private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
@@ -112,7 +112,7 @@ namespace Halka.Game.Editor
                 "outdoor grass is rebuilt after return");
             Check(maps.GetMap("first_field") == field && maps.GetMap("halka_house") == room,
                 "map registry resolves stable IDs");
-            Debug.Log("HALKA ver2.0 regression checks with Map Editor v0.3 passed.");
+            Debug.Log("HALKA ver2.0 regression checks with Map Editor v0.4 passed.");
         }
 
         [MenuItem("HALKA/Validate v0.3 moved house fixture")]

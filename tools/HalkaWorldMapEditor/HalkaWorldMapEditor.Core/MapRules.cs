@@ -16,13 +16,17 @@ public static class MapRules
 
     public static IEnumerable<GridCell> FootprintCells(ObjectPlacement placement, CatalogObject definition)
     {
-        var offsets = definition.BlockedCellOffsets.Count > 0 ? definition.BlockedCellOffsets :
-            (from y in Enumerable.Range(0, Math.Max(0, definition.Footprint.Height))
-             from x in Enumerable.Range(0, Math.Max(0, definition.Footprint.Width))
-             select new GridCell(x, y));
-        foreach (var offset in offsets)
+        foreach (var offset in definition.BlockedCellOffsets)
             yield return new GridCell(placement.RootCell.X + offset.X, placement.RootCell.Y + offset.Y);
     }
+
+    public static GridCell ActionCell(ObjectPlacement placement, ActionPoint point) =>
+        new(placement.RootCell.X + point.PlayerCellOffset.X,
+            placement.RootCell.Y + point.PlayerCellOffset.Y);
+
+    public static bool HasSprite(CatalogObject definition) =>
+        !string.IsNullOrWhiteSpace(definition.PreviewSpritePath) &&
+        definition.VisualWidthPixels > 0 && definition.VisualHeightPixels > 0;
 
     public static (GridCell Minimum, GridCell Maximum) VisualBounds(ObjectPlacement placement, CatalogObject definition)
     {
@@ -59,13 +63,17 @@ public static class MapRules
         if (!catalog.ObjectById.TryGetValue(definitionId, out var definition) ||
             !definition.EditorSelectable || !Allowed(definition.AllowedMapTypes, map.MapType))
         { reason = "このMapでは配置できないオブジェクトです。"; return false; }
+        if (!HasSprite(definition))
+        { reason = "MISSING ASSET: 正式Spriteがないため配置できません。"; return false; }
         if (definition.VisualWidthPixels < 1 || definition.VisualHeightPixels < 1 ||
-            definition.BlockedCellOffsets.Count == 0)
+            (definition.BlocksMovement && definition.BlockedCellOffsets.Count == 0))
         { reason = "VisualまたはBlocked Footprintが不正です。"; return false; }
         var candidate = new ObjectPlacement { DefinitionId = definitionId, RootCell = root };
         var visual = VisualBounds(candidate, definition);
         if (!map.Bounds.Contains(visual.Minimum) || !map.Bounds.Contains(visual.Maximum))
         { reason = "見た目がマップ範囲外です。"; return false; }
+        if (definition.ActionPoints.Any(point => !map.Bounds.Contains(ActionCell(candidate, point))))
+        { reason = "Action Pointがマップ範囲外です。"; return false; }
         if (definitionId == "house_main" && map.Objects.Any(item =>
             item.DefinitionId == "house_main" && item.InstanceId != ignoreInstanceId))
         { reason = "家は1つだけ配置できます。"; return false; }
@@ -142,9 +150,19 @@ public static class MapRules
             if (!catalog.ObjectById.TryGetValue(placement.DefinitionId, out var definition) ||
                 !Allowed(definition.AllowedMapTypes, map.MapType))
             { issues.Add(new("objectDefinition", "不明またはMap Type非対応のObject ID: " + placement.DefinitionId, placement.RootCell)); continue; }
-            if (definition.BlockedCellOffsets.Count == 0 ||
+            if ((definition.BlocksMovement && definition.BlockedCellOffsets.Count == 0) ||
                 definition.BlockedCellOffsets.Distinct().Count() != definition.BlockedCellOffsets.Count)
                 issues.Add(new("footprint", "Blocked Footprintが空または重複しています。", placement.RootCell));
+            if (!HasSprite(definition))
+                issues.Add(new("missingAsset", "MISSING ASSET: 正式Spriteがありません。", placement.RootCell));
+            foreach (var point in definition.ActionPoints)
+            {
+                var actionCell = ActionCell(placement, point);
+                if (!map.Bounds.Contains(actionCell))
+                    issues.Add(new("actionBounds", "Action PointがMap範囲外です: " + point.Id, actionCell));
+                else if (point.ActionType == "examine" && BlocksMovement(map, catalog, actionCell))
+                    issues.Add(new("actionBlocked", "調べる立ち位置が塞がれています: " + point.Id, actionCell, true));
+            }
             var visual = VisualBounds(placement, definition);
             if (!map.Bounds.Contains(visual.Minimum) || !map.Bounds.Contains(visual.Maximum))
                 issues.Add(new("visualBounds", "Object Visualが範囲外です。", placement.RootCell));

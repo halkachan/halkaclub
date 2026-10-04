@@ -1,6 +1,6 @@
 {
   "format": "halka-world-catalog",
-  "formatVersion": 2,
+  "formatVersion": 3,
   "surfaces": [
     {
       "definitionId": "base_ground",
@@ -79,6 +79,19 @@
       ],
       "allowedMapTypes": [
         "outdoor"
+      ],
+      "actionPoints": [
+        {
+          "id": "examine_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "いし。"
+        }
       ]
     },
     {
@@ -104,6 +117,19 @@
       ],
       "allowedMapTypes": [
         "outdoor"
+      ],
+      "actionPoints": [
+        {
+          "id": "examine_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "はな。"
+        }
       ]
     },
     {
@@ -129,6 +155,19 @@
       ],
       "allowedMapTypes": [
         "outdoor"
+      ],
+      "actionPoints": [
+        {
+          "id": "examine_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "き。"
+        }
       ]
     },
     {
@@ -186,7 +225,8 @@
       "allowedMapTypes": [
         "outdoor"
       ],
-      "editorSelectable": true
+      "editorSelectable": true,
+      "actionPoints": []
     },
     {
       "definitionId": "bed_basic",
@@ -231,7 +271,295 @@
       "allowedMapTypes": [
         "interior"
       ],
-      "editorSelectable": true
+      "editorSelectable": true,
+      "actionPoints": [
+        {
+          "id": "sleep_main",
+          "playerCellOffset": {
+            "x": 0,
+            "y": 1
+          },
+          "playerFacing": "up",
+          "actionType": "sleep",
+          "poseKey": "bed_sleep",
+          "interactionText": null
+        }
+      ]
+    },
+    {
+      "definitionId": "cushion_basic",
+      "displayName": "クッション",
+      "category": "furniture",
+      "previewSpritePath": "",
+      "visualWidthPixels": 0,
+      "visualHeightPixels": 0,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 0,
+        "height": 0
+      },
+      "blocksMovement": false,
+      "excludeGrass": false,
+      "editorSelectable": true,
+      "blockedCellOffsets": [],
+      "allowedMapTypes": [
+        "interior"
+      ],
+      "actionPoints": [
+        {
+          "id": "sit_main",
+          "playerCellOffset": {
+            "x": 0,
+            "y": 0
+          },
+          "playerFacing": "up",
+          "actionType": "sit",
+          "poseKey": "cushion_sit",
+          "interactionText": null
+        }
+      ]
+    },
+    {
+      "definitionId": "desk_basic",
+      "displayName": "机",
+      "category": "furniture",
+      "previewSpritePath": "",
+      "visualWidthPixels": 0,
+      "visualHeightPixels": 0,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 0,
+        "height": 0
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [],
+      "allowedMapTypes": [
+        "interior"
+      ],
+      "actionPoints": [
+        {
+          "id": "examine_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "つくえ。"
+        }
+      ]
+    },
+    {
+      "definitionId": "bench_basic",
+      "displayName": "ベンチ",
+      "category": "furniture",
+      "previewSpritePath": "",
+      "visualWidthPixels": 0,
+      "visualHeightPixels": 0,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 0,
+        "height": 0
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [],
+      "allowedMapTypes": [
+        "outdoor"
+      ],
+      "actionPoints": [
+        {
+          "id": "seat_left",
+          "playerCellOffset": {
+            "x": -1,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "sit",
+          "poseKey": "bench_sit",
+          "interactionText": null
+        },
+        {
+          "id": "seat_right",
+          "playerCellOffset": {
+            "x": 1,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "sit",
+          "poseKey": "bench_sit",
+          "interactionText": null
+        }
+      ]
+    },
+    {
+      "definitionId": "sign_north",
+      "displayName": "看板：きた",
+      "category": "fixture",
+      "previewSpritePath": "",
+      "visualWidthPixels": 0,
+      "visualHeightPixels": 0,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 0,
+        "height": 0
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [],
+      "allowedMapTypes": [
+        "outdoor"
+      ],
+      "actionPoints": [
+        {
+          "id": "read_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "きた"
+        }
+      ]
+    },
+    {
+      "definitionId": "sign_east",
+      "displayName": "看板：ひがし",
+      "category": "fixture",
+      "previewSpritePath": "",
+      "visualWidthPixels": 0,
+      "visualHeightPixels": 0,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 0,
+        "height": 0
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [],
+      "allowedMapTypes": [
+        "outdoor"
+      ],
+      "actionPoints": [
+        {
+          "id": "read_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "ひがし"
+        }
+      ]
+    },
+    {
+      "definitionId": "sign_south",
+      "displayName": "看板：みなみ",
+      "category": "fixture",
+      "previewSpritePath": "",
+      "visualWidthPixels": 0,
+      "visualHeightPixels": 0,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 0,
+        "height": 0
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [],
+      "allowedMapTypes": [
+        "outdoor"
+      ],
+      "actionPoints": [
+        {
+          "id": "read_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "みなみ"
+        }
+      ]
+    },
+    {
+      "definitionId": "sign_west",
+      "displayName": "看板：にし",
+      "category": "fixture",
+      "previewSpritePath": "",
+      "visualWidthPixels": 0,
+      "visualHeightPixels": 0,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 0,
+        "height": 0
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [],
+      "allowedMapTypes": [
+        "outdoor"
+      ],
+      "actionPoints": [
+        {
+          "id": "read_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "にし"
+        }
+      ]
+    },
+    {
+      "definitionId": "well_basic",
+      "displayName": "井戸",
+      "category": "fixture",
+      "previewSpritePath": "",
+      "visualWidthPixels": 0,
+      "visualHeightPixels": 0,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 0,
+        "height": 0
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [],
+      "allowedMapTypes": [
+        "outdoor"
+      ],
+      "actionPoints": [
+        {
+          "id": "examine_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "いど。"
+        }
+      ]
     }
   ],
   "visuals": {

@@ -106,6 +106,17 @@ public sealed class CatalogObject
     public bool BlocksMovement { get; set; } = true;
     public bool ExcludeGrass { get; set; } = true;
     public bool EditorSelectable { get; set; } = true;
+    public List<ActionPoint> ActionPoints { get; set; } = [];
+}
+
+public sealed class ActionPoint
+{
+    public string Id { get; set; } = "";
+    public GridCell PlayerCellOffset { get; set; }
+    public string PlayerFacing { get; set; } = "up";
+    public string ActionType { get; set; } = "none";
+    public string? PoseKey { get; set; }
+    public string? InteractionText { get; set; }
 }
 
 public sealed class CatalogVisuals
@@ -119,7 +130,7 @@ public sealed class CatalogVisuals
 public sealed class CatalogDocument
 {
     public string Format { get; set; } = "halka-world-catalog";
-    public int FormatVersion { get; set; } = 2;
+    public int FormatVersion { get; set; } = 3;
     public List<CatalogSurface> Surfaces { get; set; } = [];
     public List<CatalogObject> Objects { get; set; } = [];
     public CatalogVisuals Visuals { get; set; } = new();
@@ -130,4 +141,4 @@ public sealed class CatalogDocument
         Objects.ToDictionary(item => item.DefinitionId, StringComparer.Ordinal);
 }
 
-public sealed record MapIssue(string Code, string Message, GridCell? Cell = null);
+public sealed record MapIssue(string Code, string Message, GridCell? Cell = null, bool IsWarning = false);

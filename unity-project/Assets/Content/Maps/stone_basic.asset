@@ -21,6 +21,13 @@ MonoBehaviour:
   footprint: {x: 1, y: 1}
   blockedCellOffsets:
   - {x: 0, y: 0}
+  actionPoints:
+  - id: examine_front
+    playerCellOffset: {x: 0, y: -1}
+    playerFacing: 0
+    actionType: 1
+    poseKey:
+    interactionText: "\u3044\u3057\u3002"
   rootAnchor: bottom-center
   behavior: 0
   blocksMovement: 1

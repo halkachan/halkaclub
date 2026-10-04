@@ -1,4 +1,4 @@
-# HALKA WORLD MAP EDITOR v0.3
+# HALKA WORLD MAP EDITOR v0.4
 
 ゲーム本編は **ver2.0** のままです。開発専用の .NET 8 / WPF / SkiaSharp Windows アプリで、ゲーム画面には出ません。
 
@@ -16,7 +16,7 @@ JSONが唯一の編集元です。Unityの `Assets/Content/Maps/*.asset` と `Fi
 |---|---|
 | 地面「草」「土」 | 屋外のSurface編集。「草」はSurface overrideを消して通常の草地へ戻します。Grass Placementは保存しません。 |
 | 室内「木床」「壁」 | 「木床」は壁Surfaceを消してBaseの床へ戻し、「壁」は通行不可Surfaceを塗ります。 |
-| Object Palette | Map Typeに合う石・花・木・家・ベッドを選択。左クリックでRoot Cellに配置。 |
+| Object Palette | Map Typeに合うObjectを選択。素材未設定の候補は `MISSING ASSET` と表示し、配置を拒否します。 |
 | 選択 `[1]` | Spriteの見た目範囲からObjectを選択。InspectorにInstance ID、Root、Visual、Blocked Cellを表示。 |
 | Paint `[2]` / Erase `[3]` | Surfaceは左ドラッグで連続編集し、1ドラッグをUndo 1回にまとめます。右クリックはErase。 |
 | `Ctrl+Z` / `Ctrl+Y` | Undo / Redo。House移動でもInstance IDは維持します。 |
@@ -26,13 +26,13 @@ JSONが唯一の編集元です。Unityの `Assets/Content/Maps/*.asset` と `Fi
 | `F` / `G` | 全体表示 / Grid切替。 |
 | `Ctrl+S` | 現在のMap JSONを検証して保存。 |
 
-Grid、Grass、Collision、座標、Markersの表示を切り替えられます。大型Objectは画像の5×4などの見た目範囲と、通行不可セル群を別々に表示します。HouseのRootはドアの下中央セルで、通行不可はドアを除く9セルです。Houseを移動すると入口前セルはRootから導出されます。ベッドは2×3の通行不可Objectです。
+Grid、Grass、Collision、座標、Markers、Action Pointsの表示を切り替えられます。大型Objectは画像の5×4などの見た目範囲と、通行不可セル群を別々に表示します。HouseのRootはドアの下中央セルで、通行不可はドアを除く9セルです。Houseを移動すると入口前セルはRootから導出されます。ベッドは2×3の通行不可Objectです。
 
 ## Map v2 契約
 
 Schemaは `tools/HalkaWorldMapEditor/halka-world-map.schema.json`。各Mapに `mapId`、`mapType`、`baseSurfaceDefinitionId`、`grassMode`、`backdropColor`、Bounds、Surface overrides、Objects、ID付きMarkersを保存します。Base Surfaceを1セルずつ保存しません。屋外Grassは `grassMode=auto` で派生し、室内は `grassMode=none` です。
 
-Objectは `instanceId`、`definitionId`、`rootCell` を保存します。Visualサイズ、Root Anchor、通行不可セルの相対オフセット、Map Type制限はCatalogとUnity Definitionが持ちます。移動・Undo/Redo・再保存でInstance IDを保ちます。回転と自由Scaleはv0.3では扱いません。
+Objectは `instanceId`、`definitionId`、`rootCell` を保存します。Visualサイズ、Root Anchor、通行不可セルの相対オフセット、Map Type制限、Action PointはCatalog v3とUnity Definitionが持ちます。移動・Undo/Redo・再保存でInstance IDを保ちます。回転と自由Scaleはv0.4では扱いません。
 
 古いv1の `first_field` はCoreで読み込み時にv2へ変換できます。正式Mapの移行には `tools/HalkaWorldMapEditor/scripts/migrate-v02-to-v03.py` を用い、元JSONを別途バックアップしてから実行してください。現在の正式JSONはv2へ移行済みです。
 
@@ -43,3 +43,24 @@ Unity Importerが両MapのJSONとCatalogを読み、MapDefinition/Definition ass
 `dotnet run --project tools/HalkaWorldMapEditor/HalkaWorldMapEditor.Tests -c Release`
 
 Unity側は `Halka.Game.Editor.MapAuthoringChecks.Run` と `Halka.Game.Editor.Version20Checks.Run`。GameVersionは2.0のままです。GUIの破壊操作は正式Mapを直接使わず、コピーで確認してください。
+
+## Action Pointと通行判定
+
+Catalog v3の各Objectには `actionPoints` 配列があります。各点は `id`、Root相対の整数セル `playerCellOffset`、`playerFacing`（up/down/left/right）、`actionType`（none/examine/sit/sleep）、任意の `poseKey` と `interactionText` を持ちます。World座標は `rootCell + playerCellOffset` で算出し、Map JSONには重複保存しません。InspectorのLocal/World座標とCanvas上の E/S/Z + 矢印で確認できます。Object移動、Undo/Redo、Copy/Pasteにもこの計算が追従します。
+
+`blockedCellOffsets` は通行不可の範囲です。Action PointはPlayerの行動位置であり、両者は独立です。ベッドのsleep点は自身のblocked範囲にあっても構いません。クッションはblocked offsetsが空で通行可能な定義です。examineの立ち位置が塞がれた場合は警告として表示します。sit/sleepとPose Keyは将来用メタデータで、本編ver2.0では実行しません。石・花・木の既存メッセージはAction Pointの `interactionText` をUnity Definitionへ同期し、現行RuntimeのExamine表示を維持します。家の入退室は既存の移動遷移のままです。
+
+素材未設定の `cushion_basic`、`desk_basic`、`bench_basic`、`sign_north/east/south/west`、`well_basic` はPalette上で `MISSING ASSET` と表示されます。正式Sprite、寸法、footprintが決まるまで配置できません。現時点のAction Point offsetは素材確定後に確認する仮値です。看板の文字は順に「きた」「ひがし」「みなみ」「にし」、井戸は「いど。」で、井戸への遷移はありません。
+
+## 新しいObjectを追加する手順
+
+1. 正式Spriteを `Assets/Content/World` に追加する。
+2. Catalogへ変更されない `definitionId` と表示名、Sprite pathを登録する。Unity Importerが同じIDの `WorldObjectDefinition` を生成・更新する。
+3. 実Spriteに合わせてVisual Width/Height、Root Anchorを決める。
+4. 通行不可セルをRoot相対の `blockedCellOffsets` で設定する。通行可能なら空配列、`blocksMovement=false` とする。
+5. 必要なAction PointをRoot相対位置、Facing、Type、Pose Key、Textで定義する。
+6. `allowedMapTypes` を設定する。Catalogの選択項目は対応MapのPaletteへ自動出現する。
+7. UnityでAuthoring Importと契約検証を実行する。
+8. HALKAがStandalone Editorで正式Map上の配置場所を決めて保存する。
+
+配置済みMapは定義IDとRootだけを参照するため、後でSprite pathを差し替えても配置JSONを作り直す必要はありません。Catalog v2はStandalone側でメモリ上だけv3へ読み替え可能ですが、Unity Importerへ渡す正式Catalogはv3に更新してください。
