@@ -256,7 +256,9 @@ h1{margin:18px 0 20px;line-height:.9}
 .plan-kicker{margin:0;color:#8b9198;font-size:11px;letter-spacing:.18em;font-weight:900}
 .plan-card h3{margin:4px 0 20px;font-size:28px}
 .price{padding:7px 11px;border-radius:999px;background:#eef0f2;font-size:12px;font-weight:800;color:#40454b}
-.pro-card .price{background:var(--mint);color:#10221d}
+.pro-card .price{background:var(--mint);color:#10221d;white-space:nowrap}
+.price small{font-size:10px;font-weight:700;margin-left:2px}
+.plan-terms{margin:-8px 0 18px;color:#a7edd9;font-size:13px;font-weight:700;letter-spacing:.02em}
 .plan-card ul{margin:0;padding:0;list-style:none}
 .plan-card li{padding:9px 0;border-bottom:1px solid #eaedef;font-size:13px}
 .pro-card li{border-color:#2c3035}
@@ -296,6 +298,13 @@ h1{margin:18px 0 20px;line-height:.9}
 .closing h2{margin:4px 0 7px;font-size:clamp(42px,7vw,86px);letter-spacing:-.07em;line-height:1}
 .closing p:not(.kicker){color:#7e848b;font-size:13px}
 .closing-links{display:flex;justify-content:center;gap:9px;margin-top:20px}
+.faq-list{display:grid;gap:10px}
+.faq-item{background:white;border:1px solid #d9dcdf;border-radius:16px;padding:0 22px}
+.faq-item summary{cursor:pointer;padding:18px 0;font-size:14px;font-weight:800;list-style:none;position:relative;padding-right:28px}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:"+";position:absolute;right:0;top:50%;transform:translateY(-50%);color:var(--mint);font-size:20px;font-weight:900}
+.faq-item[open] summary::after{content:"−"}
+.faq-item p{margin:0 0 18px;color:#5d6664;font-size:13px;line-height:1.8}
 footer{background:var(--bg);color:#767d85;border-top:1px solid #2b2e33}
 .footer-inner{height:88px;display:flex;align-items:center;justify-content:space-between;font-size:10px}
 
@@ -330,4 +339,7 @@ footer{background:var(--bg);color:#767d85;border-top:1px solid #2b2e33}
   .update-box{grid-template-columns:1fr}
   .version-box{min-width:0}
   .closing-links{flex-direction:column}
+  .plan-card{padding:26px 22px}
+  .plan-card h3{font-size:24px}
+  .faq-item{padding:0 16px}
 }
