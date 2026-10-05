@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:HalkaSiteEditor"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="HALKA SITE EDITOR v0.2" Icon="Assets/site-editor.ico"
+        Title="HALKA SITE EDITOR v0.3" Icon="Assets/site-editor.ico"
         Width="1660" Height="900" MinWidth="1000" MinHeight="640"
         Background="#16191E" Foreground="#E4E8EC" FontFamily="Yu Gothic UI" FontSize="13"
         Loaded="WindowLoaded" Closing="WindowClosing">
@@ -12,6 +12,7 @@
     <local:HexToBrushConverter x:Key="HexToBrush"/>
     <local:TextToVisibilityConverter x:Key="TextToVisibility"/>
     <local:ChangedToBrushConverter x:Key="ChangedToBrush"/>
+    <local:KindMatchConverter x:Key="KindMatch"/>
 
     <Style TargetType="Button">
       <Setter Property="Background" Value="#333B46"/>
@@ -81,6 +82,76 @@
                   IsEnabled="{Binding CanSyncEnglish, Mode=OneWay}"
                   ToolTip="日本語側の数字から「from 〇〇 JPY」を作ります。"/>
         </Grid>
+      </Border>
+    </DataTemplate>
+
+    <!-- 名前のついた入力欄をいくつか並べた1行（リンク・くらぶ・うたまぜ用） -->
+    <DataTemplate x:Key="RowTemplate">
+      <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,8" Padding="12,10">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Left" Text="{Binding Label}" Width="150" VerticalAlignment="Center"
+                     TextWrapping="Wrap" Margin="0,0,12,0" FontSize="14"/>
+          <ItemsControl ItemsSource="{Binding Cells}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><UniformGrid Rows="1"/></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Margin="0,0,10,0">
+                  <TextBlock Text="{Binding Caption}" Style="{StaticResource Caption}"/>
+                  <TextBox Text="{Binding Field.Value, UpdateSourceTrigger=PropertyChanged}"
+                           BorderThickness="2"
+                           BorderBrush="{Binding Field.Changed, Converter={StaticResource ChangedToBrush}}"
+                           Visibility="{Binding Field.Kind, Converter={StaticResource KindMatch},
+                                                ConverterParameter=!Boolean}"/>
+                  <CheckBox IsChecked="{Binding Field.IsOn, Mode=TwoWay}" Content="はい" Foreground="#DDE2E8"
+                            Margin="0,4,0,0"
+                            Visibility="{Binding Field.Kind, Converter={StaticResource KindMatch},
+                                                 ConverterParameter=Boolean}"/>
+                  <TextBlock DataContext="{Binding Field}" Style="{StaticResource ErrorText}"/>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </DockPanel>
+      </Border>
+    </DataTemplate>
+
+    <!-- 作品一覧の1件 -->
+    <DataTemplate x:Key="WorkTemplate">
+      <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,6" Padding="10,8">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Margin="0,0,10,0" VerticalAlignment="Center">
+            <Button Content="↑" Click="WorkUpClick" Tag="{Binding}" Width="30" Padding="0,3"/>
+            <Button Content="↓" Click="WorkDownClick" Tag="{Binding}" Width="30" Padding="0,3"/>
+            <Button Content="✕" Click="WorkDeleteClick" Tag="{Binding}" Width="30" Padding="0,3"
+                    ToolTip="この作品を一覧から外します"/>
+          </StackPanel>
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="130"/>
+                <ColumnDefinition Width="260"/>
+              </Grid.ColumnDefinitions>
+              <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                <TextBlock Text="タイトル" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                <TextBlock Text="投稿日" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding PublishedAt, UpdateSourceTrigger=PropertyChanged}"/>
+              </StackPanel>
+              <StackPanel Grid.Column="2">
+                <TextBlock Text="YouTubeのURL" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding YouTubeUrl, UpdateSourceTrigger=PropertyChanged}"/>
+              </StackPanel>
+            </Grid>
+            <TextBlock Foreground="#FF8A8A" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
+                       Text="{Binding Error}"
+                       Visibility="{Binding Error, Converter={StaticResource TextToVisibility}}"/>
+          </StackPanel>
+        </DockPanel>
       </Border>
     </DataTemplate>
 
@@ -175,6 +246,32 @@
         </DockPanel>
       </TabItem>
 
+      <TabItem Header="作品一覧">
+        <DockPanel Margin="4,10,4,0">
+          <TextBlock x:Name="WorksNote" DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap"
+                     Margin="2,0,2,10"
+                     Text="分類を選んで、作品の追加・並べ替え・削除ができます。新しい作品は一番下に足されます。"/>
+          <DockPanel DockPanel.Dock="Top" Margin="2,0,10,10">
+            <TextBlock Text="分類" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#AEB8C3"/>
+            <Button DockPanel.Dock="Right" Content="この分類に作品を追加" Click="WorkAddClick" Padding="14,5"/>
+            <ComboBox x:Name="CategoryPicker" MinWidth="240" SelectionChanged="CategoryPickerChanged"/>
+          </DockPanel>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="WorkItems" ItemTemplate="{StaticResource WorkTemplate}" Margin="2,0,10,10"/>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="リンク">
+        <DockPanel Margin="4,10,4,0">
+          <TextBlock x:Name="LinkNote" DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap"
+                     Margin="2,0,2,10"/>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="LinkItems" ItemTemplate="{StaticResource RowTemplate}" Margin="2,0,10,10"/>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
       <TabItem Header="トップページ">
         <DockPanel Margin="4,10,4,0">
           <TextBlock x:Name="TopNote" DockPanel.Dock="Top" Foreground="#AEB8C3"
@@ -193,6 +290,26 @@
                 </StackPanel>
               </Border>
             </StackPanel>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="はるかくらぶ" x:Name="ClubTab">
+        <DockPanel Margin="4,10,4,0">
+          <TextBlock x:Name="ClubNote" DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap"
+                     Margin="2,0,2,10"/>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="ClubItems" ItemTemplate="{StaticResource RowTemplate}" Margin="2,0,10,10"/>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="うたまぜ！" x:Name="UtamazeTab">
+        <DockPanel Margin="4,10,4,0">
+          <TextBlock x:Name="UtamazeNote" DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap"
+                     Margin="2,0,2,10"/>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="UtamazeItems" ItemTemplate="{StaticResource RowTemplate}" Margin="2,0,10,10"/>
           </ScrollViewer>
         </DockPanel>
       </TabItem>

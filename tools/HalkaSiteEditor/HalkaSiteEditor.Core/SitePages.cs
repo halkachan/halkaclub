@@ -32,6 +32,9 @@ public static class SitePages
         var wanted = groupTitle switch
         {
             "依頼ページ" => "/commission/",
+            "作品一覧" => "/works/",
+            "はるかくらぶ" => "/club/",
+            "うたまぜ！" => "/utamaze/",
             _ => "/",
         };
         return pages.FirstOrDefault(page => page.Url == wanted) ?? pages.FirstOrDefault();

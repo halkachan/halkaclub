@@ -11,6 +11,10 @@ public enum FieldKind
     CssColor,
     /// <summary>YouTubeの動画URL。</summary>
     YouTubeUrl,
+    /// <summary>リンク先（http(s) か、サイト内の相対パス）。</summary>
+    Url,
+    /// <summary>true / false。画面ではチェックボックスになります。</summary>
+    Boolean,
 }
 
 /// <summary>画面の入力欄1つ。ファイル内の1か所と結びついています。</summary>
@@ -51,6 +55,7 @@ public sealed class EditField : INotifyPropertyChanged
             Raise();
             Raise(nameof(Changed));
             Raise(nameof(SwatchHex));
+            Raise(nameof(IsOn));
         }
     }
 
@@ -80,8 +85,17 @@ public sealed class EditField : INotifyPropertyChanged
         FieldKind.YouTubeUrl => YouTubeUrl.ExtractId(candidate) is null
             ? "YouTubeのURLとして読み取れません（youtu.be / watch?v= / shorts のいずれか）。"
             : null,
+        FieldKind.Url => LinkUrl.Validate(candidate),
+        FieldKind.Boolean => candidate is "true" or "false" ? null : "true か false を入れてください。",
         _ => HtmlText.Validate(candidate),
     };
+
+    /// <summary>チェックボックス用。true/false の欄だけ意味があります。</summary>
+    public bool IsOn
+    {
+        get => Value == "true";
+        set => Value = value ? "true" : "false";
+    }
 
     /// <summary>入力値をファイルの文字列へ反映します（保存はまだしません）。</summary>
     internal void Apply()
@@ -130,6 +144,21 @@ public sealed class FieldPair
     }
 }
 
+/// <summary>見出し付きの1行に、名前のついた入力欄をいくつか並べたもの（リンク1枚ぶんなど）。</summary>
+public sealed record FieldCell(string Caption, EditField Field, double Width = 0);
+
+public sealed class FieldRow
+{
+    public string Label { get; }
+    public IReadOnlyList<FieldCell> Cells { get; }
+
+    public FieldRow(string label, params FieldCell[] cells)
+    {
+        Label = label;
+        Cells = cells;
+    }
+}
+
 /// <summary>画面のひとかたまり（タブ1枚ぶん）。</summary>
 public sealed class EditGroup
 {
@@ -137,13 +166,16 @@ public sealed class EditGroup
     public string Note { get; }
     public IReadOnlyList<EditField> Fields { get; }
     public IReadOnlyList<FieldPair> Pairs { get; }
+    public IReadOnlyList<FieldRow> Rows { get; }
 
-    public EditGroup(string title, string note, IReadOnlyList<EditField> fields, IReadOnlyList<FieldPair>? pairs = null)
+    public EditGroup(string title, string note, IReadOnlyList<EditField> fields,
+        IReadOnlyList<FieldPair>? pairs = null, IReadOnlyList<FieldRow>? rows = null)
     {
         Title = title;
         Note = note;
         Fields = fields;
         Pairs = pairs ?? Array.Empty<FieldPair>();
+        Rows = rows ?? Array.Empty<FieldRow>();
     }
 }
 

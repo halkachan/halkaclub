@@ -113,6 +113,27 @@ public static class PriceText
     }
 }
 
+/// <summary>リンク先として書ける値かどうか。http(s) か、サイト内の相対パスを認めます。</summary>
+public static class LinkUrl
+{
+    public static string? Validate(string? value)
+    {
+        var text = value?.Trim();
+        if (string.IsNullOrEmpty(text)) return "リンク先を入れてください。";
+        if (text.Contains('"') || text.Contains('<') || text.Contains('>')) return "\" < > は使えません。";
+
+        if (text.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            text.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return Uri.TryCreate(text, UriKind.Absolute, out _) ? null : "URLとして読み取れません。";
+        }
+
+        // サイト内のページ（commission/ や works/index.html など）。
+        if (text.Contains(' ')) return "空白は使えません。";
+        return null;
+    }
+}
+
 /// <summary>HTMLの文字列として、そのまま埋めても壊れない値かどうか。</summary>
 public static class HtmlText
 {

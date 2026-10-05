@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using System.Text.Json;
@@ -78,13 +79,20 @@ public partial class MainWindow : Window
         var commission = session.Groups.Single(group => group.Title == "依頼ページ");
         var top = session.Groups.Single(group => group.Title == "トップページ");
         var colors = session.Groups.Single(group => group.Title == "サイトの基本色");
+        var links = session.Groups.Single(group => group.Title == "リンク");
 
         CommissionNote.Text = commission.Note;
         TopNote.Text = top.Note;
         ColorNote.Text = colors.Note;
+        LinkNote.Text = links.Note;
 
         CommissionItems.ItemsSource = commission.Pairs;
         ColorItems.ItemsSource = colors.Fields;
+        LinkItems.ItemsSource = links.Rows;
+
+        BindOptionalGroup("はるかくらぶ", ClubTab, ClubNote, ClubItems);
+        BindOptionalGroup("うたまぜ！", UtamazeTab, UtamazeNote, UtamazeItems);
+        BindWorks();
 
         videoField = top.Fields.Single();
         VideoLabel.Text = videoField.Label;
@@ -98,6 +106,7 @@ public partial class MainWindow : Window
 
         UpdateVideoPreview();
         RefreshChanges();
+        // ここから下は読み込み後の表示だけなので、順番に意味はありません。
         StatusText.Text = $"読み込みました。{session.Fields.Count()} 項目を編集できます。";
 
         StartPreview(root);
@@ -235,6 +244,81 @@ public partial class MainWindow : Window
             RefreshChanges();
     }
 
+    /// <summary>サイトに無ければタブごと隠します（くらぶ・うたまぜ）。</summary>
+    private void BindOptionalGroup(string title, TabItem tab, TextBlock note, ItemsControl items)
+    {
+        var group = session?.Groups.FirstOrDefault(candidate => candidate.Title == title);
+        if (group == null)
+        {
+            tab.Visibility = Visibility.Collapsed;
+            return;
+        }
+        tab.Visibility = Visibility.Visible;
+        note.Text = group.Note;
+        items.ItemsSource = group.Rows;
+    }
+
+    // --- 作品一覧 -----------------------------------------------------------
+
+    private void BindWorks()
+    {
+        if (session == null) return;
+
+        CategoryPicker.ItemsSource = session.Works.Categories;
+        CategoryPicker.SelectedIndex = 0;
+
+        foreach (var category in session.Works.Categories)
+        {
+            category.Works.CollectionChanged += WorksCollectionChanged;
+            foreach (var work in category.Works) work.PropertyChanged += WorkChanged;
+        }
+    }
+
+    private void WorksCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+            foreach (WorkItem work in e.NewItems) work.PropertyChanged += WorkChanged;
+        if (e.OldItems != null)
+            foreach (WorkItem work in e.OldItems) work.PropertyChanged -= WorkChanged;
+        RefreshChanges();
+    }
+
+    private void WorkChanged(object? sender, PropertyChangedEventArgs e) => RefreshChanges();
+
+    private WorkCategory? SelectedCategory => CategoryPicker?.SelectedItem as WorkCategory;
+
+    private void CategoryPickerChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (WorkItems == null) return;
+        WorkItems.ItemsSource = SelectedCategory?.Works;
+    }
+
+    private void WorkAddClick(object sender, RoutedEventArgs e)
+    {
+        var category = SelectedCategory;
+        if (category == null) return;
+        category.AddNew();
+        StatusText.Text = "一番下に作品を足しました。タイトルと投稿日とURLを入れてください。";
+    }
+
+    private void WorkUpClick(object sender, RoutedEventArgs e) => MoveWork(sender, -1);
+
+    private void WorkDownClick(object sender, RoutedEventArgs e) => MoveWork(sender, 1);
+
+    private void MoveWork(object sender, int offset)
+    {
+        if (((FrameworkElement)sender).Tag is WorkItem work) SelectedCategory?.Move(work, offset);
+    }
+
+    private void WorkDeleteClick(object sender, RoutedEventArgs e)
+    {
+        if (((FrameworkElement)sender).Tag is not WorkItem work) return;
+        var answer = MessageBox.Show(this, $"「{work.Title}」を一覧から外します。よろしいですか？",
+            "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.OK) return;
+        SelectedCategory?.Works.Remove(work);
+    }
+
     private void RefreshChanges()
     {
         if (session == null) return;
@@ -243,8 +327,9 @@ public partial class MainWindow : Window
         ChangeList.ItemsSource = changes;
         ChangeCountText.Text = changes.Count == 0 ? "" : $"{changes.Count} 件";
 
-        var errors = session.Fields.Count(field => field.HasError);
-        SaveButton.IsEnabled = session.HasChanges && errors == 0;
+        var errors = session.Fields.Count(field => field.HasError)
+            + session.Works.Categories.Sum(category => category.Works.Count(work => work.HasError));
+        SaveButton.IsEnabled = session.HasChanges && !session.HasError;
         RevertButton.IsEnabled = session.HasChanges;
 
         StatusText.Text = errors > 0
@@ -339,6 +424,7 @@ public partial class MainWindow : Window
         if (answer != MessageBoxResult.OK) return;
 
         session.Revert();
+        BindWorks();   // 元に戻すと作品の一覧は作り直されるので、つなぎ直します。
         RefreshChanges();
         UpdateVideoPreview();
     }

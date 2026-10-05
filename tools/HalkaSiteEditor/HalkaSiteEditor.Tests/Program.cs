@@ -26,6 +26,8 @@ static void CopySite(string from, string to)
              {
                  "CNAME", "index.html", "style.css", "script.js",
                  "commission/index.html", "commission/en/index.html",
+                 "works/index.html", "works/works-data.js",
+                 "club/index.html", "utamaze/version.json",
              })
     {
         var source = Path.Combine(from, relative.Replace('/', Path.DirectorySeparatorChar));
@@ -171,6 +173,82 @@ Check("誤りがあるまま保存しない", Throws(() =>
     broken.Save();
 }));
 
+// --- v0.3：リンク・くらぶ・うたまぜ・作品一覧 -----------------------------
+
+var fresh = SiteSession.Load(sandbox);
+var links = fresh.Groups.Single(group => group.Title == "リンク");
+var club = fresh.Groups.Single(group => group.Title == "はるかくらぶ");
+var utamaze = fresh.Groups.Single(group => group.Title == "うたまぜ！");
+
+Check("リンクを名前・説明・リンク先の組で読む",
+    links.Rows.Count >= 10 && links.Fields.Count == links.Rows.Count * 3 &&
+    links.Rows.All(row => row.Cells.Count == 3) &&
+    links.Rows.Any(row => row.Label == "YouTube") &&
+    links.Rows.Single(row => row.Label == "YouTube").Cells[2].Field.Value.StartsWith("https://"));
+Check("サイト内の相対パスもリンク先として認める",
+    LinkUrl.Validate("commission/") == null && LinkUrl.Validate("https://example.com") == null &&
+    LinkUrl.Validate("") != null && LinkUrl.Validate("a b") != null && LinkUrl.Validate("\"") != null);
+
+Check("くらぶの更新日とKoofrを読む",
+    club.Fields.Count == 2 &&
+    System.Text.RegularExpressions.Regex.IsMatch(club.Fields[0].Value, @"^\d{4}/\d{2}/\d{2}$") &&
+    club.Fields[1].Value.Contains("k00.fr"));
+
+var released = utamaze.Fields.Single(field => field.Id == "utamaze.released");
+Check("うたまぜの版と公開状態を読む",
+    utamaze.Fields.Count == 4 && released.Value is "true" or "false" &&
+    utamaze.Fields.Single(field => field.Id == "utamaze.latest_version").Value.Length > 0);
+released.IsOn = !released.IsOn;
+Check("チェックで true/false が入れ替わる", released.Value is "true" or "false" && released.Changed);
+released.Revert();
+
+var works = fresh.Works;
+var utattemita = works.Categories.First();
+Check("作品一覧を分類ごとに読む",
+    works.Categories.Count == 4 && utattemita.Name == "歌ってみた" && utattemita.Works.Count > 5 &&
+    works.Categories.All(category => category.Works.All(work => !work.HasError)));
+Check("読んだだけなら1文字も変わらない", works.Serialize() == File.ReadAllText(Path.Combine(sandbox, "works", "works-data.js")));
+Check("最初は変更なし", !works.HasChanges && !fresh.HasChanges);
+
+var firstTitle = utattemita.Works[0].Title;
+utattemita.Move(utattemita.Works[0], 1);
+Check("並べ替えられる", utattemita.Works[1].Title == firstTitle && works.HasChanges &&
+    works.Changes().Single().Label.Contains("並び順"));
+utattemita.Move(utattemita.Works[1], -1);
+Check("戻せる", utattemita.Works[0].Title == firstTitle && !works.HasChanges);
+
+var added = works.Categories.Last().AddNew();
+added.Title = "てすと作品";
+added.PublishedAt = "2026-10-06";
+Check("追加した直後はURLが空で誤り", added.HasError && works.HasError && fresh.HasError);
+added.YouTubeUrl = "https://youtu.be/RFQw7HejNZ0";
+Check("URLを入れれば直る", !added.HasError && !works.HasError &&
+    works.Changes().Any(row => row.Label.Contains("追加") && row.After == "てすと作品"));
+
+fresh.Save();
+var afterWorks = SiteSession.Load(sandbox).Works;
+Check("追加した作品が読み直せる",
+    afterWorks.Categories.Last().Works.Last().Title == "てすと作品" &&
+    afterWorks.Categories.Last().Works.Last().YouTubeUrl == "https://youtu.be/RFQw7HejNZ0");
+Check("書き戻しても分類の説明やコメントは残る",
+    File.ReadAllText(Path.Combine(sandbox, "works", "works-data.js")).Contains("// works/works-data.js") &&
+    File.ReadAllText(Path.Combine(sandbox, "works", "works-data.js")).Contains("description: \"はぐれもの\""));
+
+var removing = afterWorks.Categories.Last();
+removing.Works.Remove(removing.Works.Last());
+Check("削除が変更一覧に出る",
+    afterWorks.Changes().Any(row => row.Label.Contains("削除") && row.Before == "てすと作品"));
+
+Check("タイトルの \" は壊さずに書き戻せる", RoundTripTitle(sandbox, "引用\"つき\\バックスラッシュ"));
+
+static bool RoundTripTitle(string root, string title)
+{
+    var session = SiteSession.Load(root);
+    session.Works.Categories.First().Works[0].Title = title;
+    session.Save();
+    return SiteSession.Load(root).Works.Categories.First().Works[0].Title == title;
+}
+
 // --- プレビュー用サーバー -------------------------------------------------
 
 Check("URLから実ファイルへ",
@@ -180,14 +258,14 @@ Check("URLから実ファイルへ",
     PreviewServer.ResolveFile(sandbox, "/style.css") == Path.Combine(sandbox, "style.css"));
 Check("無いものは配らない",
     PreviewServer.ResolveFile(sandbox, "/nothing.html") == null &&
-    PreviewServer.ResolveFile(sandbox, "/works/") == null);
+    PreviewServer.ResolveFile(sandbox, "/game/") == null);
 Check("フォルダーの外へは出られない",
     PreviewServer.ResolveFile(sandbox, "/../../windows/win.ini") == null &&
     PreviewServer.ResolveFile(sandbox, "/commission/../../..") == null);
 
 Check("出せるページだけ並べる",
     SitePages.ForSite(sandbox).Select(page => page.Url).SequenceEqual(
-        new[] { "/", "/commission/", "/commission/en/" }));
+        new[] { "/", "/commission/", "/commission/en/", "/works/", "/club/" }));
 Check("タブに合うページを選ぶ",
     SitePages.ForGroup(SitePages.ForSite(sandbox), "依頼ページ")!.Url == "/commission/" &&
     SitePages.ForGroup(SitePages.ForSite(sandbox), "サイトの基本色")!.Url == "/");

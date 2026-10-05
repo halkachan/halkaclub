@@ -34,6 +34,21 @@ public sealed class TextToVisibilityConverter : IValueConverter
         throw new NotSupportedException();
 }
 
+/// <summary>欄の種類が ConverterParameter と同じときだけ表示します。</summary>
+public sealed class KindMatchConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var matches = string.Equals(value?.ToString(), parameter?.ToString(), StringComparison.Ordinal);
+        var wantMatch = !string.Equals(parameter?.ToString(), "!Boolean", StringComparison.Ordinal);
+        if (!wantMatch) matches = !string.Equals(value?.ToString(), "Boolean", StringComparison.Ordinal);
+        return matches ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
 /// <summary>変更があった欄だけ色を変えます。</summary>
 public sealed class ChangedToBrushConverter : IValueConverter
 {
