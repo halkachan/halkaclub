@@ -319,6 +319,49 @@ h1{margin:18px 0 20px;line-height:.9}
 footer{background:var(--bg);color:#767d85;border-top:1px solid #2b2e33}
 .footer-inner{height:88px;display:flex;align-items:center;justify-content:space-between;font-size:10px}
 
+/* ---- 購入条件の案内・規約へのリンク ---- */
+.plan-legal{margin:12px 0 0;color:#9aa1a8;font-size:11px;line-height:1.7}
+.plan-legal a{color:var(--mint2);text-decoration:underline;text-underline-offset:2px}
+.note-link{color:#1f8f71;font-weight:700;text-decoration:underline;text-underline-offset:2px}
+.footer-legal{display:flex;flex-wrap:wrap;gap:8px 22px;padding:26px 0 0;font-size:12px}
+.footer-legal a{color:#aab0b7}
+.footer-legal a:hover{color:white}
+.footer-legal + .footer-inner{height:auto;padding:16px 0 28px}
+
+/* ---- 規約のページ（特定商取引法に基づく表記・使用許諾契約・プライバシーポリシー）---- */
+.header-nav a[aria-current="page"]{background:#24272c;color:white}
+.doc{width:min(840px,calc(100% - 44px));margin-inline:auto;padding:52px 0 90px}
+.doc-back{
+  display:inline-flex;align-items:center;padding:7px 14px;
+  border:1px solid #d9dcdf;border-radius:999px;background:white;
+  color:#4d535a;font-size:12px;font-weight:700;
+}
+.doc-back:hover{border-color:var(--mint)}
+.doc-head{margin:30px 0 26px}
+.doc-title{margin:6px 0 12px;font-size:clamp(28px,4.4vw,44px);line-height:1.25;letter-spacing:-.04em}
+.doc-lead{margin:0;color:#5d6664;font-size:14px;line-height:1.9}
+.doc-card{background:white;border:1px solid #d9dcdf;border-radius:var(--radius);padding:6px 32px}
+.doc-table{margin:0}
+.doc-row{display:grid;grid-template-columns:190px 1fr;gap:22px;padding:20px 0;border-bottom:1px solid #eceef0}
+.doc-row:last-child{border-bottom:0}
+.doc-row dt{font-size:13px;font-weight:800;color:#2a2d31;line-height:1.8}
+.doc-row dd{margin:0;font-size:14px;line-height:1.9;color:#3d4248}
+.doc-row dd p{margin:0}
+.doc-row dd p + p{margin-top:8px}
+.doc-section{padding:26px 0;border-bottom:1px solid #eceef0}
+.doc-section:last-child{border-bottom:0}
+.doc-section h2{margin:0 0 10px;font-size:17px;line-height:1.5;letter-spacing:0}
+.doc-section h3{margin:18px 0 6px;font-size:14px;color:#1f8f71}
+.doc-section p{margin:0;font-size:14px;line-height:1.95;color:#3d4248}
+.doc-section p + p{margin-top:10px}
+.doc ul,.doc ol{margin:6px 0 0;padding-left:1.4em;font-size:14px;line-height:1.9;color:#3d4248}
+.doc li + li{margin-top:4px}
+.doc li ul{margin-top:6px}
+.doc ul + p,.doc ol + p{margin-top:10px}
+.doc .inline{color:#1f8f71;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.doc-note{color:#7d838a;font-size:12px !important}
+.doc-date{margin:24px 4px 0;text-align:right;color:#6b7178;font-size:13px}
+
 @media (max-width:900px){
   .header-nav{display:none}
   .hero{grid-template-columns:1fr;padding-top:58px;gap:45px}
@@ -354,4 +397,8 @@ footer{background:var(--bg);color:#767d85;border-top:1px solid #2b2e33}
   .plan-card h3{font-size:24px}
   .faq-item{padding:0 16px}
   .contact-box{grid-template-columns:1fr;padding:26px 22px}
+  .doc{width:calc(100% - 24px);padding:34px 0 64px}
+  .doc-card{padding:2px 20px}
+  .doc-row{grid-template-columns:1fr;gap:4px;padding:16px 0}
+  .doc-section{padding:22px 0}
 }
