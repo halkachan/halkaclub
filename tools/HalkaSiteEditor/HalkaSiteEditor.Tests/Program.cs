@@ -171,5 +171,59 @@ Check("誤りがあるまま保存しない", Throws(() =>
     broken.Save();
 }));
 
+// --- プレビュー用サーバー -------------------------------------------------
+
+Check("URLから実ファイルへ",
+    PreviewServer.ResolveFile(sandbox, "/") == Path.Combine(sandbox, "index.html") &&
+    PreviewServer.ResolveFile(sandbox, "/commission/") == Path.Combine(sandbox, "commission", "index.html") &&
+    PreviewServer.ResolveFile(sandbox, "/commission/en/") == Path.Combine(sandbox, "commission", "en", "index.html") &&
+    PreviewServer.ResolveFile(sandbox, "/style.css") == Path.Combine(sandbox, "style.css"));
+Check("無いものは配らない",
+    PreviewServer.ResolveFile(sandbox, "/nothing.html") == null &&
+    PreviewServer.ResolveFile(sandbox, "/works/") == null);
+Check("フォルダーの外へは出られない",
+    PreviewServer.ResolveFile(sandbox, "/../../windows/win.ini") == null &&
+    PreviewServer.ResolveFile(sandbox, "/commission/../../..") == null);
+
+Check("出せるページだけ並べる",
+    SitePages.ForSite(sandbox).Select(page => page.Url).SequenceEqual(
+        new[] { "/", "/commission/", "/commission/en/" }));
+Check("タブに合うページを選ぶ",
+    SitePages.ForGroup(SitePages.ForSite(sandbox), "依頼ページ")!.Url == "/commission/" &&
+    SitePages.ForGroup(SitePages.ForSite(sandbox), "サイトの基本色")!.Url == "/");
+
+using (var server = new PreviewServer(sandbox))
+{
+    server.Start();
+    using var http = new HttpClient { BaseAddress = new Uri(server.BaseUrl) };
+
+    var home = http.GetAsync("/").Result;
+    var homeBody = home.Content.ReadAsStringAsync().Result;
+    Check("トップを配る", server.IsRunning && home.IsSuccessStatusCode &&
+        homeBody.Contains("<html") && home.Content.Headers.ContentType?.MediaType == "text/html");
+
+    var css = http.GetAsync("/style.css").Result;
+    Check("CSSを正しい種類で配る", css.IsSuccessStatusCode &&
+        css.Content.Headers.ContentType?.MediaType == "text/css" &&
+        css.Content.ReadAsStringAsync().Result.Contains("--paper"));
+
+    var page = http.GetAsync("/commission/").Result;
+    Check("下の階層のページも配る", page.IsSuccessStatusCode &&
+        page.Content.ReadAsStringAsync().Result.Contains("依頼一覧"));
+
+    Check("キャッシュさせない", home.Headers.CacheControl?.NoStore == true);
+    Check("無いURLは404", http.GetAsync("/nothing.html").Result.StatusCode == System.Net.HttpStatusCode.NotFound);
+    Check("外へ出るURLは配らない",
+        http.GetAsync("/../../../../Windows/win.ini").Result.StatusCode != System.Net.HttpStatusCode.OK);
+
+    // 保存したものがすぐ見えること（キャッシュさせていないので、次のGETで変わります）。
+    var swap = SiteSession.Load(sandbox);
+    swap.Groups.Single(group => group.Title == "サイトの基本色")
+        .Fields.Single(field => field.Label.StartsWith("黄色")).Value = "#00ff00";
+    swap.Save();
+    Check("保存した内容がすぐ出る",
+        http.GetAsync("/style.css").Result.Content.ReadAsStringAsync().Result.Contains("--yellow: #00ff00;"));
+}
+
 Directory.Delete(sandbox, recursive: true);
 Console.WriteLine($"\n{passes} passed");

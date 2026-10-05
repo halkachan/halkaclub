@@ -7,6 +7,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using HalkaSiteEditor.Core;
+using Microsoft.Web.WebView2.Core;
 using Microsoft.Win32;
 
 namespace HalkaSiteEditor;
@@ -18,6 +19,9 @@ public partial class MainWindow : Window
         public string SiteRoot { get; set; } = "";
     }
 
+    /// <summary>PC側プレビューで再現する画面の横幅（CSSピクセル）。</summary>
+    private const double DesktopPreviewWidth = 1280;
+
     private static readonly Brush ChangedBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xCB, 0x75));
     private static readonly Brush QuietBrush = new SolidColorBrush(Color.FromRgb(0x58, 0x61, 0x70));
 
@@ -27,6 +31,8 @@ public partial class MainWindow : Window
 
     private SiteSession? session;
     private EditField? videoField;
+    private PreviewServer? previewServer;
+    private bool previewReady;
 
     public MainWindow() => InitializeComponent();
 
@@ -34,6 +40,10 @@ public partial class MainWindow : Window
 
     private void WindowLoaded(object sender, RoutedEventArgs e)
     {
+        // XAMLに書いた初期状態は、読み込み中のイベントでは反映できないのでここで1回入れ直します。
+        ApplyPreviewMode();
+        PreviewToggled(this, new RoutedEventArgs());
+
         var saved = LoadSettings().SiteRoot;
         var root = !string.IsNullOrEmpty(saved) && SitePaths.IsSiteRoot(saved)
             ? saved
@@ -89,6 +99,134 @@ public partial class MainWindow : Window
         UpdateVideoPreview();
         RefreshChanges();
         StatusText.Text = $"読み込みました。{session.Fields.Count()} 項目を編集できます。";
+
+        StartPreview(root);
+    }
+
+    // --- プレビュー ---------------------------------------------------------
+
+    private void StartPreview(string root)
+    {
+        previewServer?.Dispose();
+        previewServer = null;
+        previewReady = false;
+
+        try
+        {
+            previewServer = new PreviewServer(root);
+            previewServer.Start();
+        }
+        catch (Exception error)
+        {
+            PreviewNote.Text = "プレビュー用のサーバーを開始できませんでした：" + error.Message;
+            return;
+        }
+
+        var pages = SitePages.ForSite(root);
+        PagePicker.ItemsSource = pages;
+        PagePicker.SelectedItem = SitePages.ForGroup(pages, CurrentGroupTitle());
+
+        _ = InitializePreviewAsync();
+    }
+
+    private async Task InitializePreviewAsync()
+    {
+        if (previewReady) { NavigatePreview(); return; }
+
+        try
+        {
+            // ユーザーデータはEXEの隣ではなく、いつもの場所へ置きます。
+            var folder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "HalkaSiteEditor", "WebView2");
+            var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: folder);
+            await DesktopView.EnsureCoreWebView2Async(environment);
+            await MobileView.EnsureCoreWebView2Async(environment);
+        }
+        catch (Exception error)
+        {
+            PreviewNote.Text =
+                "プレビューを表示できません。WebView2 ランタイムが必要です（Windows 11 なら通常は入っています）。\n" +
+                error.Message;
+            return;
+        }
+
+        previewReady = true;
+        MobileView.ZoomFactor = 1;
+        ApplyDesktopZoom();
+        NavigatePreview();
+    }
+
+    private string CurrentGroupTitle() => (Tabs.SelectedItem as TabItem)?.Header as string ?? "";
+
+    private void NavigatePreview()
+    {
+        if (!previewReady || previewServer == null || !previewServer.IsRunning) return;
+        if (PagePicker.SelectedItem is not SitePage page) return;
+
+        var target = new Uri(previewServer.BaseUrl.TrimEnd('/') + page.Url);
+        foreach (var view in new[] { DesktopView, MobileView })
+        {
+            if (view.Source == target) view.CoreWebView2?.Reload();
+            else view.Source = target;
+        }
+    }
+
+    private void RefreshPreview()
+    {
+        if (!previewReady) return;
+        DesktopView.CoreWebView2?.Reload();
+        MobileView.CoreWebView2?.Reload();
+    }
+
+    private void ApplyDesktopZoom()
+    {
+        if (!previewReady || DesktopView.ActualWidth < 1) return;
+        var zoom = Math.Clamp(DesktopView.ActualWidth / DesktopPreviewWidth, 0.25, 1.0);
+        DesktopView.ZoomFactor = zoom;
+        DesktopCaption.Text = $"PC（{DesktopPreviewWidth:0}px 相当・{zoom * 100:0}% 表示）";
+    }
+
+    private void DesktopViewSizeChanged(object sender, SizeChangedEventArgs e) => ApplyDesktopZoom();
+
+    private void PreviewModeChanged(object sender, RoutedEventArgs e) => ApplyPreviewMode();
+
+    /// <summary>
+    /// 表示（両方／PCのみ／スマホのみ）を画面へ反映します。
+    /// XAMLを読んでいる途中にも Checked が飛んでくるため、そのときは何もせず、
+    /// 画面ができあがってから WindowLoaded で1回呼び直します。
+    /// </summary>
+    private void ApplyPreviewMode()
+    {
+        if (DesktopBox == null || MobileBox == null) return;
+
+        DesktopBox.Visibility = ShowMobile.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
+        MobileBox.Visibility = ShowDesktop.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
+        ApplyDesktopZoom();
+    }
+
+    private void PagePickerChanged(object sender, SelectionChangedEventArgs e) => NavigatePreview();
+
+    private void RefreshPreviewClick(object sender, RoutedEventArgs e) => RefreshPreview();
+
+    private void TabChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // XAMLを読んでいる途中にも飛んでくるので、部品が揃うまでは何もしません。
+        if (PagePicker == null || !ReferenceEquals(e.OriginalSource, Tabs)) return;
+        if (PagePicker.ItemsSource is not IReadOnlyList<SitePage> pages) return;
+        var wanted = SitePages.ForGroup(pages, CurrentGroupTitle());
+        if (wanted != null && !ReferenceEquals(PagePicker.SelectedItem, wanted)) PagePicker.SelectedItem = wanted;
+    }
+
+    private void PreviewToggled(object sender, RoutedEventArgs e)
+    {
+        // IsChecked="True" の指定で、XAMLを読んでいる途中にも飛んできます。
+        if (PreviewPanel == null || PreviewSplitter == null || PreviewColumn == null) return;
+
+        var show = PreviewToggle.IsChecked == true;
+        PreviewPanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        PreviewSplitter.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        PreviewColumn.Width = show ? new GridLength(860) : new GridLength(0);
     }
 
     private void FieldChanged(object? sender, PropertyChangedEventArgs e)
@@ -189,7 +327,8 @@ public partial class MainWindow : Window
 
         RefreshChanges();
         UpdateVideoPreview();
-        StatusText.Text = $"{changes.Count} 件を保存しました。ブラウザで確認してから、GitHub Desktop でコミットしてください。";
+        RefreshPreview();
+        StatusText.Text = $"{changes.Count} 件を保存しました。右のプレビューで確かめてから、GitHub Desktop でコミットしてください。";
     }
 
     private void RevertClick(object sender, RoutedEventArgs e)
@@ -242,10 +381,15 @@ public partial class MainWindow : Window
 
     private void WindowClosing(object sender, CancelEventArgs e)
     {
-        if (session == null || !session.HasChanges) return;
-        var answer = MessageBox.Show(this, "保存していない変更があります。閉じてよろしいですか？",
-            "確認", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
-        if (answer != MessageBoxResult.OK) e.Cancel = true;
+        if (session != null && session.HasChanges)
+        {
+            var answer = MessageBox.Show(this, "保存していない変更があります。閉じてよろしいですか？",
+                "確認", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+            if (answer != MessageBoxResult.OK) { e.Cancel = true; return; }
+        }
+
+        previewServer?.Dispose();
+        previewServer = null;
     }
 
     // --- 設定 ---------------------------------------------------------------
