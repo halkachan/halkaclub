@@ -14,15 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.WorldObjectDefinition
   stableId: bench_basic
   displayName: "\u30D9\u30F3\u30C1"
-  previewSprite: {fileID: 0}
+  previewSprite: {fileID: 21300000, guid: a30335fd0b1d4eb2b117457f389316e5, type: 3}
   examineMessage:
   rootedArtwork: 0
   clickColliderSize: {x: 0.5, y: 0.5}
-  footprint: {x: 0, y: 0}
-  blockedCellOffsets: []
+  footprint: {x: 2, y: 1}
+  blockedCellOffsets:
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
   actionPoints:
   - id: seat_left
-    playerCellOffset: {x: -1, y: -1}
+    playerCellOffset: {x: 0, y: -1}
     playerFacing: 0
     actionType: 2
     poseKey: bench_sit
@@ -33,7 +35,7 @@ MonoBehaviour:
     actionType: 2
     poseKey: bench_sit
     interactionText:
-  rootAnchor: bottom-center
+  rootAnchor: bottom-left
   behavior: 2
   blocksMovement: 1
   excludesGrass: 1

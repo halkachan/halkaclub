@@ -1,0 +1,152 @@
+[
+  {
+    "source": "SourceGeneratedArt\\map_editor_v04_objects\\cushion_imagegen_source.png",
+    "sourceSha256": "26f4befa6eacac835628e1e58afc3a17e58a81b107f241b029b5744702794e79",
+    "sourceSize": [
+      1254,
+      1254
+    ],
+    "sourceOpaqueCrop": [
+      374,
+      440,
+      882,
+      886
+    ],
+    "output": "Assets\\Content\\World\\cushion.png",
+    "outputSha256": "bb301d941af4ef9c7158304568bc65cf1f80f85794ea890ca9a74a0c09b4306d",
+    "canvasSize": [
+      32,
+      32
+    ],
+    "contentSize": [
+      28,
+      25
+    ],
+    "foregroundColors": 9,
+    "opaquePixels": 623,
+    "alphaValues": [
+      0,
+      255
+    ]
+  },
+  {
+    "source": "SourceGeneratedArt\\map_editor_v04_objects\\desk_imagegen_source.png",
+    "sourceSha256": "004dcb480dc5ac7bfed5950b54967438c945f2a0332977185c7675875989da31",
+    "sourceSize": [
+      1774,
+      887
+    ],
+    "sourceOpaqueCrop": [
+      304,
+      203,
+      1471,
+      748
+    ],
+    "output": "Assets\\Content\\World\\desk.png",
+    "outputSha256": "690b14065d7e78c8631e45a13d3015e57f076533204ab60c19f45abb58d8b30c",
+    "canvasSize": [
+      64,
+      32
+    ],
+    "contentSize": [
+      58,
+      27
+    ],
+    "foregroundColors": 11,
+    "opaquePixels": 1142,
+    "alphaValues": [
+      0,
+      255
+    ]
+  },
+  {
+    "source": "SourceGeneratedArt\\map_editor_v04_objects\\bench_imagegen_source.png",
+    "sourceSha256": "fa8a9da9be65e204d22422961ab7790c6dc44d0e3f559330cacc12dfabe5ce89",
+    "sourceSize": [
+      1774,
+      887
+    ],
+    "sourceOpaqueCrop": [
+      411,
+      241,
+      1364,
+      710
+    ],
+    "output": "Assets\\Content\\World\\bench.png",
+    "outputSha256": "71e28da8bab54c3ffaf61d4a04dc315af74de1f7e44b0bb550d773e1c63bc599",
+    "canvasSize": [
+      64,
+      32
+    ],
+    "contentSize": [
+      58,
+      29
+    ],
+    "foregroundColors": 11,
+    "opaquePixels": 1214,
+    "alphaValues": [
+      0,
+      255
+    ]
+  },
+  {
+    "source": "SourceGeneratedArt\\map_editor_v04_objects\\sign_imagegen_source.png",
+    "sourceSha256": "2e3b243cb0b48bebdf73b6a53eec4e3aba264f2b71667dbeaa1057e5a6f478d5",
+    "sourceSize": [
+      887,
+      1774
+    ],
+    "sourceOpaqueCrop": [
+      165,
+      375,
+      725,
+      1444
+    ],
+    "output": "Assets\\Content\\World\\sign.png",
+    "outputSha256": "3be62ad64fbd534bed92d623da86350569f9b0927881ee90e6d99aa73e7d21be",
+    "canvasSize": [
+      32,
+      64
+    ],
+    "contentSize": [
+      30,
+      58
+    ],
+    "foregroundColors": 9,
+    "opaquePixels": 768,
+    "alphaValues": [
+      0,
+      255
+    ]
+  },
+  {
+    "source": "SourceGeneratedArt\\map_editor_v04_objects\\well_imagegen_source.png",
+    "sourceSha256": "e5594110ac95bb5e2c75ba33b1707a4643b4cfed3cfa7855d43349e2a1da279a",
+    "sourceSize": [
+      1254,
+      1254
+    ],
+    "sourceOpaqueCrop": [
+      335,
+      391,
+      919,
+      911
+    ],
+    "output": "Assets\\Content\\World\\well.png",
+    "outputSha256": "4d39d4944d629335a3cdf9f0287f07f543d9dbde4269ca453ca2082b61fc1c8c",
+    "canvasSize": [
+      32,
+      32
+    ],
+    "contentSize": [
+      28,
+      25
+    ],
+    "foregroundColors": 9,
+    "opaquePixels": 541,
+    "alphaValues": [
+      0,
+      255
+    ]
+  }
+]

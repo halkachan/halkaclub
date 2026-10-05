@@ -50,7 +50,19 @@ Catalog v3の各Objectには `actionPoints` 配列があります。各点は `i
 
 `blockedCellOffsets` は通行不可の範囲です。Action PointはPlayerの行動位置であり、両者は独立です。ベッドのsleep点は自身のblocked範囲にあっても構いません。クッションはblocked offsetsが空で通行可能な定義です。examineの立ち位置が塞がれた場合は警告として表示します。sit/sleepとPose Keyは将来用メタデータで、本編ver2.0では実行しません。石・花・木の既存メッセージはAction Pointの `interactionText` をUnity Definitionへ同期し、現行RuntimeのExamine表示を維持します。家の入退室は既存の移動遷移のままです。
 
-素材未設定の `cushion_basic`、`desk_basic`、`bench_basic`、`sign_north/east/south/west`、`well_basic` はPalette上で `MISSING ASSET` と表示されます。正式Sprite、寸法、footprintが決まるまで配置できません。現時点のAction Point offsetは素材確定後に確認する仮値です。看板の文字は順に「きた」「ひがし」「みなみ」「にし」、井戸は「いど。」で、井戸への遷移はありません。
+## v0.4の正式World Object素材
+
+| Definition | Sprite | Visual / blocked | Action Point |
+|---|---|---|---|
+| `cushion_basic` | `cushion.png` | 32×32 / 通行可能 | Rootの(0,0)、`sit` / `cushion_sit` |
+| `desk_basic` | `desk.png` | 64×32 / 横2セル | Rootの(0,-1)、上向き `examine` / 「つくえ。」 |
+| `bench_basic` | `bench.png` | 64×32 / 横2セル | (0,-1)、(1,-1)の2席、`sit` / `bench_sit` |
+| `sign_north/east/south/west` | 共有 `sign.png` | 32×64 / Rootの1セルのみ | (0,-1)、上向き `examine`、順に「きた」「ひがし」「みなみ」「にし」 |
+| `well_basic` | `well.png` | 32×32 / Rootの1セル | (0,-1)、上向き `examine` / 「いど。」 |
+
+机とベンチは左下セルをRootとし、見た目の右セルにも通行不可判定を置きます。看板は下段中央セルがRootで、上段は絵だけです。クッションは床置きで上を歩けます。看板画像には文字も矢印も描いていません。sit/sleepは引き続き将来用メタデータで、本編ver2.0の座る・寝る処理はありません。正式Mapにはこれらを自動配置しません。
+
+画像の原本は `SourceGeneratedArt/map_editor_v04_objects` に保存し、ゲーム用PNGは `Assets/Content/World` に置きます。追加素材は透明RGBA、32pxセルの整数倍、PPU64、Point、Single Sprite、mipmap無効、無圧縮を守ります。絵は画像生成機能で制作し、技術的後処理では透明化、切り抜き、Nearest縮小、色数整理だけを行います。Catalogのstable IDとSprite path、Visual寸法、Root Anchor、blocked offsets、Action Pointを設定してからUnity同期とCore/Unity検証を実行してください。Map内の配置場所はStandalone Editorで決めます。
 
 ## 新しいObjectを追加する手順
 

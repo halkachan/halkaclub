@@ -14,12 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.WorldObjectDefinition
   stableId: desk_basic
   displayName: "\u673A"
-  previewSprite: {fileID: 0}
+  previewSprite: {fileID: 21300000, guid: b5f495831aac4e64a743c97f9530c1e2, type: 3}
   examineMessage: "\u3064\u304F\u3048\u3002"
   rootedArtwork: 0
   clickColliderSize: {x: 0.5, y: 0.5}
-  footprint: {x: 0, y: 0}
-  blockedCellOffsets: []
+  footprint: {x: 2, y: 1}
+  blockedCellOffsets:
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
   actionPoints:
   - id: examine_front
     playerCellOffset: {x: 0, y: -1}
@@ -27,8 +29,8 @@ MonoBehaviour:
     actionType: 1
     poseKey:
     interactionText: "\u3064\u304F\u3048\u3002"
-  rootAnchor: bottom-center
-  behavior: 2
+  rootAnchor: bottom-left
+  behavior: 0
   blocksMovement: 1
   excludesGrass: 1
   sortingOrder: 2

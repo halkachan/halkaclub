@@ -169,7 +169,8 @@ public partial class MainWindow : Window
                 MapRules.Allowed(item.AllowedMapTypes, map.MapType)).Select(item =>
                 new PaletteEntry(item.DefinitionId, item.DisplayName, false, false,
                     LoadPaletteIcon(item.PreviewSpritePath), item.DisplayName + "を配置します",
-                    item.Category switch { "furniture" => "家具", "fixture" => "設備", _ => "オブジェクト" }))).ToArray();
+                    item.Category switch { "nature" => "自然", "furniture" => "家具",
+                        "fixture" => "設備", _ => "オブジェクト" }))).ToArray();
         var paletteView = CollectionViewSource.GetDefaultView(paletteEntries);
         paletteView.Filter = item => item is PaletteEntry entry &&
             (string.IsNullOrWhiteSpace(PaletteSearch.Text) ||

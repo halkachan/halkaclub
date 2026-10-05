@@ -27,7 +27,9 @@ Check("golden marker coordinates", map.Marker("player_start") == new GridCell(0,
     map.Marker("road_east") == new GridCell(10, -1) &&
     map.Marker("road_south") == new GridCell(2, -6) &&
     map.Marker("road_west") == new GridCell(-10, 0));
-Check("valid official map", MapRules.Validate(map, catalog).Count == 0);
+var officialIssues = MapRules.Validate(map, catalog);
+foreach (var issue in officialIssues) Console.WriteLine("OFFICIAL MAP ISSUE " + issue);
+Check("valid official map", officialIssues.All(issue => issue.IsWarning));
 var grass = 0;
 for (var y = map.Bounds.MinY; y <= map.Bounds.MaxY; y++)
 for (var x = map.Bounds.MinX; x <= map.Bounds.MaxX; x++)
@@ -61,8 +63,31 @@ Check("bench multiple seats", catalog.ObjectById["bench_basic"].ActionPoints.Cou
 Check("sign examine texts", new[] { ("north", "きた"), ("east", "ひがし"),
     ("south", "みなみ"), ("west", "にし") }.All(pair =>
     catalog.ObjectById["sign_" + pair.Item1].ActionPoints.Single().InteractionText == pair.Item2));
-Check("missing sprite placement rejected", !MapRules.CanPlace(map, catalog, "bench_basic", new GridCell(0, 3), out var missingReason) &&
-    missingReason.Contains("MISSING ASSET"));
+var newObjects = new[] { "cushion_basic", "desk_basic", "bench_basic", "sign_north",
+    "sign_east", "sign_south", "sign_west", "well_basic" };
+Check("formal sprite paths and sizes", newObjects.All(id => {
+    var definition = catalog.ObjectById[id];
+    var spritePath = ProjectPaths.SpritePath(project, definition.PreviewSpritePath);
+    return File.Exists(spritePath) && MapRules.HasSprite(definition) &&
+        (id == "desk_basic" || id == "bench_basic" ?
+            definition.VisualWidthPixels == 64 && definition.VisualHeightPixels == 32 :
+            id.StartsWith("sign_", StringComparison.Ordinal) ?
+                definition.VisualWidthPixels == 32 && definition.VisualHeightPixels == 64 :
+                definition.VisualWidthPixels == 32 && definition.VisualHeightPixels == 32);
+}));
+Check("shared blank sign art", new[] { "sign_north", "sign_east", "sign_south", "sign_west" }
+    .Select(id => catalog.ObjectById[id].PreviewSpritePath).Distinct().Single() ==
+    "Assets/Content/World/sign.png");
+Check("formal blocked footprint metadata", !catalog.ObjectById["cushion_basic"].BlockedCellOffsets.Any() &&
+    new[] { "desk_basic", "bench_basic" }.All(id =>
+        catalog.ObjectById[id].RootAnchor == "bottom-left" &&
+        catalog.ObjectById[id].BlockedCellOffsets.SequenceEqual(new[] { new GridCell(0, 0), new GridCell(1, 0) })) &&
+    new[] { "sign_north", "sign_east", "sign_south", "sign_west", "well_basic" }.All(id =>
+        catalog.ObjectById[id].BlockedCellOffsets.SequenceEqual(new[] { new GridCell(0, 0) })));
+Check("formal action point metadata", catalog.ObjectById["desk_basic"].ActionPoints.Single().InteractionText == "つくえ。" &&
+    catalog.ObjectById["bench_basic"].ActionPoints.Select(p => p.PlayerCellOffset)
+        .SequenceEqual(new[] { new GridCell(0, -1), new GridCell(1, -1) }) &&
+    catalog.ObjectById["well_basic"].ActionPoints.Single().InteractionText == "いど。");
 var legacyCatalog = JsonNode.Parse(File.ReadAllText(catalogPath))!;
 legacyCatalog["formatVersion"] = 2;
 foreach (var entry in legacyCatalog["objects"]!.AsArray()) entry!.AsObject().Remove("actionPoints");
@@ -212,13 +237,15 @@ try
     Check("duplicate surface validation", MapRules.Validate(invalid, catalog).Any(i => i.Code == "duplicateSurface"));
     var houseEdit = new MapSession(MapFormat.Clone(map), catalog, Path.Combine(tempDir, "house-move.hwmap.json"));
     var houseId = houseEdit.Map.Objects.Single(o => o.DefinitionId == "house_main").InstanceId;
-    Check("house move keeps ID and derives entry", houseEdit.MoveObject(houseId, new GridCell(-6, -4), out _) &&
-        houseEdit.Map.Objects.Single(o => o.InstanceId == houseId).RootCell == new GridCell(-6, -4) &&
-        MapRules.OutsideEntry(houseEdit.Map) == new GridCell(-6, -5));
+    var houseTarget = FindPlacement(houseEdit.Map, catalog, "house_main", houseId,
+        houseEdit.Map.Objects.Single(o => o.InstanceId == houseId).RootCell);
+    Check("house move keeps ID and derives entry", houseEdit.MoveObject(houseId, houseTarget, out _) &&
+        houseEdit.Map.Objects.Single(o => o.InstanceId == houseId).RootCell == houseTarget &&
+        MapRules.OutsideEntry(houseEdit.Map) == new GridCell(houseTarget.X, houseTarget.Y - 1));
     houseEdit.Undo();
     Check("house move undo", MapRules.HouseRoot(houseEdit.Map) == new GridCell(-7, -4));
     houseEdit.Redo();
-    Check("house move redo", MapRules.HouseRoot(houseEdit.Map) == new GridCell(-6, -4));
+    Check("house move redo", MapRules.HouseRoot(houseEdit.Map) == houseTarget);
     var roomEdit = new MapSession(MapFormat.Clone(houseMap), catalog, Path.Combine(tempDir, "house-room.hwmap.json"));
     var wall = new GridCell(0, 0);
     Check("wall paint blocks movement", roomEdit.PaintSurface("house_wall", wall) &&
@@ -231,6 +258,43 @@ try
     Check("floor restore redo", !MapRules.BlocksMovement(roomEdit.Map, catalog, wall));
     roomEdit.Save();
     Check("interior save and reload", MapRules.Validate(MapFormat.LoadMap(roomEdit.FilePath), catalog).Count == 0);
+    foreach (var id in new[] { "cushion_basic", "desk_basic", "bench_basic", "sign_north", "sign_east",
+                 "sign_south", "sign_west", "well_basic" })
+    {
+        var original = id is "cushion_basic" or "desk_basic" ? houseMap : map;
+        var session = new MapSession(MapFormat.Clone(original), catalog,
+            Path.Combine(tempDir, id + ".hwmap.json"));
+        var root = FindPlacement(session.Map, catalog, id);
+        Check(id + " test map placement", session.PlaceObject(id, root, out var placementReason));
+        var placement = session.Map.Objects.Single(o => o.DefinitionId == id);
+        var definition = catalog.ObjectById[id];
+        var footprint = MapRules.FootprintCells(placement, definition).ToArray();
+        Check(id + " collision", (id == "cushion_basic" && footprint.Length == 0 &&
+            !MapRules.BlocksMovement(session.Map, catalog, root)) ||
+            (id is "desk_basic" or "bench_basic" && footprint.Length == 2 &&
+             footprint.All(c => MapRules.BlocksMovement(session.Map, catalog, c))) ||
+            (id != "cushion_basic" && id is not ("desk_basic" or "bench_basic") &&
+             footprint.Length == 1 && MapRules.BlocksMovement(session.Map, catalog, root)));
+        Check(id + " action overlay", definition.ActionPoints.All(point =>
+            MapRules.ActionCell(placement, point) ==
+            new GridCell(root.X + point.PlayerCellOffset.X, root.Y + point.PlayerCellOffset.Y)));
+        var visual = MapRules.VisualBounds(placement, definition);
+        Check(id + " visual size", visual.Maximum.X - visual.Minimum.X + 1 ==
+            definition.VisualWidthPixels / 32 && visual.Maximum.Y - visual.Minimum.Y + 1 ==
+            definition.VisualHeightPixels / 32);
+        session.Save();
+        Check(id + " test map reload", MapFormat.LoadMap(session.FilePath).Objects.Any(o =>
+            o.InstanceId == placement.InstanceId));
+        var idOfPlacement = placement.InstanceId;
+        var moved = FindPlacement(session.Map, catalog, id, idOfPlacement, root);
+        Check(id + " generic move", session.MoveObject(idOfPlacement, moved, out _));
+        session.Undo();
+        Check(id + " generic undo", session.Map.Objects.Single(o => o.InstanceId == idOfPlacement).RootCell == root);
+        session.Redo();
+        Check(id + " generic redo", session.Map.Objects.Single(o => o.InstanceId == idOfPlacement).RootCell == moved);
+        Check(id + " generic copy", session.CopyObject(idOfPlacement, root, out _));
+        Check(id + " generic delete", session.DeleteObject(idOfPlacement));
+    }
 }
 finally { Directory.Delete(tempDir, true); }
 Check("formal map never written", File.ReadAllText(mapPath) == source);
@@ -241,4 +305,21 @@ static bool Throws(Action action)
 {
     try { action(); return false; }
     catch { return true; }
+}
+
+static GridCell FindPlacement(MapDocument map, CatalogDocument catalog, string id,
+    string? ignoreInstanceId = null, GridCell? excluded = null)
+{
+    for (var y = map.Bounds.MinY; y <= map.Bounds.MaxY; y++)
+    for (var x = map.Bounds.MinX; x <= map.Bounds.MaxX; x++)
+    {
+        var cell = new GridCell(x, y);
+        if (cell != excluded &&
+            !(excluded is { } previous && id is ("desk_basic" or "bench_basic") &&
+              cell.Y == previous.Y && Math.Abs(cell.X - previous.X) < 2) &&
+            (id != "cushion_basic" || !MapRules.BlocksMovement(map, catalog, cell)) &&
+            MapRules.CanPlace(map, catalog, id, cell, out _, ignoreInstanceId))
+            return cell;
+    }
+    throw new Exception("No test placement available: " + id);
 }

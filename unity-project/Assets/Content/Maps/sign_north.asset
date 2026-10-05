@@ -14,12 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.WorldObjectDefinition
   stableId: sign_north
   displayName: "\u770B\u677F\uFF1A\u304D\u305F"
-  previewSprite: {fileID: 0}
+  previewSprite: {fileID: 21300000, guid: e6ed6756d9f54e72a8cd2082c99eb7b0, type: 3}
   examineMessage: "\u304D\u305F"
   rootedArtwork: 0
   clickColliderSize: {x: 0.5, y: 0.5}
-  footprint: {x: 0, y: 0}
-  blockedCellOffsets: []
+  footprint: {x: 1, y: 1}
+  blockedCellOffsets:
+  - {x: 0, y: 0}
   actionPoints:
   - id: read_front
     playerCellOffset: {x: 0, y: -1}
@@ -28,7 +29,7 @@ MonoBehaviour:
     poseKey:
     interactionText: "\u304D\u305F"
   rootAnchor: bottom-center
-  behavior: 2
+  behavior: 0
   blocksMovement: 1
   excludesGrass: 1
   sortingOrder: 2

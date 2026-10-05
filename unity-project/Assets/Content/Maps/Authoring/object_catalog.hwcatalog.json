@@ -59,7 +59,7 @@
     {
       "definitionId": "stone_basic",
       "displayName": "石",
-      "category": "world-object",
+      "category": "nature",
       "previewSpritePath": "Assets/Content/World/stone.png",
       "visualWidthPixels": 32,
       "visualHeightPixels": 32,
@@ -97,7 +97,7 @@
     {
       "definitionId": "flower_basic",
       "displayName": "花",
-      "category": "world-object",
+      "category": "nature",
       "previewSpritePath": "Assets/Content/World/flower.png",
       "visualWidthPixels": 32,
       "visualHeightPixels": 32,
@@ -135,7 +135,7 @@
     {
       "definitionId": "tree_basic",
       "displayName": "木",
-      "category": "world-object",
+      "category": "nature",
       "previewSpritePath": "Assets/Content/World/tree.png",
       "visualWidthPixels": 96,
       "visualHeightPixels": 128,
@@ -173,7 +173,7 @@
     {
       "definitionId": "house_main",
       "displayName": "家",
-      "category": "world-object",
+      "category": "fixture",
       "previewSpritePath": "Assets/Content/World/house_exterior.png",
       "visualWidthPixels": 160,
       "visualHeightPixels": 128,
@@ -231,7 +231,7 @@
     {
       "definitionId": "bed_basic",
       "displayName": "ベッド",
-      "category": "world-object",
+      "category": "furniture",
       "previewSpritePath": "Assets/Content/World/house_bed.png",
       "visualWidthPixels": 64,
       "visualHeightPixels": 96,
@@ -290,13 +290,13 @@
       "definitionId": "cushion_basic",
       "displayName": "クッション",
       "category": "furniture",
-      "previewSpritePath": "",
-      "visualWidthPixels": 0,
-      "visualHeightPixels": 0,
+      "previewSpritePath": "Assets/Content/World/cushion.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
       "rootAnchor": "bottom-center",
       "footprint": {
-        "width": 0,
-        "height": 0
+        "width": 1,
+        "height": 1
       },
       "blocksMovement": false,
       "excludeGrass": false,
@@ -323,18 +323,27 @@
       "definitionId": "desk_basic",
       "displayName": "机",
       "category": "furniture",
-      "previewSpritePath": "",
-      "visualWidthPixels": 0,
-      "visualHeightPixels": 0,
-      "rootAnchor": "bottom-center",
+      "previewSpritePath": "Assets/Content/World/desk.png",
+      "visualWidthPixels": 64,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-left",
       "footprint": {
-        "width": 0,
-        "height": 0
+        "width": 2,
+        "height": 1
       },
       "blocksMovement": true,
       "excludeGrass": true,
       "editorSelectable": true,
-      "blockedCellOffsets": [],
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ],
       "allowedMapTypes": [
         "interior"
       ],
@@ -355,19 +364,28 @@
     {
       "definitionId": "bench_basic",
       "displayName": "ベンチ",
-      "category": "furniture",
-      "previewSpritePath": "",
-      "visualWidthPixels": 0,
-      "visualHeightPixels": 0,
-      "rootAnchor": "bottom-center",
+      "category": "fixture",
+      "previewSpritePath": "Assets/Content/World/bench.png",
+      "visualWidthPixels": 64,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-left",
       "footprint": {
-        "width": 0,
-        "height": 0
+        "width": 2,
+        "height": 1
       },
       "blocksMovement": true,
       "excludeGrass": true,
       "editorSelectable": true,
-      "blockedCellOffsets": [],
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ],
       "allowedMapTypes": [
         "outdoor"
       ],
@@ -375,7 +393,7 @@
         {
           "id": "seat_left",
           "playerCellOffset": {
-            "x": -1,
+            "x": 0,
             "y": -1
           },
           "playerFacing": "up",
@@ -400,18 +418,23 @@
       "definitionId": "sign_north",
       "displayName": "看板：きた",
       "category": "fixture",
-      "previewSpritePath": "",
-      "visualWidthPixels": 0,
-      "visualHeightPixels": 0,
+      "previewSpritePath": "Assets/Content/World/sign.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 64,
       "rootAnchor": "bottom-center",
       "footprint": {
-        "width": 0,
-        "height": 0
+        "width": 1,
+        "height": 1
       },
       "blocksMovement": true,
       "excludeGrass": true,
       "editorSelectable": true,
-      "blockedCellOffsets": [],
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
       "allowedMapTypes": [
         "outdoor"
       ],
@@ -433,18 +456,23 @@
       "definitionId": "sign_east",
       "displayName": "看板：ひがし",
       "category": "fixture",
-      "previewSpritePath": "",
-      "visualWidthPixels": 0,
-      "visualHeightPixels": 0,
+      "previewSpritePath": "Assets/Content/World/sign.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 64,
       "rootAnchor": "bottom-center",
       "footprint": {
-        "width": 0,
-        "height": 0
+        "width": 1,
+        "height": 1
       },
       "blocksMovement": true,
       "excludeGrass": true,
       "editorSelectable": true,
-      "blockedCellOffsets": [],
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
       "allowedMapTypes": [
         "outdoor"
       ],
@@ -466,18 +494,23 @@
       "definitionId": "sign_south",
       "displayName": "看板：みなみ",
       "category": "fixture",
-      "previewSpritePath": "",
-      "visualWidthPixels": 0,
-      "visualHeightPixels": 0,
+      "previewSpritePath": "Assets/Content/World/sign.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 64,
       "rootAnchor": "bottom-center",
       "footprint": {
-        "width": 0,
-        "height": 0
+        "width": 1,
+        "height": 1
       },
       "blocksMovement": true,
       "excludeGrass": true,
       "editorSelectable": true,
-      "blockedCellOffsets": [],
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
       "allowedMapTypes": [
         "outdoor"
       ],
@@ -499,18 +532,23 @@
       "definitionId": "sign_west",
       "displayName": "看板：にし",
       "category": "fixture",
-      "previewSpritePath": "",
-      "visualWidthPixels": 0,
-      "visualHeightPixels": 0,
+      "previewSpritePath": "Assets/Content/World/sign.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 64,
       "rootAnchor": "bottom-center",
       "footprint": {
-        "width": 0,
-        "height": 0
+        "width": 1,
+        "height": 1
       },
       "blocksMovement": true,
       "excludeGrass": true,
       "editorSelectable": true,
-      "blockedCellOffsets": [],
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
       "allowedMapTypes": [
         "outdoor"
       ],
@@ -532,18 +570,23 @@
       "definitionId": "well_basic",
       "displayName": "井戸",
       "category": "fixture",
-      "previewSpritePath": "",
-      "visualWidthPixels": 0,
-      "visualHeightPixels": 0,
+      "previewSpritePath": "Assets/Content/World/well.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
       "rootAnchor": "bottom-center",
       "footprint": {
-        "width": 0,
-        "height": 0
+        "width": 1,
+        "height": 1
       },
       "blocksMovement": true,
       "excludeGrass": true,
       "editorSelectable": true,
-      "blockedCellOffsets": [],
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
       "allowedMapTypes": [
         "outdoor"
       ],

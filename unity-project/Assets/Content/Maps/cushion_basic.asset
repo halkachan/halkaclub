@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.WorldObjectDefinition
   stableId: cushion_basic
   displayName: "\u30AF\u30C3\u30B7\u30E7\u30F3"
-  previewSprite: {fileID: 0}
+  previewSprite: {fileID: 21300000, guid: c1e4da56bc7f4e939d2b39ac787b4301, type: 3}
   examineMessage:
   rootedArtwork: 0
   clickColliderSize: {x: 0.5, y: 0.5}
-  footprint: {x: 0, y: 0}
+  footprint: {x: 1, y: 1}
   blockedCellOffsets: []
   actionPoints:
   - id: sit_main
