@@ -275,6 +275,9 @@ h1{margin:18px 0 20px;line-height:.9}
 .info-table div:nth-child(odd){border-right:1px solid #e2e4e7}
 .info-table div:nth-last-child(-n+2){border-bottom:0}
 .info-table span{color:#8c9198;font-size:12px}
+.info-table.cols-3{grid-template-columns:repeat(3,1fr)}
+.info-table.cols-3 div{border-bottom:0;border-right:1px solid #e2e4e7}
+.info-table.cols-3 div:last-child{border-right:0}
 .info-table b{font-size:13px}
 .update-box{
   background:#e7f7f2;
@@ -373,6 +376,9 @@ footer{background:var(--bg);color:#767d85;border-top:1px solid #2b2e33}
   .feature-card.featured{padding-bottom:140px}
   .feature-card:has(.mini-spectrum){padding-bottom:124px}
   .module-grid{grid-template-columns:1fr 1fr}
+  .info-table.cols-3{grid-template-columns:1fr}
+  .info-table.cols-3 div{border-right:0;border-bottom:1px solid #e2e4e7}
+  .info-table.cols-3 div:last-child{border-bottom:0}
   .section-heading{display:block}
   .section-heading .kicker{margin-bottom:9px}
 }
