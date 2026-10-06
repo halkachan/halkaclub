@@ -31,7 +31,8 @@
         "properties": {
           "instanceId": { "type": "string", "minLength": 1 },
           "definitionId": { "type": "string", "minLength": 1 },
-          "rootCell": { "$ref": "#/$defs/cell" }
+          "rootCell": { "$ref": "#/$defs/cell" },
+          "signText": { "type": "string", "minLength": 1, "maxLength": 80 }
         }
       }
     },

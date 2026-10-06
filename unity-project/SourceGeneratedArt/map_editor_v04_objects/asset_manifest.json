@@ -90,30 +90,30 @@
     ]
   },
   {
-    "source": "SourceGeneratedArt\\map_editor_v04_objects\\sign_imagegen_source.png",
-    "sourceSha256": "2e3b243cb0b48bebdf73b6a53eec4e3aba264f2b71667dbeaa1057e5a6f478d5",
+    "source": "SourceGeneratedArt\\map_editor_v04_objects\\sign_one_tile_imagegen_source.png",
+    "sourceSha256": "48ce107a7951bdcbf4aa8e77ddf99c4c16ac5b0f84a92d520ab43c1ad0cb0b02",
     "sourceSize": [
-      887,
-      1774
+      1254,
+      1254
     ],
     "sourceOpaqueCrop": [
-      165,
-      375,
-      725,
-      1444
+      255,
+      401,
+      1000,
+      980
     ],
     "output": "Assets\\Content\\World\\sign.png",
-    "outputSha256": "3be62ad64fbd534bed92d623da86350569f9b0927881ee90e6d99aa73e7d21be",
+    "outputSha256": "b8de881fd1419b67df27b0bcad0ef3f513559ea752c47cc14d0bab46eaa13833",
     "canvasSize": [
       32,
-      64
+      32
     ],
     "contentSize": [
       30,
-      58
+      28
     ],
     "foregroundColors": 9,
-    "opaquePixels": 768,
+    "opaquePixels": 560,
     "alphaValues": [
       0,
       255

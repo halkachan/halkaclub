@@ -286,6 +286,13 @@ namespace Halka.Game.Editor
             var interiorSurfaces = new GameObject("Interior surfaces");
             interiorSurfaces.transform.SetParent(interiorRoot.transform, false);
             var interiorSurfaceField = interiorSurfaces.AddComponent<GroundSurfaceField2D>();
+            var interiorGrassGroup = new GameObject("Interior grass decorations");
+            interiorGrassGroup.transform.SetParent(interiorRoot.transform, false);
+            var interiorGrassField = interiorGrassGroup.AddComponent<GrassField2D>();
+            SetReference(interiorGrassField, "world", world);
+            SetReference(interiorGrassField, "player", mover);
+            SetReference(interiorGrassField, "idleSprite", grassSprite);
+            SetSprites(interiorGrassField, "rustleFrames", rustleFrames);
             var interiorObjects = new GameObject("Interior objects");
             interiorObjects.transform.SetParent(interiorRoot.transform, false);
             var interiorLoaderObject = new GameObject("Interior map loader");
@@ -294,6 +301,8 @@ namespace Halka.Game.Editor
             interiorLoader.SetMap(houseMap);
             SetReference(interiorLoader, "world", world);
             SetReference(interiorLoader, "surfaceField", interiorSurfaceField);
+            SetReference(interiorLoader, "grassField", interiorGrassField);
+            SetReference(interiorLoader, "grassPrefab", grassPrefab);
             SetReference(interiorLoader, "surfaceRoot", interiorSurfaces.transform);
             SetReference(interiorLoader, "objectRoot", interiorObjects.transform);
             SetReference(interiorLoader, "player", mover);
@@ -312,6 +321,8 @@ namespace Halka.Game.Editor
             SetReference(houseArea, "world", world);
             SetReference(houseArea, "player", mover);
             SetReference(houseArea, "grassOcclusion", grassOcclusion);
+            SetReference(houseArea, "exteriorGrass", grassField);
+            SetReference(houseArea, "interiorGrass", interiorGrassField);
             SetReference(houseArea, "maps", mapController);
             SetReference(houseArea, "worldCamera", camera);
             SetReference(houseArea, "cameraFollow", follow);

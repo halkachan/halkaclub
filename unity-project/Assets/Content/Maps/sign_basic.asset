@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b7c55d63a6fbaf8488893bfe6c9abf3d, type: 3}
-  m_Name: sign_west
+  m_Name: sign_basic
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.WorldObjectDefinition
-  stableId: sign_west
-  displayName: "\u770B\u677F\uFF1A\u306B\u3057"
+  stableId: sign_basic
+  displayName: "\u770B\u677F"
   previewSprite: {fileID: 21300000, guid: e6ed6756d9f54e72a8cd2082c99eb7b0, type: 3}
-  examineMessage: "\u306B\u3057"
+  examineMessage: "\u304B\u3093\u3070\u3093\u3002"
   rootedArtwork: 0
   clickColliderSize: {x: 0.5, y: 0.5}
   footprint: {x: 1, y: 1}
@@ -27,7 +27,7 @@ MonoBehaviour:
     playerFacing: 0
     actionType: 1
     poseKey:
-    interactionText: "\u306B\u3057"
+    interactionText: "\u304B\u3093\u3070\u3093\u3002"
   rootAnchor: bottom-center
   behavior: 0
   blocksMovement: 1

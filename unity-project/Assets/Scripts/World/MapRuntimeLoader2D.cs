@@ -37,8 +37,11 @@ namespace Halka.Game.World
                 surfaceRoot == null || objectRoot == null ||
                 player == null || playerRenderer == null || hud == null)
                 throw new InvalidOperationException("MapRuntimeLoader2D has missing references");
-            if (map.GrassMode == "auto" && (grassField == null || grassPrefab == null))
-                throw new InvalidOperationException("Outdoor map needs grass field and prefab");
+            var needsGrass = map.GrassMode == "auto" ||
+                System.Linq.Enumerable.Any(map.Surfaces, placement =>
+                    placement.Definition != null && placement.Definition.GrowsGrass);
+            if (needsGrass && (grassField == null || grassPrefab == null))
+                throw new InvalidOperationException("Grass surface needs a field and prefab");
             var errors = MapPlacementRules.Validate(map);
             if (errors.Count != 0) throw new InvalidOperationException(
                 "Invalid map " + map.MapId + ": " + string.Join("; ", errors));
@@ -48,7 +51,7 @@ namespace Halka.Game.World
             {
                 for (var y = map.MinCell.y; y <= map.MaxCell.y; y++)
                 for (var x = map.MinCell.x; x <= map.MaxCell.x; x++)
-                    CreateSurfaceTile(new Vector2Int(x, y), map.BaseSurface.Sprite, -9, false);
+                    CreateSurfaceTile(new Vector2Int(x, y), map.BaseSurface.Sprite, -10, false);
             }
             foreach (var surface in map.Surfaces)
             {
@@ -56,7 +59,7 @@ namespace Halka.Game.World
                 if (sprite == null) throw new InvalidOperationException("Surface sprite missing at " + surface.Cell);
                 surfaceField.AddSurface(surface.Cell, sprite);
                 CreateSurfaceTile(surface.Cell, sprite, surface.Definition.BlocksMovement ? -7 : -9,
-                    surface.Definition.BlocksMovement);
+                    surface.Definition.BlocksMovement, surface.Definition.GrowsGrass);
             }
 
             var serial = new Dictionary<WorldObjectDefinition, int>();
@@ -67,10 +70,10 @@ namespace Halka.Game.World
                     throw new InvalidOperationException("Object sprite missing: " + definition.StableId);
                 serial.TryGetValue(definition, out var number);
                 serial[definition] = ++number;
-                CreateObject(placement.RootCell, definition, number);
+                CreateObject(placement, number);
             }
 
-            if (map.GrassMode == "auto")
+            if (needsGrass)
             {
                 for (var y = map.MinCell.y; y <= map.MaxCell.y; y++)
                 for (var x = map.MinCell.x; x <= map.MaxCell.x; x++)
@@ -85,7 +88,8 @@ namespace Halka.Game.World
             built = true;
         }
 
-        private void CreateSurfaceTile(Vector2Int cell, Sprite sprite, int order, bool blocks)
+        private void CreateSurfaceTile(Vector2Int cell, Sprite sprite, int order, bool blocks,
+            bool grassGround = false)
         {
             var tile = new GameObject($"Surface {cell.x},{cell.y}");
             tile.transform.SetParent(surfaceRoot, false);
@@ -93,6 +97,13 @@ namespace Halka.Game.World
             var renderer = tile.AddComponent<SpriteRenderer>();
             renderer.sprite = sprite;
             renderer.sortingOrder = order;
+            if (grassGround && sprite.rect.width == 1 && sprite.rect.height == 1)
+            {
+                tile.transform.localScale = new Vector3(
+                    GridWorld2D.TileWorldSize / sprite.bounds.size.x,
+                    GridWorld2D.TileWorldSize / sprite.bounds.size.y, 1f);
+                renderer.color = new Color(0.85f, 0.91f, 0.72f);
+            }
             if (blocks)
             {
                 tile.AddComponent<BoxCollider2D>().size = Vector2.one * GridWorld2D.TileWorldSize;
@@ -126,8 +137,10 @@ namespace Halka.Game.World
             }
         }
 
-        private void CreateObject(Vector2Int cell, WorldObjectDefinition definition, int number)
+        private void CreateObject(WorldObjectPlacement placement, int number)
         {
+            var cell = placement.RootCell;
+            var definition = placement.Definition;
             var label = definition.DisplayName;
             var name = number == 1 ? label + " - first world object" : label + " " + number;
             if (definition.StableId == "flower_basic" && number == 1) name = "Flower - first bloom";
@@ -138,7 +151,10 @@ namespace Halka.Game.World
             if (definition.Behavior == WorldObjectBehavior.Examine)
             {
                 var examine = root.AddComponent<ExamineInteractable>();
-                examine.Configure(player, world, hud, definition.ExamineMessage);
+                var message = definition.StableId == "sign_basic" &&
+                    !string.IsNullOrWhiteSpace(placement.SignText)
+                    ? placement.SignText : definition.ExamineMessage;
+                examine.Configure(player, world, hud, message);
             }
             if (definition.BlocksMovement) AddObstacleCells(root, definition);
             var artwork = new GameObject(label + " artwork");

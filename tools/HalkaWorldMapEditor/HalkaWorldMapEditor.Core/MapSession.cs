@@ -45,11 +45,13 @@ public sealed class MapSession
     public bool PaintSurface(string definitionId, GridCell cell)
     {
         if (!Map.Bounds.Contains(cell) || !Catalog.SurfaceById.TryGetValue(definitionId, out var surface) ||
-            !MapRules.Allowed(surface.AllowedMapTypes, Map.MapType) ||
             (surface.BlocksMovement && (MapRules.IsProtected(Map, cell) ||
                 Map.Objects.Any(item => Catalog.ObjectById.TryGetValue(item.DefinitionId, out var definition) &&
-                    MapRules.FootprintCells(item, definition).Contains(cell)))) ||
-            Map.Surfaces.Any(item => item.Cell == cell && item.DefinitionId == definitionId)) return false;
+                    MapRules.FootprintCells(item, definition).Contains(cell))))) return false;
+        if (definitionId == Map.BaseSurfaceDefinitionId &&
+            (definitionId != "base_ground" || Map.GrassMode == "auto"))
+            return EraseSurface(cell);
+        if (Map.Surfaces.Any(item => item.Cell == cell && item.DefinitionId == definitionId)) return false;
         Change(() =>
         {
             Map.Surfaces.RemoveAll(item => item.Cell == cell);
@@ -65,18 +67,19 @@ public sealed class MapSession
         return true;
     }
 
-    // Grass is derived from the absence of a surface override, never serialized.
-    public bool RestoreGrass(GridCell cell) => EraseSurface(cell);
+    // Paints explicit grass ground indoors; on an outdoor grass base this erases the override.
+    public bool RestoreGrass(GridCell cell) => PaintSurface("base_ground", cell);
     public bool RestoreBaseSurface(GridCell cell) => EraseSurface(cell);
 
-    public bool PlaceObject(string definitionId, GridCell cell, out string reason)
+    public bool PlaceObject(string definitionId, GridCell cell, out string reason, string? signText = null)
     {
         if (!MapRules.CanPlace(Map, Catalog, definitionId, cell, out reason)) return false;
         Change(() => Map.Objects.Add(new ObjectPlacement
         {
             InstanceId = "obj_" + Guid.NewGuid().ToString("N"),
             DefinitionId = definitionId,
-            RootCell = cell
+            RootCell = cell,
+            SignText = definitionId == "sign_basic" ? signText ?? "かんばん。" : null
         }));
         return true;
     }
@@ -102,7 +105,18 @@ public sealed class MapSession
     {
         var source = Map.Objects.FirstOrDefault(item => item.InstanceId == instanceId);
         if (source == null) { reason = "Objectが見つかりません。"; return false; }
-        return PlaceObject(source.DefinitionId, target, out reason);
+        return PlaceObject(source.DefinitionId, target, out reason, source.SignText);
+    }
+
+    public bool SetSignText(string instanceId, string text)
+    {
+        var placement = Map.Objects.FirstOrDefault(item => item.InstanceId == instanceId &&
+            item.DefinitionId == "sign_basic");
+        var normalized = text.Trim();
+        if (placement == null || normalized.Length is < 1 or > 80 || placement.SignText == normalized)
+            return false;
+        Change(() => placement.SignText = normalized);
+        return true;
     }
 
     public void Undo()

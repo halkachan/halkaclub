@@ -10,6 +10,8 @@ namespace Halka.Game.World
         [SerializeField] private GridWorld2D world;
         [SerializeField] private PlayerMover player;
         [SerializeField] private PlayerGrassOcclusion grassOcclusion;
+        [SerializeField] private GrassField2D exteriorGrass;
+        [SerializeField] private GrassField2D interiorGrass;
         [SerializeField] private MapWorldController2D maps;
         [SerializeField] private Camera worldCamera;
         [SerializeField] private CameraFollow2D cameraFollow;
@@ -50,8 +52,8 @@ namespace Halka.Game.World
         {
             if (IsInside) return;
             player.CancelStep();
-            grassOcclusion.enabled = false;
             maps.LoadMap("halka_house", "interior_entry");
+            grassOcclusion.UseGrassField(interiorGrass);
             player.SetFacing(FacingDirection.Up);
             var room = maps.GetMap("halka_house");
             worldCamera.orthographicSize = 3.4f;
@@ -71,7 +73,7 @@ namespace Halka.Game.World
             maps.ActivateMap("first_field");
             player.TeleportTo(OutsideEntryCell);
             player.SetFacing(FacingDirection.Down);
-            grassOcclusion.enabled = true;
+            grassOcclusion.UseGrassField(exteriorGrass);
             worldCamera.orthographicSize = outsideCameraSize;
             cameraFollow.SetBounds(outsideCameraMin, outsideCameraMax);
             cameraFollow.SnapToTarget();

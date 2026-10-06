@@ -89,11 +89,21 @@ namespace Halka.Game.Editor
             {
                 if (item == null || item.rootCell == null)
                     throw new InvalidDataException("Map " + expectedId + ": null Object placement.");
-                var definition = FindObject(item.definitionId);
+                var definitionId = item.definitionId;
+                var signText = item.signText;
+                switch (definitionId)
+                {
+                    case "sign_north": definitionId = "sign_basic"; signText = signText ?? "きた"; break;
+                    case "sign_east": definitionId = "sign_basic"; signText = signText ?? "ひがし"; break;
+                    case "sign_south": definitionId = "sign_basic"; signText = signText ?? "みなみ"; break;
+                    case "sign_west": definitionId = "sign_basic"; signText = signText ?? "にし"; break;
+                }
+                var definition = FindObject(definitionId);
                 if (definition == null)
-                    throw new InvalidDataException("Map " + expectedId + ": unknown Object definitionId " + item.definitionId);
+                    throw new InvalidDataException("Map " + expectedId + ": unknown Object definitionId " + definitionId);
                 objects.Add(new WorldObjectPlacement {
-                    InstanceId = item.instanceId, RootCell = item.rootCell.ToVector(), Definition = definition });
+                    InstanceId = item.instanceId, RootCell = item.rootCell.ToVector(),
+                    Definition = definition, SignText = signText });
             }
             ValidateCatalog(catalog, surfaces, objects);
             var minimum = new Vector2Int(source.bounds.minX, source.bounds.minY);
@@ -145,7 +155,8 @@ namespace Halka.Game.Editor
                     AssetDatabase.GetAssetPath(definition.Sprite) != match.previewSpritePath ||
                     definition.Sprite.rect.width != match.visualWidthPixels ||
                     definition.Sprite.rect.height != match.visualHeightPixels ||
-                    definition.BlocksMovement != match.blocksMovement)
+                    definition.BlocksMovement != match.blocksMovement ||
+                    definition.GrowsGrass != match.growsGrass)
                     throw new InvalidDataException("Catalog mismatch for Surface " + match.definitionId);
             }
             foreach (var match in catalog.objects)
@@ -209,6 +220,7 @@ namespace Halka.Game.Editor
                 serialized.FindProperty("displayName").stringValue = entry.displayName;
                 serialized.FindProperty("sprite").objectReferenceValue = sprite;
                 serialized.FindProperty("blocksMovement").boolValue = entry.blocksMovement;
+                serialized.FindProperty("growsGrass").boolValue = entry.growsGrass;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
             }
             foreach (var entry in catalog.objects)
@@ -318,7 +330,7 @@ namespace Halka.Game.Editor
         [Serializable] private sealed class BoundsDto { public int minX, maxX, minY, maxY; }
         [Serializable] private sealed class SurfaceDto { public string definitionId; public CellDto cell; }
         [Serializable] private sealed class ObjectDto
-        { public string instanceId, definitionId; public CellDto rootCell; }
+        { public string instanceId, definitionId, signText; public CellDto rootCell; }
         [Serializable] private sealed class MarkerDto { public string id; public CellDto cell; }
         [Serializable] private sealed class MapDto
         {
@@ -335,6 +347,7 @@ namespace Halka.Game.Editor
             public string definitionId, displayName, previewSpritePath;
             public int visualWidthPixels, visualHeightPixels;
             public bool blocksMovement;
+            public bool growsGrass;
         }
         [Serializable] private sealed class CatalogObjectDto
         {

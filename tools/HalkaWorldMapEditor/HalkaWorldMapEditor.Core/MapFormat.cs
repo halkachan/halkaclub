@@ -59,6 +59,7 @@ public static class MapFormat
                         InstanceId = "obj_house_main_v03_migration",
                         DefinitionId = "house_main", RootCell = legacy.Markers.HouseDoor
                     });
+                MigrateLegacySigns(migrated);
                 return migrated;
             }
             Require(root.GetProperty("bounds"), "minX", "maxX", "minY", "maxY");
@@ -76,6 +77,7 @@ public static class MapFormat
             if (map.Bounds == null || map.Surfaces == null || map.Objects == null ||
                 map.Markers == null)
                 throw new InvalidDataException("Map JSON is missing a required section.");
+            MigrateLegacySigns(map);
             return map;
         }
         catch (InvalidOperationException error)
@@ -86,6 +88,21 @@ public static class MapFormat
         {
             throw new InvalidDataException($"Map JSON parse error: line {error.LineNumber + 1}, byte {error.BytePositionInLine + 1}: {error.Message}", error);
         }
+    }
+
+    private static void MigrateLegacySigns(MapDocument map)
+    {
+        var oldTexts = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["sign_north"] = "きた", ["sign_east"] = "ひがし",
+            ["sign_south"] = "みなみ", ["sign_west"] = "にし"
+        };
+        foreach (var placement in map.Objects)
+            if (oldTexts.TryGetValue(placement.DefinitionId, out var text))
+            {
+                placement.DefinitionId = "sign_basic";
+                placement.SignText ??= text;
+            }
     }
 
     public static CatalogDocument ParseCatalog(string json)

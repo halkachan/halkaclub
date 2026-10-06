@@ -23,7 +23,7 @@ ASSETS = {
     "cushion": ((32, 32), (28, 25), 10),
     "desk": ((64, 32), (58, 27), 12),
     "bench": ((64, 32), (58, 29), 12),
-    "sign": ((32, 64), (30, 58), 10),
+    "sign": ((32, 32), (30, 28), 10),
     "well": ((32, 32), (28, 25), 10),
 }
 
@@ -34,7 +34,8 @@ def sha256(path: Path) -> str:
 
 def process(name: str, canvas_size: tuple[int, int],
             content_size: tuple[int, int], colors: int) -> dict:
-    source_path = SOURCE / f"{name}_imagegen_source.png"
+    source_name = "sign_one_tile_imagegen_source.png" if name == "sign" else f"{name}_imagegen_source.png"
+    source_path = SOURCE / source_name
     output_path = OUTPUT / f"{name}.png"
     source = Image.open(source_path).convert("RGBA")
     alpha = source.getchannel("A").point(lambda value: 255 if value >= 128 else 0)

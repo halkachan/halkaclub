@@ -24,6 +24,10 @@ public static class MapRules
         new(placement.RootCell.X + point.PlayerCellOffset.X,
             placement.RootCell.Y + point.PlayerCellOffset.Y);
 
+    public static string? ActionText(ObjectPlacement placement, ActionPoint point) =>
+        placement.DefinitionId == "sign_basic" && point.ActionType == "examine"
+            ? placement.SignText : point.InteractionText;
+
     public static bool HasSprite(CatalogObject definition) =>
         !string.IsNullOrWhiteSpace(definition.PreviewSpritePath) &&
         definition.VisualWidthPixels > 0 && definition.VisualHeightPixels > 0;
@@ -48,21 +52,23 @@ public static class MapRules
 
     public static bool HasGrass(MapDocument map, CatalogDocument catalog, GridCell cell)
     {
-        if (map.GrassMode != "auto" || !map.Bounds.Contains(cell) ||
-            map.Surfaces.Any(item => item.Cell == cell) || BlocksMovement(map, catalog, cell)) return false;
+        if (!map.Bounds.Contains(cell) || BlocksMovement(map, catalog, cell)) return false;
+        var overrideId = map.Surfaces.FirstOrDefault(item => item.Cell == cell)?.DefinitionId;
+        var growsGrass = overrideId != null
+            ? catalog.SurfaceById.TryGetValue(overrideId, out var surface) && surface.GrowsGrass
+            : map.GrassMode == "auto" && catalog.SurfaceById.TryGetValue(map.BaseSurfaceDefinitionId,
+                out var baseSurface) && baseSurface.GrowsGrass;
+        if (!growsGrass) return false;
         return !map.Objects.Any(item => catalog.ObjectById.TryGetValue(item.DefinitionId, out var definition) &&
             definition.ExcludeGrass && FootprintCells(item, definition).Contains(cell));
     }
-
-    public static bool Allowed(IReadOnlyCollection<string> types, string mapType) =>
-        types.Count == 0 || types.Contains(mapType);
 
     public static bool CanPlace(MapDocument map, CatalogDocument catalog, string definitionId,
         GridCell root, out string reason, string? ignoreInstanceId = null)
     {
         if (!catalog.ObjectById.TryGetValue(definitionId, out var definition) ||
-            !definition.EditorSelectable || !Allowed(definition.AllowedMapTypes, map.MapType))
-        { reason = "このMapでは配置できないオブジェクトです。"; return false; }
+            !definition.EditorSelectable)
+        { reason = "配置できないオブジェクトです。"; return false; }
         if (!HasSprite(definition))
         { reason = "MISSING ASSET: 正式Spriteがないため配置できません。"; return false; }
         if (definition.VisualWidthPixels < 1 || definition.VisualHeightPixels < 1 ||
@@ -136,9 +142,8 @@ public static class MapRules
         foreach (var placement in map.Surfaces)
         {
             if (!map.Bounds.Contains(placement.Cell)) issues.Add(new("surfaceBounds", "地面が範囲外です。", placement.Cell));
-            if (!catalog.SurfaceById.TryGetValue(placement.DefinitionId, out var definition) ||
-                !Allowed(definition.AllowedMapTypes, map.MapType))
-                issues.Add(new("surfaceDefinition", "不明またはMap Type非対応の地面ID: " + placement.DefinitionId, placement.Cell));
+            if (!catalog.SurfaceById.ContainsKey(placement.DefinitionId))
+                issues.Add(new("surfaceDefinition", "不明な地面ID: " + placement.DefinitionId, placement.Cell));
             if (!surfaceCells.Add(placement.Cell)) issues.Add(new("duplicateSurface", "地面が重複しています。", placement.Cell));
         }
         var seenInstance = new HashSet<string>(StringComparer.Ordinal);
@@ -147,9 +152,11 @@ public static class MapRules
         {
             if (string.IsNullOrWhiteSpace(placement.InstanceId) || !seenInstance.Add(placement.InstanceId))
                 issues.Add(new("duplicateInstanceId", "instanceIdが空または重複しています。", placement.RootCell));
-            if (!catalog.ObjectById.TryGetValue(placement.DefinitionId, out var definition) ||
-                !Allowed(definition.AllowedMapTypes, map.MapType))
-            { issues.Add(new("objectDefinition", "不明またはMap Type非対応のObject ID: " + placement.DefinitionId, placement.RootCell)); continue; }
+            if (!catalog.ObjectById.TryGetValue(placement.DefinitionId, out var definition))
+            { issues.Add(new("objectDefinition", "不明なObject ID: " + placement.DefinitionId, placement.RootCell)); continue; }
+            if (placement.DefinitionId == "sign_basic" &&
+                (string.IsNullOrWhiteSpace(placement.SignText) || placement.SignText.Length > 80))
+                issues.Add(new("signText", "看板の内容は1～80文字で入力してください。", placement.RootCell));
             if ((definition.BlocksMovement && definition.BlockedCellOffsets.Count == 0) ||
                 definition.BlockedCellOffsets.Distinct().Count() != definition.BlockedCellOffsets.Count)
                 issues.Add(new("footprint", "Blocked Footprintが空または重複しています。", placement.RootCell));

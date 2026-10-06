@@ -156,17 +156,11 @@ public partial class MainWindow : Window
     {
         if (catalog == null) return;
         loading = true;
-        var restoresBase = map.MapType == "outdoor"
-            ? new PaletteEntry("", "草", true, true, LoadPaletteIcon(catalog.Visuals.GrassSpritePath), "通常の草地に戻します")
-            : new PaletteEntry("", "木床", true, true,
-                LoadPaletteIcon(catalog.SurfaceById[map.BaseSurfaceDefinitionId].PreviewSpritePath), "壁を消して木床に戻します");
-        var paletteEntries = new[] { restoresBase }.Concat(catalog.Surfaces.Where(item =>
-            item.EditorSelectable && item.DefinitionId != map.BaseSurfaceDefinitionId &&
-            MapRules.Allowed(item.AllowedMapTypes, map.MapType)).Select(item =>
+        var paletteEntries = catalog.Surfaces.Where(item => item.EditorSelectable).Select(item =>
             new PaletteEntry(item.DefinitionId, item.DisplayName, true, false,
-                LoadPaletteIcon(item.PreviewSpritePath), item.DisplayName + "を配置します"))).Concat(
-            catalog.Objects.Where(item => item.EditorSelectable &&
-                MapRules.Allowed(item.AllowedMapTypes, map.MapType)).Select(item =>
+                LoadPaletteIcon(item.GrowsGrass ? catalog.Visuals.GrassSpritePath : item.PreviewSpritePath),
+                item.GrowsGrass ? "通常の草地にします" : item.DisplayName + "を配置します")).Concat(
+            catalog.Objects.Where(item => item.EditorSelectable).Select(item =>
                 new PaletteEntry(item.DefinitionId, item.DisplayName, false, false,
                     LoadPaletteIcon(item.PreviewSpritePath), item.DisplayName + "を配置します",
                     item.Category switch { "nature" => "自然", "furniture" => "家具",
@@ -221,8 +215,11 @@ public partial class MainWindow : Window
                 : selected.DefinitionId;
         ActionPointInfo.Text = selected != null && catalog.ObjectById.TryGetValue(selected.DefinitionId, out var actionDefinition)
             ? actionDefinition.ActionPoints.Count == 0 ? "なし" : string.Join("\n\n", actionDefinition.ActionPoints.Select(point =>
-                $"{point.Id}\nLocal: {point.PlayerCellOffset}  World: {MapRules.ActionCell(selected, point)}\nFacing: {point.PlayerFacing}  Type: {point.ActionType}\nPose: {point.PoseKey ?? "—"}  Text: {point.InteractionText ?? "—"}"))
+                $"{point.Id}\nLocal: {point.PlayerCellOffset}  World: {MapRules.ActionCell(selected, point)}\nFacing: {point.PlayerFacing}  Type: {point.ActionType}\nPose: {point.PoseKey ?? "—"}  Text: {MapRules.ActionText(selected, point) ?? "—"}"))
             : "Objectを選択してください";
+        SignTextSection.Visibility = selected?.DefinitionId == "sign_basic" ? Visibility.Visible : Visibility.Collapsed;
+        if (selected?.DefinitionId == "sign_basic" && !SignTextBox.IsKeyboardFocusWithin)
+            SignTextBox.Text = selected.SignText ?? "";
         InstanceText.Text = selected?.InstanceId ?? "";
         RootX.Text = selected?.RootCell.X.ToString() ?? selectedCell?.X.ToString() ?? "";
         RootY.Text = selected?.RootCell.Y.ToString() ?? selectedCell?.Y.ToString() ?? "";
@@ -344,6 +341,21 @@ public partial class MainWindow : Window
         if (!session.MoveObject(selectedInstanceId, new GridCell(x, y), out var reason)) StatusText.Text = reason;
         RefreshView();
     }
+    private void ApplySignTextClick(object sender, RoutedEventArgs e)
+    {
+        if (session == null || selectedInstanceId == null) return;
+        if (string.IsNullOrWhiteSpace(SignTextBox.Text))
+        { StatusText.Text = "看板の内容を入力してください。"; return; }
+        session.SetSignText(selectedInstanceId, SignTextBox.Text);
+        SignTextBox.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+        RefreshView();
+    }
+    private void SignTextKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Return) return;
+        ApplySignTextClick(sender, e);
+        e.Handled = true;
+    }
     private void ValidationDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (session == null || catalog == null || ValidationList.SelectedIndex < 0) return;
@@ -358,9 +370,21 @@ public partial class MainWindow : Window
             if (e.Key == Key.S) SaveMap(sender, e);
             else if (e.Key == Key.Z) UndoClick(sender, e);
             else if (e.Key == Key.Y) RedoClick(sender, e);
-            else if (e.Key == Key.C && SelectedObject() is { } source) Clipboard.SetText(source.DefinitionId);
+            else if (e.Key == Key.C && SelectedObject() is { } source)
+                Clipboard.SetText("HALKA_WORLD_OBJECT:" + JsonSerializer.Serialize(source));
             else if (e.Key == Key.V && selectedCell is { } cell && Clipboard.ContainsText() && session != null)
-            { if (!session.PlaceObject(Clipboard.GetText(), cell, out var reason)) StatusText.Text = reason; RefreshView(); }
+            {
+                var clip = Clipboard.GetText();
+                ObjectPlacement? copied = null;
+                if (clip.StartsWith("HALKA_WORLD_OBJECT:", StringComparison.Ordinal))
+                    try { copied = JsonSerializer.Deserialize<ObjectPlacement>(clip[19..]); }
+                    catch (JsonException) { StatusText.Text = "コピーしたObjectを読み込めません。"; }
+                if (copied != null)
+                { if (!session.PlaceObject(copied.DefinitionId, cell, out var reason, copied.SignText)) StatusText.Text = reason; }
+                else if (!clip.StartsWith("HALKA_WORLD_OBJECT:", StringComparison.Ordinal) &&
+                    !session.PlaceObject(clip, cell, out var reason)) StatusText.Text = reason;
+                RefreshView();
+            }
             else return;
             e.Handled = true; return;
         }
@@ -412,8 +436,7 @@ public partial class MainWindow : Window
         {
             session.BeginStroke(); dragPaint = entry.IsSurface;
             if (dragPaint) lastPaintCell = cell;
-            if (entry.RestoresBase) session.RestoreBaseSurface(cell);
-            else if (entry.IsSurface)
+            if (entry.IsSurface)
             {
                 if (!session.PaintSurface(entry.DefinitionId, cell) &&
                     session.Map.Objects.Any(item => catalog.ObjectById.TryGetValue(item.DefinitionId, out var definition) &&
@@ -471,8 +494,7 @@ public partial class MainWindow : Window
                 foreach (var crossed in StrokeCells(lastPaintCell ?? cell, cell))
                 {
                     if (!session.Map.Bounds.Contains(crossed)) continue;
-                    if (entry.RestoresBase) session.RestoreBaseSurface(crossed);
-                    else session.PaintSurface(entry.DefinitionId, crossed);
+                    session.PaintSurface(entry.DefinitionId, crossed);
                 }
                 lastPaintCell = cell;
             }
@@ -567,8 +589,11 @@ public partial class MainWindow : Window
                 DrawSprite(canvas, baseSurface.PreviewSpritePath, rect, new SKColor(86, 68, 52));
             else Fill(canvas, rect, new SKColor(130, 151, 89));
             if (surfaceLookup.TryGetValue(cell, out var surface) && catalog.SurfaceById.TryGetValue(surface.DefinitionId, out var sdef))
-                DrawSprite(canvas, sdef.PreviewSpritePath, rect, new SKColor(125, 101, 75));
-            else if (GrassCheck.IsChecked == true && MapRules.HasGrass(map, catalog, cell))
+            {
+                if (sdef.GrowsGrass) Fill(canvas, rect, new SKColor(217, 232, 184));
+                else DrawSprite(canvas, sdef.PreviewSpritePath, rect, new SKColor(125, 101, 75));
+            }
+            if (GrassCheck.IsChecked == true && MapRules.HasGrass(map, catalog, cell))
                 DrawSprite(canvas, catalog.Visuals.GrassSpritePath, rect, new SKColor(60, 117, 43));
             if (GridCheck.IsChecked == true)
             { using var line = new SKPaint { Color = new SKColor(15, 28, 14, 110), StrokeWidth = 1, Style = SKPaintStyle.Stroke, IsAntialias = false }; canvas.DrawRect(rect, line); }

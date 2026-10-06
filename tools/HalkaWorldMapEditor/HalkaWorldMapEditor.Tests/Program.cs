@@ -52,37 +52,34 @@ Check("catalog v3 and action point serialization", catalog.FormatVersion == 3 &&
     catalog.ObjectById["bed_basic"].ActionPoints.Single().PlayerCellOffset == new GridCell(0, 1));
 Check("bed sleep world cell", MapRules.ActionCell(new ObjectPlacement { RootCell = new GridCell(-5, 0) },
     catalog.ObjectById["bed_basic"].ActionPoints.Single()) == new GridCell(-5, 1));
-Check("planned map type filter", MapRules.Allowed(catalog.ObjectById["cushion_basic"].AllowedMapTypes, "interior") &&
-    !MapRules.Allowed(catalog.ObjectById["cushion_basic"].AllowedMapTypes, "outdoor") &&
-    MapRules.Allowed(catalog.ObjectById["bench_basic"].AllowedMapTypes, "outdoor"));
+Check("palette has no map type limits", catalog.Objects.All(o => o.AllowedMapTypes.Count == 0) &&
+    catalog.Surfaces.All(s => s.AllowedMapTypes.Count == 0 && s.EditorSelectable));
 Check("passable cushion metadata", !catalog.ObjectById["cushion_basic"].BlocksMovement &&
     !catalog.ObjectById["cushion_basic"].BlockedCellOffsets.Any() &&
     catalog.ObjectById["cushion_basic"].ActionPoints.Single().ActionType == "sit");
 Check("bench multiple seats", catalog.ObjectById["bench_basic"].ActionPoints.Count == 2 &&
     catalog.ObjectById["bench_basic"].ActionPoints.All(p => p.PoseKey == "bench_sit"));
-Check("sign examine texts", new[] { ("north", "きた"), ("east", "ひがし"),
-    ("south", "みなみ"), ("west", "にし") }.All(pair =>
-    catalog.ObjectById["sign_" + pair.Item1].ActionPoints.Single().InteractionText == pair.Item2));
-var newObjects = new[] { "cushion_basic", "desk_basic", "bench_basic", "sign_north",
-    "sign_east", "sign_south", "sign_west", "well_basic" };
+Check("one sign definition", catalog.ObjectById.ContainsKey("sign_basic") &&
+    catalog.Objects.Count(o => o.DefinitionId.StartsWith("sign_", StringComparison.Ordinal)) == 1 &&
+    catalog.ObjectById["sign_basic"].ActionPoints.Single().Id == "read_front" &&
+    catalog.ObjectById["sign_basic"].ActionPoints.Single().InteractionText == "かんばん。");
+var newObjects = new[] { "cushion_basic", "desk_basic", "bench_basic", "sign_basic", "well_basic" };
 Check("formal sprite paths and sizes", newObjects.All(id => {
     var definition = catalog.ObjectById[id];
     var spritePath = ProjectPaths.SpritePath(project, definition.PreviewSpritePath);
     return File.Exists(spritePath) && MapRules.HasSprite(definition) &&
         (id == "desk_basic" || id == "bench_basic" ?
             definition.VisualWidthPixels == 64 && definition.VisualHeightPixels == 32 :
-            id.StartsWith("sign_", StringComparison.Ordinal) ?
-                definition.VisualWidthPixels == 32 && definition.VisualHeightPixels == 64 :
                 definition.VisualWidthPixels == 32 && definition.VisualHeightPixels == 32);
 }));
-Check("shared blank sign art", new[] { "sign_north", "sign_east", "sign_south", "sign_west" }
-    .Select(id => catalog.ObjectById[id].PreviewSpritePath).Distinct().Single() ==
-    "Assets/Content/World/sign.png");
+Check("one tile blank sign art", catalog.ObjectById["sign_basic"].PreviewSpritePath ==
+    "Assets/Content/World/sign.png" && catalog.ObjectById["sign_basic"].Footprint.Width == 1 &&
+    catalog.ObjectById["sign_basic"].Footprint.Height == 1);
 Check("formal blocked footprint metadata", !catalog.ObjectById["cushion_basic"].BlockedCellOffsets.Any() &&
     new[] { "desk_basic", "bench_basic" }.All(id =>
         catalog.ObjectById[id].RootAnchor == "bottom-left" &&
         catalog.ObjectById[id].BlockedCellOffsets.SequenceEqual(new[] { new GridCell(0, 0), new GridCell(1, 0) })) &&
-    new[] { "sign_north", "sign_east", "sign_south", "sign_west", "well_basic" }.All(id =>
+    new[] { "sign_basic", "well_basic" }.All(id =>
         catalog.ObjectById[id].BlockedCellOffsets.SequenceEqual(new[] { new GridCell(0, 0) })));
 Check("formal action point metadata", catalog.ObjectById["desk_basic"].ActionPoints.Single().InteractionText == "つくえ。" &&
     catalog.ObjectById["bench_basic"].ActionPoints.Select(p => p.PlayerCellOffset)
@@ -123,6 +120,13 @@ Check("interior migration contract", houseMap.Bounds.MinX == -6 && houseMap.Boun
     MapRules.Validate(houseMap, catalog).Count == 0);
 Check("interior stable roundtrip", MapFormat.SerializeMap(MapFormat.ParseMap(houseSource)) ==
     MapFormat.SerializeMap(houseMap));
+var legacySignFixture = MapFormat.Clone(houseMap);
+legacySignFixture.Objects.Add(new ObjectPlacement { InstanceId = "legacy_sign", DefinitionId = "sign_west",
+    RootCell = new GridCell(0, 1) });
+var migratedSign = MapFormat.ParseMap(MapFormat.SerializeMap(legacySignFixture)).Objects
+    .Single(o => o.InstanceId == "legacy_sign");
+Check("old sign migrates in memory", migratedSign.DefinitionId == "sign_basic" &&
+    migratedSign.SignText == "にし" && !houseMap.Objects.Any(o => o.InstanceId == "legacy_sign"));
 var house = map.Objects.Single(o => o.DefinitionId == "house_main");
 var houseDefinition = catalog.ObjectById["house_main"];
 var houseBlocked = MapRules.FootprintCells(house, houseDefinition).ToArray();
@@ -258,8 +262,29 @@ try
     Check("floor restore redo", !MapRules.BlocksMovement(roomEdit.Map, catalog, wall));
     roomEdit.Save();
     Check("interior save and reload", MapRules.Validate(MapFormat.LoadMap(roomEdit.FilePath), catalog).Count == 0);
-    foreach (var id in new[] { "cushion_basic", "desk_basic", "bench_basic", "sign_north", "sign_east",
-                 "sign_south", "sign_west", "well_basic" })
+    var surfaceFreedom = new MapSession(MapFormat.Clone(houseMap), catalog,
+        Path.Combine(tempDir, "indoor-grass.hwmap.json"));
+    var interiorCell = new GridCell(0, 0);
+    Check("grass paints indoors", surfaceFreedom.RestoreGrass(interiorCell) &&
+        surfaceFreedom.Map.Surfaces.Any(s => s.Cell == interiorCell && s.DefinitionId == "base_ground") &&
+        MapRules.HasGrass(surfaceFreedom.Map, catalog, interiorCell));
+    Check("floor repaints indoors", surfaceFreedom.PaintSurface("house_floor", interiorCell) &&
+        !MapRules.HasGrass(surfaceFreedom.Map, catalog, interiorCell) &&
+        !surfaceFreedom.Map.Surfaces.Any(s => s.Cell == interiorCell));
+    Check("dirt paints indoors", surfaceFreedom.PaintSurface("dirt", interiorCell) &&
+        !MapRules.HasGrass(surfaceFreedom.Map, catalog, interiorCell));
+    var indoorTreeRoot = FindPlacement(surfaceFreedom.Map, catalog, "tree_basic");
+    Check("tree can be placed indoors", surfaceFreedom.PlaceObject("tree_basic", indoorTreeRoot, out _) &&
+        MapRules.Validate(surfaceFreedom.Map, catalog).All(issue => issue.IsWarning));
+    surfaceFreedom.Save();
+    Check("indoor unrestricted map reload", MapFormat.LoadMap(surfaceFreedom.FilePath).Objects
+        .Any(o => o.DefinitionId == "tree_basic"));
+    var outdoorBed = new MapSession(MapFormat.Clone(map), catalog,
+        Path.Combine(tempDir, "outdoor-bed.hwmap.json"));
+    var outdoorBedRoot = FindPlacement(outdoorBed.Map, catalog, "bed_basic");
+    Check("bed can be placed outdoors", outdoorBed.PlaceObject("bed_basic", outdoorBedRoot, out _) &&
+        MapRules.Validate(outdoorBed.Map, catalog).All(issue => issue.IsWarning));
+    foreach (var id in new[] { "cushion_basic", "desk_basic", "bench_basic", "sign_basic", "well_basic" })
     {
         var original = id is "cushion_basic" or "desk_basic" ? houseMap : map;
         var session = new MapSession(MapFormat.Clone(original), catalog,
@@ -295,6 +320,27 @@ try
         Check(id + " generic copy", session.CopyObject(idOfPlacement, root, out _));
         Check(id + " generic delete", session.DeleteObject(idOfPlacement));
     }
+    var signSession = new MapSession(MapFormat.Clone(houseMap), catalog,
+        Path.Combine(tempDir, "sign-instance.hwmap.json"));
+    var signRoot = FindPlacement(signSession.Map, catalog, "sign_basic");
+    Check("new sign default text", signSession.PlaceObject("sign_basic", signRoot, out _) &&
+        signSession.Map.Objects.Single(o => o.DefinitionId == "sign_basic").SignText == "かんばん。");
+    var signId = signSession.Map.Objects.Single(o => o.DefinitionId == "sign_basic").InstanceId;
+    Check("inspector sign text edit", signSession.SetSignText(signId, "ここからさき") &&
+        signSession.Map.Objects.Single(o => o.InstanceId == signId).SignText == "ここからさき");
+    signSession.Undo();
+    Check("sign text undo", signSession.Map.Objects.Single(o => o.InstanceId == signId).SignText == "かんばん。");
+    signSession.Redo();
+    var signMove = FindPlacement(signSession.Map, catalog, "sign_basic", signId, signRoot);
+    Check("sign move preserves text", signSession.MoveObject(signId, signMove, out _) &&
+        signSession.Map.Objects.Single(o => o.InstanceId == signId).SignText == "ここからさき");
+    Check("sign copy preserves text", signSession.CopyObject(signId, signRoot, out _) &&
+        signSession.Map.Objects.Single(o => o.RootCell == signRoot).SignText == "ここからさき" &&
+        signSession.Map.Objects.Single(o => o.RootCell == signRoot).InstanceId != signId);
+    signSession.Save();
+    Check("sign instance text reload", MapFormat.LoadMap(signSession.FilePath).Objects
+        .Count(o => o.DefinitionId == "sign_basic" && o.SignText == "ここからさき") == 2);
+    Check("non-sign JSON stays sparse", !MapFormat.SerializeMap(map).Contains("\"signText\"", StringComparison.Ordinal));
 }
 finally { Directory.Delete(tempDir, true); }
 Check("formal map never written", File.ReadAllText(mapPath) == source);

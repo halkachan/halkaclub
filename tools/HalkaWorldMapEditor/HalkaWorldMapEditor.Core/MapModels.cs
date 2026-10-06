@@ -34,6 +34,8 @@ public sealed class ObjectPlacement
     public string InstanceId { get; set; } = "";
     public string DefinitionId { get; set; } = "";
     public GridCell RootCell { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? SignText { get; set; }
 }
 
 public sealed class RoadEnds
@@ -87,6 +89,7 @@ public sealed class CatalogSurface
     public int VisualWidthPixels { get; set; } = 32;
     public int VisualHeightPixels { get; set; } = 32;
     public bool BlocksMovement { get; set; }
+    public bool GrowsGrass { get; set; }
     public List<string> AllowedMapTypes { get; set; } = [];
     public bool EditorSelectable { get; set; } = true;
 }

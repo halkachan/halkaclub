@@ -9,10 +9,12 @@ namespace Halka.Game.World
         [SerializeField] private string displayName;
         [SerializeField] private Sprite sprite;
         [SerializeField] private bool blocksMovement;
+        [SerializeField] private bool growsGrass;
 
         public string StableId => stableId;
         public string DisplayName => displayName;
         public Sprite Sprite => sprite;
         public bool BlocksMovement => blocksMovement;
+        public bool GrowsGrass => growsGrass;
     }
 }

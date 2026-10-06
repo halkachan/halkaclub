@@ -17,6 +17,7 @@ namespace Halka.Game.World
         public string InstanceId;
         public Vector2Int RootCell;
         public WorldObjectDefinition Definition;
+        public string SignText;
     }
 
     [Serializable]

@@ -49,8 +49,11 @@ namespace Halka.Game.World
 
         public static bool HasGrass(MapDefinition map, Vector2Int cell)
         {
-            if (map.GrassMode != "auto" || !map.Contains(cell) || map.SurfaceAt(cell) != null ||
-                BlocksMovement(map, cell)) return false;
+            if (!map.Contains(cell) || BlocksMovement(map, cell)) return false;
+            var surface = map.SurfaceAt(cell);
+            var growsGrass = surface != null ? surface.GrowsGrass :
+                map.GrassMode == "auto" && map.BaseSurface != null && map.BaseSurface.GrowsGrass;
+            if (!growsGrass) return false;
             foreach (var placement in map.Objects)
                 if (placement.Definition != null && placement.Definition.ExcludesGrass &&
                     Covers(placement, cell)) return false;

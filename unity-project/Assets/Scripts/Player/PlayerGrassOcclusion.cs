@@ -16,6 +16,13 @@ namespace Halka.Game.Player
 
         public bool IsMasked => playerRenderer.maskInteraction == SpriteMaskInteraction.VisibleInsideMask;
 
+        public void UseGrassField(GrassField2D field)
+        {
+            if (field == null) throw new ArgumentNullException(nameof(field));
+            grassField = field;
+            RefreshMask();
+        }
+
         private void Awake()
         {
             if (mover == null || grassField == null || playerRenderer == null || spriteMask == null ||

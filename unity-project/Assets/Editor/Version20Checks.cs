@@ -89,6 +89,11 @@ namespace Halka.Game.Editor
             Check(autoMode.CanAutoEnter(door) == false && AutoModeController.IdleSeconds == 60f,
                 "AUTO remains outdoors and avoids the house entrance");
 
+            var interiorGrass = (GrassField2D)Field(area, "interiorGrass");
+            Check(interiorGrass != null &&
+                (GrassField2D)Field(area, "exteriorGrass") == grass,
+                "both areas have separate grass fields");
+
             typeof(HouseArea2D).GetMethod("Awake", Hidden).Invoke(area, null);
             player.TeleportTo(field.OutsideEntryCell);
             area.Enter();
@@ -96,7 +101,9 @@ namespace Halka.Game.Editor
             Check(area.IsInside && maps.ActiveMapId == "halka_house" &&
                 interiorRoot[1].activeSelf && !interiorRoot[0].activeSelf &&
                 player.Cell == insideEntry && world.MinCell == room.MinCell &&
-                world.MaxCell == room.MaxCell, "entry activates indoor Map ID and spawn");
+                world.MaxCell == room.MaxCell &&
+                (GrassField2D)Field(playerMask, "grassField") == interiorGrass,
+                "entry activates indoor Map ID, spawn and grass mask source");
             Check(!world.CanEnter(bed.RootCell) && !world.CanEnter(new Vector2Int(-6, 0)) &&
                 world.CanEnter(insideExit), "bed, wall and passage collision follow MapData");
             Check(follow.transform.position == follow.TargetPosition,
@@ -105,7 +112,8 @@ namespace Halka.Game.Editor
             Check(!area.IsInside && maps.ActiveMapId == "first_field" &&
                 interiorRoot[0].activeSelf && !interiorRoot[1].activeSelf &&
                 player.Cell == field.OutsideEntryCell && world.MinCell == field.MinCell &&
-                follow.transform.position == follow.TargetPosition,
+                follow.transform.position == follow.TargetPosition &&
+                (GrassField2D)Field(playerMask, "grassField") == grass,
                 "exit returns to the house root-derived entry and snaps camera");
             Check(grass.HasGrass(new Vector2Int(0, 0)) ==
                 MapPlacementRules.HasGrass(field, new Vector2Int(0, 0)),
