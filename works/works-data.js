@@ -123,6 +123,16 @@ const worksData = [
         publishedAt: "2026-07-03",
         youtubeUrl: "https://youtu.be/jQBH_FHq0iI",
       },
+      {
+        title: "テオｳﾀｯﾀ (Arrange cover)",
+        publishedAt: "2026-09-25",
+        youtubeUrl: "https://youtu.be/dhHE1-KrwTY",
+      },
+      {
+        title: "したをみてわらおう！ / 鏡音レン",
+        publishedAt: "2026-08-22",
+        youtubeUrl: "https://youtu.be/5-ACJ-VJ2NQ",
+      },
     ],
   },
   {
