@@ -20,6 +20,7 @@ public sealed class SiteSession
     private const string OptionName = @"(<span class=""plan-option-name"">)([^<]*)(</span>)";
     private const string OptionPrice = @"(<span class=""plan-option-price"">)([^<]*)(</span>)";
     private const string LatestVideo = @"(const latestVideoUrl = "")([^""]*)("";)";
+    private const string NewsYear = @"(<p>)([^<]*)(</p>\r?\n[ \t]*<h1 id=""news-title"">)";
     private const string LinkHref = @"(<a class=""link-card[^""]*"" href="")([^""]*)("")";
     private const string LinkName = @"(<strong>)([^<]*)(</strong>)";
     private const string LinkNote = @"(<small>)([^<]*)(</small>)";
@@ -51,18 +52,22 @@ public sealed class SiteSession
     public WorksDocument Works { get; }
     public CommissionTextDocument CommissionText { get; }
     public UtamazeRelease? Utamaze { get; }
+    public NewsDocument? News { get; }
+    public ParagraphRun? ClubUpdate { get; }
 
     /// <summary>このツールが書き換えるファイル（サイトのフォルダーからの相対パス）。公開もこれだけを対象にします。</summary>
     public IReadOnlyList<string> ManagedFiles =>
         files.Select(file => SitePaths.Relative(Root, file.Path)).OrderBy(path => path, StringComparer.Ordinal).ToArray();
 
     public IEnumerable<EditField> Fields => Groups.SelectMany(group => group.Fields);
-    public bool HasChanges => Fields.Any(field => field.Changed) || Works.HasChanges || CommissionText.HasChanges || Utamaze?.HasChanges == true;
-    public bool HasError => Fields.Any(field => field.HasError) || Works.HasError || CommissionText.HasError || Utamaze?.HasError == true;
+    public bool HasChanges => Fields.Any(field => field.Changed) || Works.HasChanges || CommissionText.HasChanges || Utamaze?.HasChanges == true
+        || News?.HasChanges == true || ClubUpdate?.Changed == true;
+    public bool HasError => Fields.Any(field => field.HasError) || Works.HasError || CommissionText.HasError || Utamaze?.HasError == true
+        || News?.HasError == true || ClubUpdate?.HasError == true;
 
     private SiteSession(string root, List<SiteFile> files, IReadOnlyList<EditGroup> groups,
         WorksDocument works, CommissionTextDocument commissionText, UtamazeRelease? utamaze,
-        SiteFile? worksPage)
+        SiteFile? worksPage, NewsDocument? news, ParagraphRun? clubUpdate)
     {
         Root = root;
         this.files = files;
@@ -71,6 +76,8 @@ public sealed class SiteSession
         CommissionText = commissionText;
         Utamaze = utamaze;
         this.worksPage = worksPage;
+        News = news;
+        ClubUpdate = clubUpdate;
     }
 
     public static SiteSession Load(string root)
@@ -98,14 +105,19 @@ public sealed class SiteSession
         var groups = new List<EditGroup>
         {
             BuildCommission(root, ja, en),
-            BuildTopPage(root, script),
+            BuildTopPage(root, script, home),
             BuildLinks(root, home),
             BuildColors(root, style),
         };
 
         // あるときだけ出すページ。
         var clubPath = SitePaths.ClubHtml(root);
-        if (File.Exists(clubPath)) groups.Add(BuildClub(root, Open(clubPath)));
+        SiteFile? clubFile = null;
+        if (File.Exists(clubPath))
+        {
+            clubFile = Open(clubPath);
+            groups.Add(BuildClub(root, clubFile));
+        }
 
         var versionPath = SitePaths.UtamazeVersion(root);
         SiteFile? versionFile = null;
@@ -120,11 +132,20 @@ public sealed class SiteSession
         var utamaze = UtamazeRelease.Load(root, File.Exists(utamazePath) ? Open(utamazePath) : null,
             home, versionFile);
 
+        // トップページの「うれしいこと」と、くらぶの更新内容。
+        var news = NewsDocument.Load(home, SitePaths.Relative(root, home.Path));
+        var clubUpdate = clubFile == null ? null : ParagraphRun.Create(
+            clubFile, SitePaths.Relative(root, clubFile.Path),
+            "はるかくらぶ：更新内容", "1行＝1項目です。「・」も含めてそのまま書けます。",
+            new System.Text.RegularExpressions.Regex(
+                @"(<p class=""club-date"">[^<]*</p>\r?\n)((?:[ \t]*<p>[\s\S]*?</p>\r?\n)+)([ \t]*</section>)"));
+
         var works = WorksDocument.Load(worksFile, SitePaths.Relative(root, worksFile.Path));
         var commissionText = CommissionTextDocument.Load(
             ("日本語版", ja, SitePaths.Relative(root, ja.Path)),
             ("英語版", en, SitePaths.Relative(root, en.Path)));
-        return new SiteSession(root, files, groups, works, commissionText, utamaze, worksPage);
+        return new SiteSession(root, files, groups, works, commissionText, utamaze, worksPage,
+            news, clubUpdate);
     }
 
     private static EditGroup BuildLinks(string root, SiteFile home)
@@ -276,9 +297,9 @@ public sealed class SiteSession
             pairs, null, options);
     }
 
-    private static EditGroup BuildTopPage(string root, SiteFile script)
+    private static EditGroup BuildTopPage(string root, SiteFile script, SiteFile home)
     {
-        var field = new EditField(
+        var video = new EditField(
             script,
             SitePaths.Relative(root, script.Path),
             new ValueSlot(LatestVideo),
@@ -286,10 +307,19 @@ public sealed class SiteSession
             "最新動画のURL",
             FieldKind.YouTubeUrl);
 
+        var year = new EditField(
+            home,
+            SitePaths.Relative(root, home.Path),
+            new ValueSlot(NewsYear),
+            "top.newsYear",
+            "「うれしいこと」の年",
+            FieldKind.HtmlText);
+
         return new EditGroup(
             "トップページ",
-            "サムネイル画像とリンク先は、このURLから自動で作られます。",
-            new[] { field });
+            "サムネイル画像とリンク先は、最新動画のURLから自動で作られます。",
+            new[] { video, year }, null,
+            new[] { new FieldRow("うれしいこと", new FieldCell("見出しに出す年", year, 160)) });
     }
 
     private static EditGroup BuildColors(string root, SiteFile style)
@@ -315,6 +345,8 @@ public sealed class SiteSession
         .Concat(Works.Changes())
         .Concat(CommissionText.Changes())
         .Concat(Utamaze?.Changes() ?? Array.Empty<ChangeRow>())
+        .Concat(News?.Changes() ?? Array.Empty<ChangeRow>())
+        .Concat(ClubUpdate?.Change() is { } clubRow ? new[] { clubRow } : Array.Empty<ChangeRow>())
         .ToArray();
 
     /// <summary>入力内容をファイルへ書き込みます。</summary>
@@ -339,11 +371,15 @@ public sealed class SiteSession
         Works.Apply();
         CommissionText.Apply();
         Utamaze?.Apply();
+        News?.Apply();
+        ClubUpdate?.Apply();
         foreach (var file in files) file.Save();
         foreach (var field in Fields) field.MarkSaved();
         Works.MarkSaved();
         CommissionText.MarkSaved();
         Utamaze?.MarkSaved();
+        News?.MarkSaved();
+        ClubUpdate?.MarkSaved();
     }
 
     public void Revert()
@@ -352,5 +388,7 @@ public sealed class SiteSession
         Works.Revert();
         CommissionText.Revert();
         Utamaze?.Revert();
+        News?.Revert();
+        ClubUpdate?.Revert();
     }
 }

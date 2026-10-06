@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:HalkaSiteEditor"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="HALKA SITE EDITOR v0.7" Icon="Assets/site-editor.ico"
+        Title="HALKA SITE EDITOR v0.8" Icon="Assets/site-editor.ico"
         Width="1660" Height="900" MinWidth="1000" MinHeight="640"
         Background="#16191E" Foreground="#E4E8EC" FontFamily="Yu Gothic UI" FontSize="13"
         Loaded="WindowLoaded" Closing="WindowClosing">
@@ -205,6 +205,47 @@
       </Border>
     </DataTemplate>
 
+    <!-- うれしいこと 1件 -->
+    <DataTemplate x:Key="NewsTemplate">
+      <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,6" Padding="10,8">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Margin="0,0,10,0" VerticalAlignment="Top">
+            <Button Content="↑" Click="NewsUpClick" Tag="{Binding}" Width="30" Padding="0,3"/>
+            <Button Content="↓" Click="NewsDownClick" Tag="{Binding}" Width="30" Padding="0,3"/>
+            <Button Content="✕" Click="NewsDeleteClick" Tag="{Binding}" Width="30" Padding="0,3"
+                    ToolTip="このお知らせを消します"/>
+          </StackPanel>
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="150"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
+              <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                <TextBlock Text="日付" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding Date, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="「2/21投稿」「4/25〜4/26開催」のように、自由に書けます。"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1">
+                <TextBlock Text="見出し" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"/>
+              </StackPanel>
+            </Grid>
+            <TextBlock Text="説明（いらなければ空のまま）" Style="{StaticResource Caption}" Margin="0,6,0,3"/>
+            <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"/>
+            <TextBlock Text="受賞・参加など（1行＝1つ。いらなければ空のまま）" Style="{StaticResource Caption}"
+                       Margin="0,6,0,3"/>
+            <TextBox Text="{Binding Achievements, UpdateSourceTrigger=PropertyChanged}"
+                     AcceptsReturn="True" TextWrapping="Wrap" MinHeight="46" MaxHeight="120"
+                     VerticalScrollBarVisibility="Auto"/>
+            <TextBlock Foreground="#FF8A8A" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
+                       Text="{Binding Error}"
+                       Visibility="{Binding Error, Converter={StaticResource TextToVisibility}}"/>
+          </StackPanel>
+        </DockPanel>
+      </Border>
+    </DataTemplate>
+
     <!-- 作品一覧の1件 -->
     <DataTemplate x:Key="WorkTemplate">
       <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,6" Padding="10,8">
@@ -375,6 +416,21 @@
         </DockPanel>
       </TabItem>
 
+      <TabItem Header="うれしいこと">
+        <DockPanel Margin="4,10,4,0">
+          <TextBlock DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap" Margin="2,0,2,10"
+                     Text="トップページの「うれしいこと」欄です。受賞やイベント参加のお知らせを、追加・並べ替え・削除できます。新しいお知らせは一番下に足されます。"/>
+          <DockPanel DockPanel.Dock="Top" Margin="2,0,10,10">
+            <Button DockPanel.Dock="Right" Content="お知らせを追加" Click="NewsAddClick" Padding="14,5"/>
+            <TextBlock Foreground="#8C97A6" FontSize="11" VerticalAlignment="Center"
+                       Text="見出しに出ている年は「トップページ」タブで直せます。"/>
+          </DockPanel>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="NewsItems" ItemTemplate="{StaticResource NewsTemplate}" Margin="2,0,10,10"/>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
       <TabItem Header="リンク">
         <DockPanel Margin="4,10,4,0">
           <TextBlock x:Name="LinkNote" DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap"
@@ -402,6 +458,7 @@
                          HorizontalAlignment="Left" Stretch="Uniform"/>
                 </StackPanel>
               </Border>
+              <ItemsControl x:Name="TopRows" ItemTemplate="{StaticResource RowTemplate}" Margin="0,10,0,0"/>
             </StackPanel>
           </ScrollViewer>
         </DockPanel>
@@ -412,7 +469,22 @@
           <TextBlock x:Name="ClubNote" DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap"
                      Margin="2,0,2,10"/>
           <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <ItemsControl x:Name="ClubItems" ItemTemplate="{StaticResource RowTemplate}" Margin="2,0,10,10"/>
+            <StackPanel Margin="2,0,10,10">
+              <ItemsControl x:Name="ClubItems" ItemTemplate="{StaticResource RowTemplate}"/>
+              <Border x:Name="ClubUpdateBox" Background="#20262F" BorderBrush="#2F3845" BorderThickness="1"
+                      Padding="12,10">
+                <StackPanel>
+                  <DockPanel Margin="0,0,0,5">
+                    <TextBlock DockPanel.Dock="Left" Text="更新内容" FontSize="14"/>
+                    <TextBlock x:Name="ClubUpdateHint" Foreground="#8C97A6" FontSize="11" Margin="12,2,0,0"/>
+                  </DockPanel>
+                  <TextBox x:Name="ClubUpdateText" AcceptsReturn="True" TextWrapping="Wrap"
+                           MinHeight="70" MaxHeight="200" VerticalScrollBarVisibility="Auto"/>
+                  <TextBlock x:Name="ClubUpdateError" Foreground="#FF8A8A" FontSize="11" TextWrapping="Wrap"
+                             Margin="0,4,0,0"/>
+                </StackPanel>
+              </Border>
+            </StackPanel>
           </ScrollViewer>
         </DockPanel>
       </TabItem>

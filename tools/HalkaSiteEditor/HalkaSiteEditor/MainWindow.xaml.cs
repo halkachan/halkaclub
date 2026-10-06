@@ -98,6 +98,7 @@ public partial class MainWindow : Window
         OptionItems.ItemsSource = commission.Options;
         ColorItems.ItemsSource = colors.Fields;
         LinkItems.ItemsSource = links.Rows;
+        TopRows.ItemsSource = top.Rows;
 
         TextPagePicker.ItemsSource = session.CommissionText.Pages;
         TextPagePicker.SelectedIndex = 0;
@@ -109,8 +110,10 @@ public partial class MainWindow : Window
         BindOptionalGroup("うたまぜ！", UtamazeTab, UtamazeNote, UtamazeItems);
         BindWorks();
         BindRelease();
+        BindNews();
+        BindClubUpdate();
 
-        videoField = top.Fields.Single();
+        videoField = top.Fields.Single(field => field.Id == "top.latestVideo");
         VideoLabel.Text = videoField.Label;
         VideoBox.SetBinding(TextBox.TextProperty, new Binding(nameof(EditField.Value))
         {
@@ -302,6 +305,80 @@ public partial class MainWindow : Window
 
     private void WorkChanged(object? sender, PropertyChangedEventArgs e) => RefreshChanges();
 
+    // --- うれしいこと -------------------------------------------------------
+
+    private void BindNews()
+    {
+        var news = session?.News;
+        if (news == null) return;
+
+        NewsItems.ItemsSource = news.Items;
+        news.Items.CollectionChanged += NewsCollectionChanged;
+        foreach (var item in news.Items) item.PropertyChanged += NewsChanged;
+    }
+
+    private void NewsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+            foreach (NewsItem item in e.NewItems) item.PropertyChanged += NewsChanged;
+        if (e.OldItems != null)
+            foreach (NewsItem item in e.OldItems) item.PropertyChanged -= NewsChanged;
+        RefreshChanges();
+    }
+
+    private void NewsChanged(object? sender, PropertyChangedEventArgs e) => RefreshChanges();
+
+    /// <summary>くらぶの更新内容（1行＝1項目）。</summary>
+    private void BindClubUpdate()
+    {
+        var update = session?.ClubUpdate;
+        if (update == null)
+        {
+            ClubUpdateBox.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        ClubUpdateBox.Visibility = Visibility.Visible;
+        ClubUpdateHint.Text = update.Hint;
+        ClubUpdateText.SetBinding(TextBox.TextProperty, new Binding(nameof(ParagraphRun.Text))
+        {
+            Source = update,
+            UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+        });
+        update.PropertyChanged += ClubUpdateChanged;
+        ClubUpdateError.Text = update.Error ?? "";
+    }
+
+    private void ClubUpdateChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        ClubUpdateError.Text = session?.ClubUpdate?.Error ?? "";
+        RefreshChanges();
+    }
+
+    private void NewsAddClick(object sender, RoutedEventArgs e)
+    {
+        session?.News?.AddNew();
+        StatusText.Text = "一番下にお知らせを足しました。日付と見出しを入れてください。";
+    }
+
+    private void NewsUpClick(object sender, RoutedEventArgs e) => MoveNews(sender, -1);
+
+    private void NewsDownClick(object sender, RoutedEventArgs e) => MoveNews(sender, 1);
+
+    private void MoveNews(object sender, int offset)
+    {
+        if (((FrameworkElement)sender).Tag is NewsItem item) session?.News?.Move(item, offset);
+    }
+
+    private void NewsDeleteClick(object sender, RoutedEventArgs e)
+    {
+        if (((FrameworkElement)sender).Tag is not NewsItem item) return;
+        var answer = MessageBox.Show(this, $"「{item.Title}」を消します。よろしいですか？",
+            "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.OK) return;
+        session?.News?.Items.Remove(item);
+    }
+
     // --- うたまぜ！のリリース -----------------------------------------------
 
     private void BindRelease()
@@ -400,7 +477,9 @@ public partial class MainWindow : Window
         var errors = (session.Utamaze?.Switches.Count(step => step.HasError) ?? 0)
             + session.Fields.Count(field => field.HasError)
             + session.Works.Categories.Sum(category => category.Works.Count(work => work.HasError))
-            + session.CommissionText.Pages.Sum(page => page.Blocks.Count(block => block.HasError));
+            + session.CommissionText.Pages.Sum(page => page.Blocks.Count(block => block.HasError))
+            + (session.News?.Items.Count(item => item.HasError) ?? 0)
+            + (session.ClubUpdate?.HasError == true ? 1 : 0);
         SaveButton.IsEnabled = session.HasChanges && !session.HasError;
         RevertButton.IsEnabled = session.HasChanges;
 
@@ -606,7 +685,8 @@ public partial class MainWindow : Window
         if (answer != MessageBoxResult.OK) return;
 
         session.Revert();
-        BindWorks();   // 元に戻すと作品の一覧は作り直されるので、つなぎ直します。
+        BindWorks();
+        BindNews();   // 元に戻すと作品の一覧は作り直されるので、つなぎ直します。
         RefreshChanges();
         UpdateVideoPreview();
     }

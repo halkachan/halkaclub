@@ -100,7 +100,7 @@ Check("見出しは日本語版の項目名", commission.Pairs.Skip(1).All(pair 
     commission.Pairs.Any(pair => pair.Label.Contains("歌ってみた")));
 Check("いまの受付状況を読めている", commission.Pairs[0].Ja.Value.Length > 0 && commission.Pairs[0].En.Value.Length > 0);
 Check("色を6つ読む", colors.Fields.Count == 6 && colors.Fields.All(field => CssColor.IsValid(field.Value)));
-Check("最新動画を読む", YouTubeUrl.ExtractId(top.Fields.Single().Value) != null);
+Check("最新動画を読む", YouTubeUrl.ExtractId(top.Fields.Single(field => field.Id == "top.latestVideo").Value) != null);
 Check("読んだ直後は変更なし", !session.HasChanges && !session.HasError && session.Changes().Count == 0);
 
 // --- 入力の検証 -----------------------------------------------------------
@@ -111,7 +111,7 @@ Check("おかしな色は誤りとして出る", yellow.HasError && session.HasE
 yellow.Revert();
 Check("元に戻せる", !yellow.HasError && !session.HasChanges);
 
-var video = top.Fields.Single();
+var video = top.Fields.Single(field => field.Id == "top.latestVideo");
 video.Value = "https://example.com/abc";
 Check("YouTube以外のURLは誤り", video.HasError);
 video.Revert();
@@ -170,7 +170,7 @@ Check("中途半端に書き込まれていない", File.ReadAllText(Path.Combin
 Check("誤りがあるまま保存しない", Throws(() =>
 {
     var broken = SiteSession.Load(sandbox);
-    broken.Groups.Single(group => group.Title == "トップページ").Fields.Single().Value = "だめなURL";
+    broken.Groups.Single(group => group.Title == "トップページ").Fields.Single(field => field.Id == "top.latestVideo").Value = "だめなURL";
     broken.Save();
 }));
 
@@ -508,6 +508,77 @@ Check("作品を触らなければ上がらない",
 
 // ?v= がまだ無いファイルには付ける。
 Check("まだ番号が無ければ付ける", CacheBuster.Current("<script src=\"a.js\"></script>", "a.js") == 0);
+
+// --- v0.8：うれしいこと／くらぶの更新内容 ----------------------------------
+
+var v8 = SiteSession.Load(sandbox);
+var news = v8.News ?? throw new Exception("うれしいこと欄が読めません");
+var clubUpdate = v8.ClubUpdate ?? throw new Exception("くらぶの更新内容が読めません");
+
+Check("うれしいことを読み取れる",
+    news.Items.Count == 3 &&
+    news.Items[0].Date == "2/21投稿" &&
+    news.Items[0].Title.Contains("竹取オーバナイト") &&
+    news.Items[0].Description.Contains("ボカコレ") &&
+    news.Items[0].Achievements.Contains("超かぐや姫！賞"));
+Check("説明が無い件も読める",
+    news.Items[1].Description == "" && news.Items[1].Achievements.Contains("コンピCD"));
+Check("HTMLの印は画面に出さない",
+    news.Items.All(item => !item.Title.Contains("<") && !item.Achievements.Contains("<mark>")));
+Check("読んだだけなら1文字も変わらない", news.Rebuild() == File.ReadAllText(Path.Combine(sandbox, "index.html")));
+Check("最初は変更なし", !news.HasChanges && !clubUpdate.Changed && !v8.HasChanges);
+
+Check("くらぶの更新内容を読める", clubUpdate.Text == "・ページ作成");
+
+// 追加・並べ替え・削除。
+var addedNews = news.AddNew();
+addedNews.Date = "10/7";
+addedNews.Title = "ためしのお知らせ";
+addedNews.Achievements = "ためし賞　受賞\nもうひとつ";
+Check("追加が変更一覧に出る",
+    news.HasChanges && !news.HasError &&
+    v8.Changes().Any(row => row.Label.Contains("うれしいこと：追加") && row.After == "ためしのお知らせ"));
+
+news.Move(addedNews, -1);
+Check("並べ替えられる", news.Items[2] == addedNews);
+
+clubUpdate.Text = "・ページ作成\n・ステムを追加";
+Check("くらぶの更新内容を増やせる", clubUpdate.Changed &&
+    v8.Changes().Any(row => row.Label.Contains("くらぶ")));
+
+v8.Save();
+
+var newsSession = SiteSession.Load(sandbox);
+var newsAfter = newsSession.News!;
+Check("書いたお知らせが読み直せる",
+    newsAfter.Items.Count == 4 &&
+    newsAfter.Items[2].Title == "ためしのお知らせ" &&
+    newsAfter.Items[2].Achievements == "ためし賞　受賞\nもうひとつ" &&
+    newsAfter.Items[2].Description == "");
+Check("保存後も組み立て直しで1文字も変わらない",
+    newsAfter.Rebuild() == File.ReadAllText(Path.Combine(sandbox, "index.html")));
+Check("くらぶの更新内容が読み直せる", newsSession.ClubUpdate!.Text == "・ページ作成\n・ステムを追加");
+Check("説明が空なら、その行ごと出さない",
+    !File.ReadAllText(Path.Combine(sandbox, "index.html")).Contains("<p class=\"news-desc\"></p>"));
+
+// 削除して元の件数へ戻せること。
+var shrink = SiteSession.Load(sandbox);
+var remove = shrink.News!.Items.First(item => item.Title == "ためしのお知らせ");
+shrink.News.Items.Remove(remove);
+Check("削除が変更一覧に出る",
+    shrink.Changes().Any(row => row.Label.Contains("削除") && row.Before == "ためしのお知らせ"));
+shrink.Save();
+Check("消すと元の件数に戻る", SiteSession.Load(sandbox).News!.Items.Count == 3);
+
+// リンクの編集と同じファイルを触るので、両方残ること。
+var together = SiteSession.Load(sandbox);
+together.Groups.Single(group => group.Title == "リンク").Rows[0].Cells[0].Field.Value = "作品のまとめ";
+together.News!.Items[0].Title = "見出しを変えた";
+together.Save();
+var bothSaved = SiteSession.Load(sandbox);
+Check("リンクとお知らせを同時に直せる",
+    bothSaved.Groups.Single(group => group.Title == "リンク").Rows[0].Cells[0].Field.Value == "作品のまとめ" &&
+    bothSaved.News!.Items[0].Title == "見出しを変えた");
 
 // --- プレビュー用サーバー -------------------------------------------------
 
