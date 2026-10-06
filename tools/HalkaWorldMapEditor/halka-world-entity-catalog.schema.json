@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "HALKA WORLD Entity Catalog v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "formatVersion", "entities"],
+  "properties": {
+    "format": { "const": "halka-world-entity-catalog" },
+    "formatVersion": { "const": 1 },
+    "entities": { "type": "array", "minItems": 1, "items": {
+      "type": "object", "additionalProperties": false,
+      "required": ["definitionId", "displayName", "previewSpritePath", "visualWidthCells",
+        "visualHeightCells", "defaultFacing", "runtimeBehavior", "spawnMode",
+        "blocksMovement", "editorCategory", "maxInstances"],
+      "properties": {
+        "definitionId": { "type": "string", "pattern": "^[a-z0-9_-]+$" },
+        "displayName": { "type": "string", "minLength": 1 },
+        "previewSpritePath": { "type": "string", "minLength": 1 },
+        "visualWidthCells": { "type": "integer", "minimum": 1 },
+        "visualHeightCells": { "type": "integer", "minimum": 1 },
+        "defaultFacing": { "enum": ["up", "down", "left", "right"] },
+        "runtimeBehavior": { "enum": ["persistent-player", "crow-wander"] },
+        "spawnMode": { "enum": ["game-start", "map-local"] },
+        "blocksMovement": { "type": "boolean" },
+        "editorCategory": { "type": "string", "minLength": 1 },
+        "maxInstances": { "type": "integer", "minimum": 1 },
+        "wanderRegion": { "type": "object", "additionalProperties": false,
+          "required": ["minX", "maxX", "minY", "maxY"],
+          "properties": { "minX": { "type": "integer" }, "maxX": { "type": "integer" },
+            "minY": { "type": "integer" }, "maxY": { "type": "integer" } }
+        }
+      }
+    } }
+  }
+}

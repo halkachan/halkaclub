@@ -12,7 +12,23 @@ public static class MapRules
         .Where(item => item.Id.StartsWith("road_", StringComparison.Ordinal)).Select(item => item.Cell);
 
     public static bool IsProtected(MapDocument map, GridCell cell) =>
-        map.Markers.Any(item => item.Cell == cell) || OutsideEntry(map) == cell || HouseRoot(map) == cell;
+        map.Markers.Any(item => item.Cell == cell) || map.EntitySpawns.Any(item => item.Cell == cell) ||
+        OutsideEntry(map) == cell || HouseRoot(map) == cell;
+
+    public static bool CanPlaceEntity(MapDocument map, CatalogDocument catalog, string definitionId,
+        GridCell cell, out string reason, string? ignoreInstanceId = null)
+    {
+        if (!catalog.EntityCatalog.ById.TryGetValue(definitionId, out var definition))
+        { reason = "不明なEntityです。"; return false; }
+        if (!map.Bounds.Contains(cell) || BlocksMovement(map, catalog, cell) ||
+            map.Markers.Any(item => item.Cell == cell) ||
+            map.EntitySpawns.Any(item => item.Cell == cell && item.InstanceId != ignoreInstanceId))
+        { reason = "Spawnセルが範囲外か、塞がれています。"; return false; }
+        if (map.EntitySpawns.Count(item => item.DefinitionId == definitionId && item.InstanceId != ignoreInstanceId) >= definition.MaxInstances)
+        { reason = definition.DisplayName + "は既に存在します。"; return false; }
+        reason = "";
+        return true;
+    }
 
     public static IEnumerable<GridCell> FootprintCells(ObjectPlacement placement, CatalogObject definition)
     {
@@ -84,7 +100,7 @@ public static class MapRules
             item.DefinitionId == "house_main" && item.InstanceId != ignoreInstanceId))
         { reason = "家は1つだけ配置できます。"; return false; }
         if (definitionId == "house_main" &&
-            (map.Markers.Any(item => item.Cell == root) ||
+            (map.Markers.Any(item => item.Cell == root) || map.EntitySpawns.Any(item => item.Cell == root) ||
              map.Objects.Any(item => item.InstanceId != ignoreInstanceId &&
                  catalog.ObjectById.TryGetValue(item.DefinitionId, out var other) &&
                  FootprintCells(item, other).Contains(root))))
@@ -92,7 +108,7 @@ public static class MapRules
         var oldEntry = OutsideEntry(map);
         var candidateEntry = definitionId == "house_main" ? new GridCell(root.X, root.Y - 1) : (GridCell?)null;
         if (candidateEntry is { } entry && (!map.Bounds.Contains(entry) ||
-            map.Markers.Any(item => item.Cell == entry) ||
+            map.Markers.Any(item => item.Cell == entry) || map.EntitySpawns.Any(item => item.Cell == entry) ||
             map.Objects.Any(item => item.InstanceId != ignoreInstanceId &&
                 catalog.ObjectById.TryGetValue(item.DefinitionId, out var other) &&
                 FootprintCells(item, other).Contains(entry))))
@@ -100,7 +116,7 @@ public static class MapRules
         foreach (var cell in FootprintCells(candidate, definition))
         {
             if (!map.Bounds.Contains(cell)) { reason = "Blocked Footprintが範囲外です。"; return false; }
-            if (map.Markers.Any(item => item.Cell == cell) ||
+            if (map.Markers.Any(item => item.Cell == cell) || map.EntitySpawns.Any(item => item.Cell == cell) ||
                 (definitionId != "house_main" && (oldEntry == cell || HouseRoot(map) == cell)))
             { reason = "Spawn・道路終端・入口前の保護セルです。"; return false; }
             if (map.Surfaces.Any(item => item.Cell == cell &&
@@ -118,7 +134,7 @@ public static class MapRules
     public static IReadOnlyList<MapIssue> Validate(MapDocument map, CatalogDocument catalog)
     {
         var issues = new List<MapIssue>();
-        if (map.Format != "halka-world-map" || map.FormatVersion != 2)
+        if (map.Format != "halka-world-map" || map.FormatVersion != 3)
             issues.Add(new("format", "Map format/versionが未対応です。"));
         if (string.IsNullOrWhiteSpace(map.MapId) ||
             !System.Text.RegularExpressions.Regex.IsMatch(map.MapId, "^[a-z0-9_-]+$"))
@@ -138,6 +154,28 @@ public static class MapRules
                 issues.Add(new("markerId", "Marker IDが空または重複しています。", marker.Cell));
             if (!map.Bounds.Contains(marker.Cell)) issues.Add(new("markerBounds", "Markerが範囲外です。", marker.Cell));
         }
+        var entityIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var spawn in map.EntitySpawns)
+        {
+            if (string.IsNullOrWhiteSpace(spawn.InstanceId) || !entityIds.Add(spawn.InstanceId))
+                issues.Add(new("entityInstanceId", "Entity instanceIdが空または重複しています。", spawn.Cell));
+            if (spawn.Facing is not ("up" or "down" or "left" or "right"))
+                issues.Add(new("entityFacing", "Entityの向きが不正です。", spawn.Cell));
+            if (!catalog.EntityCatalog.ById.TryGetValue(spawn.DefinitionId, out var entity))
+            { issues.Add(new("entityDefinition", "不明なEntity ID: " + spawn.DefinitionId, spawn.Cell)); continue; }
+            if (!map.Bounds.Contains(spawn.Cell) || BlocksMovement(map, catalog, spawn.Cell) ||
+                map.Markers.Any(item => item.Cell == spawn.Cell))
+                issues.Add(new("entityCell", "Entity Spawnが範囲外または通行不可です。", spawn.Cell));
+            if (entity.WanderRegion is { } range &&
+                (spawn.Cell.X + range.MinX < map.Bounds.MinX || spawn.Cell.X + range.MaxX > map.Bounds.MaxX ||
+                 spawn.Cell.Y + range.MinY < map.Bounds.MinY || spawn.Cell.Y + range.MaxY > map.Bounds.MaxY))
+                issues.Add(new("wanderBounds", "行動範囲がMap外へ出ます。Runtimeは範囲内へ制限します。", spawn.Cell, true));
+        }
+        foreach (var group in map.EntitySpawns.GroupBy(item => item.DefinitionId))
+            if (catalog.EntityCatalog.ById.TryGetValue(group.Key, out var entity) && group.Count() > entity.MaxInstances)
+                issues.Add(new("entityLimit", entity.DisplayName + "の数が上限を超えています。"));
+        foreach (var cellGroup in map.EntitySpawns.GroupBy(item => item.Cell))
+            if (cellGroup.Count() > 1) issues.Add(new("entityOverlap", "Entity Spawnが重複しています。", cellGroup.Key));
         var surfaceCells = new HashSet<GridCell>();
         foreach (var placement in map.Surfaces)
         {
@@ -193,8 +231,9 @@ public static class MapRules
                      catalog.ObjectById.TryGetValue(item.DefinitionId, out var other) &&
                      FootprintCells(item, other).Contains(door))))
                 issues.Add(new("houseDoor", "家の入口セルが閉塞しています。", door));
-            if (map.Marker("player_start") is not { } start || BlocksMovement(map, catalog, start))
-                issues.Add(new("playerStart", "Player Spawnが無いか閉塞しています。"));
+            if (map.EntitySpawns.Any(item => item.DefinitionId == "player_main") &&
+                map.EntitySpawns.Any(item => item.DefinitionId == "player_main" && BlocksMovement(map, catalog, item.Cell)))
+                issues.Add(new("playerStart", "Player Startが閉塞しています。"));
             if (OutsideEntry(map) is not { } entry || !map.Bounds.Contains(entry) || BlocksMovement(map, catalog, entry))
                 issues.Add(new("houseEntry", "家の入口前が使用できません。"));
         }
@@ -207,6 +246,10 @@ public static class MapRules
         foreach (var marker in map.Markers)
             if (BlocksMovement(map, catalog, marker.Cell))
                 issues.Add(new("markerBlocked", "Markerが閉塞しています。", marker.Cell));
+        foreach (var spawn in map.EntitySpawns)
+            if (map.Objects.Any(item => catalog.ObjectById.TryGetValue(item.DefinitionId, out var definition) &&
+                FootprintCells(item, definition).Contains(spawn.Cell)))
+                issues.Add(new("entityBlocked", "Entity SpawnがObjectと重なります。", spawn.Cell));
         return issues;
     }
 }

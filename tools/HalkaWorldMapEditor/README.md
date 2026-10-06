@@ -1,4 +1,4 @@
-# HALKA WORLD MAP EDITOR v0.4
+# HALKA WORLD MAP EDITOR v0.5
 
 .NET 8 / WPF / SkiaSharpのWindows専用マップ編集アプリです。ゲーム本編のバージョンはver2.0です。
 
@@ -12,7 +12,7 @@ PowerShellで `./scripts/publish-win-x64.ps1` を実行してください。出�
 
 EXEの近くにある `unity-project` を自動探索します。見つからなければ `Project...` でUnity Projectフォルダーを指定します。`Assets/Content/Maps/Authoring/*.hwmap.json` がMap選択に並びます。正式マップは屋外 `first_field.hwmap.json` と室内 `halka_house.hwmap.json`、Paletteは `object_catalog.hwcatalog.json` です。Mapごとの未保存変更は切替時に確認します。
 
-操作は [Unity側ドキュメント](../../unity-project/Docs/HALKA_WORLD_MAP_EDITOR.md) に記載しました。Map v2 Schemaは `halka-world-map.schema.json`、Catalog v3 Schemaは `halka-world-catalog.schema.json` です。
+操作は [Unity側ドキュメント](../../unity-project/Docs/HALKA_WORLD_MAP_EDITOR.md) に記載しました。Map v3 Schemaは `halka-world-map.schema.json`、Catalog v3 Schemaは `halka-world-catalog.schema.json` です。
 
 Paletteの「地面」には「草」「土」「木床」「壁」が両Mapで並びます。「草」は屋外では通常草地へ戻し、室内では草地Surfaceを明示的に塗ります。室内でも草が表示され、木床を選べば床へ戻せます。左ドラッグは1操作としてUndoでき、右クリックEraseも使えます。屋外で自動生成される草を配置データとして保存しません。
 
@@ -32,4 +32,14 @@ Unityでは `Halka.Game.Editor.MapAuthoringChecks.Run` を実行してくださ�
 
 ## 制約
 
-v0.4では新Map作成、Objectの回転・自由Scale、NPC配置、大規模Mapのchunk描画、座る・寝る実行を扱いません。Map v2 JSONが配置のAuthoring Source、Catalog v3 JSONがObject定義のAuthoring Sourceです。Unity生成assetやSceneを直接編集しません。
+v0.5では新Map作成、Objectの回転・自由Scale、NPC配置、大規模Mapのchunk描画、座る・寝る実行を扱いません。Map v3 JSONが配置のAuthoring Source、Catalog v3 JSONがObject定義のAuthoring Sourceです。Unity生成assetやSceneを直接編集しません。
+
+## v0.5 Entity / Spawn Editor
+
+共通Paletteの「キャラクター / 生き物」にはﾊﾙｶﾁｬﾝ開始位置とカラスが両Mapで表示されます。これらは静的World Objectではなく動的Entityの初期Spawnです。`entity_catalog.hwentitycatalog.json` に種類、既存Sprite、既定向き、Runtime Behavior、最大数、Crowの相対行動範囲を定義します。新しい画像はありません。
+
+選択したEntityはInspectorの座標欄で移動し、向き欄で上下左右を設定します。`Entities` Overlayで表示を切り替えられ、Crowの行動範囲は薄い枠、選択時は強調枠で表示します。Add/Delete/Move/向き変更はUndo/Redoできます。Player StartはWorld全体で1個で、Copyは禁止、Deleteには確認があります。Crowは現行Runtimeの上限1羽ですが、JSON配列は複数個体を表せる形式です。
+
+Map v3は`entitySpawns`へ`instanceId`、`definitionId`、`cell`、`facing`を保存します。旧v2の`player_start`/`crow_spawn` Markerは読み込み時に移行し、正式ファイルはバックアップ後に`scripts/migrate-v04-to-v05.py`で移行しました。道路終端と室内入退室Markerは従来どおりです。開始PlayerはPersistentでMap切替時に生成し直しません。Crowの行動範囲はSpawnからの相対値(-3..+1,-2..+2)で、Map Boundsと通行判定で制限します。
+
+将来Entityを追加する場合は、Sprite、Entity Catalog定義、Unityの明示的Runtime Behavior、Previewを用意するとEditor Paletteに現れます。配置はHALKAがEditorで行います。任意のC#型名をJSONから反射生成する方式は採りません。ゲーム本編はver2.0のままです。

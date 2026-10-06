@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://halkaclub.com/schemas/halka-world-map-v2.json",
-  "title": "HALKA WORLD Map Authoring v2",
+  "$id": "https://halkaclub.com/schemas/halka-world-map-v3.json",
+  "title": "HALKA WORLD Map Authoring v3",
   "type": "object",
   "additionalProperties": false,
-  "required": ["format", "formatVersion", "mapId", "displayName", "mapType", "baseSurfaceDefinitionId", "grassMode", "backdropColor", "bounds", "surfaces", "objects", "markers"],
+  "required": ["format", "formatVersion", "mapId", "displayName", "mapType", "baseSurfaceDefinitionId", "grassMode", "backdropColor", "bounds", "surfaces", "objects", "markers", "entitySpawns"],
   "properties": {
     "format": { "const": "halka-world-map" },
-    "formatVersion": { "const": 2 },
+    "formatVersion": { "const": 3 },
     "mapId": { "type": "string", "pattern": "^[a-z0-9_-]+$" },
     "displayName": { "type": "string", "minLength": 1 },
     "mapType": { "enum": ["outdoor", "interior"] },
@@ -36,7 +36,17 @@
         }
       }
     },
-    "markers": { "type": "array", "items": { "$ref": "#/$defs/marker" } }
+    "markers": { "type": "array", "items": { "$ref": "#/$defs/marker" } },
+    "entitySpawns": { "type": "array", "items": {
+      "type": "object", "additionalProperties": false,
+      "required": ["instanceId", "definitionId", "cell", "facing"],
+      "properties": {
+        "instanceId": { "type": "string", "minLength": 1 },
+        "definitionId": { "type": "string", "minLength": 1 },
+        "cell": { "$ref": "#/$defs/cell" },
+        "facing": { "enum": ["up", "down", "left", "right"] }
+      }
+    } }
   },
   "$defs": {
     "cell": { "type": "object", "additionalProperties": false, "required": ["x", "y"], "properties": { "x": { "type": "integer" }, "y": { "type": "integer" } } },

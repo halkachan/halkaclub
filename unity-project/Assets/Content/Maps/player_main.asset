@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b04bc7239786f594ea76f5c50c286e21, type: 3}
+  m_Name: player_main
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.EntityDefinition
+  stableId: player_main
+  displayName: "\uFF8A\uFF99\uFF76\uFF81\uFF6C\uFF9D\u958B\u59CB\u4F4D\u7F6E"
+  previewSprite: {fileID: 21300000, guid: 34a28a2f8d3190f4d9f97be041f41f9d, type: 3}
+  visualCells: {x: 2, y: 2}
+  defaultFacing: down
+  runtimeBehavior: persistent-player
+  spawnMode: game-start
+  blocksMovement: 1
+  maxInstances: 1
+  wanderMinimum: {x: 0, y: 0}
+  wanderMaximum: {x: 0, y: 0}

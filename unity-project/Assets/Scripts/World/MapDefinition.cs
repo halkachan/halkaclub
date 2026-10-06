@@ -27,9 +27,18 @@ namespace Halka.Game.World
         public Vector2Int Cell;
     }
 
+    [Serializable]
+    public struct EntitySpawnPlacement
+    {
+        public string InstanceId;
+        public EntityDefinition Definition;
+        public Vector2Int Cell;
+        public string Facing;
+    }
+
     public sealed class MapDefinition : ScriptableObject
     {
-        [SerializeField] private int dataVersion = 2;
+        [SerializeField] private int dataVersion = 3;
         [SerializeField] private string mapId;
         [SerializeField] private string displayName;
         [SerializeField] private string mapType = "outdoor";
@@ -41,6 +50,7 @@ namespace Halka.Game.World
         [SerializeField] private List<SurfacePlacement> surfaces = new List<SurfacePlacement>();
         [SerializeField] private List<WorldObjectPlacement> objects = new List<WorldObjectPlacement>();
         [SerializeField] private List<LockedMapMarker> markers = new List<LockedMapMarker>();
+        [SerializeField] private List<EntitySpawnPlacement> entitySpawns = new List<EntitySpawnPlacement>();
 
         public int DataVersion => dataVersion;
         public string MapId => mapId;
@@ -54,7 +64,8 @@ namespace Halka.Game.World
         public IReadOnlyList<SurfacePlacement> Surfaces => surfaces;
         public IReadOnlyList<WorldObjectPlacement> Objects => objects;
         public IReadOnlyList<LockedMapMarker> Markers => markers;
-        public Vector2Int PlayerSpawnCell => TryGetMarker("player_start", out var cell) ? cell : default;
+        public IReadOnlyList<EntitySpawnPlacement> EntitySpawns => entitySpawns;
+        public Vector2Int PlayerSpawnCell => TryGetEntitySpawn("player_main", out var spawn) ? spawn.Cell : default;
         public Vector2Int HouseDoorCell => TryGetHouseRoot(out var cell) ? cell : default;
         public Vector2Int OutsideEntryCell => HouseDoorCell + Vector2Int.down;
         public Vector2Int NorthRoadEnd => TryGetMarker("road_north", out var cell) ? cell : default;
@@ -97,9 +108,13 @@ namespace Halka.Game.World
             return null;
         }
 
-        public bool TryGetEntitySpawn(string stableId, out Vector2Int cell)
+        public bool TryGetEntitySpawn(string definitionId, out EntitySpawnPlacement spawn)
         {
-            return TryGetMarker(stableId == "crow" ? "crow_spawn" : stableId, out cell);
+            foreach (var item in entitySpawns)
+                if (item.Definition != null && item.Definition.StableId == definitionId)
+                { spawn = item; return true; }
+            spawn = default;
+            return false;
         }
 
         public bool SetSurface(Vector2Int cell, SurfaceDefinition definition)
@@ -140,9 +155,10 @@ namespace Halka.Game.World
         public void ReplaceFromAuthoring(string id, string title, string type,
             SurfaceDefinition baseDefinition, string grass, Color backdrop, Vector2Int minimum,
             Vector2Int maximum, List<SurfacePlacement> surfacePlacements,
-            List<WorldObjectPlacement> objectPlacements, List<LockedMapMarker> mapMarkers)
+            List<WorldObjectPlacement> objectPlacements, List<LockedMapMarker> mapMarkers,
+            List<EntitySpawnPlacement> spawns = null)
         {
-            dataVersion = 2;
+            dataVersion = 3;
             mapId = id;
             displayName = title;
             mapType = type;
@@ -154,6 +170,7 @@ namespace Halka.Game.World
             surfaces = surfacePlacements;
             objects = objectPlacements;
             markers = mapMarkers;
+            entitySpawns = spawns ?? new List<EntitySpawnPlacement>();
         }
     }
 }

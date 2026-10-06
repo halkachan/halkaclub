@@ -15,6 +15,8 @@ namespace Halka.Game.World
 
         public bool IsMasked => artwork.maskInteraction == SpriteMaskInteraction.VisibleInsideMask;
 
+        public void SetGrassField(GrassField2D field) => grassField = field;
+
         public static Vector2Int VisualCell(Vector2Int source, Vector2Int destination,
             bool isMoving, float progress) =>
             isMoving && progress >= 0.5f ? destination : source;

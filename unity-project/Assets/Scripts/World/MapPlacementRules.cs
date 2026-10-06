@@ -22,8 +22,10 @@ namespace Halka.Game.World
 
         public static bool IsEntitySpawn(MapDefinition map, Vector2Int cell)
         {
-            foreach (var spawn in map.Markers)
+            foreach (var spawn in map.EntitySpawns)
                 if (spawn.Cell == cell) return true;
+            foreach (var marker in map.Markers)
+                if (marker.Cell == cell) return true;
             return false;
         }
 
@@ -143,6 +145,22 @@ namespace Halka.Game.World
             }
             foreach (var marker in map.Markers)
                 if (BlocksMovement(map, marker.Cell)) problems.Add("ERROR: Protected marker blocked at " + marker.Cell);
+            var entityIds = new HashSet<string>();
+            var entityCells = new HashSet<Vector2Int>();
+            var entityCounts = new Dictionary<string, int>();
+            foreach (var spawn in map.EntitySpawns)
+            {
+                if (spawn.Definition == null || string.IsNullOrEmpty(spawn.InstanceId) || !entityIds.Add(spawn.InstanceId))
+                    problems.Add("ERROR: Invalid Entity Spawn instanceId or Definition at " + spawn.Cell);
+                if (!map.Contains(spawn.Cell) || BlocksMovement(map, spawn.Cell) || !entityCells.Add(spawn.Cell))
+                    problems.Add("ERROR: Entity Spawn blocked, duplicated or out of bounds at " + spawn.Cell);
+                if (spawn.Definition == null) continue;
+                var id = spawn.Definition.StableId;
+                entityCounts.TryGetValue(id, out var count);
+                entityCounts[id] = ++count;
+                if (count > spawn.Definition.MaxInstances)
+                    problems.Add("ERROR: Entity Spawn exceeds maxInstances for " + id);
+            }
             return problems;
         }
     }

@@ -52,6 +52,48 @@ public sealed class MapMarker
     public GridCell Cell { get; set; }
 }
 
+public sealed class EntitySpawn
+{
+    public string InstanceId { get; set; } = "";
+    public string DefinitionId { get; set; } = "";
+    public GridCell Cell { get; set; }
+    public string Facing { get; set; } = "down";
+}
+
+public sealed class WanderRegion
+{
+    public int MinX { get; set; }
+    public int MaxX { get; set; }
+    public int MinY { get; set; }
+    public int MaxY { get; set; }
+}
+
+public sealed class CatalogEntity
+{
+    public string DefinitionId { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public string PreviewSpritePath { get; set; } = "";
+    public int VisualWidthCells { get; set; } = 1;
+    public int VisualHeightCells { get; set; } = 1;
+    public string DefaultFacing { get; set; } = "down";
+    public string RuntimeBehavior { get; set; } = "";
+    public string SpawnMode { get; set; } = "map";
+    public bool BlocksMovement { get; set; } = true;
+    public string EditorCategory { get; set; } = "キャラクター / 生き物";
+    public int MaxInstances { get; set; } = 1;
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public WanderRegion? WanderRegion { get; set; }
+}
+
+public sealed class EntityCatalogDocument
+{
+    public string Format { get; set; } = "halka-world-entity-catalog";
+    public int FormatVersion { get; set; } = 1;
+    public List<CatalogEntity> Entities { get; set; } = [];
+    [JsonIgnore] public Dictionary<string, CatalogEntity> ById =>
+        Entities.ToDictionary(item => item.DefinitionId, StringComparer.Ordinal);
+}
+
 public sealed class MapMarkers
 {
     public GridCell PlayerSpawn { get; set; }
@@ -65,7 +107,7 @@ public sealed class MapMarkers
 public sealed class MapDocument
 {
     public string Format { get; set; } = "halka-world-map";
-    public int FormatVersion { get; set; } = 2;
+    public int FormatVersion { get; set; } = 3;
     public string MapId { get; set; } = "";
     public string DisplayName { get; set; } = "";
     public string MapType { get; set; } = "outdoor";
@@ -76,6 +118,7 @@ public sealed class MapDocument
     public List<SurfacePlacement> Surfaces { get; set; } = [];
     public List<ObjectPlacement> Objects { get; set; } = [];
     public List<MapMarker> Markers { get; set; } = [];
+    public List<EntitySpawn> EntitySpawns { get; set; } = [];
 
     public GridCell? Marker(string id) => Markers.FirstOrDefault(item => item.Id == id)?.Cell;
 }
@@ -137,6 +180,7 @@ public sealed class CatalogDocument
     public List<CatalogSurface> Surfaces { get; set; } = [];
     public List<CatalogObject> Objects { get; set; } = [];
     public CatalogVisuals Visuals { get; set; } = new();
+    [JsonIgnore] public EntityCatalogDocument EntityCatalog { get; set; } = new();
 
     [JsonIgnore] public Dictionary<string, CatalogSurface> SurfaceById =>
         Surfaces.ToDictionary(item => item.DefinitionId, StringComparer.Ordinal);

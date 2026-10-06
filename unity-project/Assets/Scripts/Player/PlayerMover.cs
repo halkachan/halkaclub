@@ -13,6 +13,7 @@ namespace Halka.Game.Player
         [SerializeField] private GridWorld2D world;
         [SerializeField] private DynamicGridOccupancy2D occupancy;
         [SerializeField, Min(0.05f)] private float stepSeconds = DefaultStepSeconds;
+        [SerializeField] private string initialFacing = "down";
 
         private GridStepMotion motion;
 
@@ -28,6 +29,7 @@ namespace Halka.Game.Player
         private void Awake()
         {
             motion = new GridStepMotion(world.WorldToCell(transform.position));
+            Facing = EntityRuntimeFactory2D.ParseFacing(initialFacing);
             transform.position = world.CellToWorld(motion.Cell);
         }
 
@@ -83,5 +85,10 @@ namespace Halka.Game.Player
         }
 
         public void SetFacing(FacingDirection facing) => Facing = facing;
+        public void SetInitialFacing(FacingDirection facing)
+        {
+            initialFacing = facing.ToString().ToLowerInvariant();
+            Facing = facing;
+        }
     }
 }

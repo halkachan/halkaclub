@@ -15,6 +15,7 @@ namespace Halka.Game.Player
         [SerializeField] private GridWorld2D world;
         [SerializeField] private HouseArea2D house;
         [SerializeField] private DynamicGridOccupancy2D occupancy;
+        [SerializeField] private CrowWander2D crow;
         [SerializeField] private bool enabledByDefault = true;
 
         private readonly List<Vector2Int> route = new List<Vector2Int>();
@@ -85,8 +86,10 @@ namespace Halka.Game.Player
         {
             route.Clear();
             // Nearby interests remain destinations on the existing outdoor grid.
+            var crowNearby = crow != null && crow.isActiveAndEnabled
+                ? crow.Cell + Vector2Int.down : player.Cell;
             var interests = new[] { house.OutsideEntryCell, new Vector2Int(-3, 0),
-                new Vector2Int(5, 0), new Vector2Int(7, 2), new Vector2Int(0, -1) };
+                new Vector2Int(5, 0), crowNearby, new Vector2Int(0, -1) };
             for (var attempt = 0; attempt < 12; attempt++)
             {
                 var goal = attempt < 5 ? interests[Random.Range(0, interests.Length)] :

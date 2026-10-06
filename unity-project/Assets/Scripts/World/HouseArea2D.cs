@@ -26,9 +26,24 @@ namespace Halka.Game.World
 
         private void Awake()
         {
+            IsInside = maps.ActiveMapId == "halka_house";
             outsideCameraSize = worldCamera.orthographicSize;
             outsideCameraMin = cameraFollow.WorldMin;
             outsideCameraMax = cameraFollow.WorldMax;
+        }
+
+        private void Start()
+        {
+            if (!IsInside) return;
+            grassOcclusion.UseGrassField(interiorGrass);
+            var room = maps.GetMap("halka_house");
+            worldCamera.orthographicSize = 3.4f;
+            cameraFollow.SetBounds(
+                new Vector2(room.MinCell.x * GridWorld2D.TileWorldSize - 0.8f,
+                    room.MinCell.y * GridWorld2D.TileWorldSize - 0.8f),
+                new Vector2(room.MaxCell.x * GridWorld2D.TileWorldSize + 0.8f,
+                    room.MaxCell.y * GridWorld2D.TileWorldSize + 0.8f));
+            cameraFollow.SnapToTarget();
         }
 
         private void OnEnable()

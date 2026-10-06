@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7333b7c63ac1a534d85d98463325eff1, type: 3}
   m_Name: first_field
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.MapDefinition
-  dataVersion: 2
+  dataVersion: 3
   mapId: first_field
   displayName: First Field
   mapType: outdoor
@@ -150,44 +150,52 @@ MonoBehaviour:
   - InstanceId: obj_3420672f46af5b9ba3d44af98a19925a
     RootCell: {x: 6, y: -1}
     Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
   - InstanceId: obj_233d1ca59f445f8a92a6641167b3d78a
     RootCell: {x: -3, y: 1}
     Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
   - InstanceId: obj_086314e510a15c41bd6693248dbab167
     RootCell: {x: -5, y: 2}
     Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
   - InstanceId: obj_fadd9ea16d185d9ca4e16a8b6b17d04c
     RootCell: {x: 2, y: 3}
     Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
   - InstanceId: obj_7e49f7553a825d00b3129c4474906dfb
     RootCell: {x: 3, y: -4}
     Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
   - InstanceId: obj_b44948f3a19d5295a1092049156cd5e6
     RootCell: {x: 1, y: 1}
     Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
   - InstanceId: obj_08973c34e708520f81aa843efd4e00c3
     RootCell: {x: 9, y: 3}
     Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
   - InstanceId: obj_36867ec94b7559c59aa31d96d0608460
     RootCell: {x: -2, y: 4}
     Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
   - InstanceId: obj_73336cc2f30a5b03b80a9aea27e2355b
     RootCell: {x: 8, y: -3}
     Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
   - InstanceId: obj_b8083b939c355574929e534054d4ad43
     RootCell: {x: 5, y: 1}
     Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
   - InstanceId: obj_27e1ad8c53db59f1a79895f66ae43951
     RootCell: {x: -7, y: 2}
     Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
   - InstanceId: obj_house_main_v03_migration
     RootCell: {x: -7, y: -4}
     Definition: {fileID: 11400000, guid: 44fd5b0701e1a854799c458ef559905a, type: 2}
+    SignText: 
   markers:
-  - StableId: player_start
-    Cell: {x: 0, y: 0}
-  - StableId: crow_spawn
-    Cell: {x: 7, y: 2}
   - StableId: road_north
     Cell: {x: 0, y: 6}
   - StableId: road_east
@@ -196,3 +204,12 @@ MonoBehaviour:
     Cell: {x: 2, y: -6}
   - StableId: road_west
     Cell: {x: -10, y: 0}
+  entitySpawns:
+  - InstanceId: ent_crow_main_first
+    Definition: {fileID: 11400000, guid: e0e7212624464324f9296d76faddddc8, type: 2}
+    Cell: {x: 7, y: 2}
+    Facing: right
+  - InstanceId: ent_player_main_start
+    Definition: {fileID: 11400000, guid: 5c79467cf3296704a8720f33cfa33bd6, type: 2}
+    Cell: {x: 0, y: 0}
+    Facing: down

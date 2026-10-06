@@ -17,12 +17,15 @@ namespace Halka.Game.World
         [SerializeField] private GrassField2D grassField;
         [SerializeField] private Transform surfaceRoot;
         [SerializeField] private Transform objectRoot;
+        [SerializeField] private Transform entityRoot;
         [SerializeField] private GameObject grassPrefab;
         [SerializeField] private PlayerMover player;
         [SerializeField] private SpriteRenderer playerRenderer;
         [SerializeField] private GameHud hud;
+        [SerializeField] private CrowWander2D crow;
 
         private bool built;
+        private bool initialStartApplied;
         public MapDefinition Map => map;
         public bool IsBuilt => built;
 
@@ -47,6 +50,8 @@ namespace Halka.Game.World
                 "Invalid map " + map.MapId + ": " + string.Join("; ", errors));
 
             world.SetBounds(map.MinCell, map.MaxCell);
+            if (!initialStartApplied)
+                initialStartApplied = EntityRuntimeFactory2D.TryApplyPlayerStart(map, world, player);
             if (map.BaseSurface != null && map.MapType == "interior")
             {
                 for (var y = map.MinCell.y; y <= map.MaxCell.y; y++)
@@ -85,6 +90,7 @@ namespace Halka.Game.World
                 }
                 grassField.Rebuild();
             }
+            EntityRuntimeFactory2D.TryActivateCrow(map, world, grassField, entityRoot, crow);
             built = true;
         }
 
@@ -104,6 +110,7 @@ namespace Halka.Game.World
                     GridWorld2D.TileWorldSize / sprite.bounds.size.y, 1f);
                 renderer.color = new Color(0.85f, 0.91f, 0.72f);
             }
+
             if (blocks)
             {
                 tile.AddComponent<BoxCollider2D>().size = Vector2.one * GridWorld2D.TileWorldSize;

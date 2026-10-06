@@ -55,6 +55,13 @@ namespace Halka.Game.Editor
             var houseProblems = MapPlacementRules.Validate(houseMap);
             if (houseProblems.Count != 0)
                 throw new InvalidOperationException("Invalid halka_house: " + string.Join("; ", houseProblems));
+            var startMap = map.TryGetEntitySpawn("player_main", out var playerStart) ? map : houseMap;
+            if (startMap == houseMap)
+                playerStart = EntityRuntimeFactory2D.Required(houseMap, "player_main");
+            var crowSpawn = map.TryGetEntitySpawn("crow_main", out var outdoorCrow)
+                ? outdoorCrow : EntityRuntimeFactory2D.Required(houseMap, "crow_main");
+            var crowWanderMinimum = crowSpawn.Definition.WanderMinimum;
+            var crowWanderMaximum = crowSpawn.Definition.WanderMaximum;
             var frames = LoadFrames("front_idle");
             if (frames.Length == 0) throw new InvalidOperationException("front_idle needs at least one PNG frame");
             ConfigureSpriteImport(PixelPath, 1f);
@@ -92,10 +99,10 @@ namespace Halka.Game.Editor
 
             var worldObject = new GameObject("World - first day grid");
             var world = worldObject.AddComponent<GridWorld2D>();
-            world.SetBounds(map.MinCell, map.MaxCell);
+            world.SetBounds(startMap.MinCell, startMap.MaxCell);
 
             var player = new GameObject("Player - HarukaChan");
-            player.transform.position = world.CellToWorld(map.PlayerSpawnCell);
+            player.transform.position = world.CellToWorld(playerStart.Cell);
             var artwork = new GameObject("Player artwork");
             artwork.transform.SetParent(player.transform, false);
             artwork.transform.localPosition = Vector3.up * ArtworkFootOffset;
@@ -107,6 +114,7 @@ namespace Halka.Game.Editor
             var spriteMask = maskObject.AddComponent<SpriteMask>();
             spriteMask.sprite = maskSprite;
             var mover = player.AddComponent<PlayerMover>();
+            SetString(mover, "initialFacing", playerStart.Facing);
             var visual = player.AddComponent<CharacterVisual>();
             var audioSource = player.AddComponent<AudioSource>();
             audioSource.playOnAwake = false;
@@ -152,9 +160,7 @@ namespace Halka.Game.Editor
             SetReference(occupancy, "player", mover);
             SetReference(mover, "occupancy", occupancy);
             var crow = new GameObject("Crow - first neighbor");
-            if (!map.TryGetMarker("crow_spawn", out var crowSpawn))
-                throw new InvalidOperationException("Map has no locked crow spawn");
-            crow.transform.position = world.CellToWorld(crowSpawn);
+            crow.transform.position = world.CellToWorld(crowSpawn.Cell);
             var crowRenderer = crow.AddComponent<SpriteRenderer>();
             crowRenderer.sprite = crowIdleRight;
             crowRenderer.sortingOrder = 3;
@@ -162,6 +168,11 @@ namespace Halka.Game.Editor
             crowCollider.size = Vector2.one * GridWorld2D.TileWorldSize;
             var crowExamine = crow.AddComponent<ExamineInteractable>();
             var crowWander = crow.AddComponent<CrowWander2D>();
+            SetReference(crowWander, "world", world);
+            SetVector2Int(crowWander, "spawnCell", crowSpawn.Cell);
+            SetVector2Int(crowWander, "wanderMinimumOffset", crowWanderMinimum);
+            SetVector2Int(crowWander, "wanderMaximumOffset", crowWanderMaximum);
+            SetString(crowWander, "initialFacing", crowSpawn.Facing);
             var crowAudioSource = crow.AddComponent<AudioSource>();
             crowAudioSource.playOnAwake = false;
             crowAudioSource.spatialBlend = 0f;
@@ -169,7 +180,6 @@ namespace Halka.Game.Editor
             var crowVoice = crow.AddComponent<InteractionAudio>();
             SetReference(crowVoice, "audioSource", crowAudioSource);
             SetReference(crowVoice, "clip", crowVoiceClip);
-            SetReference(crowWander, "world", world);
             SetReference(crowWander, "occupancy", occupancy);
             SetReference(crowWander, "artwork", crowRenderer);
             SetReference(crowWander, "clickCollider", crowCollider);
@@ -261,6 +271,7 @@ namespace Halka.Game.Editor
                 objectGroup, crow, grassGroup })
                 objectInField.transform.SetParent(exteriorRoot.transform, true);
             var loaderObject = new GameObject("Map runtime loader");
+            loaderObject.transform.SetParent(exteriorRoot.transform, false);
             var loader = loaderObject.AddComponent<MapRuntimeLoader2D>();
             loader.SetMap(AssetDatabase.LoadAssetAtPath<MapDefinition>(MapPath));
             if (loader.Map == null)
@@ -270,10 +281,12 @@ namespace Halka.Game.Editor
             SetReference(loader, "grassField", grassField);
             SetReference(loader, "surfaceRoot", surfaceGroup.transform);
             SetReference(loader, "objectRoot", objectGroup.transform);
+            SetReference(loader, "entityRoot", exteriorRoot.transform);
             SetReference(loader, "grassPrefab", grassPrefab);
             SetReference(loader, "player", mover);
             SetReference(loader, "playerRenderer", playerRenderer);
             SetReference(loader, "hud", hud);
+            SetReference(loader, "crow", crowWander);
             var interiorRoot = new GameObject("Interior - halka_house");
             interiorRoot.SetActive(false);
             var backdrop = new GameObject("Interior dark backdrop");
@@ -305,9 +318,11 @@ namespace Halka.Game.Editor
             SetReference(interiorLoader, "grassPrefab", grassPrefab);
             SetReference(interiorLoader, "surfaceRoot", interiorSurfaces.transform);
             SetReference(interiorLoader, "objectRoot", interiorObjects.transform);
+            SetReference(interiorLoader, "entityRoot", interiorRoot.transform);
             SetReference(interiorLoader, "player", mover);
             SetReference(interiorLoader, "playerRenderer", playerRenderer);
             SetReference(interiorLoader, "hud", hud);
+            SetReference(interiorLoader, "crow", crowWander);
 
             var mapControllerObject = new GameObject("Map runtime controller");
             var mapController = mapControllerObject.AddComponent<MapWorldController2D>();
@@ -334,6 +349,7 @@ namespace Halka.Game.Editor
             SetReference(autoMode, "world", world);
             SetReference(autoMode, "house", houseArea);
             SetReference(autoMode, "occupancy", occupancy);
+            SetReference(autoMode, "crow", crowWander);
             SetReference(input, "autoMode", autoMode);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -626,6 +642,13 @@ namespace Halka.Game.Editor
         {
             var serialized = new SerializedObject(target);
             serialized.FindProperty(field).stringValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void SetVector2Int(UnityEngine.Object target, string field, Vector2Int value)
+        {
+            var serialized = new SerializedObject(target);
+            serialized.FindProperty(field).vector2IntValue = value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

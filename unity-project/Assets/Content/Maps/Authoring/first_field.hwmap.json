@@ -1,6 +1,6 @@
 {
   "format": "halka-world-map",
-  "formatVersion": 2,
+  "formatVersion": 3,
   "mapId": "first_field",
   "displayName": "First Field",
   "mapType": "outdoor",
@@ -549,20 +549,6 @@
   ],
   "markers": [
     {
-      "id": "player_start",
-      "cell": {
-        "x": 0,
-        "y": 0
-      }
-    },
-    {
-      "id": "crow_spawn",
-      "cell": {
-        "x": 7,
-        "y": 2
-      }
-    },
-    {
       "id": "road_north",
       "cell": {
         "x": 0,
@@ -589,6 +575,26 @@
         "x": -10,
         "y": 0
       }
+    }
+  ],
+  "entitySpawns": [
+    {
+      "instanceId": "ent_crow_main_first",
+      "definitionId": "crow_main",
+      "cell": {
+        "x": 7,
+        "y": 2
+      },
+      "facing": "right"
+    },
+    {
+      "instanceId": "ent_player_main_start",
+      "definitionId": "player_main",
+      "cell": {
+        "x": 0,
+        "y": 0
+      },
+      "facing": "down"
     }
   ]
 }

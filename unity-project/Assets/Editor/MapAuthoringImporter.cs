@@ -14,6 +14,7 @@ namespace Halka.Game.Editor
     {
         public const string AuthoringFolder = "Assets/Content/Maps/Authoring";
         public const string CatalogPath = AuthoringFolder + "/object_catalog.hwcatalog.json";
+        public const string EntityCatalogPath = AuthoringFolder + "/entity_catalog.hwentitycatalog.json";
         private const string MapSuffix = ".hwmap.json";
         private static bool syncing;
 
@@ -30,10 +31,22 @@ namespace Halka.Game.Editor
                 var files = Directory.GetFiles(folder, "*" + MapSuffix, SearchOption.TopDirectoryOnly);
                 if (files.Length == 0) throw new InvalidDataException("No *.hwmap.json found in " + folder);
                 Array.Sort(files, StringComparer.Ordinal);
+                var playerCount = 0;
+                foreach (var file in files)
+                {
+                    var source = JsonUtility.FromJson<MapDto>(File.ReadAllText(file));
+                    if (source == null || source.entitySpawns == null)
+                        throw new InvalidDataException("Map is missing v3 Entity Spawns: " + file);
+                    playerCount += source.entitySpawns.Count(item => item != null && item.definitionId == "player_main");
+                }
+                if (playerCount != 1)
+                    throw new InvalidDataException("World needs exactly one player_main Entity Spawn; found " + playerCount);
                 var catalog = ParseCatalog();
                 EnsureCatalogDefinitions(catalog);
+                var entities = ParseEntityCatalog();
+                EnsureEntityDefinitions(entities);
                 foreach (var file in files)
-                    SyncMapFromFile(file, catalog);
+                    SyncMapFromFile(file, catalog, entities);
                 AssetDatabase.SaveAssets();
             }
             finally { syncing = false; }
@@ -43,12 +56,14 @@ namespace Halka.Game.Editor
         {
             var catalog = ParseCatalog();
             EnsureCatalogDefinitions(catalog);
-            var result = SyncMapFromFile(fullPath, catalog);
+            var entities = ParseEntityCatalog();
+            EnsureEntityDefinitions(entities);
+            var result = SyncMapFromFile(fullPath, catalog, entities);
             AssetDatabase.SaveAssets();
             return result;
         }
 
-        private static MapDefinition SyncMapFromFile(string fullPath, CatalogDto catalog)
+        private static MapDefinition SyncMapFromFile(string fullPath, CatalogDto catalog, EntityCatalogDto entityCatalog)
         {
             var sourceName = Path.GetFileName(fullPath);
             var expectedId = sourceName.Substring(0, sourceName.Length - MapSuffix.Length);
@@ -56,9 +71,10 @@ namespace Halka.Game.Editor
             try { source = JsonUtility.FromJson<MapDto>(File.ReadAllText(fullPath)); }
             catch (Exception error)
             { throw new InvalidDataException("Map " + expectedId + " JSON parse error: " + error.Message, error); }
-            if (source == null || source.format != "halka-world-map" || source.formatVersion != 2 ||
+            if (source == null || source.format != "halka-world-map" || source.formatVersion != 3 ||
                 source.mapId != expectedId || !Regex.IsMatch(source.mapId ?? "", "^[a-z0-9_-]+$") ||
                 source.bounds == null || source.markers == null || source.surfaces == null || source.objects == null ||
+                source.entitySpawns == null ||
                 (source.mapType != "outdoor" && source.mapType != "interior") ||
                 (source.grassMode != "auto" && source.grassMode != "none"))
                 throw new InvalidDataException("Map " + expectedId + " JSON parse error: missing or invalid format, mapId, bounds, placements or markers.");
@@ -105,6 +121,20 @@ namespace Halka.Game.Editor
                     InstanceId = item.instanceId, RootCell = item.rootCell.ToVector(),
                     Definition = definition, SignText = signText });
             }
+            var spawns = new List<EntitySpawnPlacement>();
+            var entityIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var item in source.entitySpawns)
+            {
+                if (item == null || item.cell == null || string.IsNullOrWhiteSpace(item.instanceId) ||
+                    !entityIds.Add(item.instanceId) ||
+                    (item.facing != "up" && item.facing != "down" && item.facing != "left" && item.facing != "right"))
+                    throw new InvalidDataException("Map " + expectedId + ": invalid Entity Spawn.");
+                var definition = FindEntity(item.definitionId);
+                if (definition == null || !entityCatalog.entities.Any(entry => entry.definitionId == item.definitionId))
+                    throw new InvalidDataException("Map " + expectedId + ": unknown Entity " + item.definitionId);
+                spawns.Add(new EntitySpawnPlacement { InstanceId = item.instanceId,
+                    Definition = definition, Cell = item.cell.ToVector(), Facing = item.facing });
+            }
             ValidateCatalog(catalog, surfaces, objects);
             var minimum = new Vector2Int(source.bounds.minX, source.bounds.minY);
             var maximum = new Vector2Int(source.bounds.maxX, source.bounds.maxY);
@@ -113,7 +143,7 @@ namespace Halka.Game.Editor
             {
                 temporary.ReplaceFromAuthoring(source.mapId, source.displayName, source.mapType,
                     baseSurface, source.grassMode, backdrop, minimum, maximum,
-                    surfaces, objects, markers);
+                    surfaces, objects, markers, spawns);
                 var errors = MapPlacementRules.Validate(temporary);
                 if (errors.Count != 0)
                     throw new InvalidDataException("Map " + expectedId + " validation error: " + string.Join("; ", errors));
@@ -129,7 +159,7 @@ namespace Halka.Game.Editor
                 {
                     asset.ReplaceFromAuthoring(source.mapId, source.displayName, source.mapType,
                         baseSurface, source.grassMode, backdrop, minimum, maximum,
-                        surfaces, objects, markers);
+                        surfaces, objects, markers, spawns);
                     EditorUtility.SetDirty(asset);
                 }
                 return asset;
@@ -300,6 +330,56 @@ namespace Halka.Game.Editor
             }
         }
 
+        private static EntityCatalogDto ParseEntityCatalog()
+        {
+            EntityCatalogDto catalog;
+            try { catalog = JsonUtility.FromJson<EntityCatalogDto>(File.ReadAllText(ToFullPath(EntityCatalogPath))); }
+            catch (Exception error)
+            { throw new InvalidDataException("Entity catalog JSON parse error: " + error.Message, error); }
+            if (catalog == null || catalog.format != "halka-world-entity-catalog" ||
+                catalog.formatVersion != 1 || catalog.entities == null || catalog.entities.Length == 0 ||
+                catalog.entities.Any(item => item == null || string.IsNullOrWhiteSpace(item.definitionId)) ||
+                catalog.entities.Select(item => item.definitionId).Distinct().Count() != catalog.entities.Length)
+                throw new InvalidDataException("Entity catalog is incomplete or has duplicate IDs.");
+            return catalog;
+        }
+
+        private static void EnsureEntityDefinitions(EntityCatalogDto catalog)
+        {
+            foreach (var entry in catalog.entities)
+            {
+                var asset = FindEntity(entry.definitionId);
+                if (asset == null)
+                {
+                    asset = ScriptableObject.CreateInstance<EntityDefinition>();
+                    AssetDatabase.CreateAsset(asset, "Assets/Content/Maps/" + entry.definitionId + ".asset");
+                }
+                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(entry.previewSpritePath);
+                if (sprite == null || entry.visualWidthCells < 1 || entry.visualHeightCells < 1 ||
+                    entry.maxInstances < 1 || entry.wanderRegion == null && entry.runtimeBehavior == "crow-wander")
+                    throw new InvalidDataException("Invalid Entity definition: " + entry.definitionId);
+                var serialized = new SerializedObject(asset);
+                serialized.FindProperty("stableId").stringValue = entry.definitionId;
+                serialized.FindProperty("displayName").stringValue = entry.displayName;
+                serialized.FindProperty("previewSprite").objectReferenceValue = sprite;
+                serialized.FindProperty("visualCells").vector2IntValue =
+                    new Vector2Int(entry.visualWidthCells, entry.visualHeightCells);
+                serialized.FindProperty("defaultFacing").stringValue = entry.defaultFacing;
+                serialized.FindProperty("runtimeBehavior").stringValue = entry.runtimeBehavior;
+                serialized.FindProperty("spawnMode").stringValue = entry.spawnMode;
+                serialized.FindProperty("blocksMovement").boolValue = entry.blocksMovement;
+                serialized.FindProperty("maxInstances").intValue = entry.maxInstances;
+                if (entry.wanderRegion != null)
+                {
+                    serialized.FindProperty("wanderMinimum").vector2IntValue =
+                        new Vector2Int(entry.wanderRegion.minX, entry.wanderRegion.minY);
+                    serialized.FindProperty("wanderMaximum").vector2IntValue =
+                        new Vector2Int(entry.wanderRegion.maxX, entry.wanderRegion.maxY);
+                }
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+            }
+        }
+
         private static WorldActionType ParseActionType(string value)
         {
             switch (value)
@@ -318,6 +398,12 @@ namespace Halka.Game.Editor
                     AssetDatabase.GUIDToAssetPath(guid)))
                 .FirstOrDefault(item => item != null && item.StableId == id);
 
+        private static EntityDefinition FindEntity(string id) =>
+            AssetDatabase.FindAssets("t:EntityDefinition")
+                .Select(guid => AssetDatabase.LoadAssetAtPath<EntityDefinition>(
+                    AssetDatabase.GUIDToAssetPath(guid)))
+                .FirstOrDefault(item => item != null && item.StableId == id);
+
         private static string ToFullPath(string assetPath) =>
             Path.GetFullPath(Path.Combine(Application.dataPath, "..", assetPath));
 
@@ -332,6 +418,8 @@ namespace Halka.Game.Editor
         [Serializable] private sealed class ObjectDto
         { public string instanceId, definitionId, signText; public CellDto rootCell; }
         [Serializable] private sealed class MarkerDto { public string id; public CellDto cell; }
+        [Serializable] private sealed class EntitySpawnDto
+        { public string instanceId, definitionId, facing; public CellDto cell; }
         [Serializable] private sealed class MapDto
         {
             public string format, mapId, displayName;
@@ -341,7 +429,18 @@ namespace Halka.Game.Editor
             public SurfaceDto[] surfaces;
             public ObjectDto[] objects;
             public MarkerDto[] markers;
+            public EntitySpawnDto[] entitySpawns;
         }
+        [Serializable] private sealed class WanderRegionDto { public int minX, maxX, minY, maxY; }
+        [Serializable] private sealed class EntityDto
+        {
+            public string definitionId, displayName, previewSpritePath, defaultFacing, runtimeBehavior, spawnMode;
+            public int visualWidthCells, visualHeightCells, maxInstances;
+            public bool blocksMovement;
+            public WanderRegionDto wanderRegion;
+        }
+        [Serializable] private sealed class EntityCatalogDto
+        { public string format; public int formatVersion; public EntityDto[] entities; }
         [Serializable] private sealed class CatalogSurfaceDto
         {
             public string definitionId, displayName, previewSpritePath;
@@ -381,7 +480,8 @@ namespace Halka.Game.Editor
             if (pending || !importedAssets.Any(path =>
                 path.StartsWith(MapAuthoringImporter.AuthoringFolder + "/", StringComparison.Ordinal) &&
                 (path.EndsWith(".hwmap.json", StringComparison.Ordinal) ||
-                 path.EndsWith(".hwcatalog.json", StringComparison.Ordinal)))) return;
+                 path.EndsWith(".hwcatalog.json", StringComparison.Ordinal) ||
+                 path.EndsWith(".hwentitycatalog.json", StringComparison.Ordinal)))) return;
             pending = true;
             EditorApplication.delayCall += () =>
             {

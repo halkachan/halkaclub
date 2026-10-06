@@ -16,11 +16,11 @@ namespace Halka.Game.Editor
         private const string OfficialPath = "Assets/Content/Maps/first_field.asset";
         private const string FixtureAssetPath = "Assets/Content/Maps/standalone_contract_fixture.asset";
 
-        [MenuItem("HALKA WORLD/Build v0.4 WebGL regression to Temp")]
+        [MenuItem("HALKA WORLD/Build v0.5 WebGL regression to Temp")]
         public static void BuildWebGLRegression()
         {
             ProjectBuilder.PrepareScene();
-            var output = Path.Combine(Path.GetTempPath(), "HalkaMapEditorV04WebGLRegression");
+            var output = Path.Combine(Path.GetTempPath(), "HalkaMapEditorV05WebGLRegression");
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions {
                 scenes = new[] { "Assets/Scenes/FirstDay.unity" },
                 locationPathName = output,
@@ -29,10 +29,10 @@ namespace Halka.Game.Editor
             });
             Check(report.summary.result == BuildResult.Succeeded,
                 "WebGL regression build succeeded");
-            Debug.Log("HALKA WORLD Map Editor v0.4 WebGL regression built to " + output);
+            Debug.Log("HALKA WORLD Map Editor v0.5 WebGL regression built to " + output);
         }
 
-        [MenuItem("HALKA WORLD/Validate Standalone Map Contract v0.4")]
+        [MenuItem("HALKA WORLD/Validate Standalone Map Contract v0.5")]
         public static void Run()
         {
             MapAuthoringImporter.SyncAll();
@@ -43,6 +43,41 @@ namespace Halka.Game.Editor
             Check(interior != null && interior.MapId == "halka_house" &&
                 interior.MapType == "interior" && interior.GrassMode == "none" &&
                 interior.BaseSurface.StableId == "house_floor", "indoor map is imported");
+            Check(official.DataVersion == 3 && interior.DataVersion == 3 &&
+                official.EntitySpawns.Count == 2 && interior.EntitySpawns.Count == 0 &&
+                official.Markers.All(item => item.StableId != "player_start" && item.StableId != "crow_spawn"),
+                "v3 Entity Spawns replace actor markers");
+            var playerSpawn = EntityRuntimeFactory2D.Required(official, "player_main");
+            var crowSpawn = EntityRuntimeFactory2D.Required(official, "crow_main");
+            Check(playerSpawn.Cell == Vector2Int.zero && playerSpawn.Facing == "down" &&
+                crowSpawn.Cell == new Vector2Int(7, 2) && crowSpawn.Facing == "right" &&
+                crowSpawn.Definition.WanderMinimum == new Vector2Int(-3, -2) &&
+                crowSpawn.Definition.WanderMaximum == new Vector2Int(1, 2),
+                "Player and Crow authoring positions and relative wander import");
+            var movedSpawns = new System.Collections.Generic.List<EntitySpawnPlacement>(official.EntitySpawns);
+            for (var i = 0; i < movedSpawns.Count; i++)
+            {
+                var item = movedSpawns[i];
+                item.Cell = item.Definition.StableId == "crow_main" ? new Vector2Int(0, 3) : new Vector2Int(0, -3);
+                movedSpawns[i] = item;
+            }
+            var movedFixture = ScriptableObject.CreateInstance<MapDefinition>();
+            try
+            {
+                movedFixture.ReplaceFromAuthoring("moved_spawn_fixture", "Moved spawn fixture", official.MapType,
+                    official.BaseSurface, official.GrassMode, official.BackdropColor, official.MinCell, official.MaxCell,
+                    new System.Collections.Generic.List<SurfacePlacement>(official.Surfaces),
+                    new System.Collections.Generic.List<WorldObjectPlacement>(official.Objects),
+                    new System.Collections.Generic.List<LockedMapMarker>(official.Markers), movedSpawns);
+                var movedCrow = EntityRuntimeFactory2D.Required(movedFixture, "crow_main");
+                Check(EntityRuntimeFactory2D.Required(movedFixture, "player_main").Cell == new Vector2Int(0, -3) &&
+                    movedCrow.Cell == new Vector2Int(0, 3) &&
+                    movedCrow.Cell + movedCrow.Definition.WanderMinimum == new Vector2Int(-3, 1) &&
+                    movedCrow.Cell + movedCrow.Definition.WanderMaximum == new Vector2Int(1, 5) &&
+                    MapPlacementRules.Validate(movedFixture).Count == 0,
+                    "moved Player and Crow fixture follows authored cells");
+            }
+            finally { UnityEngine.Object.DestroyImmediate(movedFixture); }
             var bed = interior.Objects.Single(item => item.Definition.StableId == "bed_basic").Definition;
             Check(bed.ActionPoints.Count == 1 && bed.ActionPoints[0].Id == "sleep_main" &&
                 bed.ActionPoints[0].PlayerCellOffset == new Vector2Int(0, 1) &&
@@ -109,6 +144,7 @@ namespace Halka.Game.Editor
             Check(baseGround != null && baseGround.GrowsGrass, "grass ground Surface is available on both maps");
             ValidateRuntimeSpriteFixtures();
             ValidateCrossMapRuntimeFixtures();
+            ValidateIndoorCrowRuntimeFixture(interior, crowSpawn, playerSpawn);
             var before = JsonUtility.ToJson(official);
             var authoringPath = Path.GetFullPath(Path.Combine(Application.dataPath,
                 "Content/Maps/Authoring/first_field.hwmap.json"));
@@ -153,7 +189,7 @@ namespace Halka.Game.Editor
                 Check(rejected, "invalid JSON rejected");
                 Check(JsonUtility.ToJson(official) == before,
                     "invalid JSON leaves official generated cache unchanged");
-                Debug.Log("HALKA WORLD Standalone Map Contract v0.4: passed.");
+                Debug.Log("HALKA WORLD Standalone Map Contract v0.5: passed.");
             }
             finally
             {
@@ -345,6 +381,89 @@ namespace Halka.Game.Editor
                 UnityEngine.Object.DestroyImmediate(root);
                 UnityEngine.Object.DestroyImmediate(fixture);
                 UnityEngine.Object.DestroyImmediate(outdoorFixture);
+            }
+        }
+
+        private static void ValidateIndoorCrowRuntimeFixture(MapDefinition interior,
+            EntitySpawnPlacement outdoorCrow, EntitySpawnPlacement outdoorPlayer)
+        {
+            var fixture = ScriptableObject.CreateInstance<MapDefinition>();
+            var playerFixture = ScriptableObject.CreateInstance<MapDefinition>();
+            var root = new GameObject("Indoor crow spawn fixture");
+            try
+            {
+                var indoorCrow = outdoorCrow;
+                indoorCrow.Cell = new Vector2Int(3, 0);
+                indoorCrow.Facing = "up";
+                fixture.ReplaceFromAuthoring("indoor_crow_fixture", "Indoor crow fixture", interior.MapType,
+                    interior.BaseSurface, interior.GrassMode, interior.BackdropColor,
+                    interior.MinCell, interior.MaxCell,
+                    new System.Collections.Generic.List<SurfacePlacement>(interior.Surfaces),
+                    new System.Collections.Generic.List<WorldObjectPlacement>(interior.Objects),
+                    new System.Collections.Generic.List<LockedMapMarker>(interior.Markers),
+                    new System.Collections.Generic.List<EntitySpawnPlacement> { indoorCrow });
+                Check(MapPlacementRules.Validate(fixture).Count == 0,
+                    "indoor Crow Spawn is valid without a Player duplicate");
+                var grid = root.AddComponent<GridWorld2D>();
+                var surfaceField = root.AddComponent<GroundSurfaceField2D>();
+                var grassField = root.AddComponent<GrassField2D>();
+                var playerObject = new GameObject("Player");
+                playerObject.transform.SetParent(root.transform, false);
+                var player = playerObject.AddComponent<PlayerMover>();
+                var renderer = playerObject.AddComponent<SpriteRenderer>();
+                var hud = root.AddComponent<GameHud>();
+                var surfaceRoot = new GameObject("Surfaces").transform;
+                var objectRoot = new GameObject("Objects").transform;
+                surfaceRoot.SetParent(root.transform, false);
+                objectRoot.SetParent(root.transform, false);
+                var crowObject = new GameObject("Crow");
+                crowObject.transform.SetParent(root.transform, false);
+                var crow = crowObject.AddComponent<CrowWander2D>();
+                var loader = root.AddComponent<MapRuntimeLoader2D>();
+                var serialized = new SerializedObject(loader);
+                serialized.FindProperty("map").objectReferenceValue = fixture;
+                serialized.FindProperty("world").objectReferenceValue = grid;
+                serialized.FindProperty("surfaceField").objectReferenceValue = surfaceField;
+                serialized.FindProperty("grassField").objectReferenceValue = grassField;
+                serialized.FindProperty("surfaceRoot").objectReferenceValue = surfaceRoot;
+                serialized.FindProperty("objectRoot").objectReferenceValue = objectRoot;
+                serialized.FindProperty("entityRoot").objectReferenceValue = root.transform;
+                serialized.FindProperty("player").objectReferenceValue = player;
+                serialized.FindProperty("playerRenderer").objectReferenceValue = renderer;
+                serialized.FindProperty("hud").objectReferenceValue = hud;
+                serialized.FindProperty("crow").objectReferenceValue = crow;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                loader.Build();
+                Check(loader.IsBuilt && crow.transform.position == grid.CellToWorld(indoorCrow.Cell) &&
+                    crow.RangeMin == new Vector2Int(0, -2) &&
+                    crow.RangeMax == new Vector2Int(4, 2) &&
+                    crow.Facing == FacingDirection.Up,
+                    "indoor runtime applies authored Crow Spawn and relative wander range");
+                var indoorPlayer = outdoorPlayer;
+                indoorPlayer.Cell = new Vector2Int(1, 0);
+                indoorPlayer.Facing = "left";
+                playerFixture.ReplaceFromAuthoring("indoor_player_fixture", "Indoor Player fixture", interior.MapType,
+                    interior.BaseSurface, interior.GrassMode, interior.BackdropColor,
+                    interior.MinCell, interior.MaxCell,
+                    new System.Collections.Generic.List<SurfacePlacement>(interior.Surfaces),
+                    new System.Collections.Generic.List<WorldObjectPlacement>(interior.Objects),
+                    new System.Collections.Generic.List<LockedMapMarker>(interior.Markers),
+                    new System.Collections.Generic.List<EntitySpawnPlacement> { indoorPlayer });
+                Check(MapPlacementRules.Validate(playerFixture).Count == 0,
+                    "indoor Player Start placement validates");
+                Check(EntityRuntimeFactory2D.FindPlayerStartMap(new[] { interior, playerFixture }) == 1,
+                    "indoor Player Start selects the indoor map");
+                Check(EntityRuntimeFactory2D.TryApplyPlayerStart(playerFixture, grid, player),
+                    "indoor Player Start is applied to the persistent actor");
+                Check(player.transform.position == grid.CellToWorld(indoorPlayer.Cell) &&
+                    player.Facing == FacingDirection.Left,
+                    "indoor Player Start sets position and facing");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(fixture);
+                UnityEngine.Object.DestroyImmediate(playerFixture);
             }
         }
     }

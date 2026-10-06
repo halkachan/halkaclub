@@ -60,6 +60,7 @@ public static class MapFormat
                         DefinitionId = "house_main", RootCell = legacy.Markers.HouseDoor
                     });
                 MigrateLegacySigns(migrated);
+                MigrateSpawns(migrated);
                 return migrated;
             }
             Require(root.GetProperty("bounds"), "minX", "maxX", "minY", "maxY");
@@ -72,12 +73,21 @@ public static class MapFormat
             { Require(placement, "instanceId", "definitionId", "rootCell"); Require(placement.GetProperty("rootCell"), "x", "y"); }
             var map = JsonSerializer.Deserialize<MapDocument>(json, Options) ??
                 throw new InvalidDataException("Map JSON is empty.");
-            if (map.Format != "halka-world-map" || map.FormatVersion != 2)
+            if (map.Format != "halka-world-map" || map.FormatVersion is not (2 or 3))
                 throw new InvalidDataException($"Unsupported map format {map.Format} v{map.FormatVersion}.");
             if (map.Bounds == null || map.Surfaces == null || map.Objects == null ||
                 map.Markers == null)
                 throw new InvalidDataException("Map JSON is missing a required section.");
             MigrateLegacySigns(map);
+            if (map.FormatVersion == 2) MigrateSpawns(map);
+            else
+            {
+                Require(root, "entitySpawns");
+                foreach (var spawn in root.GetProperty("entitySpawns").EnumerateArray())
+                { Require(spawn, "instanceId", "definitionId", "cell", "facing"); Require(spawn.GetProperty("cell"), "x", "y"); }
+                if (map.Markers.Any(item => item.Id is "player_start" or "crow_spawn"))
+                    throw new InvalidDataException("Entity marker duplicates entitySpawns.");
+            }
             return map;
         }
         catch (InvalidOperationException error)
@@ -89,6 +99,36 @@ public static class MapFormat
             throw new InvalidDataException($"Map JSON parse error: line {error.LineNumber + 1}, byte {error.BytePositionInLine + 1}: {error.Message}", error);
         }
     }
+
+    private static void MigrateSpawns(MapDocument map)
+    {
+        foreach (var marker in map.Markers.Where(item => item.Id is "player_start" or "crow_spawn").ToArray())
+        {
+            var player = marker.Id == "player_start";
+            map.EntitySpawns.Add(new EntitySpawn {
+                InstanceId = player ? "ent_player_main_start" : "ent_crow_main_first",
+                DefinitionId = player ? "player_main" : "crow_main",
+                Cell = marker.Cell, Facing = player ? "down" : "right" });
+            map.Markers.Remove(marker);
+        }
+        map.FormatVersion = 3;
+    }
+
+    public static EntityCatalogDocument ParseEntityCatalog(string json)
+    {
+        var catalog = JsonSerializer.Deserialize<EntityCatalogDocument>(json, Options) ??
+            throw new InvalidDataException("Entity catalog is empty.");
+        if (catalog.Format != "halka-world-entity-catalog" || catalog.FormatVersion != 1 ||
+            catalog.Entities == null || catalog.Entities.Count == 0 ||
+            catalog.Entities.Any(item => string.IsNullOrWhiteSpace(item.DefinitionId) ||
+                string.IsNullOrWhiteSpace(item.PreviewSpritePath) || item.MaxInstances < 1 ||
+                item.DefaultFacing is not ("up" or "down" or "left" or "right")) ||
+            catalog.Entities.Select(item => item.DefinitionId).Distinct(StringComparer.Ordinal).Count() != catalog.Entities.Count)
+            throw new InvalidDataException("Invalid entity catalog.");
+        return catalog;
+    }
+
+    public static EntityCatalogDocument LoadEntityCatalog(string path) => ParseEntityCatalog(File.ReadAllText(path, Encoding.UTF8));
 
     private static void MigrateLegacySigns(MapDocument map)
     {
@@ -164,7 +204,13 @@ public static class MapFormat
     }
 
     public static MapDocument LoadMap(string path) => ParseMap(File.ReadAllText(path, Encoding.UTF8));
-    public static CatalogDocument LoadCatalog(string path) => ParseCatalog(File.ReadAllText(path, Encoding.UTF8));
+    public static CatalogDocument LoadCatalog(string path)
+    {
+        var catalog = ParseCatalog(File.ReadAllText(path, Encoding.UTF8));
+        var entityPath = Path.Combine(Path.GetDirectoryName(path)!, "entity_catalog.hwentitycatalog.json");
+        catalog.EntityCatalog = LoadEntityCatalog(entityPath);
+        return catalog;
+    }
 
     private static void Require(JsonElement element, params string[] names)
     {
@@ -183,6 +229,9 @@ public static class MapFormat
             .ThenBy(item => item.RootCell.Y).ThenBy(item => item.RootCell.X)
             .ThenBy(item => item.InstanceId, StringComparer.Ordinal).ToList();
         map.Markers = map.Markers.OrderBy(item => item.Id, StringComparer.Ordinal).ToList();
+        map.EntitySpawns = map.EntitySpawns.OrderBy(item => item.DefinitionId, StringComparer.Ordinal)
+            .ThenBy(item => item.Cell.Y).ThenBy(item => item.Cell.X)
+            .ThenBy(item => item.InstanceId, StringComparer.Ordinal).ToList();
         return JsonSerializer.Serialize(map, Options) + "\n";
     }
 

@@ -119,6 +119,63 @@ public sealed class MapSession
         return true;
     }
 
+    public bool PlaceEntity(string definitionId, GridCell cell, out string reason)
+    {
+        if (!MapRules.CanPlaceEntity(Map, Catalog, definitionId, cell, out reason)) return false;
+        if (Catalog.EntityCatalog.ById[definitionId].SpawnMode == "game-start" &&
+            OtherMaps().Any(map => map.EntitySpawns.Any(item => item.DefinitionId == definitionId)))
+        { reason = "ﾊﾙｶﾁｬﾝ開始位置は別Mapに既に存在します。"; return false; }
+        Change(() => Map.EntitySpawns.Add(new EntitySpawn {
+            InstanceId = "ent_" + Guid.NewGuid().ToString("N"), DefinitionId = definitionId,
+            Cell = cell, Facing = Catalog.EntityCatalog.ById[definitionId].DefaultFacing }));
+        return true;
+    }
+
+    public bool MoveEntity(string instanceId, GridCell target, out string reason)
+    {
+        var spawn = Map.EntitySpawns.FirstOrDefault(item => item.InstanceId == instanceId);
+        if (spawn == null) { reason = "Entityが見つかりません。"; return false; }
+        if (!MapRules.CanPlaceEntity(Map, Catalog, spawn.DefinitionId, target, out reason, instanceId)) return false;
+        Change(() => spawn.Cell = target);
+        return true;
+    }
+
+    public bool SetEntityFacing(string instanceId, string facing)
+    {
+        var spawn = Map.EntitySpawns.FirstOrDefault(item => item.InstanceId == instanceId);
+        if (spawn == null || facing is not ("up" or "down" or "left" or "right") || spawn.Facing == facing) return false;
+        Change(() => spawn.Facing = facing);
+        return true;
+    }
+
+    public bool DeleteEntity(string instanceId)
+    {
+        if (!Map.EntitySpawns.Any(item => item.InstanceId == instanceId)) return false;
+        Change(() => Map.EntitySpawns.RemoveAll(item => item.InstanceId == instanceId));
+        return true;
+    }
+
+    public bool CopyEntity(string instanceId, GridCell target, out string reason)
+    {
+        var spawn = Map.EntitySpawns.FirstOrDefault(item => item.InstanceId == instanceId);
+        if (spawn == null) { reason = "Entityが見つかりません。"; return false; }
+        if (Catalog.EntityCatalog.ById[spawn.DefinitionId].SpawnMode == "game-start")
+        { reason = "ﾊﾙｶﾁｬﾝ開始位置はコピーできません。"; return false; }
+        if (!PlaceEntity(spawn.DefinitionId, target, out reason)) return false;
+        var placed = Map.EntitySpawns.Last(item => item.Cell == target && item.DefinitionId == spawn.DefinitionId);
+        SetEntityFacing(placed.InstanceId, spawn.Facing);
+        return true;
+    }
+
+    private IEnumerable<MapDocument> OtherMaps()
+    {
+        var folder = Path.GetDirectoryName(FilePath);
+        if (folder == null || !Directory.Exists(folder)) yield break;
+        foreach (var path in Directory.GetFiles(folder, "*.hwmap.json"))
+            if (!string.Equals(Path.GetFullPath(path), Path.GetFullPath(FilePath), StringComparison.OrdinalIgnoreCase))
+                yield return MapFormat.LoadMap(path);
+    }
+
     public void Undo()
     {
         EndStroke();
@@ -142,6 +199,15 @@ public sealed class MapSession
         var errors = issues.Where(item => !item.IsWarning).ToArray();
         if (errors.Length > 0) throw new InvalidDataException(
             "Map validation failed: " + string.Join("; ", errors.Take(5).Select(item => item.Message)));
+        if (Path.GetFileName(Path.GetDirectoryName(FilePath)) == "Authoring")
+        {
+            var allMaps = OtherMaps().Append(Map).ToArray();
+            if (allMaps.Sum(item => item.EntitySpawns.Count(spawn => spawn.DefinitionId == "player_main")) != 1)
+                throw new InvalidDataException("World全体でﾊﾙｶﾁｬﾝ開始位置は1個必要です。");
+            if (allMaps.SelectMany(item => item.EntitySpawns).GroupBy(item => item.InstanceId)
+                .Any(group => group.Count() > 1))
+                throw new InvalidDataException("Entity instanceIdがWorld内で重複しています。");
+        }
         MapFormat.SaveAtomic(Map, FilePath);
         savedSnapshot = MapFormat.SerializeMap(Map);
     }

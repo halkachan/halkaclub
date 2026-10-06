@@ -1,0 +1,33 @@
+{
+  "format": "halka-world-entity-catalog",
+  "formatVersion": 1,
+  "entities": [
+    {
+      "definitionId": "player_main",
+      "displayName": "ﾊﾙｶﾁｬﾝ開始位置",
+      "previewSpritePath": "Assets/Content/Character/front_idle/00.png",
+      "visualWidthCells": 2,
+      "visualHeightCells": 2,
+      "defaultFacing": "down",
+      "runtimeBehavior": "persistent-player",
+      "spawnMode": "game-start",
+      "blocksMovement": true,
+      "editorCategory": "キャラクター / 生き物",
+      "maxInstances": 1
+    },
+    {
+      "definitionId": "crow_main",
+      "displayName": "カラス",
+      "previewSpritePath": "Assets/Content/World/crow_idle_right.png",
+      "visualWidthCells": 1,
+      "visualHeightCells": 1,
+      "defaultFacing": "right",
+      "runtimeBehavior": "crow-wander",
+      "spawnMode": "map-local",
+      "blocksMovement": true,
+      "editorCategory": "キャラクター / 生き物",
+      "maxInstances": 1,
+      "wanderRegion": { "minX": -3, "maxX": 1, "minY": -2, "maxY": 2 }
+    }
+  ]
+}

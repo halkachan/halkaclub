@@ -42,7 +42,7 @@ namespace Halka.Game.Editor
             Check(field != null && room != null && maps != null && area != null && world != null,
                 "both maps and runtime controller exist");
             Check(field.MapId == "first_field" && room.MapId == "halka_house" &&
-                field.DataVersion == 2 && room.DataVersion == 2 &&
+                field.DataVersion == 3 && room.DataVersion == 3 &&
                 field.MapType == "outdoor" && room.MapType == "interior" &&
                 field.GrassMode == "auto" && room.GrassMode == "none" &&
                 room.BaseSurface.StableId == "house_floor", "map identities, base and grass policy");
@@ -120,7 +120,7 @@ namespace Halka.Game.Editor
                 "outdoor grass is rebuilt after return");
             Check(maps.GetMap("first_field") == field && maps.GetMap("halka_house") == room,
                 "map registry resolves stable IDs");
-            Debug.Log("HALKA ver2.0 regression checks with Map Editor v0.4 passed.");
+            Debug.Log("HALKA ver2.0 regression checks with Map Editor v0.5 passed.");
         }
 
         [MenuItem("HALKA/Validate v0.3 moved house fixture")]
@@ -140,7 +140,7 @@ namespace Halka.Game.Editor
             shifted.ReplaceFromAuthoring(official.MapId, official.DisplayName, official.MapType,
                 official.BaseSurface, official.GrassMode, official.BackdropColor,
                 official.MinCell, official.MaxCell, official.Surfaces.ToList(), objects,
-                official.Markers.ToList());
+                official.Markers.ToList(), official.EntitySpawns.ToList());
             try
             {
                 Check(MapPlacementRules.Validate(shifted).Count == 0,
@@ -213,7 +213,7 @@ namespace Halka.Game.Editor
             shifted.ReplaceFromAuthoring(official.MapId, official.DisplayName, official.MapType,
                 official.BaseSurface, official.GrassMode, official.BackdropColor,
                 official.MinCell, official.MaxCell, official.Surfaces.ToList(), objects,
-                official.Markers.ToList());
+                official.Markers.ToList(), official.EntitySpawns.ToList());
             Check(MapPlacementRules.Validate(shifted).Count == 0, "moved house test map validates");
             try
             {

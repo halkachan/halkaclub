@@ -18,7 +18,7 @@ public partial class MainWindow : Window
     private static readonly SKTypeface MarkerTypeface = SKTypeface.FromFamilyName("Yu Gothic UI") ?? SKTypeface.Default;
     private enum EditorTool { Select, Paint, Erase }
     private sealed record PaletteEntry(string DefinitionId, string DisplayName, bool IsSurface,
-        bool RestoresBase, BitmapImage? PreviewIcon, string Tooltip, string Category = "オブジェクト")
+        bool RestoresBase, BitmapImage? PreviewIcon, string Tooltip, string Category = "オブジェクト", bool IsEntity = false)
     {
         public string GroupName => IsSurface ? "地面" : Category;
         public string AssetStatus => !IsSurface && PreviewIcon == null ? "MISSING ASSET" : "";
@@ -37,6 +37,7 @@ public partial class MainWindow : Window
         public bool ShowCoordinates { get; set; }
         public bool ShowMarkers { get; set; } = true;
         public bool ShowActionPoints { get; set; } = true;
+        public bool ShowEntities { get; set; } = true;
     }
 
     private readonly Dictionary<string, SKBitmap?> spriteCache = new(StringComparer.OrdinalIgnoreCase);
@@ -74,6 +75,7 @@ public partial class MainWindow : Window
             CollisionCheck.IsChecked = settings.ShowCollision; CoordCheck.IsChecked = settings.ShowCoordinates;
             MarkerCheck.IsChecked = settings.ShowMarkers;
             ActionPointCheck.IsChecked = settings.ShowActionPoints;
+            EntityCheck.IsChecked = settings.ShowEntities;
             var found = ProjectPaths.IsUnityProject(settings.ProjectRoot) ? settings.ProjectRoot :
                 ProjectPaths.FindNear(AppContext.BaseDirectory) ?? ProjectPaths.FindNear(Environment.CurrentDirectory);
             if (found != null) OpenProject(found, settings.MapFile, fit: settings.MapFile.Length == 0);
@@ -114,6 +116,7 @@ public partial class MainWindow : Window
         settings.ShowCollision = CollisionCheck.IsChecked == true; settings.ShowCoordinates = CoordCheck.IsChecked == true;
         settings.ShowMarkers = MarkerCheck.IsChecked == true;
         settings.ShowActionPoints = ActionPointCheck.IsChecked == true;
+        settings.ShowEntities = EntityCheck.IsChecked == true;
         Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
         File.WriteAllText(settingsPath, JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true }));
     }
@@ -164,7 +167,10 @@ public partial class MainWindow : Window
                 new PaletteEntry(item.DefinitionId, item.DisplayName, false, false,
                     LoadPaletteIcon(item.PreviewSpritePath), item.DisplayName + "を配置します",
                     item.Category switch { "nature" => "自然", "furniture" => "家具",
-                        "fixture" => "設備", _ => "オブジェクト" }))).ToArray();
+                        "fixture" => "設備", _ => "オブジェクト" }))).Concat(
+            catalog.EntityCatalog.Entities.Select(item => new PaletteEntry(item.DefinitionId, item.DisplayName,
+                false, false, LoadPaletteIcon(item.PreviewSpritePath), item.DisplayName + "のSpawnを配置します",
+                item.EditorCategory, true))).ToArray();
         var paletteView = CollectionViewSource.GetDefaultView(paletteEntries);
         paletteView.Filter = item => item is PaletteEntry entry &&
             (string.IsNullOrWhiteSpace(PaletteSearch.Text) ||
@@ -197,32 +203,37 @@ public partial class MainWindow : Window
     {
         if (session == null || catalog == null) return;
         var map = session.Map;
-        Title = "HALKA WORLD MAP EDITOR v0.4 — " + map.MapId + (session.IsDirty ? " *" : "");
+        Title = "HALKA WORLD MAP EDITOR v0.5 — " + map.MapId + (session.IsDirty ? " *" : "");
         DirtyText.Text = session.IsDirty ? "● 未保存" : "保存済み";
         ActivePaletteText.Text = tool switch
         {
             EditorTool.Select => "選択",
             EditorTool.Erase => "消去",
             _ when PaletteList.SelectedItem is PaletteEntry palette =>
-                $"配置: {palette.DisplayName}  |  {(palette.IsSurface ? "地面" : "オブジェクト")}",
+                $"配置: {palette.DisplayName}  |  {(palette.IsSurface ? "地面" : palette.IsEntity ? "Entity" : "オブジェクト")}",
             _ => "配置: 未選択"
         };
-        MapInfo.Text = $"{map.DisplayName} ({map.MapId})\nType: {map.MapType}  Base: {map.BaseSurfaceDefinitionId}  Grass: {map.GrassMode}\nBounds: X {map.Bounds.MinX}..{map.Bounds.MaxX}, Y {map.Bounds.MinY}..{map.Bounds.MaxY}\nSurface: {map.Surfaces.Count}\nObject: {map.Objects.Count}\nDerived Grass: {CountGrass()}\nTool: {tool}";
+        MapInfo.Text = $"{map.DisplayName} ({map.MapId})\nType: {map.MapType}  Base: {map.BaseSurfaceDefinitionId}  Grass: {map.GrassMode}\nBounds: X {map.Bounds.MinX}..{map.Bounds.MaxX}, Y {map.Bounds.MinY}..{map.Bounds.MaxY}\nSurface: {map.Surfaces.Count}\nObject: {map.Objects.Count}\nEntity: {map.EntitySpawns.Count}\nDerived Grass: {CountGrass()}\nTool: {tool}";
         var selected = SelectedObject();
-        SelectedKind.Text = selected == null ? selectedCell.HasValue ? $"Cell {selectedCell.Value}" : "セルを選択してください" :
+        var selectedEntity = SelectedEntity();
+        SelectedKind.Text = selectedEntity != null ?
+            $"{catalog.EntityCatalog.ById[selectedEntity.DefinitionId].DisplayName} ({selectedEntity.DefinitionId})\nMap: {map.MapId}\nSpawn: {selectedEntity.Cell}" :
+            selected == null ? selectedCell.HasValue ? $"Cell {selectedCell.Value}" : "セルを選択してください" :
             catalog.ObjectById.TryGetValue(selected.DefinitionId, out var definition)
                 ? $"{definition.DisplayName} ({selected.DefinitionId})\nMap: {map.MapId}\nRoot: {selected.RootCell}\nVisual: {definition.VisualWidthPixels / 32}×{definition.VisualHeightPixels / 32} cells\nBlocked: {MapRules.FootprintCells(selected, definition).Count()} cells"
                 : selected.DefinitionId;
         ActionPointInfo.Text = selected != null && catalog.ObjectById.TryGetValue(selected.DefinitionId, out var actionDefinition)
             ? actionDefinition.ActionPoints.Count == 0 ? "なし" : string.Join("\n\n", actionDefinition.ActionPoints.Select(point =>
                 $"{point.Id}\nLocal: {point.PlayerCellOffset}  World: {MapRules.ActionCell(selected, point)}\nFacing: {point.PlayerFacing}  Type: {point.ActionType}\nPose: {point.PoseKey ?? "—"}  Text: {MapRules.ActionText(selected, point) ?? "—"}"))
-            : "Objectを選択してください";
+            : selectedEntity != null ? "Entity Spawn" : "Objectを選択してください";
+        FacingSection.Visibility = selectedEntity != null ? Visibility.Visible : Visibility.Collapsed;
+        if (selectedEntity != null) FacingPicker.SelectedValue = selectedEntity.Facing;
         SignTextSection.Visibility = selected?.DefinitionId == "sign_basic" ? Visibility.Visible : Visibility.Collapsed;
         if (selected?.DefinitionId == "sign_basic" && !SignTextBox.IsKeyboardFocusWithin)
             SignTextBox.Text = selected.SignText ?? "";
-        InstanceText.Text = selected?.InstanceId ?? "";
-        RootX.Text = selected?.RootCell.X.ToString() ?? selectedCell?.X.ToString() ?? "";
-        RootY.Text = selected?.RootCell.Y.ToString() ?? selectedCell?.Y.ToString() ?? "";
+        InstanceText.Text = selected?.InstanceId ?? selectedEntity?.InstanceId ?? "";
+        RootX.Text = selected?.RootCell.X.ToString() ?? selectedEntity?.Cell.X.ToString() ?? selectedCell?.X.ToString() ?? "";
+        RootY.Text = selected?.RootCell.Y.ToString() ?? selectedEntity?.Cell.Y.ToString() ?? selectedCell?.Y.ToString() ?? "";
         ValidateNow();
         MapCanvas.InvalidateVisual();
     }
@@ -237,6 +248,7 @@ public partial class MainWindow : Window
     }
 
     private ObjectPlacement? SelectedObject() => session?.Map.Objects.FirstOrDefault(item => item.InstanceId == selectedInstanceId);
+    private EntitySpawn? SelectedEntity() => session?.Map.EntitySpawns.FirstOrDefault(item => item.InstanceId == selectedInstanceId);
 
     private void ValidateNow()
     {
@@ -272,9 +284,18 @@ public partial class MainWindow : Window
     private void ExitApp(object sender, RoutedEventArgs e) => Close();
     private void UndoClick(object sender, RoutedEventArgs e) { session?.Undo(); RefreshView(); }
     private void RedoClick(object sender, RoutedEventArgs e) { session?.Redo(); RefreshView(); }
-    private void DeleteClick(object sender, RoutedEventArgs e) { if (session != null && selectedInstanceId != null && session.DeleteObject(selectedInstanceId)) { selectedInstanceId = null; RefreshView(); } }
+    private void DeleteClick(object sender, RoutedEventArgs e)
+    {
+        if (session == null || selectedInstanceId == null) return;
+        var entity = SelectedEntity();
+        if (entity?.DefinitionId == "player_main" && MessageBox.Show(this,
+            "ﾊﾙｶﾁｬﾝ開始位置を削除しますか？ 保存前に再配置が必要です。", "開始位置の削除",
+            MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        if (entity != null ? session.DeleteEntity(selectedInstanceId) : session.DeleteObject(selectedInstanceId))
+        { selectedInstanceId = null; RefreshView(); }
+    }
     private void ValidateClick(object sender, RoutedEventArgs e) => ValidateNow();
-    private void AboutClick(object sender, RoutedEventArgs e) => MessageBox.Show(this, "HALKA WORLD MAP EDITOR v0.4\nStandalone Edition\nMap JSONを編集します。UnityのMapDefinitionは生成キャッシュです。", "このツールについて");
+    private void AboutClick(object sender, RoutedEventArgs e) => MessageBox.Show(this, "HALKA WORLD MAP EDITOR v0.5\nStandalone Edition\nMap JSONを編集します。UnityのMapDefinitionは生成キャッシュです。", "このツールについて");
     private void PaletteSearchChanged(object sender, TextChangedEventArgs e)
     {
         if (PaletteList?.ItemsSource is { } source)
@@ -338,7 +359,17 @@ public partial class MainWindow : Window
     {
         if (session == null || selectedInstanceId == null) return;
         if (!int.TryParse(RootX.Text, out var x) || !int.TryParse(RootY.Text, out var y)) { StatusText.Text = "座標は整数で入力してください。"; return; }
-        if (!session.MoveObject(selectedInstanceId, new GridCell(x, y), out var reason)) StatusText.Text = reason;
+        string reason;
+        var moved = SelectedEntity() != null
+            ? session.MoveEntity(selectedInstanceId, new GridCell(x, y), out reason)
+            : session.MoveObject(selectedInstanceId, new GridCell(x, y), out reason);
+        if (!moved) StatusText.Text = reason;
+        RefreshView();
+    }
+    private void ApplyFacingClick(object sender, RoutedEventArgs e)
+    {
+        if (session != null && selectedInstanceId != null && FacingPicker.SelectedValue is string facing)
+            session.SetEntityFacing(selectedInstanceId, facing);
         RefreshView();
     }
     private void ApplySignTextClick(object sender, RoutedEventArgs e)
@@ -372,16 +403,29 @@ public partial class MainWindow : Window
             else if (e.Key == Key.Y) RedoClick(sender, e);
             else if (e.Key == Key.C && SelectedObject() is { } source)
                 Clipboard.SetText("HALKA_WORLD_OBJECT:" + JsonSerializer.Serialize(source));
+            else if (e.Key == Key.C && SelectedEntity() is { } entity)
+            {
+                if (entity.DefinitionId == "player_main") StatusText.Text = "ﾊﾙｶﾁｬﾝ開始位置はコピーできません。";
+                else Clipboard.SetText("HALKA_WORLD_ENTITY:" + JsonSerializer.Serialize(entity));
+            }
             else if (e.Key == Key.V && selectedCell is { } cell && Clipboard.ContainsText() && session != null)
             {
                 var clip = Clipboard.GetText();
                 ObjectPlacement? copied = null;
+                EntitySpawn? copiedEntity = null;
                 if (clip.StartsWith("HALKA_WORLD_OBJECT:", StringComparison.Ordinal))
                     try { copied = JsonSerializer.Deserialize<ObjectPlacement>(clip[19..]); }
                     catch (JsonException) { StatusText.Text = "コピーしたObjectを読み込めません。"; }
-                if (copied != null)
+                if (clip.StartsWith("HALKA_WORLD_ENTITY:", StringComparison.Ordinal))
+                    try { copiedEntity = JsonSerializer.Deserialize<EntitySpawn>(clip[19..]); }
+                    catch (JsonException) { StatusText.Text = "コピーしたEntityを読み込めません。"; }
+                if (copiedEntity != null)
+                { if (!session.PlaceEntity(copiedEntity.DefinitionId, cell, out var reason)) StatusText.Text = reason;
+                  else session.SetEntityFacing(session.Map.EntitySpawns.Last(item => item.Cell == cell).InstanceId, copiedEntity.Facing); }
+                else if (copied != null)
                 { if (!session.PlaceObject(copied.DefinitionId, cell, out var reason, copied.SignText)) StatusText.Text = reason; }
                 else if (!clip.StartsWith("HALKA_WORLD_OBJECT:", StringComparison.Ordinal) &&
+                    !clip.StartsWith("HALKA_WORLD_ENTITY:", StringComparison.Ordinal) &&
                     !session.PlaceObject(clip, cell, out var reason)) StatusText.Text = reason;
                 RefreshView();
             }
@@ -426,7 +470,7 @@ public partial class MainWindow : Window
         rightErase = e.ChangedButton == MouseButton.Right;
         if (tool == EditorTool.Select && !rightErase)
         {
-            selectedInstanceId = HitObject(point)?.InstanceId;
+            selectedInstanceId = HitEntity(point)?.InstanceId ?? HitObject(point)?.InstanceId;
         }
         else if (tool == EditorTool.Erase || rightErase)
         {
@@ -444,6 +488,8 @@ public partial class MainWindow : Window
                     StatusText.Text = "Objectの占有セルには地面を配置できません。";
             }
             else if (entry.PreviewIcon == null) StatusText.Text = "MISSING ASSET: 正式Spriteがないため配置できません。";
+            else if (entry.IsEntity)
+            { if (!session.PlaceEntity(entry.DefinitionId, cell, out var entityReason)) StatusText.Text = entityReason; }
             else if (!session.PlaceObject(entry.DefinitionId, cell, out var reason)) StatusText.Text = reason;
         }
         MapCanvas.CaptureMouse(); RefreshView();
@@ -462,6 +508,22 @@ public partial class MainWindow : Window
         return null;
     }
 
+    private EntitySpawn? HitEntity(Point point)
+    {
+        if (session == null || catalog == null || EntityCheck.IsChecked != true) return null;
+        return session.Map.EntitySpawns.FirstOrDefault(item =>
+            catalog.EntityCatalog.ById.TryGetValue(item.DefinitionId, out var def) &&
+            EntityRect(item, def).Contains(point));
+    }
+
+    private Rect EntityRect(EntitySpawn item, CatalogEntity definition)
+    {
+        var cell = CellRect(item.Cell);
+        return new Rect(cell.Left - (definition.VisualWidthCells - 1) * zoom / 2,
+            cell.Bottom - definition.VisualHeightCells * zoom,
+            definition.VisualWidthCells * zoom, definition.VisualHeightCells * zoom);
+    }
+
     private Rect VisualRect(ObjectPlacement item, CatalogObject definition)
     {
         var bounds = MapRules.VisualBounds(item, definition);
@@ -474,7 +536,9 @@ public partial class MainWindow : Window
     {
         if (session == null) return;
         var selected = HitObject(point);
-        if (selected != null) { session.DeleteObject(selected.InstanceId); if (selectedInstanceId == selected.InstanceId) selectedInstanceId = null; }
+        var entity = HitEntity(point);
+        if (entity != null) { selectedInstanceId = entity.InstanceId; DeleteClick(this, new RoutedEventArgs()); }
+        else if (selected != null) { session.DeleteObject(selected.InstanceId); if (selectedInstanceId == selected.InstanceId) selectedInstanceId = null; }
         else session.EraseSurface(cell);
     }
 
@@ -621,12 +685,31 @@ public partial class MainWindow : Window
                 if (MapRules.BlocksMovement(map, catalog, cell))
                     Fill(canvas, ToSkia(CellRect(cell)), new SKColor(255, 55, 55, 75));
             }
-        if (map.MapType == "outdoor")
+        if (EntityCheck.IsChecked == true)
         {
-            if (map.Marker("player_start") is { } playerSpawn)
-                DrawLargeMarker(canvas, playerSpawn, 2, 2, catalog.Visuals.PlayerSpritePath);
-            if (map.Marker("crow_spawn") is { } crowSpawn)
-                DrawLargeMarker(canvas, crowSpawn, 1, 1, catalog.Visuals.CrowSpritePath);
+            foreach (var spawn in map.EntitySpawns)
+            {
+                if (!catalog.EntityCatalog.ById.TryGetValue(spawn.DefinitionId, out var def)) continue;
+                if (def.WanderRegion is { } wander)
+                {
+                    var a = CellRect(new GridCell(spawn.Cell.X + wander.MinX, spawn.Cell.Y + wander.MinY));
+                    var far = CellRect(new GridCell(spawn.Cell.X + wander.MaxX, spawn.Cell.Y + wander.MaxY));
+                    using var regionPaint = new SKPaint {
+                        Color = spawn.InstanceId == selectedInstanceId ? new SKColor(255, 225, 90, 180) : new SKColor(255, 225, 90, 60),
+                        Style = SKPaintStyle.Stroke, StrokeWidth = spawn.InstanceId == selectedInstanceId ? 2 : 1 };
+                    canvas.DrawRect(new SKRect((float)a.Left, (float)far.Top, (float)far.Right, (float)a.Bottom), regionPaint);
+                }
+                var rect = EntityRect(spawn, def);
+                DrawSprite(canvas, def.PreviewSpritePath, ToSkia(rect), SKColors.DimGray);
+                if (spawn.InstanceId == selectedInstanceId)
+                {
+                    using var outline = new SKPaint { Color = SKColors.Yellow, Style = SKPaintStyle.Stroke, StrokeWidth = 2 };
+                    canvas.DrawRect(ToSkia(rect), outline);
+                    var center = ToSkia(CellRect(spawn.Cell));
+                    Text(canvas, spawn.Facing switch { "up" => "↑", "down" => "↓", "left" => "←", _ => "→" },
+                        center.MidX - 7, center.Bottom - 4, SKColors.Yellow, 16);
+                }
+            }
         }
         if (MarkerCheck.IsChecked == true)
         {

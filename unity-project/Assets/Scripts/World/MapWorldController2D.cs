@@ -5,6 +5,7 @@ using UnityEngine;
 namespace Halka.Game.World
 {
     // A small explicit registry for the maps used by the first field and its house.
+    [DefaultExecutionOrder(-20000)]
     public sealed class MapWorldController2D : MonoBehaviour
     {
         [SerializeField] private MapDefinition[] maps;
@@ -13,6 +14,15 @@ namespace Halka.Game.World
         [SerializeField] private PlayerMover player;
 
         public string ActiveMapId { get; private set; } = "first_field";
+
+        private void Awake()
+        {
+            if (maps == null || roots == null || maps.Length != roots.Length)
+                throw new InvalidOperationException("Map registry is incomplete");
+            var startIndex = EntityRuntimeFactory2D.FindPlayerStartMap(maps);
+            ActiveMapId = maps[startIndex].MapId;
+            for (var i = 0; i < roots.Length; i++) roots[i].SetActive(i == startIndex);
+        }
 
         public MapDefinition GetMap(string mapId)
         {

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7333b7c63ac1a534d85d98463325eff1, type: 3}
   m_Name: halka_house
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.MapDefinition
-  dataVersion: 2
+  dataVersion: 3
   mapId: halka_house
   displayName: "\uFF8A\uFF99\uFF76\uFF81\uFF6C\uFF9D\u306E\u5BB6"
   mapType: interior
@@ -126,8 +126,10 @@ MonoBehaviour:
   - InstanceId: obj_bed_basic_v03_migration
     RootCell: {x: -5, y: 0}
     Definition: {fileID: 11400000, guid: 88990215c948f3441931795d2fde4a44, type: 2}
+    SignText: 
   markers:
   - StableId: interior_entry
     Cell: {x: 0, y: -3}
   - StableId: interior_exit
     Cell: {x: 0, y: -4}
+  entitySpawns: []

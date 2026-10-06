@@ -6,9 +6,6 @@ namespace Halka.Game.World
     // A small walker: one interpolated grid step, then a few seconds of rest.
     public sealed class CrowWander2D : MonoBehaviour, Halka.Game.Interaction.IInteractionAvailability
     {
-        public static readonly Vector2Int InitialCell = new Vector2Int(7, 2);
-        public static readonly Vector2Int RangeMin = new Vector2Int(4, 0);
-        public static readonly Vector2Int RangeMax = new Vector2Int(8, 4);
         public const float StepSeconds = 0.27f;
         public const float WalkFrameSeconds = 0.12f;
 
@@ -25,6 +22,10 @@ namespace Halka.Game.World
         [SerializeField] private Sprite[] walkUp;
         [SerializeField] private Sprite[] walkLeft;
         [SerializeField] private Sprite[] walkRight;
+        [SerializeField] private Vector2Int wanderMinimumOffset;
+        [SerializeField] private Vector2Int wanderMaximumOffset;
+        [SerializeField] private Vector2Int spawnCell;
+        [SerializeField] private string initialFacing = "right";
 
         private GridStepMotion motion;
         private float nextActionAt;
@@ -37,10 +38,33 @@ namespace Halka.Game.World
         public bool CanInteract => !IsMoving;
         public float StepProgressNormalized => motion != null ? motion.StepProgressNormalized : 1f;
         public FacingDirection Facing { get; private set; } = FacingDirection.Right;
+        public Vector2Int RangeMin => spawnCell + wanderMinimumOffset;
+        public Vector2Int RangeMax => spawnCell + wanderMaximumOffset;
+
+        public void SetGrassField(GrassField2D field) => grassField = field;
+
+        public void ApplySpawn(EntitySpawnPlacement spawn, GridWorld2D grid)
+        {
+            if (spawn.Definition == null || spawn.Definition.RuntimeBehavior != "crow-wander")
+                throw new System.InvalidOperationException("Expected a crow-wander Entity Spawn");
+            world = grid;
+            spawnCell = spawn.Cell;
+            wanderMinimumOffset = spawn.Definition.WanderMinimum;
+            wanderMaximumOffset = spawn.Definition.WanderMaximum;
+            initialFacing = spawn.Facing;
+            Facing = EntityRuntimeFactory2D.ParseFacing(initialFacing);
+            transform.position = world.CellToWorld(spawnCell);
+            if (motion != null) motion = new GridStepMotion(spawnCell);
+            nextActionAt = Time.time + 2f;
+            lastTickAt = Time.time;
+            if (clickCollider != null) clickCollider.enabled = true;
+            if (artwork != null) RefreshVisual();
+        }
 
         private void Awake()
         {
             motion = new GridStepMotion(world.WorldToCell(transform.position));
+            Facing = EntityRuntimeFactory2D.ParseFacing(initialFacing);
             transform.position = world.CellToWorld(motion.Cell);
             nextActionAt = Time.time + 2f;
             lastTickAt = Time.time;

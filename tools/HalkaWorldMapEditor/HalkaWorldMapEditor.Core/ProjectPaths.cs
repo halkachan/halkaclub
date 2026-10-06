@@ -22,6 +22,8 @@ public static class ProjectPaths
         Path.Combine(projectRoot, "Assets", "Content", "Maps", "Authoring");
     public static string CatalogPath(string projectRoot) =>
         Path.Combine(AuthoringFolder(projectRoot), "object_catalog.hwcatalog.json");
+    public static string EntityCatalogPath(string projectRoot) =>
+        Path.Combine(AuthoringFolder(projectRoot), "entity_catalog.hwentitycatalog.json");
     public static string[] MapPaths(string projectRoot) =>
         Directory.GetFiles(AuthoringFolder(projectRoot), "*.hwmap.json")
             .OrderBy(path => path, StringComparer.Ordinal).ToArray();

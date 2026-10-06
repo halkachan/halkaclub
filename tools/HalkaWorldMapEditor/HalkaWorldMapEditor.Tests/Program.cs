@@ -20,8 +20,8 @@ Check("format and bounds", map.MapId == "first_field" && map.Bounds.MinX == -10 
 Check("editable authoring placements", map.Surfaces.Count > 0 && map.Objects.Count > 0 &&
     map.Surfaces.All(s => catalog.SurfaceById.ContainsKey(s.DefinitionId)) &&
     map.Objects.All(o => catalog.ObjectById.ContainsKey(o.DefinitionId)));
-Check("golden marker coordinates", map.Marker("player_start") == new GridCell(0, 0) &&
-    map.Marker("crow_spawn") == new GridCell(7, 2) && MapRules.HouseRoot(map) == new GridCell(-7, -4) &&
+Check("golden entity coordinates", map.EntitySpawns.Single(e => e.DefinitionId == "player_main").Cell == new GridCell(0, 0) &&
+    map.EntitySpawns.Single(e => e.DefinitionId == "crow_main").Cell == new GridCell(7, 2) && MapRules.HouseRoot(map) == new GridCell(-7, -4) &&
     MapRules.OutsideEntry(map) == new GridCell(-7, -5) &&
     map.Marker("road_north") == new GridCell(0, 6) &&
     map.Marker("road_east") == new GridCell(10, -1) &&
@@ -40,7 +40,7 @@ Check("IDs stable unique", map.Objects.All(o => !string.IsNullOrEmpty(o.Instance
     map.Objects.Select(o => o.InstanceId).Distinct().Count() == map.Objects.Count);
 Check("stable ordered roundtrip", MapFormat.SerializeMap(MapFormat.ParseMap(source)) == MapFormat.SerializeMap(map));
 Check("locked cells", MapRules.IsProtected(map, MapRules.HouseRoot(map)!.Value) &&
-    MapRules.IsProtected(map, map.Marker("player_start")!.Value) &&
+    MapRules.IsProtected(map, map.EntitySpawns.Single(e => e.DefinitionId == "player_main").Cell) &&
     MapRules.IsProtected(map, map.Marker("road_north")!.Value));
 Check("reject protected and outside", !MapRules.CanPlace(map, catalog, "stone_basic", MapRules.HouseRoot(map)!.Value, out _) &&
     !MapRules.CanPlace(map, catalog, "stone_basic", new GridCell(100, 100), out _));
@@ -107,7 +107,7 @@ var houseMapPath = Path.Combine(ProjectPaths.AuthoringFolder(project), "halka_ho
 var houseSource = File.ReadAllText(houseMapPath);
 var houseMap = MapFormat.LoadMap(houseMapPath);
 Check("multiple map IDs", map.MapId == "first_field" && houseMap.MapId == "halka_house" &&
-    map.MapType == "outdoor" && houseMap.MapType == "interior" && map.FormatVersion == 2 && houseMap.FormatVersion == 2);
+    map.MapType == "outdoor" && houseMap.MapType == "interior" && map.FormatVersion == 3 && houseMap.FormatVersion == 3);
 Check("base surfaces and grass policies", map.BaseSurfaceDefinitionId == "base_ground" &&
     map.GrassMode == "auto" && houseMap.BaseSurfaceDefinitionId == "house_floor" &&
     houseMap.GrassMode == "none" && !MapRules.HasGrass(houseMap, catalog, new GridCell(0, 0)));
@@ -148,9 +148,9 @@ var oldJson = """
     {"format":"halka-world-map","formatVersion":1,"mapId":"legacy_field","displayName":"Legacy","bounds":{"minX":-10,"maxX":10,"minY":-6,"maxY":6},"surfaces":[],"objects":[],"markers":{"playerSpawn":{"x":0,"y":0},"crowSpawn":{"x":7,"y":2},"houseDoor":{"x":-7,"y":-4},"outsideEntry":{"x":-7,"y":-5},"houseFootprint":{"width":5,"height":2},"roadEnds":{"north":{"x":0,"y":6},"east":{"x":10,"y":-1},"south":{"x":2,"y":-6},"west":{"x":-10,"y":0}}}}
     """;
 var migrated = MapFormat.ParseMap(oldJson);
-Check("v1 to v2 migration", migrated.FormatVersion == 2 && migrated.MapId == "legacy_field" &&
+Check("v1 to v3 migration", migrated.FormatVersion == 3 && migrated.MapId == "legacy_field" &&
     migrated.Objects.Single(o => o.DefinitionId == "house_main").RootCell == new GridCell(-7, -4) &&
-    migrated.Marker("player_start") == new GridCell(0, 0) &&
+    migrated.EntitySpawns.Single(e => e.DefinitionId == "player_main").Cell == new GridCell(0, 0) &&
     migrated.Marker("road_north") == new GridCell(0, 6));
 
 var tempDir = Path.Combine(Path.GetTempPath(), "HalkaMapEditorTests-" + Guid.NewGuid().ToString("N"));
@@ -340,7 +340,59 @@ try
     signSession.Save();
     Check("sign instance text reload", MapFormat.LoadMap(signSession.FilePath).Objects
         .Count(o => o.DefinitionId == "sign_basic" && o.SignText == "ここからさき") == 2);
-    Check("non-sign JSON stays sparse", !MapFormat.SerializeMap(map).Contains("\"signText\"", StringComparison.Ordinal));
+Check("non-sign JSON stays sparse", !MapFormat.SerializeMap(map).Contains("\"signText\"", StringComparison.Ordinal));
+
+// v0.5: Entity / Spawn authoring, including the v2 marker migration.
+var entityCatalog = MapFormat.LoadEntityCatalog(ProjectPaths.EntityCatalogPath(project));
+Check("entity catalog two definitions", entityCatalog.Entities.Count == 2 &&
+    entityCatalog.ById.ContainsKey("player_main") && entityCatalog.ById.ContainsKey("crow_main"));
+Check("player entity metadata", entityCatalog.ById["player_main"].SpawnMode == "game-start" &&
+    entityCatalog.ById["player_main"].MaxInstances == 1);
+var region = entityCatalog.ById["crow_main"].WanderRegion!;
+Check("crow relative wander metadata", region != null &&
+    region.MinX == -3 && region.MaxX == 1 && region.MinY == -2 && region.MaxY == 2);
+Check("official entity spawns", map.FormatVersion == 3 && map.EntitySpawns.Count == 2 &&
+    houseMap.EntitySpawns.Count == 0 && !map.Markers.Any(m => m.Id is "player_start" or "crow_spawn"));
+Check("entity stable IDs", map.EntitySpawns.Select(e => e.InstanceId).Distinct().Count() == 2 &&
+    map.EntitySpawns.All(e => !string.IsNullOrWhiteSpace(e.InstanceId)));
+Check("entity facing persisted", map.EntitySpawns.Single(e => e.DefinitionId == "player_main").Facing == "down" &&
+    map.EntitySpawns.Single(e => e.DefinitionId == "crow_main").Facing == "right");
+var legacyV2 = JsonNode.Parse(source)!.AsObject();
+legacyV2["formatVersion"] = 2;
+legacyV2.Remove("entitySpawns");
+legacyV2["markers"]!.AsArray().Insert(0, JsonNode.Parse("{\"id\":\"player_start\",\"cell\":{\"x\":0,\"y\":0}}"));
+legacyV2["markers"]!.AsArray().Insert(0, JsonNode.Parse("{\"id\":\"crow_spawn\",\"cell\":{\"x\":7,\"y\":2}}"));
+var migratedV2 = MapFormat.ParseMap(legacyV2.ToJsonString());
+Check("v2 marker migration", migratedV2.EntitySpawns.Count == 2 && migratedV2.Markers.Count == map.Markers.Count);
+Check("v2 semantic placements preserved", MapFormat.SerializeMap(migratedV2) == MapFormat.SerializeMap(map));
+var entitySession = new MapSession(MapFormat.Clone(map), catalog, Path.Combine(tempDir, "entity-edit.hwmap.json"));
+var playerId = entitySession.Map.EntitySpawns.Single(e => e.DefinitionId == "player_main").InstanceId;
+var crowId = entitySession.Map.EntitySpawns.Single(e => e.DefinitionId == "crow_main").InstanceId;
+var movedCrow = new GridCell(0, 3);
+var movedPlayer = new GridCell(0, -3);
+Check("crow moved fixture", entitySession.MoveEntity(crowId, movedCrow, out _) &&
+    entitySession.Map.EntitySpawns.Single(e => e.InstanceId == crowId).Cell == movedCrow);
+Check("crow range follows spawn", movedCrow.X + region.MinX == -3 && movedCrow.X + region.MaxX == 1 &&
+    movedCrow.Y + region.MinY == 1 && movedCrow.Y + region.MaxY == 5);
+Check("player moved fixture", entitySession.MoveEntity(playerId, movedPlayer, out _) &&
+    entitySession.Map.EntitySpawns.Single(e => e.InstanceId == playerId).Cell == movedPlayer);
+Check("entity facing edit", entitySession.SetEntityFacing(crowId, "up") &&
+    entitySession.Map.EntitySpawns.Single(e => e.InstanceId == crowId).Facing == "up");
+entitySession.Undo();
+Check("entity facing undo", entitySession.Map.EntitySpawns.Single(e => e.InstanceId == crowId).Facing == "right");
+entitySession.Redo();
+Check("entity facing redo", entitySession.Map.EntitySpawns.Single(e => e.InstanceId == crowId).Facing == "up");
+Check("reject second player", !entitySession.PlaceEntity("player_main", new GridCell(2, 0), out _));
+Check("player copy forbidden", !entitySession.CopyEntity(playerId, new GridCell(2, 0), out _));
+Check("reject blocked entity", !entitySession.PlaceEntity("crow_main", MapRules.HouseRoot(map)!.Value, out _));
+Check("reject second crow", !entitySession.PlaceEntity("crow_main", new GridCell(2, 0), out _));
+entitySession.Save();
+var entityReload = MapFormat.LoadMap(entitySession.FilePath);
+Check("entity save reload", entityReload.EntitySpawns.Single(e => e.InstanceId == crowId).Cell == movedCrow &&
+    entityReload.EntitySpawns.Single(e => e.InstanceId == crowId).Facing == "up" &&
+    entityReload.EntitySpawns.Single(e => e.InstanceId == playerId).Cell == movedPlayer);
+Check("entity stable serialization", MapFormat.SerializeMap(entityReload) == MapFormat.SerializeMap(entitySession.Map));
+Check("house permits crow placement", MapRules.CanPlaceEntity(houseMap, catalog, "crow_main", new GridCell(0, 0), out _));
 }
 finally { Directory.Delete(tempDir, true); }
 Check("formal map never written", File.ReadAllText(mapPath) == source);

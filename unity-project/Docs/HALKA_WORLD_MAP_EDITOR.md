@@ -1,4 +1,4 @@
-# HALKA WORLD MAP EDITOR v0.4
+# HALKA WORLD MAP EDITOR v0.5
 
 ゲーム本編は **ver2.0** のままです。開発専用の .NET 8 / WPF / SkiaSharp Windows アプリで、ゲーム画面には出ません。
 
@@ -27,15 +27,15 @@ JSONが唯一の編集元です。Unityの `Assets/Content/Maps/*.asset` と `Fi
 
 Grid、Grass、Collision、座標、Markers、Action Pointsの表示を切り替えられます。大型Objectは画像の5×4などの見た目範囲と、通行不可セル群を別々に表示します。HouseのRootはドアの下中央セルで、通行不可はドアを除く9セルです。Houseを移動すると入口前セルはRootから導出されます。ベッドは2×3の通行不可Objectです。
 
-## Map v2 契約
+## Map v3 契約
 
 Schemaは `tools/HalkaWorldMapEditor/halka-world-map.schema.json`。各Mapに `mapId`、`mapType`、`baseSurfaceDefinitionId`、`grassMode`、`backdropColor`、Bounds、Surface overrides、Objects、ID付きMarkersを保存します。Base Surfaceを1セルずつ保存しません。屋外Grassは `grassMode=auto` で派生します。室内の既定値は `grassMode=none` ですが、草地Surfaceを塗ったセルにはGrassが表示されます。
 
 Objectは `instanceId`、`definitionId`、`rootCell` を保存し、看板だけ任意の `signText` も保存します。Visualサイズ、Root Anchor、通行不可セルの相対オフセット、Action PointはCatalog v3とUnity Definitionが持ちます。旧 `allowedMapTypes` は配置制限に使用しません。移動・Undo/Redo・再保存でInstance IDと看板の文面を保ちます。回転と自由Scaleはv0.4では扱いません。
 
-看板は `sign_basic` 1種類です。選択後にInspectorのText欄で文面を入力し、ApplyまたはEnterで反映します。Action PointはRootの1セル下から上向きで読む位置です。旧4方向の看板IDは読み込み時に `sign_basic` と対応する文面へ移行します。Map JSON v2のままで、屋外の草は引き続き派生状態として保存しません。
+看板は `sign_basic` 1種類です。選択後にInspectorのText欄で文面を入力し、ApplyまたはEnterで反映します。Action PointはRootの1セル下から上向きで読む位置です。旧4方向の看板IDは読み込み時に `sign_basic` と対応する文面へ移行します。現在のMap JSONはv3で、屋外の草は引き続き派生状態として保存しません。
 
-古いv1の `first_field` はCoreで読み込み時にv2へ変換できます。正式Mapの移行には `tools/HalkaWorldMapEditor/scripts/migrate-v02-to-v03.py` を用い、元JSONを別途バックアップしてから実行してください。現在の正式JSONはv2へ移行済みです。
+古いv1/v2のMapはCoreで読み込み時にv3へ変換できます。正式Mapのv2→v3移行には `tools/HalkaWorldMapEditor/scripts/migrate-v04-to-v05.py` を用い、元JSONを別途バックアップしてから実行してください。現在の正式JSONはv3へ移行済みです。
 
 Unity Importerが両MapのJSONとCatalogを読み、MapDefinition/Definition assetへ同期します。Runtimeは `MapWorldController2D` のMap IDで屋外と室内を切り替え、家の入退室位置はMarkerとHouse Rootから取得します。SceneとWebGLはMap JSONから再生成します。
 
@@ -77,3 +77,11 @@ Catalog v3の各Objectには `actionPoints` 配列があります。各点は `i
 8. HALKAがStandalone Editorで正式Map上の配置場所を決めて保存する。
 
 配置済みMapは定義IDとRootだけを参照するため、後でSprite pathを差し替えても配置JSONを作り直す必要はありません。Catalog v2はStandalone側でメモリ上だけv3へ読み替え可能ですが、Unity Importerへ渡す正式Catalogはv3に更新してください。
+
+## v0.5 Entity / Spawn Editor
+
+Surfaceと静的World Objectから分離して、`entitySpawns`配列で動的Entityの開始セルと向きを保存します。共有`entity_catalog.hwentitycatalog.json`は`player_main`と`crow_main`を定義します。Playerはゲーム開始時に既存Persistent Playerを移動し、室内遷移は引き続き`interior_entry`/`interior_exit` Markerを使います。CrowはSpawnセルから相対(-3..+1,-2..+2)を歩き、Map外と静的障害物を避けます。既存のDynamic Occupancy、草遮蔽、ガサゴソ、鳴き声を使います。
+
+Palette「キャラクター / 生き物」は両Mapに表示されます。Entityを選択するとInspectorで座標とFacingを編集でき、CrowのWander RegionをOverlayで確認できます。Player StartはWorldで1個、Copy禁止、Delete確認あり。SpawnセルはMap内の通行可能セルに限ります。Crow範囲がMap外へ出る場合はWarningです。Map v2のPlayer/Crow Markerはv3へ移行し、道路と遷移Markerは保持します。
+
+NPC追加時は (1) Sprite (2) Entity Catalog定義 (3) Unity EntityDefinition同期 (4) 明示的Runtime Behavior登録 (5) Preview確認 (6) Editorで配置、の順です。MapDefinitionはJSONから生成されるキャッシュです。RuntimeのActor生成をリフレクションへ任せず、対応するBehaviorを明示的に実装してください。
