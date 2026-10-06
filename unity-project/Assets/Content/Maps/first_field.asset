@@ -147,6 +147,14 @@ MonoBehaviour:
   - Cell: {x: 0, y: 6}
     Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
   objects:
+  - InstanceId: obj_a52161791c424e05af2eca87360c5cd1
+    RootCell: {x: -9, y: -5}
+    Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
+  - InstanceId: obj_8342a2f42f894ed9983e6966cc0593ab
+    RootCell: {x: -8, y: -5}
+    Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
   - InstanceId: obj_3420672f46af5b9ba3d44af98a19925a
     RootCell: {x: 6, y: -1}
     Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
@@ -163,8 +171,16 @@ MonoBehaviour:
     RootCell: {x: 2, y: 3}
     Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
     SignText: 
+  - InstanceId: obj_house_main_v03_migration
+    RootCell: {x: -7, y: -4}
+    Definition: {fileID: 11400000, guid: 44fd5b0701e1a854799c458ef559905a, type: 2}
+    SignText: 
   - InstanceId: obj_7e49f7553a825d00b3129c4474906dfb
     RootCell: {x: 3, y: -4}
+    Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
+  - InstanceId: obj_a985098b726c4ca8823c9217e625dced
+    RootCell: {x: -4, y: -3}
     Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
     SignText: 
   - InstanceId: obj_b44948f3a19d5295a1092049156cd5e6
@@ -191,15 +207,11 @@ MonoBehaviour:
     RootCell: {x: -7, y: 2}
     Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
     SignText: 
-  - InstanceId: obj_house_main_v03_migration
-    RootCell: {x: -7, y: -4}
-    Definition: {fileID: 11400000, guid: 44fd5b0701e1a854799c458ef559905a, type: 2}
-    SignText: 
   markers:
-  - StableId: road_north
-    Cell: {x: 0, y: 6}
   - StableId: road_east
     Cell: {x: 10, y: -1}
+  - StableId: road_north
+    Cell: {x: 0, y: 6}
   - StableId: road_south
     Cell: {x: 2, y: -6}
   - StableId: road_west

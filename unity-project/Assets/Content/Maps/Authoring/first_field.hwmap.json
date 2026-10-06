@@ -451,6 +451,22 @@
   ],
   "objects": [
     {
+      "instanceId": "obj_a52161791c424e05af2eca87360c5cd1",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": -9,
+        "y": -5
+      }
+    },
+    {
+      "instanceId": "obj_8342a2f42f894ed9983e6966cc0593ab",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": -8,
+        "y": -5
+      }
+    },
+    {
       "instanceId": "obj_3420672f46af5b9ba3d44af98a19925a",
       "definitionId": "flower_basic",
       "rootCell": {
@@ -483,11 +499,27 @@
       }
     },
     {
+      "instanceId": "obj_house_main_v03_migration",
+      "definitionId": "house_main",
+      "rootCell": {
+        "x": -7,
+        "y": -4
+      }
+    },
+    {
       "instanceId": "obj_7e49f7553a825d00b3129c4474906dfb",
       "definitionId": "stone_basic",
       "rootCell": {
         "x": 3,
         "y": -4
+      }
+    },
+    {
+      "instanceId": "obj_a985098b726c4ca8823c9217e625dced",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": -4,
+        "y": -3
       }
     },
     {
@@ -537,29 +569,21 @@
         "x": -7,
         "y": 2
       }
-    },
-    {
-      "instanceId": "obj_house_main_v03_migration",
-      "definitionId": "house_main",
-      "rootCell": {
-        "x": -7,
-        "y": -4
-      }
     }
   ],
   "markers": [
-    {
-      "id": "road_north",
-      "cell": {
-        "x": 0,
-        "y": 6
-      }
-    },
     {
       "id": "road_east",
       "cell": {
         "x": 10,
         "y": -1
+      }
+    },
+    {
+      "id": "road_north",
+      "cell": {
+        "x": 0,
+        "y": 6
       }
     },
     {
