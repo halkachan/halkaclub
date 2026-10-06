@@ -27,6 +27,7 @@ static void CopySite(string from, string to)
                  "CNAME", "index.html", "style.css", "script.js",
                  "commission/index.html", "commission/en/index.html",
                  "works/index.html", "works/works-data.js",
+                 "utamaze/index.html",
                  "club/index.html", "utamaze/version.json",
              })
     {
@@ -342,6 +343,78 @@ Check("続けて保存しても見失わない",
     SiteSession.Load(sandbox).CommissionText.Pages[0].Blocks
         .First(block => block.Label.Contains("リテイク")).Text == "もう一度ためす。");
 
+// --- v0.6：うたまぜ！のリリース切り替え -----------------------------------
+
+var v6 = SiteSession.Load(sandbox);
+var release = v6.Utamaze ?? throw new Exception("うたまぜ！のリリース手順が読めません");
+
+Check("リリース手順を6項目そろえる",
+    release.Switches.Count == 6 &&
+    release.Switches.All(step => !step.IsUnknown) &&
+    release.Switches.Any(step => step.Label.Contains("検索")) &&
+    release.Switches.Any(step => step.Label.Contains("PRO")) &&
+    release.Switches.Any(step => step.Label.Contains("トップページ")));
+Check("いまは全部準備中", release.LiveCount == 0 && !release.IsMixed &&
+    release.Summary.Contains("すべて準備中"));
+Check("version.json のダウンロード先を初期値にする", release.DownloadUrl.Contains("halkaclub.com"));
+
+// URLが足りないまま公開にしようとすると、誤りとして出る。
+var pro = release.Switches.First(step => step.Label.Contains("PRO"));
+pro.MakeLive = true;
+Check("購入URLが無いと誤りになる", pro.HasError && release.HasError && v6.HasError);
+release.CheckoutUrl = "https://halka.lemonsqueezy.com/buy/xxxx";
+Check("入れれば直る", !pro.HasError && !release.HasError);
+pro.MakeLive = false;
+
+// まとめて公開の形へ。
+release.MakeAllLive();
+Check("まとめて公開にできる", release.Switches.All(step => step.MakeLive) && release.HasChanges &&
+    !release.HasError && v6.Changes().Count(row => row.Label.StartsWith("うたまぜ！")) == 6);
+
+v6.Save();
+
+var utamazePage = File.ReadAllText(Path.Combine(sandbox, "utamaze", "index.html"));
+var topPage = File.ReadAllText(Path.Combine(sandbox, "index.html"));
+Check("noindex が外れる", !utamazePage.Contains("noindex"));
+Check("ダウンロードボタンがリンクになる",
+    utamazePage.Contains("<a class=\"button primary\" href=\"https://halkaclub.com/utamaze/\">ダウンロード</a>") &&
+    utamazePage.Contains("<a class=\"button ghost full\" href=\"https://halkaclub.com/utamaze/\">ダウンロード</a>"));
+Check("購入ボタンが購入URLになる",
+    utamazePage.Contains("<a class=\"button primary full\" href=\"https://halka.lemonsqueezy.com/buy/xxxx\">PROを購入する</a>"));
+Check("「公開準備中です」が消える", !utamazePage.Contains("pre-release"));
+Check("トップページにカードが出る",
+    topPage.Contains("href=\"/utamaze/\"") && topPage.Contains("<strong>うたまぜ！</strong>") &&
+    topPage.Contains("utamaze-link:start") && topPage.Contains("utamaze-link:end"));
+Check("ページの作りが変わったと分かる", release.StructureChanged == false);   // 保存後は変更なしに戻る
+
+var afterRelease = SiteSession.Load(sandbox).Utamaze!;
+Check("読み直すと全部公開になっている",
+    afterRelease.LiveCount == 6 && !afterRelease.IsMixed && !afterRelease.HasChanges &&
+    afterRelease.Summary.Contains("すべて公開"));
+
+// 準備中へ戻せること（間違えて公開してしまったときのため）。
+foreach (var step in afterRelease.Switches) step.MakeLive = false;
+Check("準備中へ戻す変更として出る", afterRelease.HasChanges && afterRelease.Changes().Count == 6);
+
+var back = SiteSession.Load(sandbox);
+foreach (var step in back.Utamaze!.Switches) step.MakeLive = false;
+back.Save();
+
+var restored = SiteSession.Load(sandbox).Utamaze!;
+Check("戻すと全部準備中に戻る", restored.LiveCount == 0);
+Check("戻したページは元どおり",
+    File.ReadAllText(Path.Combine(sandbox, "utamaze", "index.html")).Contains("noindex") &&
+    File.ReadAllText(Path.Combine(sandbox, "utamaze", "index.html")).Contains("PRO　準備中") &&
+    File.ReadAllText(Path.Combine(sandbox, "utamaze", "index.html")).Contains("pre-release") &&
+    !File.ReadAllText(Path.Combine(sandbox, "index.html")).Contains("href=\"/utamaze/\""));
+
+// 一部だけ公開した状態を見分けられること。
+var partial = SiteSession.Load(sandbox);
+partial.Utamaze!.Switches.First(step => step.Label.Contains("検索")).MakeLive = true;
+partial.Save();
+var mixed = SiteSession.Load(sandbox).Utamaze!;
+Check("揃っていないと分かる", mixed.IsMixed && mixed.LiveCount == 1 && mixed.Summary.Contains("揃っていません"));
+
 // --- プレビュー用サーバー -------------------------------------------------
 
 Check("URLから実ファイルへ",
@@ -358,7 +431,7 @@ Check("フォルダーの外へは出られない",
 
 Check("出せるページだけ並べる",
     SitePages.ForSite(sandbox).Select(page => page.Url).SequenceEqual(
-        new[] { "/", "/commission/", "/commission/en/", "/works/", "/club/" }));
+        new[] { "/", "/commission/", "/commission/en/", "/works/", "/club/", "/utamaze/" }));
 Check("タブに合うページを選ぶ",
     SitePages.ForGroup(SitePages.ForSite(sandbox), "依頼ページ")!.Url == "/commission/" &&
     SitePages.ForGroup(SitePages.ForSite(sandbox), "サイトの基本色")!.Url == "/");

@@ -26,6 +26,7 @@ public static class SitePaths
     public static string WorksData(string root) => Path.Combine(root, "works", "works-data.js");
     public static string ClubHtml(string root) => Path.Combine(root, "club", "index.html");
     public static string UtamazeVersion(string root) => Path.Combine(root, "utamaze", "version.json");
+    public static string UtamazePage(string root) => Path.Combine(root, "utamaze", "index.html");
     public static string StyleCss(string root) => Path.Combine(root, "style.css");
     public static string ScriptJs(string root) => Path.Combine(root, "script.js");
     public static string CommissionJa(string root) => Path.Combine(root, "commission", "index.html");

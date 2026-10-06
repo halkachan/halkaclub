@@ -49,23 +49,25 @@ public sealed class SiteSession
     public IReadOnlyList<EditGroup> Groups { get; }
     public WorksDocument Works { get; }
     public CommissionTextDocument CommissionText { get; }
+    public UtamazeRelease? Utamaze { get; }
 
     /// <summary>このツールが書き換えるファイル（サイトのフォルダーからの相対パス）。公開もこれだけを対象にします。</summary>
     public IReadOnlyList<string> ManagedFiles =>
         files.Select(file => SitePaths.Relative(Root, file.Path)).OrderBy(path => path, StringComparer.Ordinal).ToArray();
 
     public IEnumerable<EditField> Fields => Groups.SelectMany(group => group.Fields);
-    public bool HasChanges => Fields.Any(field => field.Changed) || Works.HasChanges || CommissionText.HasChanges;
-    public bool HasError => Fields.Any(field => field.HasError) || Works.HasError || CommissionText.HasError;
+    public bool HasChanges => Fields.Any(field => field.Changed) || Works.HasChanges || CommissionText.HasChanges || Utamaze?.HasChanges == true;
+    public bool HasError => Fields.Any(field => field.HasError) || Works.HasError || CommissionText.HasError || Utamaze?.HasError == true;
 
     private SiteSession(string root, List<SiteFile> files, IReadOnlyList<EditGroup> groups,
-        WorksDocument works, CommissionTextDocument commissionText)
+        WorksDocument works, CommissionTextDocument commissionText, UtamazeRelease? utamaze)
     {
         Root = root;
         this.files = files;
         Groups = groups;
         Works = works;
         CommissionText = commissionText;
+        Utamaze = utamaze;
     }
 
     public static SiteSession Load(string root)
@@ -101,13 +103,23 @@ public sealed class SiteSession
         if (File.Exists(clubPath)) groups.Add(BuildClub(root, Open(clubPath)));
 
         var versionPath = SitePaths.UtamazeVersion(root);
-        if (File.Exists(versionPath)) groups.Add(BuildUtamaze(root, Open(versionPath)));
+        SiteFile? versionFile = null;
+        if (File.Exists(versionPath))
+        {
+            versionFile = Open(versionPath);
+            groups.Add(BuildUtamaze(root, versionFile));
+        }
+
+        // うたまぜ！のリリース手順（準備中 ⇄ 公開の切り替え）。
+        var utamazePath = SitePaths.UtamazePage(root);
+        var utamaze = UtamazeRelease.Load(root, File.Exists(utamazePath) ? Open(utamazePath) : null,
+            home, versionFile);
 
         var works = WorksDocument.Load(worksFile, SitePaths.Relative(root, worksFile.Path));
         var commissionText = CommissionTextDocument.Load(
             ("日本語版", ja, SitePaths.Relative(root, ja.Path)),
             ("英語版", en, SitePaths.Relative(root, en.Path)));
-        return new SiteSession(root, files, groups, works, commissionText);
+        return new SiteSession(root, files, groups, works, commissionText, utamaze);
     }
 
     private static EditGroup BuildLinks(string root, SiteFile home)
@@ -297,6 +309,7 @@ public sealed class SiteSession
         .Select(field => new ChangeRow(field.Label, field.Original, field.Value, field.FileRelative))
         .Concat(Works.Changes())
         .Concat(CommissionText.Changes())
+        .Concat(Utamaze?.Changes() ?? Array.Empty<ChangeRow>())
         .ToArray();
 
     /// <summary>入力内容をファイルへ書き込みます。</summary>
@@ -314,10 +327,12 @@ public sealed class SiteSession
         foreach (var field in Fields) field.Apply();
         Works.Apply();
         CommissionText.Apply();
+        Utamaze?.Apply();
         foreach (var file in files) file.Save();
         foreach (var field in Fields) field.MarkSaved();
         Works.MarkSaved();
         CommissionText.MarkSaved();
+        Utamaze?.MarkSaved();
     }
 
     public void Revert()
@@ -325,5 +340,6 @@ public sealed class SiteSession
         foreach (var field in Fields) field.Revert();
         Works.Revert();
         CommissionText.Revert();
+        Utamaze?.Revert();
     }
 }

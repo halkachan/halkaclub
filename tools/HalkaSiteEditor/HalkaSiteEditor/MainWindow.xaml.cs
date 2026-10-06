@@ -103,6 +103,7 @@ public partial class MainWindow : Window
         BindOptionalGroup("はるかくらぶ", ClubTab, ClubNote, ClubItems);
         BindOptionalGroup("うたまぜ！", UtamazeTab, UtamazeNote, UtamazeItems);
         BindWorks();
+        BindRelease();
 
         videoField = top.Fields.Single();
         VideoLabel.Text = videoField.Label;
@@ -296,6 +297,37 @@ public partial class MainWindow : Window
 
     private void WorkChanged(object? sender, PropertyChangedEventArgs e) => RefreshChanges();
 
+    // --- うたまぜ！のリリース -----------------------------------------------
+
+    private void BindRelease()
+    {
+        var release = session?.Utamaze;
+        if (release == null)
+        {
+            ReleaseSection.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        ReleaseSection.Visibility = Visibility.Visible;
+        ReleaseSection.DataContext = release;
+        ReleaseItems.ItemsSource = release.Switches;
+        release.PropertyChanged += ReleaseChanged;
+        foreach (var step in release.Switches) step.PropertyChanged += ReleaseChanged;
+        ReleaseSummary.Text = release.Summary;
+    }
+
+    private void ReleaseChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (session?.Utamaze != null) ReleaseSummary.Text = session.Utamaze.Summary;
+        RefreshChanges();
+    }
+
+    private void ReleaseAllClick(object sender, RoutedEventArgs e)
+    {
+        session?.Utamaze?.MakeAllLive();
+        RefreshChanges();
+    }
+
     private WorkCategory? SelectedCategory => CategoryPicker?.SelectedItem as WorkCategory;
 
     private void CategoryPickerChanged(object sender, SelectionChangedEventArgs e)
@@ -338,7 +370,8 @@ public partial class MainWindow : Window
         ChangeList.ItemsSource = changes;
         ChangeCountText.Text = changes.Count == 0 ? "" : $"{changes.Count} 件";
 
-        var errors = session.Fields.Count(field => field.HasError)
+        var errors = (session.Utamaze?.Switches.Count(step => step.HasError) ?? 0)
+            + session.Fields.Count(field => field.HasError)
             + session.Works.Categories.Sum(category => category.Works.Count(work => work.HasError))
             + session.CommissionText.Pages.Sum(page => page.Blocks.Count(block => block.HasError));
         SaveButton.IsEnabled = session.HasChanges && !session.HasError;
@@ -402,6 +435,16 @@ public partial class MainWindow : Window
                 MessageBoxButton.OK, MessageBoxImage.Information);
             RefreshPublishState();
             return;
+        }
+
+        if (session.Utamaze?.IsMixed == true)
+        {
+            var proceed = MessageBox.Show(this,
+                "うたまぜ！のリリース設定が揃っていません。" + Environment.NewLine + Environment.NewLine +
+                session.Utamaze.Summary + Environment.NewLine + Environment.NewLine +
+                "一部だけ公開された状態になります。このまま進みますか？",
+                "確認", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+            if (proceed != MessageBoxResult.OK) return;
         }
 
         var dialog = new PublishWindow(publisher, session.ManagedFiles, pending) { Owner = this };
@@ -491,6 +534,10 @@ public partial class MainWindow : Window
             "保存しますか？", MessageBoxButton.OKCancel, MessageBoxImage.Question);
         if (answer != MessageBoxResult.OK) return;
 
+        // トップページのリンクを出し入れすると、リンクの数が変わります。
+        // 位置がずれるので、保存のあとに読み込み直します。
+        var needsReload = session.Utamaze?.StructureChanged == true;
+
         try
         {
             session.Save();
@@ -509,10 +556,19 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (needsReload)
+        {
+            OpenSite(session.Root);
+            RefreshPreview();
+            StatusText.Text = $"{changes.Count} 件を保存して、読み込み直しました。右のプレビューで確かめてください。";
+            return;
+        }
+
         RefreshChanges();
         UpdateVideoPreview();
         RefreshPreview();
-        StatusText.Text = $"{changes.Count} 件を保存しました。右のプレビューで確かめてから、GitHub Desktop でコミットしてください。";
+        RefreshPublishState();
+        StatusText.Text = $"{changes.Count} 件を保存しました。右のプレビューで確かめてから「公開する」を押してください。";
     }
 
     private void RevertClick(object sender, RoutedEventArgs e)

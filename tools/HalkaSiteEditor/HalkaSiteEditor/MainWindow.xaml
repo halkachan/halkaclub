@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:HalkaSiteEditor"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="HALKA SITE EDITOR v0.5" Icon="Assets/site-editor.ico"
+        Title="HALKA SITE EDITOR v0.6" Icon="Assets/site-editor.ico"
         Width="1660" Height="900" MinWidth="1000" MinHeight="640"
         Background="#16191E" Foreground="#E4E8EC" FontFamily="Yu Gothic UI" FontSize="13"
         Loaded="WindowLoaded" Closing="WindowClosing">
@@ -179,6 +179,29 @@
                      Text="{Binding Error}"
                      Visibility="{Binding Error, Converter={StaticResource TextToVisibility}}"/>
         </StackPanel>
+      </Border>
+    </DataTemplate>
+
+    <!-- リリースの切り替え1つ -->
+    <DataTemplate x:Key="ReleaseTemplate">
+      <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,7" Padding="12,9">
+        <DockPanel>
+          <CheckBox DockPanel.Dock="Left" IsChecked="{Binding MakeLive, Mode=TwoWay}" Width="140"
+                    Content="公開の形にする" Foreground="#DDE2E8" VerticalAlignment="Center"/>
+          <Border DockPanel.Dock="Right" Width="64" Height="26" CornerRadius="13" Margin="10,0,0,0"
+                  Background="#242A33" BorderBrush="#586170" BorderThickness="1" VerticalAlignment="Center">
+            <TextBlock Text="{Binding StateText}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       FontSize="12"/>
+          </Border>
+          <StackPanel>
+            <TextBlock Text="{Binding Label}" FontSize="14"/>
+            <TextBlock Text="{Binding Note}" Foreground="#8C97A6" FontSize="11" TextWrapping="Wrap"
+                       Margin="0,2,0,0"/>
+            <TextBlock Text="{Binding Missing}" Foreground="#FF8A8A" FontSize="11" TextWrapping="Wrap"
+                       Margin="0,3,0,0"
+                       Visibility="{Binding Missing, Converter={StaticResource TextToVisibility}}"/>
+          </StackPanel>
+        </DockPanel>
       </Border>
     </DataTemplate>
 
@@ -397,7 +420,41 @@
           <TextBlock x:Name="UtamazeNote" DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap"
                      Margin="2,0,2,10"/>
           <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <ItemsControl x:Name="UtamazeItems" ItemTemplate="{StaticResource RowTemplate}" Margin="2,0,10,10"/>
+            <StackPanel Margin="2,0,10,10">
+              <ItemsControl x:Name="UtamazeItems" ItemTemplate="{StaticResource RowTemplate}"/>
+
+              <Border x:Name="ReleaseSection" Background="#1A1F26" BorderBrush="#2F3845" BorderThickness="1"
+                      Margin="0,12,0,0" Padding="12,10">
+                <StackPanel>
+                  <DockPanel Margin="0,0,0,8">
+                    <TextBlock DockPanel.Dock="Left" Text="リリース手順" FontSize="15" Foreground="#FFCB75"/>
+                    <Button DockPanel.Dock="Right" Content="まとめて公開の形にする" Click="ReleaseAllClick"/>
+                    <TextBlock x:Name="ReleaseSummary" Margin="14,2,0,0" TextWrapping="Wrap"
+                               Foreground="#E4E8EC"/>
+                  </DockPanel>
+
+                  <TextBlock TextWrapping="Wrap" Foreground="#8C97A6" FontSize="11" Margin="0,0,0,10"
+                             Text="正式リリースのときに必要な場所を全部ならべています。どれか1つだけ変えて気づかない、を防ぐためのものです。準備中へ戻すこともできます。"/>
+
+                  <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*"/>
+                      <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                      <TextBlock Text="ダウンロードのURL" Style="{StaticResource Caption}"/>
+                      <TextBox x:Name="ReleaseDownload" Text="{Binding DownloadUrl, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                      <TextBlock Text="PROの購入URL（Lemon Squeezy の共有用）" Style="{StaticResource Caption}"/>
+                      <TextBox x:Name="ReleaseCheckout" Text="{Binding CheckoutUrl, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                  </Grid>
+
+                  <ItemsControl x:Name="ReleaseItems" ItemTemplate="{StaticResource ReleaseTemplate}"/>
+                </StackPanel>
+              </Border>
+            </StackPanel>
           </ScrollViewer>
         </DockPanel>
       </TabItem>
