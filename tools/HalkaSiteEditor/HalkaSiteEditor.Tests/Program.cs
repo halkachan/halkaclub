@@ -36,6 +36,15 @@ static void CopySite(string from, string to)
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         File.Copy(source, destination, overwrite: true);
     }
+
+    // ゲームは本数が増えるので、フォルダーごと複写します。
+    foreach (var page in Directory.GetFiles(Path.Combine(from, "game"), "index.html",
+                 SearchOption.AllDirectories))
+    {
+        var destination = Path.Combine(to, Path.GetRelativePath(from, page));
+        Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+        File.Copy(page, destination, overwrite: true);
+    }
 }
 
 static string Newlines(string path)
@@ -580,6 +589,136 @@ Check("リンクとお知らせを同時に直せる",
     bothSaved.Groups.Single(group => group.Title == "リンク").Rows[0].Cells[0].Field.Value == "作品のまとめ" &&
     bothSaved.News!.Items[0].Title == "見出しを変えた");
 
+// --- v0.9：ゲーム集と各ゲームのページ --------------------------------------
+
+var gameIndexPath = Path.Combine(sandbox, "game", "index.html");
+var rinchanPath = Path.Combine(sandbox, "game", "gyugyu-rinchan", "index.html");
+
+Check("強調の書き方を行き来できる",
+    GameMarkup.ToPlain("<strong>あ</strong>い") == "**あ**い" &&
+    GameMarkup.ToHtml("**あ**い") == "<strong>あ</strong>い" &&
+    GameMarkup.Validate("**あ**い") == null &&
+    GameMarkup.Validate("**あい") != null &&
+    GameMarkup.Validate("<b>あ</b>") != null);
+
+var v9 = SiteSession.Load(sandbox);
+var games = v9.Games ?? throw new Exception("ゲーム集が読めません");
+var rinchan = games.Pages.Single(page => page.Slug == "gyugyu-rinchan");
+var kagamine = games.Pages.Single(page => page.Slug == "kagamine-challenge");
+
+Check("転送だけのページは読まない", games.Pages.Count == 2);
+Check("一覧のカードを読める",
+    games.Collection.Cards.Count == 2 &&
+    games.Collection.Cards[0].Title == "かがみねちゃれんじ" &&
+    games.Collection.Cards[1].Slug == "gyugyu-rinchan" &&
+    games.Collection.Cards[1].TagLines().Contains("ver 1.2") &&
+    games.Collection.Cards[1].DescriptionLines().Count == 3);
+Check("ひとことを読める", games.Lead.Value == "なんか、変なゲーム");
+Check("ゲームのページを読める",
+    rinchan.Title.Value == "ぎゅうぎゅうりんちゃん" &&
+    rinchan.GameUrl.Value == "https://halkachan.github.io/gyugyu-rinchan/" &&
+    rinchan.Version!.Value == "ver 1.2" &&
+    rinchan.Description!.Lines().Count == 3);
+Check("更新履歴を読める",
+    rinchan.HasChangelog && rinchan.Changelog.Count == 3 &&
+    rinchan.Changelog[0].Version == "ver 1.2" &&
+    rinchan.Changelog[0].Date == "2026-09-10" &&
+    rinchan.Changelog[0].Display == "2026.9.10" &&
+    rinchan.Changelog[0].ItemLines().Count == 5 &&
+    rinchan.Changelog[0].ItemLines()[0].StartsWith("**記録を X に") &&
+    rinchan.Changelog[1].Note.StartsWith("ランキングはこの版からの"));
+Check("更新履歴が無いゲームもある", !kagamine.HasChangelog && kagamine.Version == null);
+Check("ゲーム集は読んだだけなら1文字も変わらない",
+    games.Collection.Rebuild() == File.ReadAllText(gameIndexPath));
+Check("更新履歴は読んだだけなら1文字も変わらない",
+    rinchan.Rebuild() == File.ReadAllText(rinchanPath));
+Check("ゲームを読んだ直後は変更なし", !games.HasChanges && !games.HasError && !v9.HasChanges);
+Check("版はそろっている", !rinchan.CanAlignVersion && rinchan.VersionSummary.Contains("そろっています"));
+
+// 新しい版を出す。
+var entry = rinchan.AddNewEntry();
+Check("前の版から1つ進める", entry.Version == "ver 1.3" && rinchan.Changelog[0] == entry);
+Check("中身が空なら誤りとして出る", entry.HasError && games.HasError);
+entry.Items = "**りんちゃんが増えました。**たくさん出ます\nおとの大きさを直しました";
+entry.Note = "この版から記録が別になります。";
+Check("入れれば誤りが消える", !entry.HasError && !games.HasError && games.HasChanges);
+Check("版が食い違ったことに気づく",
+    rinchan.CanAlignVersion && rinchan.VersionSummary.Contains("ver 1.3") &&
+    rinchan.VersionSummary.Contains("ver 1.2"));
+
+rinchan.AlignVersion();
+Check("ページと一覧の札をそろえる",
+    rinchan.Version!.Value == "ver 1.3" &&
+    rinchan.Card!.TagLines().Contains("ver 1.3") &&
+    !rinchan.Card.TagLines().Contains("ver 1.2") &&
+    !rinchan.CanAlignVersion);
+Check("ゲームの変更が一覧に出る",
+    v9.Changes().Any(row => row.Label.Contains("更新履歴を追加") && row.After == "ver 1.3") &&
+    v9.Changes().Any(row => row.Label.Contains("ゲーム集")));
+
+// カードの追加と並べ替え。
+games.Lead.Value = "なんか、変なゲームたち";
+var card = games.Collection.AddNew();
+card.Title = "ためしのゲーム";
+card.Description = "1行目\n2行目";
+card.Tags = "スマホ対応";
+card.Href = "tameshi/";
+games.Collection.Move(card, -1);
+Check("カードを足して並べ替えられる", games.Collection.Cards[1] == card && !games.HasError);
+
+v9.Save();
+
+var after = SiteSession.Load(sandbox);
+var gamesAfter = after.Games!;
+var rinchanAfter = gamesAfter.Pages.Single(page => page.Slug == "gyugyu-rinchan");
+Check("書いた更新履歴が読み直せる",
+    rinchanAfter.Changelog.Count == 4 &&
+    rinchanAfter.Changelog[0].Version == "ver 1.3" &&
+    rinchanAfter.Changelog[0].ItemLines().Count == 2 &&
+    rinchanAfter.Changelog[0].Note == "この版から記録が別になります。" &&
+    rinchanAfter.Version!.Value == "ver 1.3");
+Check("書いたカードが読み直せる",
+    gamesAfter.Collection.Cards.Count == 3 &&
+    gamesAfter.Collection.Cards[1].Title == "ためしのゲーム" &&
+    gamesAfter.Collection.Cards[1].DescriptionLines().Count == 2 &&
+    gamesAfter.Lead.Value == "なんか、変なゲームたち");
+
+var gameIndexText = File.ReadAllText(gameIndexPath);
+Check("番号は並び順どおりに振り直す",
+    gameIndexText.IndexOf(">01</p>", StringComparison.Ordinal) <
+    gameIndexText.IndexOf(">02</p>", StringComparison.Ordinal) &&
+    gameIndexText.Contains(">03</p>"));
+Check("強調はHTMLへ戻している",
+    File.ReadAllText(rinchanPath)
+        .Contains("<li><strong>りんちゃんが増えました。</strong>たくさん出ます</li>"));
+Check("ゲームも保存後は組み立て直しで1文字も変わらない",
+    gamesAfter.Collection.Rebuild() == File.ReadAllText(gameIndexPath) &&
+    rinchanAfter.Rebuild() == File.ReadAllText(rinchanPath));
+
+// 名前を変えると、ページの中の4か所が一度にそろう。
+rinchanAfter.Title.Value = "ぎゅうぎゅうりんちゃん！";
+after.Save();
+var renamed = File.ReadAllText(rinchanPath);
+Check("名前は4か所まとめて変わる",
+    renamed.Contains("<title>ぎゅうぎゅうりんちゃん！ | HALKA</title>") &&
+    renamed.Contains("<h1 id=\"game-title\">ぎゅうぎゅうりんちゃん！</h1>") &&
+    renamed.Contains("data-game-title=\"ぎゅうぎゅうりんちゃん！\"") &&
+    renamed.Contains("<p>ぎゅうぎゅうりんちゃん！</p>"));
+
+// 消したあと、元に戻せること。
+var shrinkGames = SiteSession.Load(sandbox);
+var rinchanShrink = shrinkGames.Games!.Pages.Single(page => page.Slug == "gyugyu-rinchan");
+shrinkGames.Games.Collection.Cards.Remove(
+    shrinkGames.Games.Collection.Cards.Single(item => item.Title == "ためしのゲーム"));
+rinchanShrink.Changelog.Remove(rinchanShrink.Changelog[0]);
+Check("消すのも変更一覧に出る",
+    shrinkGames.Changes().Any(row => row.Label.Contains("カードを削除")) &&
+    shrinkGames.Changes().Any(row => row.Label.Contains("更新履歴を削除")));
+shrinkGames.Revert();
+Check("ゲームも元に戻せる", !shrinkGames.HasChanges &&
+    shrinkGames.Games!.Collection.Cards.Count == 3 &&
+    shrinkGames.Games.Pages.Single(page => page.Slug == "gyugyu-rinchan").Changelog.Count == 4);
+
 // --- プレビュー用サーバー -------------------------------------------------
 
 Check("URLから実ファイルへ",
@@ -589,16 +728,20 @@ Check("URLから実ファイルへ",
     PreviewServer.ResolveFile(sandbox, "/style.css") == Path.Combine(sandbox, "style.css"));
 Check("無いものは配らない",
     PreviewServer.ResolveFile(sandbox, "/nothing.html") == null &&
-    PreviewServer.ResolveFile(sandbox, "/game/") == null);
+    PreviewServer.ResolveFile(sandbox, "/halkaworld/") == null);
 Check("フォルダーの外へは出られない",
     PreviewServer.ResolveFile(sandbox, "/../../windows/win.ini") == null &&
     PreviewServer.ResolveFile(sandbox, "/commission/../../..") == null);
 
 Check("出せるページだけ並べる",
     SitePages.ForSite(sandbox).Select(page => page.Url).SequenceEqual(
-        new[] { "/", "/commission/", "/commission/en/", "/works/", "/club/", "/utamaze/" }));
+        new[] { "/", "/commission/", "/commission/en/", "/works/", "/club/", "/utamaze/", "/game/",
+                "/game/gyugyu-rinchan/", "/game/kagamine-challenge/" }));
+Check("転送だけのページは並べない",
+    SitePages.ForSite(sandbox).All(page => page.Url != "/game/mine-dungeon/"));
 Check("タブに合うページを選ぶ",
     SitePages.ForGroup(SitePages.ForSite(sandbox), "依頼ページ")!.Url == "/commission/" &&
+    SitePages.ForGroup(SitePages.ForSite(sandbox), "ゲーム")!.Url == "/game/" &&
     SitePages.ForGroup(SitePages.ForSite(sandbox), "サイトの基本色")!.Url == "/");
 
 using (var server = new PreviewServer(sandbox))

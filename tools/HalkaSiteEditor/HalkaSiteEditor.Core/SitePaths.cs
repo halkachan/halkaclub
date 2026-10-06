@@ -28,6 +28,12 @@ public static class SitePaths
     public static string ClubHtml(string root) => Path.Combine(root, "club", "index.html");
     public static string UtamazeVersion(string root) => Path.Combine(root, "utamaze", "version.json");
     public static string UtamazePage(string root) => Path.Combine(root, "utamaze", "index.html");
+    public static string GameIndex(string root) => Path.Combine(root, "game", "index.html");
+    public static string GamePage(string root, string slug) => Path.Combine(root, "game", slug, "index.html");
+
+    /// <summary>ゲームのページかどうか。移動のための置き石（転送だけのページ）を外します。</summary>
+    public static bool IsGamePage(string path) =>
+        File.Exists(path) && File.ReadAllText(path).Contains("data-game-url=\"");
     public static string StyleCss(string root) => Path.Combine(root, "style.css");
     public static string ScriptJs(string root) => Path.Combine(root, "script.js");
     public static string CommissionJa(string root) => Path.Combine(root, "commission", "index.html");

@@ -54,6 +54,7 @@ public sealed class SiteSession
     public UtamazeRelease? Utamaze { get; }
     public NewsDocument? News { get; }
     public ParagraphRun? ClubUpdate { get; }
+    public GameDocument? Games { get; }
 
     /// <summary>このツールが書き換えるファイル（サイトのフォルダーからの相対パス）。公開もこれだけを対象にします。</summary>
     public IReadOnlyList<string> ManagedFiles =>
@@ -61,13 +62,13 @@ public sealed class SiteSession
 
     public IEnumerable<EditField> Fields => Groups.SelectMany(group => group.Fields);
     public bool HasChanges => Fields.Any(field => field.Changed) || Works.HasChanges || CommissionText.HasChanges || Utamaze?.HasChanges == true
-        || News?.HasChanges == true || ClubUpdate?.Changed == true;
+        || News?.HasChanges == true || ClubUpdate?.Changed == true || Games?.HasChanges == true;
     public bool HasError => Fields.Any(field => field.HasError) || Works.HasError || CommissionText.HasError || Utamaze?.HasError == true
-        || News?.HasError == true || ClubUpdate?.HasError == true;
+        || News?.HasError == true || ClubUpdate?.HasError == true || Games?.HasError == true;
 
     private SiteSession(string root, List<SiteFile> files, IReadOnlyList<EditGroup> groups,
         WorksDocument works, CommissionTextDocument commissionText, UtamazeRelease? utamaze,
-        SiteFile? worksPage, NewsDocument? news, ParagraphRun? clubUpdate)
+        SiteFile? worksPage, NewsDocument? news, ParagraphRun? clubUpdate, GameDocument? games)
     {
         Root = root;
         this.files = files;
@@ -78,6 +79,7 @@ public sealed class SiteSession
         this.worksPage = worksPage;
         News = news;
         ClubUpdate = clubUpdate;
+        Games = games;
     }
 
     public static SiteSession Load(string root)
@@ -132,6 +134,16 @@ public sealed class SiteSession
         var utamaze = UtamazeRelease.Load(root, File.Exists(utamazePath) ? Open(utamazePath) : null,
             home, versionFile);
 
+        // ゲーム集と、各ゲームのページ。
+        var games = GameDocument.Load(root, Open);
+        if (games != null)
+        {
+            groups.Add(new EditGroup(
+                "ゲーム",
+                "ゲーム集の一覧と、各ゲームのページです。更新履歴は新しいものが上から並びます。",
+                games.Fields.ToArray()));
+        }
+
         // トップページの「うれしいこと」と、くらぶの更新内容。
         var news = NewsDocument.Load(home, SitePaths.Relative(root, home.Path));
         var clubUpdate = clubFile == null ? null : ParagraphRun.Create(
@@ -145,7 +157,7 @@ public sealed class SiteSession
             ("日本語版", ja, SitePaths.Relative(root, ja.Path)),
             ("英語版", en, SitePaths.Relative(root, en.Path)));
         return new SiteSession(root, files, groups, works, commissionText, utamaze, worksPage,
-            news, clubUpdate);
+            news, clubUpdate, games);
     }
 
     private static EditGroup BuildLinks(string root, SiteFile home)
@@ -347,6 +359,7 @@ public sealed class SiteSession
         .Concat(Utamaze?.Changes() ?? Array.Empty<ChangeRow>())
         .Concat(News?.Changes() ?? Array.Empty<ChangeRow>())
         .Concat(ClubUpdate?.Change() is { } clubRow ? new[] { clubRow } : Array.Empty<ChangeRow>())
+        .Concat(Games?.Changes() ?? Array.Empty<ChangeRow>())
         .ToArray();
 
     /// <summary>入力内容をファイルへ書き込みます。</summary>
@@ -373,6 +386,7 @@ public sealed class SiteSession
         Utamaze?.Apply();
         News?.Apply();
         ClubUpdate?.Apply();
+        Games?.Apply();
         foreach (var file in files) file.Save();
         foreach (var field in Fields) field.MarkSaved();
         Works.MarkSaved();
@@ -380,6 +394,7 @@ public sealed class SiteSession
         Utamaze?.MarkSaved();
         News?.MarkSaved();
         ClubUpdate?.MarkSaved();
+        Games?.MarkSaved();
     }
 
     public void Revert()
@@ -390,5 +405,6 @@ public sealed class SiteSession
         Utamaze?.Revert();
         News?.Revert();
         ClubUpdate?.Revert();
+        Games?.Revert();
     }
 }

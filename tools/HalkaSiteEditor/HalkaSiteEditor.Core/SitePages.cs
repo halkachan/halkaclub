@@ -24,7 +24,23 @@ public static class SitePages
     public static IReadOnlyList<SitePage> ForSite(string root) => Candidates
         .Where(page => PreviewServer.ResolveFile(root, page.Url) != null)
         .Select(page => new SitePage(page.Label, page.Url))
+        .Concat(GamePages(root))
         .ToArray();
+
+    /// <summary>ゲーム1本ずつのページ。フォルダーがある分だけ並べます。</summary>
+    private static IEnumerable<SitePage> GamePages(string root)
+    {
+        var folder = Path.Combine(root, "game");
+        if (!Directory.Exists(folder)) return Array.Empty<SitePage>();
+
+        return Directory.GetDirectories(folder)
+            .Select(Path.GetFileName)
+            .OfType<string>()
+            .OrderBy(slug => slug, StringComparer.Ordinal)
+            .Where(slug => SitePaths.IsGamePage(SitePaths.GamePage(root, slug)))
+            .Select(slug => new SitePage($"ゲーム：{slug}", $"/game/{slug}/"))
+            .ToArray();
+    }
 
     /// <summary>編集中のタブに合わせて、最初に開くページを選びます。</summary>
     public static SitePage? ForGroup(IReadOnlyList<SitePage> pages, string groupTitle)
@@ -35,6 +51,7 @@ public static class SitePages
             "作品一覧" => "/works/",
             "はるかくらぶ" => "/club/",
             "うたまぜ！" => "/utamaze/",
+            "ゲーム" => "/game/",
             _ => "/",
         };
         return pages.FirstOrDefault(page => page.Url == wanted) ?? pages.FirstOrDefault();

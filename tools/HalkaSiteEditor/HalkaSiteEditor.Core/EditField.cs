@@ -22,6 +22,7 @@ public sealed class EditField : INotifyPropertyChanged
 {
     private readonly SiteFile file;
     private readonly ValueSlot slot;
+    private readonly IReadOnlyList<ValueSlot> mirrors;
     private string value;
     private string? error;
 
@@ -31,10 +32,16 @@ public sealed class EditField : INotifyPropertyChanged
     public string FileRelative { get; }
     public string Original { get; private set; }
 
-    internal EditField(SiteFile file, string fileRelative, ValueSlot slot, string id, string label, FieldKind kind)
+    /// <param name="mirrors">
+    /// 同じ値が入っている別の場所（ゲームの名前が &lt;title&gt; や data-game-title にも出てくる、など）。
+    /// 読むのは <paramref name="slot"/> からだけで、書くときだけここにも同じ値を入れます。
+    /// </param>
+    internal EditField(SiteFile file, string fileRelative, ValueSlot slot, string id, string label, FieldKind kind,
+        IReadOnlyList<ValueSlot>? mirrors = null)
     {
         this.file = file;
         this.slot = slot;
+        this.mirrors = mirrors ?? Array.Empty<ValueSlot>();
         Id = id;
         Label = label;
         Kind = kind;
@@ -102,6 +109,8 @@ public sealed class EditField : INotifyPropertyChanged
     {
         if (!Changed) return;
         file.SetText(slot.Write(file.Text, Value));
+        // 同じ値が出てくる別の場所も、まとめてそろえます。
+        foreach (var mirror in mirrors) file.SetText(mirror.Write(file.Text, Value));
     }
 
     internal void MarkSaved()
