@@ -415,6 +415,73 @@ partial.Save();
 var mixed = SiteSession.Load(sandbox).Utamaze!;
 Check("揃っていないと分かる", mixed.IsMixed && mixed.LiveCount == 1 && mixed.Summary.Contains("揃っていません"));
 
+// --- v0.7：YouTubeの新着から作品を足す -------------------------------------
+
+const string feedSample = """
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns="http://www.w3.org/2005/Atom">
+  <title>HALKA</title>
+  <entry>
+    <id>yt:video:7dmyKo4D_3w</id>
+    <yt:videoId>7dmyKo4D_3w</yt:videoId>
+    <title>てすと Arrange coverの歌</title>
+    <published>2026-10-04T12:00:00+00:00</published>
+  </entry>
+  <entry>
+    <id>yt:video:XRIndSupS3A</id>
+    <yt:videoId>XRIndSupS3A</yt:videoId>
+    <title>脱法ロックｳﾀｯﾀ (Arrange cover)</title>
+    <published>2021-10-17T09:00:00+00:00</published>
+  </entry>
+  <entry>
+    <id>yt:video:zzzzzzzzzzz</id>
+    <yt:videoId>zzzzzzzzzzz</yt:videoId>
+    <title>引用"つきのタイトル</title>
+    <published>2026-01-02T15:30:00+00:00</published>
+  </entry>
+</feed>
+""";
+
+var feed = YouTubeFeed.Parse(feedSample);
+Check("新着を読み取れる",
+    feed.Count == 3 && feed[0].VideoId == "7dmyKo4D_3w" &&
+    feed[0].Title == "てすと Arrange coverの歌" &&
+    feed[0].Url == "https://youtu.be/7dmyKo4D_3w" &&
+    feed[0].PublishedAt.StartsWith("2026-10-0"));
+Check("チャンネルIDの形を見る",
+    YouTubeFeed.LooksLikeChannelId(YouTubeFeed.DefaultChannelId) &&
+    !YouTubeFeed.LooksLikeChannelId("HALKAchan") &&
+    !YouTubeFeed.LooksLikeChannelId("UC123") &&
+    !YouTubeFeed.LooksLikeChannelId(null));
+Check("取り出し先のURLを組み立てる",
+    YouTubeFeed.FeedUrl("UCxxxx").EndsWith("channel_id=UCxxxx"));
+
+var feedSession = SiteSession.Load(sandbox);
+var known = YouTubeFeed.KnownVideoIds(feedSession.Works);
+Check("もう入っている動画が分かる",
+    known.Contains("XRIndSupS3A") && !known.Contains("7dmyKo4D_3w") && known.Count > 20);
+
+// 新着のうち、まだ入っていないものだけを足せること。
+var target = feedSession.Works.Categories.First();
+var before = target.Works.Count;
+foreach (var feedItem in feed.Where(v => !known.Contains(v.VideoId)))
+{
+    var row = target.AddNew();
+    row.Title = feedItem.Title;
+    row.PublishedAt = feedItem.PublishedAt;
+    row.YouTubeUrl = feedItem.Url;
+}
+Check("入っていない2本だけ足される", target.Works.Count == before + 2 &&
+    target.Works.All(work => !work.HasError));
+
+feedSession.Save();
+var afterFeed = SiteSession.Load(sandbox).Works.Categories.First();
+Check("足した動画が読み直せる",
+    afterFeed.Works.Any(work => work.YouTubeUrl == "https://youtu.be/7dmyKo4D_3w") &&
+    afterFeed.Works.Any(work => work.Title == "引用\"つきのタイトル"));
+Check("足したあとは重複として扱われる",
+    YouTubeFeed.KnownVideoIds(SiteSession.Load(sandbox).Works).Contains("7dmyKo4D_3w"));
+
 // --- プレビュー用サーバー -------------------------------------------------
 
 Check("URLから実ファイルへ",

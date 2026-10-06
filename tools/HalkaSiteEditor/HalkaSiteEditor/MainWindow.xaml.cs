@@ -18,6 +18,7 @@ public partial class MainWindow : Window
     private sealed class LocalSettings
     {
         public string SiteRoot { get; set; } = "";
+        public string YouTubeChannelId { get; set; } = "";
     }
 
     /// <summary>PC側プレビューで再現する画面の横幅（CSSピクセル）。</summary>
@@ -76,7 +77,11 @@ public partial class MainWindow : Window
         }
 
         RootText.Text = root;
-        SaveSettings(new LocalSettings { SiteRoot = root });
+        SaveSettings(new LocalSettings
+        {
+            SiteRoot = root,
+            YouTubeChannelId = LoadSettings().YouTubeChannelId,
+        });
         publisher = new GitPublisher(root);
 
         var commission = session.Groups.Single(group => group.Title == "依頼ページ");
@@ -334,6 +339,28 @@ public partial class MainWindow : Window
     {
         if (WorkItems == null) return;
         WorkItems.ItemsSource = SelectedCategory?.Works;
+    }
+
+    private void PickVideosClick(object sender, RoutedEventArgs e)
+    {
+        if (session == null) return;
+
+        var saved = LoadSettings();
+        var channel = string.IsNullOrWhiteSpace(saved.YouTubeChannelId)
+            ? YouTubeFeed.DefaultChannelId
+            : saved.YouTubeChannelId;
+
+        var picker = new VideoPickerWindow(session, channel, SelectedCategory) { Owner = this };
+        picker.ShowDialog();
+
+        if (picker.ChannelId != channel)
+            SaveSettings(new LocalSettings { SiteRoot = session.Root, YouTubeChannelId = picker.ChannelId });
+
+        if (picker.AddedCount > 0)
+        {
+            StatusText.Text = $"{picker.AddedCount} 本を足しました。タイトルは直せます。保存を忘れずに。";
+            RefreshChanges();
+        }
     }
 
     private void WorkAddClick(object sender, RoutedEventArgs e)
