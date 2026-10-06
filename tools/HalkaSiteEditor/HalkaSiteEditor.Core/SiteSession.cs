@@ -44,6 +44,7 @@ public sealed class SiteSession
     };
 
     private readonly List<SiteFile> files = new();
+    private readonly SiteFile? worksPage;
 
     public string Root { get; }
     public IReadOnlyList<EditGroup> Groups { get; }
@@ -60,7 +61,8 @@ public sealed class SiteSession
     public bool HasError => Fields.Any(field => field.HasError) || Works.HasError || CommissionText.HasError || Utamaze?.HasError == true;
 
     private SiteSession(string root, List<SiteFile> files, IReadOnlyList<EditGroup> groups,
-        WorksDocument works, CommissionTextDocument commissionText, UtamazeRelease? utamaze)
+        WorksDocument works, CommissionTextDocument commissionText, UtamazeRelease? utamaze,
+        SiteFile? worksPage)
     {
         Root = root;
         this.files = files;
@@ -68,6 +70,7 @@ public sealed class SiteSession
         Works = works;
         CommissionText = commissionText;
         Utamaze = utamaze;
+        this.worksPage = worksPage;
     }
 
     public static SiteSession Load(string root)
@@ -89,6 +92,8 @@ public sealed class SiteSession
         var en = Open(SitePaths.CommissionEn(root));
         var home = Open(SitePaths.IndexHtml(root));
         var worksFile = Open(SitePaths.WorksData(root));
+        // 作品を変えたとき、読み込み側の ?v= を上げるために開いておきます。
+        var worksPage = File.Exists(SitePaths.WorksHtml(root)) ? Open(SitePaths.WorksHtml(root)) : null;
 
         var groups = new List<EditGroup>
         {
@@ -119,7 +124,7 @@ public sealed class SiteSession
         var commissionText = CommissionTextDocument.Load(
             ("日本語版", ja, SitePaths.Relative(root, ja.Path)),
             ("英語版", en, SitePaths.Relative(root, en.Path)));
-        return new SiteSession(root, files, groups, works, commissionText, utamaze);
+        return new SiteSession(root, files, groups, works, commissionText, utamaze, worksPage);
     }
 
     private static EditGroup BuildLinks(string root, SiteFile home)
@@ -325,6 +330,12 @@ public sealed class SiteSession
         // 料金などの単発の値を先に入れ、そのあとで文章のかたまりを組み立て直します
         // （文章側は書き換え後のファイルを見て作るので、どちらの変更も残ります）。
         foreach (var field in Fields) field.Apply();
+
+        // 作品一覧を変えたら、読み込み側の ?v= を上げます。
+        // 上げないと、見る人のブラウザが古い works-data.js を掴んだままになります。
+        if (Works.HasChanges && worksPage != null)
+            CacheBuster.Bump(worksPage, "works-data.js");
+
         Works.Apply();
         CommissionText.Apply();
         Utamaze?.Apply();

@@ -482,6 +482,33 @@ Check("足した動画が読み直せる",
 Check("足したあとは重複として扱われる",
     YouTubeFeed.KnownVideoIds(SiteSession.Load(sandbox).Works).Contains("7dmyKo4D_3w"));
 
+// --- v0.8：作品を変えたら読み込み側の ?v= を上げる --------------------------
+// GitHub Pages は max-age=600 を返すので、番号を上げないと見る人が古いまま見てしまう。
+
+var worksHtml = Path.Combine(sandbox, "works", "index.html");
+
+var bust = SiteSession.Load(sandbox);
+var versionBefore = CacheBuster.Current(File.ReadAllText(worksHtml), "works-data.js");
+
+bust.Works.Categories.First().Works[0].Title = "番号が上がるか確かめる";
+bust.Save();
+
+var versionAfter = CacheBuster.Current(File.ReadAllText(worksHtml), "works-data.js");
+Check("作品を変えると ?v= が上がる", versionAfter == versionBefore + 1 && versionAfter >= 1);
+Check("読み込み行が壊れていない",
+    File.ReadAllText(worksHtml).Contains($"works-data.js?v={versionAfter}\" defer"));
+
+// 作品を触っていないときは上げない（意味のない差分を出さないため）。
+var untouched = SiteSession.Load(sandbox);
+untouched.Groups.Single(group => group.Title == "サイトの基本色")
+    .Fields.Single(field => field.Label.StartsWith("黄色")).Value = "#010203";
+untouched.Save();
+Check("作品を触らなければ上がらない",
+    CacheBuster.Current(File.ReadAllText(worksHtml), "works-data.js") == versionAfter);
+
+// ?v= がまだ無いファイルには付ける。
+Check("まだ番号が無ければ付ける", CacheBuster.Current("<script src=\"a.js\"></script>", "a.js") == 0);
+
 // --- プレビュー用サーバー -------------------------------------------------
 
 Check("URLから実ファイルへ",
