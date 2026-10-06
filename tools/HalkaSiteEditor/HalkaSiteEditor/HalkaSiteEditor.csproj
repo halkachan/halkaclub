@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\HalkaSiteEditor.Core\HalkaSiteEditor.Core.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>HALKA SITE EDITOR</AssemblyName>
+    <ApplicationIcon>Assets\site-editor.ico</ApplicationIcon>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <!-- この PC には .NET 8 ランタイムが無く 10 だけなので、新しい方で動かします。
+         publish-win-x64.ps1 の自己完結版には影響しません。 -->
+    <RollForward>Major</RollForward>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\site-editor.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+  </ItemGroup>
+
+</Project>

@@ -18,3 +18,8 @@ standalone-*.log
 *.hwmap.json.bak
 *.hwmap.json.bak.meta
 *.hwmap.json.tmp
+
+# tools/ のビルド成果物（自己完結版は数百MBになります）
+tools/**/bin/
+tools/**/obj/
+tools/**/dist/
