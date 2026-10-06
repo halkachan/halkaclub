@@ -34,6 +34,8 @@ public partial class MainWindow : Window
     private EditField? videoField;
     private PreviewServer? previewServer;
     private bool previewReady;
+    private GitPublisher? publisher;
+    private bool hadChanges;
 
     public MainWindow() => InitializeComponent();
 
@@ -75,6 +77,7 @@ public partial class MainWindow : Window
 
         RootText.Text = root;
         SaveSettings(new LocalSettings { SiteRoot = root });
+        publisher = new GitPublisher(root);
 
         var commission = session.Groups.Single(group => group.Title == "依頼ページ");
         var top = session.Groups.Single(group => group.Title == "トップページ");
@@ -106,6 +109,7 @@ public partial class MainWindow : Window
 
         UpdateVideoPreview();
         RefreshChanges();
+        RefreshPublishState();
         // ここから下は読み込み後の表示だけなので、順番に意味はありません。
         StatusText.Text = $"読み込みました。{session.Fields.Count()} 項目を編集できます。";
 
@@ -337,6 +341,73 @@ public partial class MainWindow : Window
             : changes.Count == 0
                 ? "変更はありません。"
                 : $"{changes.Count} 件の変更があります。「保存する」でファイルに書き込みます。";
+
+        // 保存していない変更があるうちは公開させません。
+        if (session.HasChanges)
+        {
+            PublishButton.IsEnabled = false;
+            PublishButton.ToolTip = "先に「保存する」を押してください。";
+        }
+        else if (hadChanges)
+        {
+            RefreshPublishState();   // 変更が無くなった瞬間だけ、git に聞き直します。
+        }
+        hadChanges = session.HasChanges;
+    }
+
+    // --- 公開 ---------------------------------------------------------------
+
+    /// <summary>git に聞いて、公開待ちの件数をボタンに出します。</summary>
+    private void RefreshPublishState()
+    {
+        if (session == null || publisher == null || !publisher.IsAvailable)
+        {
+            PublishButton.IsEnabled = false;
+            PublishButton.Content = "公開する";
+            PublishButton.ToolTip = "git のリポジトリではないので、ここからは公開できません。";
+            return;
+        }
+
+        var pending = publisher.Pending(session.ManagedFiles);
+        PublishButton.Content = pending.Count > 0 ? $"公開する（{pending.Count}）" : "公開する";
+        PublishButton.IsEnabled = pending.Count > 0 && !session.HasChanges;
+        PublishButton.ToolTip = pending.Count == 0
+            ? "公開を待っている変更はありません。"
+            : "保存した内容を halkaclub.com へ出します。";
+    }
+
+    private void PublishClick(object sender, RoutedEventArgs e)
+    {
+        if (session == null || publisher == null) return;
+
+        if (session.HasChanges)
+        {
+            MessageBox.Show(this, "保存していない変更があります。先に「保存する」を押してください。",
+                "確認", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var pending = publisher.Pending(session.ManagedFiles);
+        if (pending.Count == 0)
+        {
+            MessageBox.Show(this, "公開を待っている変更はありません。", "確認",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            RefreshPublishState();
+            return;
+        }
+
+        var dialog = new PublishWindow(publisher, session.ManagedFiles, pending) { Owner = this };
+        dialog.ShowDialog();
+        RefreshPublishState();
+
+        if (dialog.Published)
+        {
+            StatusText.Text = "公開しました。halkaclub.com に出るまで30秒ほどかかります。";
+            MessageBox.Show(this,
+                "公開しました。\n\nhalkaclub.com に出るまで30秒ほどかかります。\n" +
+                "しばらくしてからブラウザで確かめてください。",
+                "公開しました", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
     }
 
     // --- トップページ（最新動画） -------------------------------------------

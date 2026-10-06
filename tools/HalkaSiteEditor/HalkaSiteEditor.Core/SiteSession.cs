@@ -47,6 +47,10 @@ public sealed class SiteSession
     public IReadOnlyList<EditGroup> Groups { get; }
     public WorksDocument Works { get; }
 
+    /// <summary>このツールが書き換えるファイル（サイトのフォルダーからの相対パス）。公開もこれだけを対象にします。</summary>
+    public IReadOnlyList<string> ManagedFiles =>
+        files.Select(file => SitePaths.Relative(Root, file.Path)).OrderBy(path => path, StringComparer.Ordinal).ToArray();
+
     public IEnumerable<EditField> Fields => Groups.SelectMany(group => group.Fields);
     public bool HasChanges => Fields.Any(field => field.Changed) || Works.HasChanges;
     public bool HasError => Fields.Any(field => field.HasError) || Works.HasError;

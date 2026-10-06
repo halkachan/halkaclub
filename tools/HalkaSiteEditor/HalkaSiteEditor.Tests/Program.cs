@@ -303,5 +303,140 @@ using (var server = new PreviewServer(sandbox))
         http.GetAsync("/style.css").Result.Content.ReadAsStringAsync().Result.Contains("--yellow: #00ff00;"));
 }
 
+// --- 公開（コミットしてpush） ---------------------------------------------
+// 一時的に本物のgitリポジトリと、その送り先（bare）を作って確かめます。
+
+var gitRoot = Path.Combine(Path.GetTempPath(), "halka-site-editor-git-" + Guid.NewGuid().ToString("N"));
+var remote = Path.Combine(Path.GetTempPath(), "halka-site-editor-remote-" + Guid.NewGuid().ToString("N") + ".git");
+CopySite(real, gitRoot);
+Directory.CreateDirectory(Path.Combine(gitRoot, "unity-project"));
+File.WriteAllText(Path.Combine(gitRoot, "unity-project", "other.txt"), "ユーザーの別作業\n");
+
+Git(gitRoot, "init", "-b", "main");
+Git(gitRoot, "config", "user.email", "test@example.com");
+Git(gitRoot, "config", "user.name", "test");
+Git(gitRoot, "add", "-A");
+Git(gitRoot, "commit", "-m", "first");
+Git(Path.GetTempPath(), "init", "--bare", remote);
+Git(gitRoot, "remote", "add", "origin", remote);
+Git(gitRoot, "push", "-u", "origin", "main");
+
+static void Git(string cwd, params string[] args)
+{
+    var info = new System.Diagnostics.ProcessStartInfo("git")
+    {
+        WorkingDirectory = cwd, CreateNoWindow = true, UseShellExecute = false,
+        RedirectStandardOutput = true, RedirectStandardError = true,
+    };
+    foreach (var argument in args) info.ArgumentList.Add(argument);
+    using var process = System.Diagnostics.Process.Start(info)!;
+    var output = process.StandardOutput.ReadToEndAsync();
+    var error = process.StandardError.ReadToEndAsync();
+    process.WaitForExit();
+    if (process.ExitCode != 0)
+    {
+        throw new Exception($"テストの下ごしらえで git {string.Join(' ', args)} が失敗しました：\n" +
+            output.Result + error.Result);
+    }
+}
+
+var publisher = new GitPublisher(gitRoot);
+var gitSession = SiteSession.Load(gitRoot);
+
+Check("gitのリポジトリだと分かる", publisher.IsAvailable && publisher.Branch() == "main");
+Check("何も変えていなければ公開するものが無い", publisher.Pending(gitSession.ManagedFiles).Count == 0);
+
+// ツールが扱うファイルと、扱わないファイルの両方を変えます。
+gitSession.Groups.Single(group => group.Title == "サイトの基本色")
+    .Fields.Single(field => field.Label.StartsWith("黄色")).Value = "#123456";
+gitSession.Save();
+File.WriteAllText(Path.Combine(gitRoot, "unity-project", "other.txt"), "ユーザーが作業中\n");
+
+var pending = publisher.Pending(gitSession.ManagedFiles);
+Check("公開対象はツールが扱うファイルだけ",
+    pending.Count == 1 && pending[0].Path == "style.css" && pending[0].Status == "変更");
+Check("メッセージの下書きができる",
+    GitPublisher.SuggestMessage(pending) == "配色を更新" &&
+    GitPublisher.SuggestMessage(new[]
+    {
+        new PendingFile("commission/index.html", "変更"),
+        new PendingFile("commission/en/index.html", "変更"),
+        new PendingFile("works/works-data.js", "変更"),
+    }) == "依頼ページ・作品一覧を更新" &&
+    GitPublisher.SuggestMessage(Array.Empty<PendingFile>()) == "サイトを更新");
+
+var published = publisher.Publish(gitSession.ManagedFiles, "配色を更新");
+Check("公開できる", published.Ok);
+Check("向こうに届いている",
+    RevisionCount(remote) == 2 && FileAt(remote, "style.css").Contains("--yellow: #123456;"));
+Check("作業中の別ファイルは巻き込まない",
+    File.ReadAllText(Path.Combine(gitRoot, "unity-project", "other.txt")).Contains("作業中") &&
+    !FileAt(remote, "unity-project/other.txt").Contains("作業中"));
+Check("公開したあとは待ちが無い", publisher.Pending(gitSession.ManagedFiles).Count == 0);
+Check("何も無い状態では公開しない",
+    !publisher.Publish(gitSession.ManagedFiles, "からっぽ").Ok);
+
+static int RevisionCount(string repo)
+{
+    var info = new System.Diagnostics.ProcessStartInfo("git")
+    { WorkingDirectory = repo, CreateNoWindow = true, UseShellExecute = false, RedirectStandardOutput = true };
+    info.ArgumentList.Add("rev-list"); info.ArgumentList.Add("--count"); info.ArgumentList.Add("main");
+    using var process = System.Diagnostics.Process.Start(info)!;
+    var text = process.StandardOutput.ReadToEnd().Trim();
+    process.WaitForExit();
+    return int.TryParse(text, out var count) ? count : -1;
+}
+
+static string FileAt(string repo, string path)
+{
+    var info = new System.Diagnostics.ProcessStartInfo("git")
+    {
+        WorkingDirectory = repo, CreateNoWindow = true, UseShellExecute = false,
+        RedirectStandardOutput = true, RedirectStandardError = true,
+        StandardOutputEncoding = System.Text.Encoding.UTF8,
+    };
+    info.ArgumentList.Add("show"); info.ArgumentList.Add("main:" + path);
+    using var process = System.Diagnostics.Process.Start(info)!;
+    var text = process.StandardOutput.ReadToEnd();
+    process.StandardError.ReadToEnd();
+    process.WaitForExit();
+    return text;
+}
+
+// 向こうに新しいコミットがある状態をつくり、押し返しと取り込みを確かめます。
+var otherClone = Path.Combine(Path.GetTempPath(), "halka-site-editor-other-" + Guid.NewGuid().ToString("N"));
+Git(Path.GetTempPath(), "clone", "-b", "main", remote, otherClone);
+Git(otherClone, "config", "user.email", "other@example.com");
+Git(otherClone, "config", "user.name", "other");
+File.WriteAllText(Path.Combine(otherClone, "from-other.txt"), "別の場所からの追記\n");
+Git(otherClone, "add", "from-other.txt");
+Git(otherClone, "commit", "-m", "from other place");
+Git(otherClone, "push", "origin", "main");
+Check("別の場所からの変更が向こうに入っている", RevisionCount(remote) == 3);
+
+gitSession.Groups.Single(group => group.Title == "サイトの基本色")
+    .Fields.Single(field => field.Label.StartsWith("黄色")).Value = "#abcdef";
+gitSession.Save();
+var rejected = publisher.Publish(gitSession.ManagedFiles, "もう一度");
+Check("向こうが進んでいたら押し返される", !rejected.Ok && rejected.RejectedByRemote);
+Check("取り込んでから公開し直せる", publisher.PullRebaseAndPush().Ok &&
+    FileAt(remote, "style.css").Contains("--yellow: #abcdef;") &&
+    FileAt(remote, "from-other.txt").Contains("別の場所からの追記"));
+Check("取り込んだあとも作業中のファイルは手元に残る",
+    File.ReadAllText(Path.Combine(gitRoot, "unity-project", "other.txt")).Contains("作業中") &&
+    !FileAt(remote, "unity-project/other.txt").Contains("作業中"));
+
+foreach (var path in new[] { gitRoot, remote, otherClone })
+{
+    try { DeleteTree(path); } catch (Exception) { }
+}
+
+static void DeleteTree(string path)
+{
+    foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+        File.SetAttributes(file, FileAttributes.Normal);
+    Directory.Delete(path, recursive: true);
+}
+
 Directory.Delete(sandbox, recursive: true);
 Console.WriteLine($"\n{passes} passed");

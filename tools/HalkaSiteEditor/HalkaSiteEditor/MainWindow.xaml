@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:HalkaSiteEditor"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="HALKA SITE EDITOR v0.3" Icon="Assets/site-editor.ico"
+        Title="HALKA SITE EDITOR v0.4" Icon="Assets/site-editor.ico"
         Width="1660" Height="900" MinWidth="1000" MinHeight="640"
         Background="#16191E" Foreground="#E4E8EC" FontFamily="Yu Gothic UI" FontSize="13"
         Loaded="WindowLoaded" Closing="WindowClosing">
@@ -206,6 +206,9 @@
         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
           <TextBlock Text="変更一覧" FontWeight="Bold" VerticalAlignment="Center"/>
           <TextBlock x:Name="ChangeCountText" Margin="10,0,0,0" VerticalAlignment="Center" Foreground="#FFCB75"/>
+          <Button DockPanel.Dock="Right" x:Name="PublishButton" Content="公開する" Click="PublishClick"
+                  IsEnabled="False" Padding="22,6" FontWeight="Bold" Background="#4A6B3A"
+                  ToolTip="保存した内容を halkaclub.com へ出します。"/>
           <Button DockPanel.Dock="Right" x:Name="SaveButton" Content="保存する" Click="SaveClick"
                   IsEnabled="False" Padding="22,6" FontWeight="Bold"/>
           <Button DockPanel.Dock="Right" x:Name="RevertButton" Content="すべて元に戻す" Click="RevertClick"
