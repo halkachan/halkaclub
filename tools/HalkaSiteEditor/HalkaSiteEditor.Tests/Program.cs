@@ -94,7 +94,7 @@ var top = session.Groups.Single(group => group.Title == "トップページ");
 Check("依頼ページを日英そろえて読む",
     commission.Pairs.Count >= 2 &&
     commission.Pairs[0].Label == "受付状況" &&
-    commission.Fields.Count == commission.Pairs.Count * 2);
+    commission.Fields.Count == commission.Pairs.Count * 2 + commission.Options.Count * 4);
 Check("見出しは日本語版の項目名", commission.Pairs.Skip(1).All(pair => !string.IsNullOrWhiteSpace(pair.Label)) &&
     commission.Pairs.Any(pair => pair.Label.Contains("歌ってみた")));
 Check("いまの受付状況を読めている", commission.Pairs[0].Ja.Value.Length > 0 && commission.Pairs[0].En.Value.Length > 0);
@@ -248,6 +248,99 @@ static bool RoundTripTitle(string root, string title)
     session.Save();
     return SiteSession.Load(root).Works.Categories.First().Works[0].Title == title;
 }
+
+// --- v0.5：追加プランと依頼ページの文章 -----------------------------------
+
+var v5 = SiteSession.Load(sandbox);
+var v5Commission = v5.Groups.Single(group => group.Title == "依頼ページ");
+
+Check("追加プランを日英の組で読む",
+    v5Commission.Options.Count == 8 &&
+    v5Commission.Options.All(row => row.Name.Ja.Value.Length > 0 && row.Price.Ja.Value.Length > 0) &&
+    v5Commission.Options.Any(row => row.Label.Contains("ハモリ")) &&
+    v5Commission.Options[0].Price.Ja.Value.Contains("4,000"));
+
+var option = v5Commission.Options[0];
+option.Price.Ja.Value = "＋9,000円";
+option.SyncEnglishFromJapanese();
+Check("追加プランの金額も英語へ写せる", option.Price.En.Value == "from 9,000 JPY" && v5.HasChanges);
+option.Price.Ja.Revert();
+option.Price.En.Revert();
+
+var text = v5.CommissionText;
+var jaPage = text.Pages.Single(page => page.Title == "日本語版");
+var enPage = text.Pages.Single(page => page.Title == "英語版");
+
+Check("文章のかたまりを両ページから拾う",
+    text.Pages.Count == 2 && jaPage.Blocks.Count > 30 && enPage.Blocks.Count > 30 &&
+    jaPage.Blocks.Any(block => block.Label.Contains("歌ってみたMIX")) &&
+    jaPage.Blocks.Any(block => block.Label.Contains("テンプレート本文")));
+Check("箇条書きは空行区切りで読める",
+    jaPage.Blocks.First(block => block.Label.Contains("歌ってみたMIX")).Text.Contains("ピッチ補正\n\nリズム補正"));
+Check("<br /> は改行として読める",
+    jaPage.Blocks.Any(block => block.Text.Contains("\n") && !block.Text.Contains("<br")));
+Check("HTMLの印は画面に出さない",
+    jaPage.Blocks.All(block => !block.Text.Contains("<li>") && !block.Text.Contains("<p>")));
+
+// ここが要：読んだだけなら1文字も変わらないこと。
+ShowFirstDifference(text.Rebuild(jaPage), jaPage.CurrentText);
+static void ShowFirstDifference(string rebuilt, string original)
+{
+    if (rebuilt == original) return;
+    var limit = Math.Min(rebuilt.Length, original.Length);
+    var at = 0;
+    while (at < limit && rebuilt[at] == original[at]) at++;
+    var from = Math.Max(0, at - 90);
+    Console.WriteLine("  [診断] 位置 " + at);
+    Console.WriteLine("  [元 ] " + original.Substring(from, Math.Min(240, original.Length - from)).Replace("\n", "\\n"));
+    Console.WriteLine("  [新 ] " + rebuilt.Substring(from, Math.Min(240, rebuilt.Length - from)).Replace("\n", "\\n"));
+}
+Check("日本語版は組み立て直しても1文字も変わらない", text.Rebuild(jaPage) == jaPage.CurrentText);
+Check("英語版は組み立て直しても1文字も変わらない", text.Rebuild(enPage) == enPage.CurrentText);
+Check("最初は変更なし", !text.HasChanges && !v5.HasChanges);
+
+var listBlock = jaPage.Blocks.First(block => block.Label.Contains("歌ってみたMIX"));
+listBlock.Text = "ピッチ補正\n\nリズム補正\n\nあたらしい項目";
+Check("箇条書きの増減が変更一覧に出る",
+    text.HasChanges && v5.Changes().Any(row => row.Label.Contains("日本語版")));
+
+var paragraph = jaPage.Blocks.First(block => block.Label.Contains("リテイク"));
+var paragraphWas = paragraph.Text;
+paragraph.Text = "ためしの説明。\n2行目。";
+
+Check("< > は誤りとして出る", NewError(jaPage, "<b>太字</b>"));
+static bool NewError(CommissionTextPage page, string bad)
+{
+    var block = page.Blocks.First();
+    var keep = block.Text;
+    block.Text = bad;
+    var bad1 = block.HasError;
+    block.Text = keep;
+    return bad1 && !block.HasError;
+}
+
+v5.Save();
+Check("保存すると変更なしに戻る", !v5.HasChanges && !text.HasChanges);
+
+var afterSave = SiteSession.Load(sandbox);
+var afterJa = afterSave.CommissionText.Pages.Single(page => page.Title == "日本語版");
+Check("書いた箇条書きが読み直せる",
+    afterJa.Blocks.First(block => block.Label.Contains("歌ってみたMIX")).Text.EndsWith("あたらしい項目"));
+Check("書いた段落が読み直せる",
+    afterJa.Blocks.First(block => block.Label.Contains("リテイク")).Text == "ためしの説明。\n2行目。");
+Check("保存後も組み立て直しで1文字も変わらない",
+    afterSave.CommissionText.Rebuild(afterJa) == afterJa.CurrentText);
+Check("料金と文章を同じファイルで同時に直せる",
+    File.ReadAllText(Path.Combine(sandbox, "commission", "index.html")).Contains("あたらしい項目") &&
+    File.ReadAllText(Path.Combine(sandbox, "commission", "index.html")).Contains("plan-amount"));
+
+// 2回続けて保存しても、位置を見失わないこと。
+var again = afterJa.Blocks.First(block => block.Label.Contains("リテイク"));
+again.Text = "もう一度ためす。";
+afterSave.Save();
+Check("続けて保存しても見失わない",
+    SiteSession.Load(sandbox).CommissionText.Pages[0].Blocks
+        .First(block => block.Label.Contains("リテイク")).Text == "もう一度ためす。");
 
 // --- プレビュー用サーバー -------------------------------------------------
 

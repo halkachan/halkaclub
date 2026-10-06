@@ -159,6 +159,25 @@ public sealed class FieldRow
     }
 }
 
+/// <summary>追加プラン1つ（名前と金額を、日英それぞれ）。</summary>
+public sealed class OptionRow
+{
+    public string Label { get; }
+    public FieldPair Name { get; }
+    public FieldPair Price { get; }
+
+    public OptionRow(string label, FieldPair name, FieldPair price)
+    {
+        Label = label;
+        Name = name;
+        Price = price;
+    }
+
+    public bool CanSyncEnglish => Price.CanSyncEnglish;
+
+    public void SyncEnglishFromJapanese() => Price.SyncEnglishFromJapanese();
+}
+
 /// <summary>画面のひとかたまり（タブ1枚ぶん）。</summary>
 public sealed class EditGroup
 {
@@ -167,15 +186,18 @@ public sealed class EditGroup
     public IReadOnlyList<EditField> Fields { get; }
     public IReadOnlyList<FieldPair> Pairs { get; }
     public IReadOnlyList<FieldRow> Rows { get; }
+    public IReadOnlyList<OptionRow> Options { get; }
 
     public EditGroup(string title, string note, IReadOnlyList<EditField> fields,
-        IReadOnlyList<FieldPair>? pairs = null, IReadOnlyList<FieldRow>? rows = null)
+        IReadOnlyList<FieldPair>? pairs = null, IReadOnlyList<FieldRow>? rows = null,
+        IReadOnlyList<OptionRow>? options = null)
     {
         Title = title;
         Note = note;
         Fields = fields;
         Pairs = pairs ?? Array.Empty<FieldPair>();
         Rows = rows ?? Array.Empty<FieldRow>();
+        Options = options ?? Array.Empty<OptionRow>();
     }
 }
 

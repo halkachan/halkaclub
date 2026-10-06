@@ -17,6 +17,8 @@ public sealed class SiteSession
     private const string StatusBadge = @"(<p class=""request-status-badge"">)([^<]*)(</p>)";
     private const string PlanAmount = @"(<span class=""plan-amount"">)([^<]*)(</span>)";
     private const string PlanName = @"(<span class=""plan-name"">)([^<]*)(</span>)";
+    private const string OptionName = @"(<span class=""plan-option-name"">)([^<]*)(</span>)";
+    private const string OptionPrice = @"(<span class=""plan-option-price"">)([^<]*)(</span>)";
     private const string LatestVideo = @"(const latestVideoUrl = "")([^""]*)("";)";
     private const string LinkHref = @"(<a class=""link-card[^""]*"" href="")([^""]*)("")";
     private const string LinkName = @"(<strong>)([^<]*)(</strong>)";
@@ -46,21 +48,24 @@ public sealed class SiteSession
     public string Root { get; }
     public IReadOnlyList<EditGroup> Groups { get; }
     public WorksDocument Works { get; }
+    public CommissionTextDocument CommissionText { get; }
 
     /// <summary>このツールが書き換えるファイル（サイトのフォルダーからの相対パス）。公開もこれだけを対象にします。</summary>
     public IReadOnlyList<string> ManagedFiles =>
         files.Select(file => SitePaths.Relative(Root, file.Path)).OrderBy(path => path, StringComparer.Ordinal).ToArray();
 
     public IEnumerable<EditField> Fields => Groups.SelectMany(group => group.Fields);
-    public bool HasChanges => Fields.Any(field => field.Changed) || Works.HasChanges;
-    public bool HasError => Fields.Any(field => field.HasError) || Works.HasError;
+    public bool HasChanges => Fields.Any(field => field.Changed) || Works.HasChanges || CommissionText.HasChanges;
+    public bool HasError => Fields.Any(field => field.HasError) || Works.HasError || CommissionText.HasError;
 
-    private SiteSession(string root, List<SiteFile> files, IReadOnlyList<EditGroup> groups, WorksDocument works)
+    private SiteSession(string root, List<SiteFile> files, IReadOnlyList<EditGroup> groups,
+        WorksDocument works, CommissionTextDocument commissionText)
     {
         Root = root;
         this.files = files;
         Groups = groups;
         Works = works;
+        CommissionText = commissionText;
     }
 
     public static SiteSession Load(string root)
@@ -99,7 +104,10 @@ public sealed class SiteSession
         if (File.Exists(versionPath)) groups.Add(BuildUtamaze(root, Open(versionPath)));
 
         var works = WorksDocument.Load(worksFile, SitePaths.Relative(root, worksFile.Path));
-        return new SiteSession(root, files, groups, works);
+        var commissionText = CommissionTextDocument.Load(
+            ("日本語版", ja, SitePaths.Relative(root, ja.Path)),
+            ("英語版", en, SitePaths.Relative(root, en.Path)));
+        return new SiteSession(root, files, groups, works, commissionText);
     }
 
     private static EditGroup BuildLinks(string root, SiteFile home)
@@ -221,11 +229,34 @@ public sealed class SiteSession
             pairs.Add(new FieldPair(label, amountJa, amountEn));
         }
 
+        // 追加プラン（「＋4,000円」など）。日英で数が同じことを確かめてから組にします。
+        var optionNames = ValueSlot.ReadAll(ja.Text, OptionName);
+        var optionCountJa = new ValueSlot(OptionPrice).Count(ja.Text);
+        var optionCountEn = new ValueSlot(OptionPrice).Count(en.Text);
+        if (optionCountJa != optionCountEn || optionNames.Count != optionCountJa)
+        {
+            throw new InvalidDataException(
+                $"追加プランの数が合いません（日本語 {optionCountJa} / 英語 {optionCountEn}）。先にHTMLを揃えてください。");
+        }
+
+        var options = new List<OptionRow>();
+        for (var i = 0; i < optionCountJa; i++)
+        {
+            var label = optionNames[i];
+            var namePair = new FieldPair(label,
+                Field(ja, jaRelative, OptionName, i, $"option.{i}.name.ja", $"{label}：名前（日本語）"),
+                Field(en, enRelative, OptionName, i, $"option.{i}.name.en", $"{label}：名前（英語）"));
+            var pricePair = new FieldPair(label,
+                Field(ja, jaRelative, OptionPrice, i, $"option.{i}.price.ja", $"{label}：金額（日本語）"),
+                Field(en, enRelative, OptionPrice, i, $"option.{i}.price.en", $"{label}：金額（英語）"));
+            options.Add(new OptionRow(label, namePair, pricePair));
+        }
+
         return new EditGroup(
             "依頼ページ",
             "受付状況と料金です。日本語版と英語版が並んでいるので、両方そろえて直してください。",
             fields,
-            pairs);
+            pairs, null, options);
     }
 
     private static EditGroup BuildTopPage(string root, SiteFile script)
@@ -265,6 +296,7 @@ public sealed class SiteSession
         .Where(field => field.Changed)
         .Select(field => new ChangeRow(field.Label, field.Original, field.Value, field.FileRelative))
         .Concat(Works.Changes())
+        .Concat(CommissionText.Changes())
         .ToArray();
 
     /// <summary>入力内容をファイルへ書き込みます。</summary>
@@ -277,16 +309,21 @@ public sealed class SiteSession
             if (file.ChangedOnDisk()) throw new SiteChangedOnDiskException(SitePaths.Relative(Root, file.Path));
         }
 
+        // 料金などの単発の値を先に入れ、そのあとで文章のかたまりを組み立て直します
+        // （文章側は書き換え後のファイルを見て作るので、どちらの変更も残ります）。
         foreach (var field in Fields) field.Apply();
         Works.Apply();
+        CommissionText.Apply();
         foreach (var file in files) file.Save();
         foreach (var field in Fields) field.MarkSaved();
         Works.MarkSaved();
+        CommissionText.MarkSaved();
     }
 
     public void Revert()
     {
         foreach (var field in Fields) field.Revert();
         Works.Revert();
+        CommissionText.Revert();
     }
 }

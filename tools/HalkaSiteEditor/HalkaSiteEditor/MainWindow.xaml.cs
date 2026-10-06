@@ -90,8 +90,15 @@ public partial class MainWindow : Window
         LinkNote.Text = links.Note;
 
         CommissionItems.ItemsSource = commission.Pairs;
+        OptionItems.ItemsSource = commission.Options;
         ColorItems.ItemsSource = colors.Fields;
         LinkItems.ItemsSource = links.Rows;
+
+        TextPagePicker.ItemsSource = session.CommissionText.Pages;
+        TextPagePicker.SelectedIndex = 0;
+        foreach (var page in session.CommissionText.Pages)
+        foreach (var block in page.Blocks)
+            block.PropertyChanged += TextBlockChanged;
 
         BindOptionalGroup("はるかくらぶ", ClubTab, ClubNote, ClubItems);
         BindOptionalGroup("うたまぜ！", UtamazeTab, UtamazeNote, UtamazeItems);
@@ -332,7 +339,8 @@ public partial class MainWindow : Window
         ChangeCountText.Text = changes.Count == 0 ? "" : $"{changes.Count} 件";
 
         var errors = session.Fields.Count(field => field.HasError)
-            + session.Works.Categories.Sum(category => category.Works.Count(work => work.HasError));
+            + session.Works.Categories.Sum(category => category.Works.Count(work => work.HasError))
+            + session.CommissionText.Pages.Sum(page => page.Blocks.Count(block => block.HasError));
         SaveButton.IsEnabled = session.HasChanges && !session.HasError;
         RevertButton.IsEnabled = session.HasChanges;
 
@@ -447,6 +455,26 @@ public partial class MainWindow : Window
     private void SyncEnglishClick(object sender, RoutedEventArgs e)
     {
         if (((FrameworkElement)sender).Tag is FieldPair pair) pair.SyncEnglishFromJapanese();
+    }
+
+    private void SyncOptionEnglishClick(object sender, RoutedEventArgs e)
+    {
+        if (((FrameworkElement)sender).Tag is OptionRow row) row.SyncEnglishFromJapanese();
+    }
+
+    // --- 依頼ページの文章 ---------------------------------------------------
+
+    private void TextBlockChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(CommissionTextBlock.Text) or nameof(CommissionTextBlock.Changed)
+            or nameof(CommissionTextBlock.Error))
+            RefreshChanges();
+    }
+
+    private void TextPageChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (TextBlockItems == null) return;
+        TextBlockItems.ItemsSource = (TextPagePicker.SelectedItem as CommissionTextPage)?.Blocks;
     }
 
     private void SaveClick(object sender, RoutedEventArgs e)
