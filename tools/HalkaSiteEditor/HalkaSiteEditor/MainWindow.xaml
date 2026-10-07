@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:HalkaSiteEditor"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="HALKA SITE EDITOR v1.2" Icon="Assets/site-editor.ico"
+        Title="HALKA SITE EDITOR v1.3" Icon="Assets/site-editor.ico"
         Width="1660" Height="900" MinWidth="1000" MinHeight="640"
         Background="#16191E" Foreground="#E4E8EC" FontFamily="Yu Gothic UI" FontSize="13"
         Loaded="WindowLoaded" Closing="WindowClosing">
@@ -475,6 +475,8 @@
                   Foreground="#DDE2E8" VerticalAlignment="Center" Margin="10,0,4,0"
                   Checked="PreviewToggled" Unchecked="PreviewToggled"/>
         <Button DockPanel.Dock="Right" Content="読み込み直す" Click="ReloadClick"/>
+        <Button DockPanel.Dock="Right" Content="近道を作る" Click="ShortcutClick"
+                ToolTip="デスクトップとスタートメニューに、このアプリの近道を作ります。"/>
         <Button DockPanel.Dock="Right" Content="フォルダーを選ぶ..." Click="ChooseFolderClick"/>
         <TextBox x:Name="RootText" IsReadOnly="True" Margin="0,0,8,0"/>
       </DockPanel>
@@ -499,6 +501,13 @@
                   IsEnabled="False" Padding="22,6" FontWeight="Bold"/>
           <Button DockPanel.Dock="Right" x:Name="RevertButton" Content="すべて元に戻す" Click="RevertClick"
                   IsEnabled="False"/>
+          <Button DockPanel.Dock="Right" x:Name="UndoButton" Content="元に戻す" Click="UndoClick"
+                  IsEnabled="False"
+                  ToolTip="追加・並べ替え・削除を1手ずつ戻します（文字の打ち直しは、入力欄の中で Ctrl+Z です）。"/>
+          <Button DockPanel.Dock="Left" x:Name="BackupButton" Content="保存を1つ前に戻す"
+                  Click="RestoreBackupClick" IsEnabled="False" Margin="14,3,3,3"/>
+          <Button DockPanel.Dock="Left" Content="サイトを開く" Click="OpenLiveSiteClick" Margin="3"
+                  ToolTip="halkaclub.com をブラウザーで開きます。"/>
           <TextBlock/>
         </DockPanel>
         <ListView x:Name="ChangeList" Background="#242A33" Foreground="#EDF0F3" BorderBrush="#2F3845">

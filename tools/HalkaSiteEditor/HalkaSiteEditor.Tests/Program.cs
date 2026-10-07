@@ -1026,6 +1026,93 @@ Check("文章を直せるページが3枚ならぶ",
     afterV12.TextPages.Select(page => page.Url)
         .SequenceEqual(new[] { "/commission/", "/commission/en/", "/utamaze/" }));
 
+// --- v1.3：1手ずつ戻す・保存の控え・近道 ------------------------------------
+
+var undo = new UndoStack();
+Check("何も無ければ戻せない", !undo.CanUndo && undo.NextLabel == null && undo.Undo() == null);
+
+var marks = new List<string>();
+undo.Record("ひとつめ", () => marks.Add("ひとつめ"));
+undo.Record("ふたつめ", () => marks.Add("ふたつめ"));
+Check("新しい手から名前が出る", undo.CanUndo && undo.NextLabel == "ふたつめ" && undo.Count == 2);
+Check("新しい手から戻す",
+    undo.Undo() == "ふたつめ" && marks.SequenceEqual(new[] { "ふたつめ" }) && undo.NextLabel == "ひとつめ");
+undo.Clear();
+Check("まとめて忘れられる", !undo.CanUndo && undo.Count == 0);
+
+for (var i = 0; i < UndoStack.Depth + 5; i++)
+{
+    var at = i;
+    undo.Record($"{at}", () => { });
+}
+Check("古い手は捨てる", undo.Count == UndoStack.Depth && undo.NextLabel == $"{UndoStack.Depth + 4}");
+
+// 実際の編集で、削除を戻せること。
+var undoSession = SiteSession.Load(sandbox);
+var undoCategory = undoSession.Works.Categories.First();
+var dropped = undoCategory.Works[0];
+var droppedAt = 0;
+undoCategory.Works.RemoveAt(droppedAt);
+undoSession.Undo.Record($"作品「{dropped.Title}」の削除", () => undoCategory.Works.Insert(droppedAt, dropped));
+Check("消したものを戻せる",
+    undoSession.HasChanges && undoSession.Undo.Undo() != null &&
+    undoCategory.Works[0] == dropped && !undoSession.HasChanges);
+
+// 保存の控え。本物の %LOCALAPPDATA% は汚さず、一時フォルダーで確かめます。
+var backupFolder = Path.Combine(Path.GetTempPath(), "halka-site-editor-backup-" + Guid.NewGuid().ToString("N"));
+var backups = new SaveBackups(backupFolder);
+Check("はじめは控えが無い", backups.Latest == null && backups.LatestLabel == null &&
+    backups.Restore(sandbox).Count == 0);
+
+var backupSession = SiteSession.Load(sandbox, backups);
+var yellowField = backupSession.Groups.Single(group => group.Title == "サイトの基本色")
+    .Fields.Single(field => field.Label.StartsWith("黄色"));
+var yellowBefore = yellowField.Value;
+yellowField.Value = "#123456";
+backupSession.Save();
+
+Check("保存すると控えが残る",
+    backups.Latest != null && backups.LatestLabel!.Contains("ファイル") &&
+    File.ReadAllText(Path.Combine(backups.Latest!, "style.css")).Contains($"--yellow: {yellowBefore};"));
+Check("変えた色がファイルに入っている",
+    File.ReadAllText(Path.Combine(sandbox, "style.css")).Contains("--yellow: #123456;"));
+Check("保存すると戻せる手は消える", !backupSession.Undo.CanUndo);
+
+var backupRestored = backups.Restore(sandbox);
+Check("控えから書き戻せる",
+    backupRestored.SequenceEqual(new[] { "style.css" }) &&
+    File.ReadAllText(Path.Combine(sandbox, "style.css")).Contains($"--yellow: {yellowBefore};"));
+Check("戻したらその控えは消える", backups.Latest == null);
+
+// 控えは、変わるファイルだけを対象にする。
+var quiet = SiteSession.Load(sandbox, backups);
+quiet.Save();
+Check("変更が無ければ控えも取らない", backups.Latest == null);
+
+// 古い控えは捨てる。
+for (var i = 0; i < SaveBackups.Keep + 3; i++)
+{
+    Directory.CreateDirectory(Path.Combine(backupFolder, $"2026010{i / 10}-00000{i % 10}"));
+    File.WriteAllText(Path.Combine(backupFolder, $"2026010{i / 10}-00000{i % 10}", "a.txt"), "x");
+}
+backups.Take(sandbox, new[] { "style.css" });
+Check("控えは決めた数だけ残す",
+    Directory.GetDirectories(backupFolder).Length == SaveBackups.Keep);
+try { Directory.Delete(backupFolder, recursive: true); } catch (Exception) { }
+
+// 近道の置き場所。作るところまでは、このテストでは触りません。
+// 近道そのものを作るのはWindowsのしくみを使うので、ここでは置き場所だけ確かめます。
+Check("近道の置き場所",
+    Shortcut.DesktopPath.EndsWith("HALKA SITE EDITOR.lnk") &&
+    Shortcut.StartMenuPath.EndsWith("HALKA SITE EDITOR.lnk") &&
+    Shortcut.DesktopPath != Shortcut.StartMenuPath);
+
+// 控えは、サイトのフォルダーごとに分かれていること。
+var mine = SaveBackups.For(sandbox);
+var other = SaveBackups.For(Path.Combine(Path.GetTempPath(), "halka-another-site"));
+Check("サイトごとに控えを分ける",
+    mine.Folder != other.Folder && mine.SiteRoot == Path.GetFullPath(sandbox));
+
 // --- プレビュー用サーバー -------------------------------------------------
 
 Check("URLから実ファイルへ",

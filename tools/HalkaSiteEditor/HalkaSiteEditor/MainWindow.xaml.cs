@@ -1,5 +1,6 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -312,6 +313,11 @@ public partial class MainWindow : Window
     {
         var category = session?.Works.AddNewCategory();
         if (category == null) return;
+        session?.Undo.Record("分類の追加", () =>
+        {
+            session.Works.Categories.Remove(category);
+            CategoryPicker.SelectedIndex = 0;
+        });
         CategoryPicker.SelectedItem = category;
         StatusText.Text = "一番下に分類を足しました。名前と合い言葉を入れてください。";
     }
@@ -323,8 +329,8 @@ public partial class MainWindow : Window
     private void MoveCategory(int offset)
     {
         var category = SelectedCategory;
-        if (category == null) return;
-        session?.Works.MoveCategory(category, offset);
+        if (category == null || session == null) return;
+        Moved("分類の並べ替え", category, session.Works.Categories.IndexOf, session.Works.MoveCategory, offset);
         CategoryPicker.SelectedItem = category;
     }
 
@@ -343,7 +349,10 @@ public partial class MainWindow : Window
             "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question);
         if (answer != MessageBoxResult.OK) return;
 
+        var at = session.Works.Categories.IndexOf(category);
         session.Works.Categories.Remove(category);
+        session.Undo.Record($"分類「{category.Name}」の削除",
+            () => session.Works.Categories.Insert(at, category));
         CategoryPicker.SelectedIndex = 0;
     }
 
@@ -377,7 +386,8 @@ public partial class MainWindow : Window
 
     private void LinkAddClick(object sender, RoutedEventArgs e)
     {
-        session?.Links?.AddNew();
+        var added = session?.Links?.AddNew();
+        if (added != null) session?.Undo.Record("リンクの追加", () => session.Links!.Cards.Remove(added));
         StatusText.Text = "一番下にリンクを足しました。名前とリンク先を入れてください。";
     }
 
@@ -387,7 +397,9 @@ public partial class MainWindow : Window
 
     private void MoveLink(object sender, int offset)
     {
-        if (((FrameworkElement)sender).Tag is LinkCard card) session?.Links?.Move(card, offset);
+        var grid = session?.Links;
+        if (((FrameworkElement)sender).Tag is not LinkCard card || grid == null) return;
+        Moved("リンクの並べ替え", card, grid.Cards.IndexOf, grid.Move, offset);
     }
 
     private void LinkDeleteClick(object sender, RoutedEventArgs e)
@@ -396,7 +408,12 @@ public partial class MainWindow : Window
         var answer = MessageBox.Show(this, $"「{card.Name}」をリンク集から外します。よろしいですか？",
             "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question);
         if (answer != MessageBoxResult.OK) return;
-        session?.Links?.Cards.Remove(card);
+
+        var grid = session?.Links;
+        if (grid == null) return;
+        var at = grid.Cards.IndexOf(card);
+        grid.Cards.Remove(card);
+        session!.Undo.Record($"リンク「{card.Name}」の削除", () => grid.Cards.Insert(at, card));
     }
 
     private void WorksCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -462,7 +479,8 @@ public partial class MainWindow : Window
 
     private void NewsAddClick(object sender, RoutedEventArgs e)
     {
-        session?.News?.AddNew();
+        var added = session?.News?.AddNew();
+        if (added != null) session?.Undo.Record("お知らせの追加", () => session.News!.Items.Remove(added));
         StatusText.Text = "一番下にお知らせを足しました。日付と見出しを入れてください。";
     }
 
@@ -472,7 +490,9 @@ public partial class MainWindow : Window
 
     private void MoveNews(object sender, int offset)
     {
-        if (((FrameworkElement)sender).Tag is NewsItem item) session?.News?.Move(item, offset);
+        var news = session?.News;
+        if (((FrameworkElement)sender).Tag is not NewsItem item || news == null) return;
+        Moved("お知らせの並べ替え", item, news.Items.IndexOf, news.Move, offset);
     }
 
     private void NewsDeleteClick(object sender, RoutedEventArgs e)
@@ -481,7 +501,12 @@ public partial class MainWindow : Window
         var answer = MessageBox.Show(this, $"「{item.Title}」を消します。よろしいですか？",
             "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question);
         if (answer != MessageBoxResult.OK) return;
-        session?.News?.Items.Remove(item);
+
+        var news = session?.News;
+        if (news == null) return;
+        var at = news.Items.IndexOf(item);
+        news.Items.Remove(item);
+        session!.Undo.Record($"お知らせ「{item.Title}」の削除", () => news.Items.Insert(at, item));
     }
 
     // --- ページの顔（タイトルとOGP）と画像 ----------------------------------
@@ -768,7 +793,9 @@ public partial class MainWindow : Window
 
     private void GameCardAddClick(object sender, RoutedEventArgs e)
     {
-        session?.Games?.Collection.AddNew();
+        var added = session?.Games?.Collection.AddNew();
+        if (added != null)
+            session?.Undo.Record("ゲームのカードの追加", () => session.Games!.Collection.Cards.Remove(added));
         StatusText.Text = "一番下にカードを足しました。名前とゲームページの場所を入れてください。";
     }
 
@@ -778,7 +805,9 @@ public partial class MainWindow : Window
 
     private void MoveGameCard(object sender, int offset)
     {
-        if (((FrameworkElement)sender).Tag is GameCard card) session?.Games?.Collection.Move(card, offset);
+        var collection = session?.Games?.Collection;
+        if (((FrameworkElement)sender).Tag is not GameCard card || collection == null) return;
+        Moved("ゲームのカードの並べ替え", card, collection.Cards.IndexOf, collection.Move, offset);
     }
 
     private void GameCardDeleteClick(object sender, RoutedEventArgs e)
@@ -788,13 +817,20 @@ public partial class MainWindow : Window
             $"「{card.Title}」を一覧から外します。ゲームのページ自体は残ります。よろしいですか？",
             "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question);
         if (answer != MessageBoxResult.OK) return;
-        session?.Games?.Collection.Cards.Remove(card);
+
+        var collection = session?.Games?.Collection;
+        if (collection == null) return;
+        var at = collection.Cards.IndexOf(card);
+        collection.Cards.Remove(card);
+        session!.Undo.Record($"ゲーム「{card.Title}」のカードの削除", () => collection.Cards.Insert(at, card));
     }
 
     private void ChangelogAddClick(object sender, RoutedEventArgs e)
     {
-        var entry = SelectedGame?.AddNewEntry();
-        if (entry == null) return;
+        var page = SelectedGame;
+        var entry = page?.AddNewEntry();
+        if (entry == null || page == null) return;
+        session?.Undo.Record($"更新履歴「{entry.Version}」の追加", () => page.Changelog.Remove(entry));
         StatusText.Text = $"更新履歴の一番上に「{entry.Version}」を足しました。内容を入れてください。";
     }
 
@@ -804,7 +840,9 @@ public partial class MainWindow : Window
 
     private void MoveChangelog(object sender, int offset)
     {
-        if (((FrameworkElement)sender).Tag is GameChangelogEntry entry) SelectedGame?.MoveEntry(entry, offset);
+        var page = SelectedGame;
+        if (((FrameworkElement)sender).Tag is not GameChangelogEntry entry || page == null) return;
+        Moved("更新履歴の並べ替え", entry, page.Changelog.IndexOf, page.MoveEntry, offset);
     }
 
     private void ChangelogDeleteClick(object sender, RoutedEventArgs e)
@@ -813,12 +851,27 @@ public partial class MainWindow : Window
         var answer = MessageBox.Show(this, $"「{entry.Version}」の履歴を消します。よろしいですか？",
             "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question);
         if (answer != MessageBoxResult.OK) return;
-        SelectedGame?.Changelog.Remove(entry);
+
+        var page = SelectedGame;
+        if (page == null) return;
+        var at = page.Changelog.IndexOf(entry);
+        page.Changelog.Remove(entry);
+        session?.Undo.Record($"更新履歴「{entry.Version}」の削除", () => page.Changelog.Insert(at, entry));
     }
 
     private void AlignVersionClick(object sender, RoutedEventArgs e)
     {
-        SelectedGame?.AlignVersion();
+        var page = SelectedGame;
+        if (page == null) return;
+
+        var version = page.Version?.Value;
+        var tags = page.Card?.Tags;
+        page.AlignVersion();
+        session?.Undo.Record("版をそろえる", () =>
+        {
+            if (page.Version != null && version != null) page.Version.Value = version;
+            if (page.Card != null && tags != null) page.Card.Tags = tags;
+        });
         RefreshChanges();
     }
 
@@ -849,7 +902,16 @@ public partial class MainWindow : Window
 
     private void ReleaseAllClick(object sender, RoutedEventArgs e)
     {
-        session?.Utamaze?.MakeAllLive();
+        var release = session?.Utamaze;
+        if (release == null) return;
+
+        var before = release.Switches.Select(step => step.MakeLive).ToArray();
+        release.MakeAllLive();
+        session!.Undo.Record("まとめて公開の形にする", () =>
+        {
+            for (var i = 0; i < release.Switches.Count && i < before.Length; i++)
+                release.Switches[i].MakeLive = before[i];
+        });
         RefreshChanges();
     }
 
@@ -872,6 +934,10 @@ public partial class MainWindow : Window
             ? YouTubeFeed.DefaultChannelId
             : saved.YouTubeChannelId;
 
+        // 新しい動画は、どの分類でも一番下に足されます。選ぶ前の数を覚えておけば、戻せます。
+        var before = session.Works.Categories.ToDictionary(
+            category => category, category => category.Works.Count);
+
         var picker = new VideoPickerWindow(session, channel, SelectedCategory) { Owner = this };
         picker.ShowDialog();
 
@@ -880,6 +946,11 @@ public partial class MainWindow : Window
 
         if (picker.AddedCount > 0)
         {
+            session.Undo.Record($"動画{picker.AddedCount}本の追加", () =>
+            {
+                foreach (var (category, count) in before)
+                    while (category.Works.Count > count) category.Works.RemoveAt(category.Works.Count - 1);
+            });
             StatusText.Text = $"{picker.AddedCount} 本を足しました。タイトルは直せます。保存を忘れずに。";
             RefreshChanges();
         }
@@ -889,7 +960,8 @@ public partial class MainWindow : Window
     {
         var category = SelectedCategory;
         if (category == null) return;
-        category.AddNew();
+        var added = category.AddNew();
+        session?.Undo.Record("作品の追加", () => category.Works.Remove(added));
         StatusText.Text = "一番下に作品を足しました。タイトルと投稿日とURLを入れてください。";
     }
 
@@ -899,7 +971,9 @@ public partial class MainWindow : Window
 
     private void MoveWork(object sender, int offset)
     {
-        if (((FrameworkElement)sender).Tag is WorkItem work) SelectedCategory?.Move(work, offset);
+        var category = SelectedCategory;
+        if (((FrameworkElement)sender).Tag is not WorkItem work || category == null) return;
+        Moved("作品の並べ替え", work, category.Works.IndexOf, category.Move, offset);
     }
 
     private void WorkDeleteClick(object sender, RoutedEventArgs e)
@@ -908,7 +982,12 @@ public partial class MainWindow : Window
         var answer = MessageBox.Show(this, $"「{work.Title}」を一覧から外します。よろしいですか？",
             "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question);
         if (answer != MessageBoxResult.OK) return;
-        SelectedCategory?.Works.Remove(work);
+
+        var category = SelectedCategory;
+        if (category == null) return;
+        var at = category.Works.IndexOf(work);
+        category.Works.Remove(work);
+        session?.Undo.Record($"作品「{work.Title}」の削除", () => category.Works.Insert(at, work));
     }
 
     private void RefreshChanges()
@@ -936,6 +1015,14 @@ public partial class MainWindow : Window
             + (session.Links?.Cards.Count(card => card.HasError) ?? 0);
         SaveButton.IsEnabled = session.HasChanges && !session.HasError;
         RevertButton.IsEnabled = session.HasChanges;
+        UndoButton.IsEnabled = session.Undo.CanUndo;
+        UndoButton.ToolTip = session.Undo.NextLabel is { } next
+            ? $"「{next}」を元に戻します。"
+            : "戻せる手がありません（文字の打ち直しは、入力欄の中で Ctrl+Z です）。";
+        BackupButton.IsEnabled = session.Backups.LatestLabel != null;
+        BackupButton.ToolTip = session.Backups.LatestLabel is { } taken
+            ? $"{taken} の保存を、書き込む前の中身に戻します。"
+            : "戻せる控えがありません。";
 
         StatusText.Text = errors > 0
             ? $"直すところが {errors} 件あります。赤い文字の欄を確認してください。"
@@ -954,6 +1041,95 @@ public partial class MainWindow : Window
             RefreshPublishState();   // 変更が無くなった瞬間だけ、git に聞き直します。
         }
         hadChanges = session.HasChanges;
+    }
+
+    // --- 1手ずつ戻す・保存の控え・近道 --------------------------------------
+
+    /// <summary>並べ替えは、実際に動いたときだけ覚えます（端で止まったときは覚えません）。</summary>
+    private void Moved<T>(string label, T item, Func<T, int> indexOf, Action<T, int> move, int offset)
+    {
+        var before = indexOf(item);
+        move(item, offset);
+        var after = indexOf(item);
+        if (after != before) session?.Undo.Record(label, () => move(item, before - after));
+    }
+
+    private void UndoClick(object sender, RoutedEventArgs e)
+    {
+        var label = session?.Undo.Undo();
+        if (label == null) return;
+        RefreshChanges();
+        StatusText.Text = $"「{label}」を元に戻しました。";
+    }
+
+    private void RestoreBackupClick(object sender, RoutedEventArgs e)
+    {
+        if (session == null) return;
+
+        var label = session.Backups.LatestLabel;
+        if (label == null)
+        {
+            MessageBox.Show(this, "戻せる控えがありません。", "確認", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var answer = MessageBox.Show(this,
+            $"いちばん新しい控え（{label}）を書き戻します。\n\n" +
+            "いまのファイルは、保存する前の中身に戻ります。よろしいですか？",
+            "保存を1つ前に戻しますか？", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+        if (answer != MessageBoxResult.OK) return;
+
+        IReadOnlyList<string> restored;
+        try
+        {
+            restored = session.Backups.Restore(session.Root);
+        }
+        catch (Exception error)
+        {
+            MessageBox.Show(this, error.Message, "戻せませんでした", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
+        var root = session.Root;
+        OpenSite(root);
+        RefreshPreview();
+        StatusText.Text = $"{restored.Count} ファイルを保存前に戻しました（{string.Join("、", restored)}）。";
+    }
+
+    private void ShortcutClick(object sender, RoutedEventArgs e)
+    {
+        var exe = Environment.ProcessPath;
+        if (exe == null)
+        {
+            MessageBox.Show(this, "EXEの場所が分かりませんでした。", "作れませんでした",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var result = Shortcut.Create(exe);
+        if (!result.Ok)
+        {
+            MessageBox.Show(this, result.Error ?? "作れませんでした。", "作れませんでした",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        MessageBox.Show(this,
+            "デスクトップとスタートメニューに近道を作りました。\n\n" + string.Join("\n", result.Created),
+            "作りました", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private void OpenLiveSiteClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var url = session == null ? "https://halkaclub.com/" : Sitemap.Origin(session.Root) + "/";
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch (Exception error)
+        {
+            MessageBox.Show(this, error.Message, "開けませんでした", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     // --- 公開 ---------------------------------------------------------------
@@ -1057,12 +1233,19 @@ public partial class MainWindow : Window
 
     private void SyncEnglishClick(object sender, RoutedEventArgs e)
     {
-        if (((FrameworkElement)sender).Tag is FieldPair pair) pair.SyncEnglishFromJapanese();
+        if (((FrameworkElement)sender).Tag is not FieldPair pair) return;
+        var before = pair.En.Value;
+        pair.SyncEnglishFromJapanese();
+        if (pair.En.Value != before) session?.Undo.Record("英語を合わせる", () => pair.En.Value = before);
     }
 
     private void SyncOptionEnglishClick(object sender, RoutedEventArgs e)
     {
-        if (((FrameworkElement)sender).Tag is OptionRow row) row.SyncEnglishFromJapanese();
+        if (((FrameworkElement)sender).Tag is not OptionRow row) return;
+        var before = row.Price.En.Value;
+        row.SyncEnglishFromJapanese();
+        if (row.Price.En.Value != before)
+            session?.Undo.Record("英語を合わせる", () => row.Price.En.Value = before);
     }
 
     // --- 依頼ページの文章 ---------------------------------------------------

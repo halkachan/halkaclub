@@ -71,6 +71,12 @@ public sealed class SiteSession
     public GameDocument? Games { get; }
     public PageMetaDocument? Meta { get; }
     public LinkGrid? Links { get; }
+
+    /// <summary>ボタンで起きたこと（追加・並べ替え・削除など）を、1手ずつ戻すための覚え書き。</summary>
+    public UndoStack Undo { get; } = new();
+
+    /// <summary>保存の直前に取る控え。「保存を1つ前に戻す」で使います。</summary>
+    public SaveBackups Backups { get; private set; } = new("");
     /// <summary>トップページのﾊﾙｶﾁｬﾝ。</summary>
     public ImageSlot? Profile { get; }
 
@@ -118,7 +124,8 @@ public sealed class SiteSession
         Links = links;
     }
 
-    public static SiteSession Load(string root)
+    /// <param name="backups">控えの置き場所。ふだんは省きます（いつもの場所を使います）。</param>
+    public static SiteSession Load(string root, SaveBackups? backups = null)
     {
         if (!SitePaths.IsSiteRoot(root))
             throw new InvalidDataException($"halkaclub のフォルダーではありません：{root}");
@@ -214,8 +221,10 @@ public sealed class SiteSession
         var utamazeText = utamazePage == null ? null : PageTextDocument.Load(PageTextDocument.Utamaze,
             ("うたまぜ！", utamazePage, SitePaths.Relative(root, utamazePage.Path), "/utamaze/"));
 
-        return new SiteSession(root, files, groups, works, commissionText, utamazeText, utamaze, worksPage,
-            news, clubUpdate, games, meta, profile, links);
+        var session = new SiteSession(root, files, groups, works, commissionText, utamazeText, utamaze,
+            worksPage, news, clubUpdate, games, meta, profile, links);
+        session.Backups = backups ?? SaveBackups.For(root);
+        return session;
     }
 
     private static EditGroup BuildLinks(string root, SiteFile home)
@@ -457,6 +466,13 @@ public sealed class SiteSession
         // 画像を差し替えるときは、読み込み側の `?v=` も上げます。
         // 上げないと、見る人のブラウザが古い画像をしばらく掴んだままになります。
         foreach (var image in Images) image.Bump(files);
+
+        // 書き換わるファイルの控えを取ってから書き込みます。
+        Backups.Take(Root, files
+            .Where(file => file.Dirty)
+            .Select(file => SitePaths.Relative(Root, file.Path))
+            .Concat(Images.Where(image => image.SourcePath != null).Select(image => image.Relative)));
+
         foreach (var file in files) file.Save();
         // 画像を写すのは、文章の書き込みが全部すんでからにします。
         foreach (var image in Images) image.Copy();
@@ -468,6 +484,8 @@ public sealed class SiteSession
         ClubUpdate?.MarkSaved();
         Games?.MarkSaved();
         Links?.MarkSaved();
+        // 保存したあとは、戻せる手を数え直します（戻しても保存前には戻らないため）。
+        Undo.Clear();
     }
 
     public void Revert()
@@ -481,5 +499,6 @@ public sealed class SiteSession
         Games?.Revert();
         Links?.Revert();
         foreach (var image in Images) image.Clear();
+        Undo.Clear();
     }
 }
