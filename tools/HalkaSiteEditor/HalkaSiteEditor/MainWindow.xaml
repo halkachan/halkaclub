@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:HalkaSiteEditor"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="HALKA SITE EDITOR v1.3" Icon="Assets/site-editor.ico"
+        Title="HALKA SITE EDITOR v1.4" Icon="Assets/site-editor.ico"
         Width="1660" Height="900" MinWidth="1000" MinHeight="640"
         Background="#16191E" Foreground="#E4E8EC" FontFamily="Yu Gothic UI" FontSize="13"
         Loaded="WindowLoaded" Closing="WindowClosing">
@@ -508,6 +508,8 @@
                   Click="RestoreBackupClick" IsEnabled="False" Margin="14,3,3,3"/>
           <Button DockPanel.Dock="Left" Content="サイトを開く" Click="OpenLiveSiteClick" Margin="3"
                   ToolTip="halkaclub.com をブラウザーで開きます。"/>
+          <Button DockPanel.Dock="Left" Content="点検する" Click="CheckClick" Margin="3"
+                  ToolTip="リンク切れ・画像の欠け・?v= の付け忘れなどを、まとめて見ます。"/>
           <TextBlock/>
         </DockPanel>
         <ListView x:Name="ChangeList" Background="#242A33" Foreground="#EDF0F3" BorderBrush="#2F3845">

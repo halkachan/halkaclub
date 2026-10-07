@@ -39,6 +39,16 @@ public static class SitePaths
     public static string CommissionJa(string root) => Path.Combine(root, "commission", "index.html");
     public static string CommissionEn(string root) => Path.Combine(root, "commission", "en", "index.html");
 
+    /// <summary>ツールが見ないフォルダー（開発用のもの）。</summary>
+    private static readonly string[] Skip = { "tools", "unity-project", ".git", "node_modules", "dist" };
+
+    /// <summary>サイトの中のページ（*.html）を全部。開発用のフォルダーは外します。</summary>
+    public static IEnumerable<string> AllPages(string root) =>
+        Directory.EnumerateFiles(root, "*.html", SearchOption.AllDirectories)
+            .Where(path => !Skip.Any(folder =>
+                Relative(root, path).StartsWith(folder + "/", StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase);
+
     /// <summary>ルートからの相対パスを、画面表示用に "/" 区切りで返します。</summary>
     public static string Relative(string root, string path) =>
         Path.GetRelativePath(root, path).Replace(Path.DirectorySeparatorChar, '/');

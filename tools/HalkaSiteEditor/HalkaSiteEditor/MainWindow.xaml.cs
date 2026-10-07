@@ -1119,6 +1119,12 @@ public partial class MainWindow : Window
             "作りました", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
+    private void CheckClick(object sender, RoutedEventArgs e)
+    {
+        if (session == null) return;
+        new CheckWindow(session) { Owner = this }.ShowDialog();
+    }
+
     private void OpenLiveSiteClick(object sender, RoutedEventArgs e)
     {
         try

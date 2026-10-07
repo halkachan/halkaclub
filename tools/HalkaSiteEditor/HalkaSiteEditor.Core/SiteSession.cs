@@ -133,9 +133,16 @@ public sealed class SiteSession
         var files = new List<SiteFile>();
         SiteFile Open(string path)
         {
-            var file = SiteFile.Load(path);
-            files.Add(file);
-            return file;
+            // 同じファイルを2回開くと、片方の書き込みがもう片方に上書きされて消えます
+            // （index.html は「リンク」「うれしいこと」「ページの顔」から開かれます）。
+            var full = Path.GetFullPath(path);
+            var already = files.FirstOrDefault(file =>
+                string.Equals(file.Path, full, StringComparison.OrdinalIgnoreCase));
+            if (already != null) return already;
+
+            var opened = SiteFile.Load(full);
+            files.Add(opened);
+            return opened;
         }
 
         var style = Open(SitePaths.StyleCss(root));
@@ -186,6 +193,10 @@ public sealed class SiteSession
                 "ゲーム集の一覧と、各ゲームのページです。更新履歴は新しいものが上から並びます。",
                 games.Fields.ToArray()));
         }
+
+        // 残りのページも開いておきます。style.css のように、たくさんのページから読まれて
+        // いるものの ?v= をそろえるためと、公開するファイルを取りこぼさないためです。
+        foreach (var page in SitePaths.AllPages(root)) Open(page);
 
         // トップページのリンク集（増やす・並べ替える・減らす）。
         var links = LinkGrid.Load(home, SitePaths.Relative(root, home.Path));
@@ -451,10 +462,23 @@ public sealed class SiteSession
         // （文章側は書き換え後のファイルを見て作るので、どちらの変更も残ります）。
         foreach (var field in Fields) field.Apply();
 
-        // 作品一覧を変えたら、読み込み側の ?v= を上げます。
-        // 上げないと、見る人のブラウザが古い works-data.js を掴んだままになります。
-        if (Works.HasChanges && worksPage != null)
-            CacheBuster.Bump(worksPage, "works-data.js");
+        // 読み込み側の ?v= を上げます。上げないと、見る人のブラウザが
+        // 古いものを最大10分（GitHub Pages の max-age=600）掴んだままになります。
+        // どれも、たくさんのページから読まれているので、全ページの番号をそろえます。
+        var shared = new List<(string Path, string Resource)>
+        {
+            (SitePaths.StyleCss(Root), "style.css"),
+            (SitePaths.ScriptJs(Root), "script.js"),
+        };
+        if (Works.HasChanges) shared.Add((SitePaths.WorksData(Root), "works-data.js"));
+
+        foreach (var (path, resource) in shared)
+        {
+            var changed = files.FirstOrDefault(file =>
+                string.Equals(file.Path, Path.GetFullPath(path), StringComparison.OrdinalIgnoreCase));
+            if (changed?.Dirty != true && resource != "works-data.js") continue;
+            foreach (var file in files) CacheBuster.Bump(file, resource);
+        }
 
         Works.Apply();
         foreach (var document in TextDocuments) document.Apply();

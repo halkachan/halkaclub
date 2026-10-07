@@ -138,7 +138,8 @@ video.Revert();
 
 var styleBefore = Newlines(Path.Combine(sandbox, "style.css"));
 var indexBefore = Newlines(Path.Combine(sandbox, "index.html"));
-var untouchedBefore = File.ReadAllBytes(Path.Combine(sandbox, "index.html"));
+var untouchedBefore = File.ReadAllText(Path.Combine(sandbox, "index.html"));
+var styleVersionBefore = CacheBuster.Current(untouchedBefore, "style.css");
 
 var priceJa = commission.Pairs[1].Ja;
 var priceEn = commission.Pairs[1].En;
@@ -165,8 +166,18 @@ Check("保存した値が読み直せる",
 Check("改行コードが変わらない",
     Newlines(Path.Combine(sandbox, "style.css")) == styleBefore &&
     Newlines(Path.Combine(sandbox, "index.html")) == indexBefore);
-Check("触っていないファイルは1バイトも変わらない",
-    File.ReadAllBytes(Path.Combine(sandbox, "index.html")).SequenceEqual(untouchedBefore));
+// 色を変えたので、style.css を読んでいるページは ?v= だけ上がります。
+// それ以外は1文字も変わりません。
+static string IgnoreStyleVersion(string text) =>
+    System.Text.RegularExpressions.Regex.Replace(text, @"style\.css\?v=\d+", "style.css?v=");
+
+var untouchedAfter = File.ReadAllText(Path.Combine(sandbox, "index.html"));
+Check("触っていない所は1文字も変わらない",
+    IgnoreStyleVersion(untouchedAfter) == IgnoreStyleVersion(untouchedBefore));
+Check("色を変えると、読んでいるページの番号が上がる",
+    CacheBuster.Current(untouchedAfter, "style.css") == styleVersionBefore + 1 &&
+    CacheBuster.Current(File.ReadAllText(Path.Combine(sandbox, "works", "index.html")), "style.css")
+        == styleVersionBefore + 1);
 
 var styleText = File.ReadAllText(Path.Combine(sandbox, "style.css"));
 Check("変えた値のまわりは元のまま",
@@ -742,7 +753,9 @@ var metaHome = meta.Pages.Single(page => page.Url == "/");
 var metaClub = meta.Pages.Single(page => page.Url == "/club/");
 
 Check("OGPのあるページだけ並べる",
-    meta.Pages.Count == 7 && meta.Pages.All(page => page.Url != "/game/gyugyu-rinchan/"));
+    meta.Pages.Count == 9 &&
+    meta.Pages.Any(page => page.Url == "/game/gyugyu-rinchan/") &&
+    meta.Pages.All(page => page.Url != "/game/mine-dungeon/"));
 Check("ページの顔を読める",
     metaHome.Fields.Single(field => field.Id.EndsWith(".title")).Value == "HALKA" &&
     metaHome.Fields.Single(field => field.Id.EndsWith(".ogDescription")).Value.StartsWith("HALKAのリンク集。歌ってみた") &&
@@ -1079,8 +1092,9 @@ Check("変えた色がファイルに入っている",
 Check("保存すると戻せる手は消える", !backupSession.Undo.CanUndo);
 
 var backupRestored = backups.Restore(sandbox);
+// 色を変えると、style.css を読んでいるページの ?v= も上がるので、控えはそのぶんも含みます。
 Check("控えから書き戻せる",
-    backupRestored.SequenceEqual(new[] { "style.css" }) &&
+    backupRestored.Contains("style.css") && backupRestored.Contains("index.html") &&
     File.ReadAllText(Path.Combine(sandbox, "style.css")).Contains($"--yellow: {yellowBefore};"));
 Check("戻したらその控えは消える", backups.Latest == null);
 
@@ -1112,6 +1126,96 @@ var mine = SaveBackups.For(sandbox);
 var other = SaveBackups.For(Path.Combine(Path.GetTempPath(), "halka-another-site"));
 Check("サイトごとに控えを分ける",
     mine.Folder != other.Folder && mine.SiteRoot == Path.GetFullPath(sandbox));
+
+// --- 同じファイルを何か所からも直す ----------------------------------------
+// index.html は「リンク」「うれしいこと」「ページの顔」から直せます。
+// 同じファイルを2回開いていると、片方の書き込みがもう片方に消されます。
+
+var sameFile = SiteSession.Load(sandbox);
+Check("同じファイルは1回だけ開く",
+    sameFile.ManagedFiles.Count(path => path == "index.html") == 1);
+
+sameFile.Groups.Single(group => group.Title == "リンク").Rows[0].Cells[0].Field.Value = "同時に直す名前";
+sameFile.Meta!.Pages.Single(page => page.Url == "/").Fields
+    .Single(field => field.Id.EndsWith(".ogDescription")).Value = "同時に直す説明";
+sameFile.News!.Items[0].Title = "同時に直す見出し";
+sameFile.Save();
+
+var sameFileText = File.ReadAllText(Path.Combine(sandbox, "index.html"));
+Check("3か所を同時に直しても、どれも消えない",
+    sameFileText.Contains("同時に直す名前") &&
+    sameFileText.Contains("同時に直す説明") &&
+    sameFileText.Contains("同時に直す見出し"));
+
+// --- v1.4：公開前の点検 -----------------------------------------------------
+
+var checkBackups = new SaveBackups(Path.Combine(Path.GetTempPath(), "halka-check-" + Guid.NewGuid().ToString("N")));
+var checkSession = SiteSession.Load(sandbox, checkBackups);
+var clean = SiteCheck.Run(checkSession);
+
+Check("行き先を見つけられる",
+    SiteCheck.Resolve(sandbox, Path.Combine(sandbox, "index.html"), "works/index.html") != null &&
+    SiteCheck.Resolve(sandbox, Path.Combine(sandbox, "index.html"), "commission/") != null &&
+    SiteCheck.Resolve(sandbox, Path.Combine(sandbox, "works", "index.html"), "../style.css") != null &&
+    SiteCheck.Resolve(sandbox, Path.Combine(sandbox, "index.html"), "/favicon.png?v=2") == null &&
+    SiteCheck.Resolve(sandbox, Path.Combine(sandbox, "index.html"), "../../windows/win.ini") == null);
+// このサンドボックスはページだけを写したものなので、CSSなどは欠けています。
+// ここで見るのは「ちゃんとある行き先を、まちがって出さないこと」です。
+Check("ちゃんとある行き先は出さない",
+    clean.All(issue => issue.Detail != "works/index.html" && issue.Detail != "../index.html" &&
+        issue.Detail != "commission/" && issue.Detail != "../style.css"));
+
+// わざと壊して、見つけられること。
+var broken = Path.Combine(sandbox, "works", "index.html");
+var brokenBefore = File.ReadAllText(broken);
+File.WriteAllText(broken, brokenBefore.Replace(
+    "<a class=\"small-sign\" href=\"../index.html\"", "<a class=\"small-sign\" href=\"../ないページ.html\""));
+var withBroken = SiteCheck.Run(SiteSession.Load(sandbox, checkBackups));
+Check("リンク切れを見つける",
+    withBroken.Any(issue => issue.What == "リンク切れ" && issue.Detail == "../ないページ.html" &&
+        issue.File == "works/index.html" && issue.Level == CheckLevel.Problem));
+File.WriteAllText(broken, brokenBefore);
+
+// HTMLのコメントの中は、まだ書いていない覚え書きなので見ない。
+var commented = Path.Combine(sandbox, "club", "index.html");
+var commentedBefore = File.ReadAllText(commented);
+File.WriteAllText(commented, commentedBefore.Replace("</head>",
+    "  <!-- あとで <a href=\"（これから決めるURL）\"> に替えます -->\n  </head>"));
+Check("コメントの中は見ない",
+    SiteCheck.Run(SiteSession.Load(sandbox, checkBackups))
+        .All(issue => !issue.Detail.Contains("これから決める")));
+File.WriteAllText(commented, commentedBefore);
+
+// 名前が同じでも、別のファイルを指していれば別もの扱い。
+Check("同じ名前の別ファイルは混ぜない",
+    clean.All(issue => issue.File != "utamaze/index.html" || !issue.Detail.StartsWith("style.css")));
+
+// ?v= の付け忘れを見つける。
+var noVersion = Path.Combine(sandbox, "works", "index.html");
+File.WriteAllText(noVersion, System.Text.RegularExpressions.Regex.Replace(
+    brokenBefore, @"works-data\.js\?v=\d+", "works-data.js"));
+Check("?v= の付け忘れを見つける",
+    SiteCheck.Run(SiteSession.Load(sandbox, checkBackups)).Any(issue =>
+        issue.What == "?v= が付いていません" && issue.Detail.StartsWith("works/works-data.js") &&
+        issue.File == "works/index.html"));
+File.WriteAllText(noVersion, brokenBefore);
+
+// sitemap が合っていなければ知らせる。
+var sitemapPath = Path.Combine(sandbox, "sitemap.xml");
+Sitemap.Write(sandbox);
+File.WriteAllText(sitemapPath, File.ReadAllText(sitemapPath)
+    .Replace("</urlset>", "  <url><loc>https://halkaclub.com/nowhere/</loc></url></urlset>"));
+Check("sitemapのずれを知らせる",
+    SiteCheck.Run(SiteSession.Load(sandbox, checkBackups))
+        .Any(issue => issue.What.Contains("sitemap.xml")));
+Sitemap.Write(sandbox);
+Check("作り直せば、そのお知らせは消える",
+    SiteCheck.Run(SiteSession.Load(sandbox, checkBackups))
+        .All(issue => !issue.What.Contains("sitemap.xml")));
+Check("改行コードは変えない",
+    Sitemap.Write(sandbox).Count == 0);
+
+try { Directory.Delete(checkBackups.Folder, recursive: true); } catch (Exception) { }
 
 // --- プレビュー用サーバー -------------------------------------------------
 
@@ -1221,10 +1325,13 @@ gitSession.Save();
 File.WriteAllText(Path.Combine(gitRoot, "unity-project", "other.txt"), "ユーザーが作業中\n");
 
 var pending = publisher.Pending(gitSession.ManagedFiles);
+// 色を変えると、style.css を読んでいるページの ?v= も上がります。
+// 大事なのは、作業中の unity-project が巻き込まれないことです。
 Check("公開対象はツールが扱うファイルだけ",
-    pending.Count == 1 && pending[0].Path == "style.css" && pending[0].Status == "変更");
+    pending.Any(file => file.Path == "style.css" && file.Status == "変更") &&
+    pending.All(file => !file.Path.StartsWith("unity-project/")));
 Check("メッセージの下書きができる",
-    GitPublisher.SuggestMessage(pending) == "配色を更新" &&
+    GitPublisher.SuggestMessage(new[] { new PendingFile("style.css", "変更") }) == "配色を更新" &&
     GitPublisher.SuggestMessage(new[]
     {
         new PendingFile("commission/index.html", "変更"),

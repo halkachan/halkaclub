@@ -66,13 +66,13 @@ public static class Sitemap
     public static IReadOnlyList<string> Write(string root)
     {
         var written = new List<string>();
-        foreach (var (name, text) in new[]
-                 {
-                     ("sitemap.xml", BuildSitemap(root)),
-                     ("robots.txt", BuildRobots(root)),
-                 })
+        foreach (var name in new[] { "sitemap.xml", "robots.txt" })
         {
             var path = Path.Combine(root, name);
+            // いまのファイルの改行コードのまま書きます（差分を改行だけで汚さないため）。
+            var newline = File.Exists(path) && File.ReadAllText(path).Contains("\r\n") ? "\r\n" : "\n";
+            var text = name == "sitemap.xml" ? BuildSitemap(root, newline) : BuildRobots(root, newline);
+
             if (File.Exists(path) && File.ReadAllText(path) == text) continue;
             File.WriteAllText(path, text, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             written.Add(name);
