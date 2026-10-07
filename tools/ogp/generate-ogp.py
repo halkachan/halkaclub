@@ -88,6 +88,12 @@ CARDS = [
           "Instrumental & original song production"],
          badge="Open for inquiries", art="assets/profile/halgif1.gif",
          tape_left="HALKA COMMISSION"),
+    Card("game-kagamine-challenge", "GAME 01", "かがみねちゃれんじ",
+         ["リンとレンの文字を揃えるルーレットゲーム。", "ブラウザでそのまま遊べます。"],
+         art="assets/profile/halgif1.gif", tape_left="HALKA GAME"),
+    Card("game-gyugyu-rinchan", "GAME 02", "ぎゅうぎゅうりんちゃん",
+         ["りんちゃんを落として押し出す。", "詰まったらパカーッと開けて解決。"],
+         art="assets/profile/halgif1.gif", tape_left="HALKA GAME"),
     Card("utamaze", "VOCAL MIXING PLUGIN", "うたまぜ！",
          [], style="utamaze", subtitle="歌のMIXを、もっとわかりやすく。",
          chips=["Windows", "VST3", "FREE + PRO"],
@@ -252,7 +258,10 @@ def draw_note_card(card: Card, fonts: "Yomogi") -> Image.Image:
     draw.rectangle([kx - 12, ky - 6, kx + kw + 12, ky + 40], fill=YELLOW)
     draw.text((kx, ky), card.kicker, font=kicker_font, fill=INK)
 
-    fonts.draw(draw, (114, 252), card.title, 92, INK)
+    title_size = 92
+    while title_size > 40 and fonts.width(draw, card.title, title_size) > 700:
+        title_size -= 4
+    fonts.draw(draw, (114, 252 + (92 - title_size) // 2), card.title, title_size, INK)
 
     ly = 392
     for line in card.lines:

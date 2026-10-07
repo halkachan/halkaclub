@@ -1034,10 +1034,10 @@ Check("見出しの改行は <br> で戻る",
     File.ReadAllText(utamazeHtml).Contains("<h2>まずはFREEから。<br>もっと詰めたい人にはPRO。</h2>"));
 Check("うたまぜ！も保存後は組み立て直しで1文字も変わらない",
     afterV12.UtamazeText!.Rebuild(afterUtamaze) == afterUtamaze.CurrentText);
-Check("文章を直せるページが3枚ならぶ",
-    afterV12.TextPages.Count == 3 &&
+Check("文章を直せるページが4枚ならぶ",
+    afterV12.TextPages.Count == 4 &&
     afterV12.TextPages.Select(page => page.Url)
-        .SequenceEqual(new[] { "/commission/", "/commission/en/", "/utamaze/" }));
+        .SequenceEqual(new[] { "/commission/", "/commission/en/", "/utamaze/", "/club/" }));
 
 // --- v1.3：1手ずつ戻す・保存の控え・近道 ------------------------------------
 
@@ -1216,6 +1216,67 @@ Check("改行コードは変えない",
     Sitemap.Write(sandbox).Count == 0);
 
 try { Directory.Delete(checkBackups.Folder, recursive: true); } catch (Exception) { }
+
+// --- v1.5：くらぶの文章・飾りの文字・ゲームのカード画像 ----------------------
+
+var v15 = SiteSession.Load(sandbox, new SaveBackups(
+    Path.Combine(Path.GetTempPath(), "halka-v15-" + Guid.NewGuid().ToString("N"))));
+var clubText = v15.ClubText ?? throw new Exception("くらぶの文章が読めません");
+var clubPage = clubText.Pages.Single();
+var clubHtml = Path.Combine(sandbox, "club", "index.html");
+
+Check("くらぶの文章を読める",
+    clubPage.Url == "/club/" && clubPage.Blocks.Count >= 6 &&
+    clubPage.Blocks.Any(block => block.Text.StartsWith("ここから先はYouTubeメンバーシップ")) &&
+    clubPage.Blocks.Any(block => block.Text.Contains("リンク、配布ファイルの外部共有は禁止です。")));
+Check("利用ルールは箇条書きとして読める",
+    clubPage.Blocks.Single(block => block.Label.Contains("【利用ルール】") && block.Label.EndsWith("箇条書き"))
+        .Text.Split("\n\n").Length == 3);
+Check("入口の注意は改行ごと読める",
+    clubPage.Blocks.Any(block => block.Label.EndsWith("入口の注意") &&
+        block.Text == "パスワードはYouTubeのメンバーシップ\n「はるかくらぶ」のコミュニティにあります"));
+Check("更新内容は、くらぶタブの受け持ちなので出てこない",
+    clubPage.Blocks.All(block => !block.Text.Contains("ページ作成")));
+Check("くらぶは組み立て直しても1文字も変わらない",
+    clubText.Rebuild(clubPage) == clubPage.CurrentText);
+Check("くらぶを読んだ直後は変更なし", !clubText.HasChanges && !v15.HasChanges);
+
+// 飾りの文字。
+var decor = v15.Groups.Single(group => group.Title == "飾りの文字");
+Check("テープの文字を読める",
+    decor.Rows.Any(row => row.Label == "index.html" &&
+        row.Cells[0].Field.Value == "HALKA" && row.Cells[1].Field.Value == "tap a note to open ↗") &&
+    decor.Rows.Any(row => row.Label == "club/index.html" &&
+        row.Cells[0].Field.Value == "HALKA CLUB"));
+Check("トップページの下も読める",
+    decor.Rows.Single(row => row.Label == "トップページの下").Cells[0].Field.Value == "© 2026 HALKA");
+
+// 直して、保存して、読み直せること。
+var rules = clubPage.Blocks.Single(block =>
+    block.Label.Contains("【利用ルール】") && block.Label.EndsWith("箇条書き"));
+rules.Text = rules.Text + "\n\nためしのルール。";
+decor.Rows.Single(row => row.Label == "index.html").Cells[1].Field.Value = "tap a note ↗";
+v15.Save();
+
+var afterV15 = SiteSession.Load(sandbox, v15.Backups);
+Check("くらぶの文章が読み直せる",
+    afterV15.ClubText!.Pages.Single().Blocks.Any(block => block.Text.EndsWith("ためしのルール。")) &&
+    File.ReadAllText(clubHtml).Contains("<li>ためしのルール。</li>"));
+Check("飾りの文字が読み直せる",
+    afterV15.Groups.Single(group => group.Title == "飾りの文字").Rows
+        .Single(row => row.Label == "index.html").Cells[1].Field.Value == "tap a note ↗");
+Check("くらぶも保存後は組み立て直しで1文字も変わらない",
+    afterV15.ClubText!.Rebuild(afterV15.ClubText.Pages.Single()) ==
+        afterV15.ClubText.Pages.Single().CurrentText);
+Check("くらぶの更新内容は、別のところから直せたまま",
+    afterV15.ClubUpdate!.Text.Contains("ページ作成"));
+
+// ゲームのカード画像。
+Check("ゲームごとのカード画像がある",
+    afterV15.Meta!.Pages.Single(page => page.Url == "/game/gyugyu-rinchan/").Card!.Relative
+        == "assets/ogp/game-gyugyu-rinchan.png" &&
+    afterV15.Meta.Pages.Single(page => page.Url == "/game/kagamine-challenge/").Card!.Current
+        is { Width: 1200, Height: 630 });
 
 // --- プレビュー用サーバー -------------------------------------------------
 

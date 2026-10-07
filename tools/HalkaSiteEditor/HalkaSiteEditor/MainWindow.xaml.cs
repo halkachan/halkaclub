@@ -108,6 +108,7 @@ public partial class MainWindow : Window
             block.PropertyChanged += TextBlockChanged;
 
         BindOptionalGroup("はるかくらぶ", ClubTab, ClubNote, ClubItems);
+        BindOptionalGroup("飾りの文字", DecorTab, DecorNote, DecorItems);
         BindOptionalGroup("うたまぜ！", UtamazeTab, UtamazeNote, UtamazeItems);
         BindWorks();
         BindRelease();

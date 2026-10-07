@@ -218,6 +218,33 @@ public sealed class PageTextDocument
         value => !value.Contains('<') && !value.Contains('&'),
         "ページ上部");
 
+    /// <summary>はるかくらぶのページ。</summary>
+    public static readonly TextProfile Club = new(
+        new Regex(
+            @"(?<ul><ul>)(?<ulInner>[\s\S]*?)</ul>" +
+            @"|(?<cp><h1>|<h2 id=""[^""]*"">|<p class=""(?:club-kicker|entrance-note)"">)" +
+            @"(?<cpInner>[\s\S]*?)</(?:h1|h2|p)>" +
+            // 段落の連なりは、案内文のところだけを拾います。更新内容（日付のすぐ下）は
+            // 「はるかくらぶ」タブが受け持つので、ここでは触りません。
+            @"|(?<=<div class=""club-intro"">\r?\n)" +
+            @"(?<run>(?:[ \t]*<p>(?:(?!</p>)[\s\S])*</p>\r?\n)+)",
+            RegexOptions.CultureInvariant),
+        new[]
+        {
+            new Regex(@"<h1>([^<]*)</h1>"),
+            new Regex(@"<h2 id=""[^""]*"">([^<]*)</h2>"),
+        },
+        name => name switch
+        {
+            "club-kicker" => "英語の小見出し",
+            "entrance-note" => "入口の注意",
+            "h1" or "h2" => "見出し",
+            _ => null,
+        },
+        "<br />",
+        value => !value.Contains('<') && !value.Contains('&'),
+        "ページ上部");
+
     private readonly TextProfile profile;
 
     public IReadOnlyList<PageTextPage> Pages { get; }

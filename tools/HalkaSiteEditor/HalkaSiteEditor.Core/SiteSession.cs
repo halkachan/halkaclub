@@ -58,13 +58,15 @@ public sealed class SiteSession
     public PageTextDocument CommissionText { get; }
     /// <summary>うたまぜ！の紹介ページの文章。そのページが無ければ null。</summary>
     public PageTextDocument? UtamazeText { get; }
+    /// <summary>はるかくらぶのページの文章。そのページが無ければ null。</summary>
+    public PageTextDocument? ClubText { get; }
 
     /// <summary>文章を直せるページを、まとめて並べます。</summary>
     public IReadOnlyList<PageTextPage> TextPages =>
-        CommissionText.Pages.Concat(UtamazeText?.Pages ?? Array.Empty<PageTextPage>()).ToArray();
+        TextDocuments.SelectMany(document => document.Pages).ToArray();
 
     private IEnumerable<PageTextDocument> TextDocuments =>
-        UtamazeText == null ? new[] { CommissionText } : new[] { CommissionText, UtamazeText };
+        new[] { CommissionText, UtamazeText, ClubText }.OfType<PageTextDocument>();
     public UtamazeRelease? Utamaze { get; }
     public NewsDocument? News { get; }
     public ParagraphRun? ClubUpdate { get; }
@@ -104,7 +106,7 @@ public sealed class SiteSession
 
     private SiteSession(string root, List<SiteFile> files, IReadOnlyList<EditGroup> groups,
         WorksDocument works, PageTextDocument commissionText, PageTextDocument? utamazeText,
-        UtamazeRelease? utamaze,
+        PageTextDocument? clubText, UtamazeRelease? utamaze,
         SiteFile? worksPage, NewsDocument? news, ParagraphRun? clubUpdate, GameDocument? games,
         PageMetaDocument? meta, ImageSlot? profile, LinkGrid? links)
     {
@@ -114,6 +116,7 @@ public sealed class SiteSession
         Works = works;
         CommissionText = commissionText;
         UtamazeText = utamazeText;
+        ClubText = clubText;
         Utamaze = utamaze;
         this.worksPage = worksPage;
         News = news;
@@ -198,6 +201,10 @@ public sealed class SiteSession
         // いるものの ?v= をそろえるためと、公開するファイルを取りこぼさないためです。
         foreach (var page in SitePaths.AllPages(root)) Open(page);
 
+        // 黄色いテープの文字など、ページの飾り。
+        var decor = BuildDecor(root, files);
+        if (decor != null) groups.Add(decor);
+
         // トップページのリンク集（増やす・並べ替える・減らす）。
         var links = LinkGrid.Load(home, SitePaths.Relative(root, home.Path));
 
@@ -232,8 +239,11 @@ public sealed class SiteSession
         var utamazeText = utamazePage == null ? null : PageTextDocument.Load(PageTextDocument.Utamaze,
             ("うたまぜ！", utamazePage, SitePaths.Relative(root, utamazePage.Path), "/utamaze/"));
 
-        var session = new SiteSession(root, files, groups, works, commissionText, utamazeText, utamaze,
-            worksPage, news, clubUpdate, games, meta, profile, links);
+        var clubText = clubFile == null ? null : PageTextDocument.Load(PageTextDocument.Club,
+            ("はるかくらぶ", clubFile, SitePaths.Relative(root, clubFile.Path), "/club/"));
+
+        var session = new SiteSession(root, files, groups, works, commissionText, utamazeText, clubText,
+            utamaze, worksPage, news, clubUpdate, games, meta, profile, links);
         session.Backups = backups ?? SaveBackups.For(root);
         return session;
     }
@@ -277,6 +287,55 @@ public sealed class SiteSession
         return new EditGroup(
             "リンク",
             "トップページのリンクです。上の大きいリンクは置き場所が決まっています。下のリンク集は、追加・並べ替え・削除ができます。",
+            fields, null, rows);
+    }
+
+    /// <summary>
+    /// 黄色いテープの文字と、トップページのフッター。
+    /// どのページにも同じ形で入っているので、ページごとに1行ずつ並べます。
+    /// </summary>
+    private static EditGroup? BuildDecor(string root, IReadOnlyList<SiteFile> files)
+    {
+        const string TapeLeft = @"(<div class=""yellow-tape""[^>]*>\s*<span>)([^<]*)(</span>)";
+        const string TapeRight =
+            @"(<div class=""yellow-tape""[^>]*>\s*<span>[^<]*</span>\s*<span>)([^<]*)(</span>)";
+        const string Copyright = @"(<footer>\s*<p>)([^<]*)(</p>)";
+        const string ToTop = @"(<a href=""#top"">)([^<]*)(</a>)";
+
+        var fields = new List<EditField>();
+        var rows = new List<FieldRow>();
+
+        EditField Field(SiteFile file, string pattern, string id, string label)
+        {
+            var field = new EditField(file, SitePaths.Relative(root, file.Path), new ValueSlot(pattern),
+                id, label, FieldKind.HtmlText);
+            fields.Add(field);
+            return field;
+        }
+
+        foreach (var file in files
+                     .Where(file => file.Path.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
+                     .Where(file => new ValueSlot(TapeRight).Count(file.Text) > 0)
+                     .OrderBy(file => SitePaths.Relative(root, file.Path), StringComparer.Ordinal))
+        {
+            var relative = SitePaths.Relative(root, file.Path);
+            rows.Add(new FieldRow(relative,
+                new FieldCell("左", Field(file, TapeLeft, $"decor.{relative}.left", $"{relative}：テープの左")),
+                new FieldCell("右", Field(file, TapeRight, $"decor.{relative}.right", $"{relative}：テープの右"))));
+        }
+
+        var home = files.FirstOrDefault(file =>
+            string.Equals(file.Path, Path.GetFullPath(SitePaths.IndexHtml(root)), StringComparison.OrdinalIgnoreCase));
+        if (home != null && new ValueSlot(Copyright).Count(home.Text) > 0)
+        {
+            rows.Add(new FieldRow("トップページの下",
+                new FieldCell("著作権の表示", Field(home, Copyright, "decor.copyright", "著作権の表示")),
+                new FieldCell("いちばん上へ戻る文字", Field(home, ToTop, "decor.toTop", "いちばん上へ戻る文字"))));
+        }
+
+        return rows.Count == 0 ? null : new EditGroup(
+            "飾りの文字",
+            "ページの上にある黄色いテープの文字と、トップページのいちばん下です。意味よりも雰囲気のための文字です。",
             fields, null, rows);
     }
 
