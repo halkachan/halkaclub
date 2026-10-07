@@ -15,7 +15,7 @@ using UnityEngine;
 
 namespace Halka.Game.Editor
 {
-    // Game regression checks after map authoring upgrades. The game stays ver2.0.
+    // Game regression checks retained for later game versions.
     public static class Version20Checks
     {
         private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
@@ -38,7 +38,8 @@ namespace Halka.Game.Editor
             var grass = UnityEngine.Object.FindFirstObjectByType<GrassField2D>();
             var playerMask = UnityEngine.Object.FindFirstObjectByType<PlayerGrassOcclusion>();
             var footsteps = UnityEngine.Object.FindFirstObjectByType<PlayerFootstepAudio>();
-            Check(GameVersion.Value == "2.0" && GameVersion.Label == "ver2.0", "game version unchanged");
+            Check((GameVersion.Value == "2.0" || GameVersion.Value == "2.1") &&
+                GameVersion.Label == "ver" + GameVersion.Value, "supported game version");
             Check(field != null && room != null && maps != null && area != null && world != null,
                 "both maps and runtime controller exist");
             Check(field.MapId == "first_field" && room.MapId == "halka_house" &&

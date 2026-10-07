@@ -40,7 +40,7 @@ namespace Halka.Game.Editor
         private const float SpritePixelsPerUnit = 64f;
         internal const float ArtworkFootOffset = GridWorld2D.TileWorldSize / 2f;
 
-        [MenuItem("HALKA/Prepare ver2.0 scene")]
+        [MenuItem("HALKA/Prepare ver2.1 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -404,7 +404,7 @@ namespace Halka.Game.Editor
             SetReference(houseArea, "cameraFollow", follow);
             SetReference(mapController, "houseArea", houseArea);
 
-            var autoObject = new GameObject("UI - auto living toggle");
+            var autoObject = new GameObject("AUTO living controller");
             var autoMode = autoObject.AddComponent<AutoModeController>();
             SetReference(autoMode, "input", input);
             SetReference(autoMode, "player", mover);
@@ -412,12 +412,17 @@ namespace Halka.Game.Editor
             SetReference(autoMode, "house", houseArea);
             SetReference(autoMode, "occupancy", occupancy);
             SetReference(autoMode, "crow", crowWander);
-            SetReference(input, "autoMode", autoMode);
+            var menuObject = new GameObject("UI - game menu");
+            var menu = menuObject.AddComponent<GameMenuController>();
+            SetReference(menu, "autoMode", autoMode);
+            SetReference(menu, "hud", hud);
+            SetReference(menu, "font", messageFont);
+            SetReference(input, "menu", menu);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.SaveAssets();
-            Debug.Log($"HALKA ver2.0 scene prepared from {map.MapId}: " +
+            Debug.Log($"HALKA ver{GameVersion.Value} scene prepared from {map.MapId}: " +
                 $"{map.Surfaces.Count} ground overrides and {map.Objects.Count} objects.");
         }
 

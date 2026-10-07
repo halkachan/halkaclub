@@ -22,10 +22,11 @@ namespace Halka.Game.Player
         private int routeIndex;
         private float lastUserAt;
         private float nextActionAt;
-        private GUIStyle buttonStyle;
+        private bool menuSuspended;
 
         public bool AutoEnabled { get; private set; }
         public bool Active { get; private set; }
+        public bool MenuSuspended => menuSuspended;
         public float LastUserAt => lastUserAt;
 
         private void Awake()
@@ -49,7 +50,7 @@ namespace Halka.Game.Player
 
         public void Tick(float now)
         {
-            if (!AutoEnabled || house.IsInside)
+            if (!AutoEnabled || menuSuspended || house.IsInside)
             {
                 if (Active) StopAuto();
                 return;
@@ -117,6 +118,12 @@ namespace Halka.Game.Player
             RecordUserAction(now);
         }
 
+        public void SetMenuSuspended(bool suspended, float now)
+        {
+            menuSuspended = suspended;
+            RecordUserAction(now);
+        }
+
         private void StopAuto()
         {
             if (Active) player.CancelStep();
@@ -125,31 +132,5 @@ namespace Halka.Game.Player
             routeIndex = 0;
         }
 
-        public bool IsOverControls(Vector2 screenPosition) =>
-            ButtonRect().Contains(new Vector2(screenPosition.x, Screen.height - screenPosition.y));
-
-        private Rect ButtonRect()
-        {
-            var safe = Screen.safeArea;
-            const float width = 114f;
-            const float height = 34f;
-            var x = Mathf.Clamp(safe.xMax - width - 12f, safe.xMin, safe.xMax - width);
-            return new Rect(x, Screen.height - safe.yMax + 44f, width, height);
-        }
-
-        private void OnGUI()
-        {
-            if (buttonStyle == null)
-            {
-                buttonStyle = new GUIStyle(GUI.skin.button)
-                {
-                    alignment = TextAnchor.MiddleCenter,
-                    fontSize = 15
-                };
-            }
-            var label = Active ? "AUTO: WALK" : AutoEnabled ? "AUTO: ON" : "AUTO: OFF";
-            if (GUI.Button(ButtonRect(), label, buttonStyle))
-                SetAutoEnabled(!AutoEnabled, Time.unscaledTime);
-        }
     }
 }

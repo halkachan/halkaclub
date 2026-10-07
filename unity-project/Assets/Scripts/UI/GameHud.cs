@@ -15,6 +15,8 @@ namespace Halka.Game.UI
         private GUIStyle versionStyle;
         private GUIStyle messageStyle;
 
+        public bool HasActiveMessage => !string.IsNullOrEmpty(message.TextAt(Time.unscaledTime));
+
         public void ShowMessage(string text) => message.Show(text, Time.unscaledTime, messageSeconds);
 
         private void OnGUI()

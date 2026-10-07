@@ -1,6 +1,6 @@
 using System;
 using Halka.Game.Interaction;
-using Halka.Game.Player;
+using Halka.Game.UI;
 using UnityEngine;
 
 namespace Halka.Game.Input
@@ -11,7 +11,7 @@ namespace Halka.Game.Input
         [SerializeField] private InteractionRouter interaction;
         [SerializeField] private TouchDpad dpad;
         [SerializeField] private TouchActionButton actionButton;
-        [SerializeField] private AutoModeController autoMode;
+        [SerializeField] private GameMenuController menu;
         [SerializeField, Min(1f)] private float clickMovementLimit = 24f;
 
         private Vector2 mouseStart;
@@ -27,6 +27,12 @@ namespace Halka.Game.Input
         private void Update()
         {
             if (UnityEngine.Input.touchCount > 0) lastTouchAt = Time.unscaledTime;
+            if (menu != null && menu.BlocksGameplayInput)
+            {
+                Direction = Vector2Int.zero;
+                pendingClick = false;
+                return;
+            }
             Direction = CardinalInput.Choose(
                 UnityEngine.Input.GetKey(KeyCode.W) || UnityEngine.Input.GetKey(KeyCode.UpArrow),
                 UnityEngine.Input.GetKey(KeyCode.S) || UnityEngine.Input.GetKey(KeyCode.DownArrow),
@@ -47,10 +53,11 @@ namespace Halka.Game.Input
 
         private bool IsOverControls(Vector2 position) =>
             dpad.IsOverControls(position) || actionButton.IsOverControls(position) ||
-            autoMode != null && autoMode.IsOverControls(position);
+            menu != null && menu.IsOverControls(position);
 
         private void OnGUI()
         {
+            if (menu != null && menu.BlocksGameplayInput) return;
             if (dpad.Visible && !dpad.PreviewMouse) return;
             if (UnityEngine.Input.touchCount > 0 || Time.unscaledTime - lastTouchAt < 0.25f) return;
             var current = Event.current;
