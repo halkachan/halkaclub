@@ -46,8 +46,8 @@
 ## 6. Production Build・公開
 
 - `ProjectBuilder.BuildWeb` 成功（同Backupの`webgl-build.log`）。Development Build OFF、Unity Splash/Logo OFF、`stripEngineCode=false`。Wasm 24,109,100 bytes、data 4,860,193 bytes。
-- 公開実装commit: 公開後に記入。
-- GitHub push / Pages deployment / 公開HTTP: 公開後に記入。
+- 公開実装commit: `6dbadb6ee21ffa0170ee88d0e9b9796c6ec9e03e`。`main`へのpush成功。Pages run `37631518452`は`success`（[Actions](https://github.com/halkachan/halkaclub/actions/runs/37631518452)）。
+- 公開HTTP: `/halkaworld/`と`/halkaworld/webgl/`が200。HPの現在Version、両Archive、WebGL `productVersion: "2.2"`を確認。新WasmとdataもHEADで200。公開WebGLの遠隔実操作は行っていない（ローカルProduction WebGLを操作）。
 - 公開URL: `https://halkaclub.com/halkaworld/`。
-- 最終git status: 公開後に記入。
+- 最終git status: 今回の作業ファイルはcommit済み。開始時から存在する`first_field.hwmap.json`の改行差による`M`と未追跡`backup-v05-20261006-174557/`を残し、どちらもcommit対象外とした。
 - ver2.3候補は家の中の家具（ベッド、クッション、机）。今回は未実装。
