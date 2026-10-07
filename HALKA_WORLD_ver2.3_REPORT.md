@@ -25,7 +25,7 @@
 - ローカル候補Buildに含まれるのは固定UIと現在のInteraction向け313文字の描画済みRGBA Atlas（2048×640 PNG）と字間数値のTextAsset。グリフ画像は通常のアンチエイリアスを維持し、Pixel Font風に無理に潰さない。対象文字のcoverageは生成時に公式TTFのcmapで確認。
 - 初回のブラウザ表示では線が細く読みにくかった。利用者の指摘に従い、Rasterize時に同色2pxの軽いStrokeを加え、Menuを18/20→20/22、Messageを24→26、Versionを16→18、Touch Aを26→28へ調整した。390×844の再起動後、Menu・AUTO・Life Log・数字・Version・Aの文字切れがないことを目視確認。
 - Dynamic Sign TextがAtlas未収録文字を含む場合は文字列全体を既存k8x12LへFallback。Fallbackにも字形がなければ`?`へ置き換えて空白化を避ける。既存k8x12Lは削除しない。
-- Raw Fontの公開前scan結果、WebGL表示とUI layoutの結果は後述。公式規約はRaw TTFの組込み可否と、このような再利用可能なBitmap Glyph Atlasの配布可否を個別に明記していない。Raw FontをBuildへ渡していないことは確認済みだが、Atlasが規約中の「フォントデータ」に該当しないと断定できないため、公開は保留する。
+- Raw Fontの公開前scan結果、WebGL表示とUI layoutの結果は後述。2026-10-07時点ではBitmap Glyph Atlasの扱いが規約に明記されていないことを理由に公開を保留した。その後、ユーザーはRaw Font Dataを配布せず現在のBitmap Atlas方式で公開する方針を明示した。2026-10-08に公式規約を再確認し、Rasterizeした画像利用を明示的に禁止する記載は確認できなかったため、この方針で公開作業を再開した。
 
 ## 4. 検証とローカルProduction Build
 
@@ -40,7 +40,15 @@
 ## 5. HP・Git・公開状態
 
 - HP現在Versionはver2.3。上Archiveはver2.3（指定日2026-10-07）→ver2.2→ver2.1、下Archiveはver2.0以前のまま。両Archiveに`open`属性はない。HP全体Fontは変更なし。
-- Raw Fontの再配布禁止は公式に明記されている一方、描画済み313文字と字間情報を配布してよいかは確認できなかった。ユーザーの「不明なら公開を止める」に従い、GitHub pushとGitHub Pagesへの公開は実施しない。現在の公開URL `https://halkaclub.com/halkaworld/` は旧版のまま。公開権利について作者から明示的な許諾または同等の確認が得られた後に公開可能。
-- ローカル実装Commit: `4a64938`、Branch: `codex/ver2.3-furniture-font`。公開先mainへmerge/pushしていない。ローカルの公式ページはver2.3だが、2026-10-08の公開URLへのHTTP確認では200応答かつ現在表示はver2.2だった。公開WebGL/Font表示は未確認。
+- 2026-10-07にはRaw Fontの再配布禁止とBitmap Atlasに関する明文の不在を理由に公開を保留した。2026-10-08、ユーザーはRaw Font非配布を守ったうえで現行Atlas方式による公開を明示的に指示した。公式規約の再確認でRasterize画像利用の明示的禁止は確認できず、公開手順を再開した。
+- ローカル実装Commit: `4a64938`、Branch: `codex/ver2.3-furniture-font`。公開先mainのSite Editor v1.6〜v1.9を含む最新`099e4be`を取り込み、merge commit `6f024f0`を作成。公開前のURLはver2.2だった。公開結果は以下の追記へ記録する。
 - 最終git status見込みは`M unity-project/Assets/Content/Maps/Authoring/first_field.hwmap.json`（開始時からの改行差）および`?? backup-v05-20261006-174557/`（既存の未追跡Backup）のみ。本レポートのCommit後に照合する。どちらも今回のCommit対象から除外する。
 - ver2.4候補はベンチ。今回、座りPoseや時間システムは実装していない。
+
+## 6. 2026-10-08 公開再開時の検証
+
+- `Version23Checks.Run`、`MapAuthoringChecks.Run`を最新main統合後のUnity 6000.3.10f1で再実行し成功。ログはrepo外Backupの`version23-publish-check.log`と`map-authoring-publish-check.log`に保存。UnityによるScene/Prefab再生成差分は開始時に存在しなかったため、検証後に復元して公開差分から除外した。
+- SITE EDITOR v1.9のテストは301/301成功。Windows改行で作品データ末尾のCRが失われる処理と依頼ページのRaw文章の比較を修正し、ver2.3履歴に合わせてWorld履歴テストの期待値を更新した。HALKA WORLD履歴の無変更再構築は元のHTMLを返すようにした。これらは別件Site Editorを最新mainから取り込んだ際の共存確認であり、ゲーム機能は変更していない。
+- 正式Map SHA-256は前記の開始時値と一致。`first_field.hwmap.json`の開始時からの改行差と既存未追跡BackupはCommitへ含めない。MAP EDITOR v0.6、GameVersion 2.3、HPのver2.3履歴を維持。
+- 公開前Raw Font scan: Git追跡ファイルとUnity Assets/WebGL内に「遊びメモ書き」のRaw TTF/OTF/WOFF/WOFF2/公式ZIPはなし。WebGL `.data`内にもRaw Font名・拡張子の一致はなし。Bitmap Atlas/metricsは保持。
+- Production WebGLは既存の最終成功Buildを使用。今回の公開再開でUnityのゲームソースを変更していないため再Buildしない。

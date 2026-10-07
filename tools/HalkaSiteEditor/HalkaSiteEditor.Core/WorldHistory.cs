@@ -297,7 +297,7 @@ public sealed class WorldHistory
 
     // --- 書き戻し -----------------------------------------------------------
 
-    public string Rebuild() => Block.Replace(file.Text,
+    public string Rebuild() => !HasChanges ? file.Text : Block.Replace(file.Text,
         match => match.Groups[1].Value + BuildBlock() + match.Groups[3].Value, 1);
 
     private string BuildBlock()

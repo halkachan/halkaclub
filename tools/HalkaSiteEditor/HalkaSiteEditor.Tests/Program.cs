@@ -193,7 +193,7 @@ Check("色を変えると、読んでいるページの番号が上がる",
     CacheBuster.Current(File.ReadAllText(Path.Combine(sandbox, "works", "index.html")), "style.css")
         == styleVersionBefore + 1);
 
-var styleText = File.ReadAllText(Path.Combine(sandbox, "style.css"));
+var styleText = File.ReadAllText(Path.Combine(sandbox, "style.css")).Replace("\r\n", "\n");
 Check("変えた値のまわりは元のまま",
     styleText.Contains("  --yellow: #ff0000;\n") && styleText.Contains("  --paper: #fffef6;\n"));
 Check("BOMは付けない", File.ReadAllBytes(Path.Combine(sandbox, "style.css"))[0] != 0xEF);
@@ -1339,11 +1339,11 @@ Check("番号つきの箇条書きも戻せる",
 
 Check("HALKA WORLD の更新履歴を読める",
     world.Archives.Count == 2 &&
-    world.Archives[0].Entries[0].Version == "ver2.2" &&
+    world.Archives[0].Entries[0].Version == "ver2.3" &&
     world.Archives[0].Entries[0].Date == "2026-10-07" &&
     world.Archives[1].Summary == "ver0.1 ～ ver2.0" &&
     world.Archives[1].Entries.Any(worldEntry => worldEntry.ItemLines().Count == 3));
-Check("いまの版も読める", world.CurrentVersion!.Value == "ver2.2");
+Check("いまの版も読める", world.CurrentVersion!.Value == "ver2.3");
 Check("HALKA WORLD は組み立て直しても1文字も変わらない",
     world.Rebuild() == File.ReadAllText(worldHtml));
 Check("読んだ直後は変更なし", !world.HasChanges && !legal.HasChanges && !v17.HasChanges);
@@ -1351,13 +1351,13 @@ Check("版はそろっている", !world.CanAlignVersion && world.VersionSummary
 
 // 新しい版を足す。
 var worldEntry = world.AddNewEntry()!;
-Check("前の版から1つ進める", worldEntry.Version == "ver2.3" && world.Archives[0].Entries[0] == worldEntry);
+Check("前の版から1つ進める", worldEntry.Version == "ver2.4" && world.Archives[0].Entries[0] == worldEntry);
 Check("中身が空なら誤りとして出る", worldEntry.HasError && world.HasError && v17.HasError);
 worldEntry.Items = "からすが2羽になりました。\nよるが来るようになりました。";
 Check("入れれば誤りが消える", !worldEntry.HasError && !world.HasError && world.HasChanges);
-Check("版が食い違ったことに気づく", world.CanAlignVersion && world.VersionSummary.Contains("ver2.3"));
+Check("版が食い違ったことに気づく", world.CanAlignVersion && world.VersionSummary.Contains("ver2.4"));
 world.AlignVersion();
-Check("ページの表記をそろえる", world.CurrentVersion.Value == "ver2.3" && !world.CanAlignVersion);
+Check("ページの表記をそろえる", world.CurrentVersion.Value == "ver2.4" && !world.CanAlignVersion);
 
 // 規約の文章も直す。
 var price = legalPage.Blocks.First(block => block.Label.StartsWith("販売価格") && block.Label.EndsWith("説明"));
@@ -1368,9 +1368,9 @@ v17.Save();
 var afterV17 = SiteSession.Load(sandbox, v17.Backups);
 var worldAfter = afterV17.World!;
 Check("足した版が読み直せる",
-    worldAfter.Archives[0].Entries[0].Version == "ver2.3" &&
+    worldAfter.Archives[0].Entries[0].Version == "ver2.4" &&
     worldAfter.Archives[0].Entries[0].ItemLines().Count == 2 &&
-    worldAfter.CurrentVersion!.Value == "ver2.3");
+    worldAfter.CurrentVersion!.Value == "ver2.4");
 Check("項目が2つ以上なら箇条書きで書く",
     File.ReadAllText(worldHtml).Contains("<li>からすが2羽になりました。</li>"));
 Check("もとが段落の件は段落のまま",
@@ -1395,7 +1395,7 @@ Check("消すのも変更一覧に出る",
 shrinkV17.Revert();
 Check("HALKA WORLD も元に戻せる",
     !shrinkV17.HasChanges && shrinkV17.World!.Archives.Count == 2 &&
-    shrinkV17.World.Archives[0].Entries[0].Version == "ver2.3");
+    shrinkV17.World.Archives[0].Entries[0].Version == "ver2.4");
 
 // --- v1.8：小さな抜けと、横断検索 -------------------------------------------
 

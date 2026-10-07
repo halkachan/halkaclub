@@ -183,7 +183,7 @@ public sealed class WorksDocument
 {
     // const worksData = [ ... ]; の中身ぜんぶ。手前の説明コメントには触れません。
     private static readonly Regex DataBlock =
-        new(@"(const worksData = \[)([\s\S]*)(\r?\n\];)", RegexOptions.CultureInvariant);
+        new(@"(const worksData = \[)([\s\S]*?)(\r?\n\];)", RegexOptions.CultureInvariant);
     private static readonly Regex CategoryBlock = new(
         @"\{\s*id: ""((?:[^""\\]|\\.)*)"",\s*name: ""((?:[^""\\]|\\.)*)"",\s*" +
         @"description: ""((?:[^""\\]|\\.)*)"",\s*works: \[([\s\S]*?)\r?\n    \],\s*\},",

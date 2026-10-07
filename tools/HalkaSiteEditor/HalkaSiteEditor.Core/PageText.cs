@@ -66,8 +66,8 @@ public sealed class PageTextBlock : INotifyPropertyChanged
     {
         Label = label;
         Hint = hint;
-        Original = original;
-        text = original;
+        Original = original.Replace("\r\n", "\n");
+        text = Original;
         Source = source;
         Shape = shape;
         Layouts = layouts;
@@ -109,7 +109,7 @@ public sealed class PageTextBlock : INotifyPropertyChanged
     /// <summary>保存したあと、新しいファイルの中身へ結び直します。</summary>
     internal void Rebind(string original, Match source, IReadOnlyList<ItemLayout> layouts)
     {
-        Original = original;
+        Original = original.Replace("\r\n", "\n");
         Source = source;
         Layouts = layouts;
         Raise(nameof(Original));
