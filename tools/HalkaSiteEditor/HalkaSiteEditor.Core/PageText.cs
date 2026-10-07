@@ -163,7 +163,9 @@ public sealed class PageTextDocument
         new Regex(
             @"<pre class=""template-text"" id=""request-template-text"">(?<raw>[\s\S]*?)</pre>" +
             @"|(?<ul><ul class=""(?:dot-list|caution-list|quote-list[^""]*)"">)(?<ulInner>[\s\S]*?)</ul>" +
-            @"|(?<cp><p class=""(?:request-lead|note-lead|note-strong|plan-sub-note|template-intro|template-note|payment-en)"">)(?<cpInner>[\s\S]*?)</p>" +
+            @"|(?<cp><h1>|<h2 id=""[^""]*"">|<h4 class=""plan-block-title"">|<span class=""plan-name"">" +
+            @"|<p class=""(?:request-lead|note-lead|note-strong|plan-sub-note|template-intro|template-note|payment-en)"">)" +
+            @"(?<cpInner>[\s\S]*?)</(?:h1|h2|h4|span|p)>" +
             @"|(?<run>(?:[ \t]*<p>(?:(?!</p>)[\s\S])*</p>\r?\n)+)",
             RegexOptions.CultureInvariant),
         new[]
@@ -174,6 +176,9 @@ public sealed class PageTextDocument
         },
         name => name switch
         {
+            "plan-name" => "項目の名前",
+            "h1" or "h2" => "見出し",
+            // plan-block-title は、その見出しそのものを名前に使うので null のままにします。
             "request-lead" => "リード文",
             "note-lead" => "書き出し",
             "note-strong" => "強調した注意",

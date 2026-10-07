@@ -291,7 +291,7 @@ public sealed class SiteSession
     }
 
     /// <summary>
-    /// 黄色いテープの文字と、トップページのフッター。
+    /// ページの大見出しと、黄色いテープの文字と、トップページのフッター。
     /// どのページにも同じ形で入っているので、ページごとに1行ずつ並べます。
     /// </summary>
     private static EditGroup? BuildDecor(string root, IReadOnlyList<SiteFile> files)
@@ -299,29 +299,45 @@ public sealed class SiteSession
         const string TapeLeft = @"(<div class=""yellow-tape""[^>]*>\s*<span>)([^<]*)(</span>)";
         const string TapeRight =
             @"(<div class=""yellow-tape""[^>]*>\s*<span>[^<]*</span>\s*<span>)([^<]*)(</span>)";
+        const string Heading = @"(<h1 id=""[^""]*"">)([^<]*)(</h1>)";
         const string Copyright = @"(<footer>\s*<p>)([^<]*)(</p>)";
         const string ToTop = @"(<a href=""#top"">)([^<]*)(</a>)";
 
         var fields = new List<EditField>();
         var rows = new List<FieldRow>();
 
-        EditField Field(SiteFile file, string pattern, string id, string label)
+        EditField Field(SiteFile file, string pattern, int index, string id, string label)
         {
-            var field = new EditField(file, SitePaths.Relative(root, file.Path), new ValueSlot(pattern),
+            var field = new EditField(file, SitePaths.Relative(root, file.Path), new ValueSlot(pattern, index),
                 id, label, FieldKind.HtmlText);
             fields.Add(field);
             return field;
         }
 
-        foreach (var file in files
-                     .Where(file => file.Path.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
-                     .Where(file => new ValueSlot(TapeRight).Count(file.Text) > 0)
-                     .OrderBy(file => SitePaths.Relative(root, file.Path), StringComparer.Ordinal))
+        var pages = files
+            .Where(file => file.Path.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(file => SitePaths.Relative(root, file.Path), StringComparer.Ordinal)
+            .ToArray();
+
+        // ページの大見出し（「リンク」「うれしいこと」「作品一覧」「ゲーム集」など）。
+        foreach (var file in pages)
         {
             var relative = SitePaths.Relative(root, file.Path);
-            rows.Add(new FieldRow(relative,
-                new FieldCell("左", Field(file, TapeLeft, $"decor.{relative}.left", $"{relative}：テープの左")),
-                new FieldCell("右", Field(file, TapeRight, $"decor.{relative}.right", $"{relative}：テープの右"))));
+            var found = ValueSlot.ReadAll(file.Text, Heading);
+            if (found.Count == 0) continue;
+
+            rows.Add(new FieldRow($"{relative} の見出し", found
+                .Select((heading, index) => new FieldCell(heading,
+                    Field(file, Heading, index, $"heading.{relative}.{index}", $"{relative}：{heading}")))
+                .ToArray()));
+        }
+
+        foreach (var file in pages.Where(file => new ValueSlot(TapeRight).Count(file.Text) > 0))
+        {
+            var relative = SitePaths.Relative(root, file.Path);
+            rows.Add(new FieldRow($"{relative} のテープ",
+                new FieldCell("左", Field(file, TapeLeft, 0, $"decor.{relative}.left", $"{relative}：テープの左")),
+                new FieldCell("右", Field(file, TapeRight, 0, $"decor.{relative}.right", $"{relative}：テープの右"))));
         }
 
         var home = files.FirstOrDefault(file =>
@@ -329,13 +345,14 @@ public sealed class SiteSession
         if (home != null && new ValueSlot(Copyright).Count(home.Text) > 0)
         {
             rows.Add(new FieldRow("トップページの下",
-                new FieldCell("著作権の表示", Field(home, Copyright, "decor.copyright", "著作権の表示")),
-                new FieldCell("いちばん上へ戻る文字", Field(home, ToTop, "decor.toTop", "いちばん上へ戻る文字"))));
+                new FieldCell("著作権の表示", Field(home, Copyright, 0, "decor.copyright", "著作権の表示")),
+                new FieldCell("いちばん上へ戻る文字", Field(home, ToTop, 0, "decor.toTop", "いちばん上へ戻る文字"))));
         }
 
         return rows.Count == 0 ? null : new EditGroup(
-            "飾りの文字",
-            "ページの上にある黄色いテープの文字と、トップページのいちばん下です。意味よりも雰囲気のための文字です。",
+            "見出しと飾り",
+            "各ページの大見出しと、上にある黄色いテープの文字、トップページのいちばん下です。" +
+            "ページの中の文章は「ページの文章」タブで直します。",
             fields, null, rows);
     }
 

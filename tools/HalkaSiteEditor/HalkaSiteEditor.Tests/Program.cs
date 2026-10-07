@@ -307,7 +307,14 @@ Check("文章のかたまりを両ページから拾う",
     jaPage.Blocks.Any(block => block.Label.Contains("歌ってみたMIX")) &&
     jaPage.Blocks.Any(block => block.Label.Contains("テンプレート本文")));
 Check("箇条書きは空行区切りで読める",
-    jaPage.Blocks.First(block => block.Label.Contains("歌ってみたMIX")).Text.Contains("ピッチ補正\n\nリズム補正"));
+    jaPage.Blocks.First(block => block.Label == "歌ってみたMIX：箇条書き")
+        .Text.Contains("ピッチ補正\n\nリズム補正"));
+Check("見出しと項目の名前も直せる",
+    jaPage.Blocks.Any(block => block.Label == "ページ上部：見出し" && block.Text == "依頼について") &&
+    jaPage.Blocks.Any(block => block.Label == "歌ってみたMIX：項目の名前" && block.Text == "歌ってみたMIX") &&
+    jaPage.Blocks.Any(block => block.Label == "依頼一覧：見出し" && block.Text == "依頼一覧") &&
+    jaPage.Blocks.Any(block => block.Label == "歌ってみたMIX：追加プラン" && block.Text == "追加プラン") &&
+    enPage.Blocks.Any(block => block.Label.EndsWith("：項目の名前")));
 Check("<br /> は改行として読める",
     jaPage.Blocks.Any(block => block.Text.Contains("\n") && !block.Text.Contains("<br")));
 Check("HTMLの印は画面に出さない",
@@ -330,12 +337,12 @@ Check("依頼ページ（日本語）は組み立て直しても1文字も変わ
 Check("依頼ページ（英語）は組み立て直しても1文字も変わらない", text.Rebuild(enPage) == enPage.CurrentText);
 Check("最初は変更なし", !text.HasChanges && !v5.HasChanges);
 
-var listBlock = jaPage.Blocks.First(block => block.Label.Contains("歌ってみたMIX"));
+var listBlock = jaPage.Blocks.First(block => block.Label == "歌ってみたMIX：箇条書き");
 listBlock.Text = "ピッチ補正\n\nリズム補正\n\nあたらしい項目";
 Check("箇条書きの増減が変更一覧に出る",
     text.HasChanges && v5.Changes().Any(row => row.Label.Contains("依頼ページ（日本語）")));
 
-var paragraph = jaPage.Blocks.First(block => block.Label.Contains("リテイク"));
+var paragraph = jaPage.Blocks.First(block => block.Label == "リテイクについて：説明");
 var paragraphWas = paragraph.Text;
 paragraph.Text = "ためしの説明。\n2行目。";
 
@@ -356,9 +363,9 @@ Check("保存すると変更なしに戻る", !v5.HasChanges && !text.HasChanges
 var afterSave = SiteSession.Load(sandbox);
 var afterJa = afterSave.CommissionText.Pages.Single(page => page.Title == "依頼ページ（日本語）");
 Check("書いた箇条書きが読み直せる",
-    afterJa.Blocks.First(block => block.Label.Contains("歌ってみたMIX")).Text.EndsWith("あたらしい項目"));
+    afterJa.Blocks.First(block => block.Label == "歌ってみたMIX：箇条書き").Text.EndsWith("あたらしい項目"));
 Check("書いた段落が読み直せる",
-    afterJa.Blocks.First(block => block.Label.Contains("リテイク")).Text == "ためしの説明。\n2行目。");
+    afterJa.Blocks.First(block => block.Label == "リテイクについて：説明").Text == "ためしの説明。\n2行目。");
 Check("保存後も組み立て直しで1文字も変わらない",
     afterSave.CommissionText.Rebuild(afterJa) == afterJa.CurrentText);
 Check("料金と文章を同じファイルで同時に直せる",
@@ -366,12 +373,12 @@ Check("料金と文章を同じファイルで同時に直せる",
     File.ReadAllText(Path.Combine(sandbox, "commission", "index.html")).Contains("plan-amount"));
 
 // 2回続けて保存しても、位置を見失わないこと。
-var again = afterJa.Blocks.First(block => block.Label.Contains("リテイク"));
+var again = afterJa.Blocks.First(block => block.Label == "リテイクについて：説明");
 again.Text = "もう一度ためす。";
 afterSave.Save();
 Check("続けて保存しても見失わない",
     SiteSession.Load(sandbox).CommissionText.Pages[0].Blocks
-        .First(block => block.Label.Contains("リテイク")).Text == "もう一度ためす。");
+        .First(block => block.Label == "リテイクについて：説明").Text == "もう一度ためす。");
 
 // --- v0.6：うたまぜ！のリリース切り替え -----------------------------------
 
@@ -1242,12 +1249,17 @@ Check("くらぶは組み立て直しても1文字も変わらない",
 Check("くらぶを読んだ直後は変更なし", !clubText.HasChanges && !v15.HasChanges);
 
 // 飾りの文字。
-var decor = v15.Groups.Single(group => group.Title == "飾りの文字");
+var decor = v15.Groups.Single(group => group.Title == "見出しと飾り");
 Check("テープの文字を読める",
-    decor.Rows.Any(row => row.Label == "index.html" &&
+    decor.Rows.Any(row => row.Label == "index.html のテープ" &&
         row.Cells[0].Field.Value == "HALKA" && row.Cells[1].Field.Value == "tap a note to open ↗") &&
-    decor.Rows.Any(row => row.Label == "club/index.html" &&
+    decor.Rows.Any(row => row.Label == "club/index.html のテープ" &&
         row.Cells[0].Field.Value == "HALKA CLUB"));
+Check("ページの大見出しを読める",
+    decor.Rows.Single(row => row.Label == "index.html の見出し").Cells
+        .Select(cell => cell.Field.Value).SequenceEqual(new[] { "リンク", "うれしいこと" }) &&
+    decor.Rows.Single(row => row.Label == "works/index.html の見出し").Cells[0].Field.Value == "作品一覧" &&
+    decor.Rows.Single(row => row.Label == "game/index.html の見出し").Cells[0].Field.Value == "ゲーム集");
 Check("トップページの下も読める",
     decor.Rows.Single(row => row.Label == "トップページの下").Cells[0].Field.Value == "© 2026 HALKA");
 
@@ -1255,16 +1267,19 @@ Check("トップページの下も読める",
 var rules = clubPage.Blocks.Single(block =>
     block.Label.Contains("【利用ルール】") && block.Label.EndsWith("箇条書き"));
 rules.Text = rules.Text + "\n\nためしのルール。";
-decor.Rows.Single(row => row.Label == "index.html").Cells[1].Field.Value = "tap a note ↗";
+decor.Rows.Single(row => row.Label == "index.html のテープ").Cells[1].Field.Value = "tap a note ↗";
+decor.Rows.Single(row => row.Label == "works/index.html の見出し").Cells[0].Field.Value = "さくひん一覧";
 v15.Save();
 
 var afterV15 = SiteSession.Load(sandbox, v15.Backups);
 Check("くらぶの文章が読み直せる",
     afterV15.ClubText!.Pages.Single().Blocks.Any(block => block.Text.EndsWith("ためしのルール。")) &&
     File.ReadAllText(clubHtml).Contains("<li>ためしのルール。</li>"));
-Check("飾りの文字が読み直せる",
-    afterV15.Groups.Single(group => group.Title == "飾りの文字").Rows
-        .Single(row => row.Label == "index.html").Cells[1].Field.Value == "tap a note ↗");
+Check("見出しと飾りが読み直せる",
+    afterV15.Groups.Single(group => group.Title == "見出しと飾り").Rows
+        .Single(row => row.Label == "index.html のテープ").Cells[1].Field.Value == "tap a note ↗" &&
+    File.ReadAllText(Path.Combine(sandbox, "works", "index.html"))
+        .Contains("<h1 id=\"works-title\">さくひん一覧</h1>"));
 Check("くらぶも保存後は組み立て直しで1文字も変わらない",
     afterV15.ClubText!.Rebuild(afterV15.ClubText.Pages.Single()) ==
         afterV15.ClubText.Pages.Single().CurrentText);

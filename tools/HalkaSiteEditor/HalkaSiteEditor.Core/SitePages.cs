@@ -53,7 +53,7 @@ public static class SitePages
             "依頼ページ" or "ページの文章" => "/commission/",
             "作品一覧" => "/works/",
             "はるかくらぶ" => "/club/",
-            "飾りの文字" => "/",
+            "見出しと飾り" => "/",
             "うたまぜ！" => "/utamaze/",
             "ゲーム" => "/game/",
             _ => "/",

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:HalkaSiteEditor"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="HALKA SITE EDITOR v1.5" Icon="Assets/site-editor.ico"
+        Title="HALKA SITE EDITOR v1.6" Icon="Assets/site-editor.ico"
         Width="1660" Height="900" MinWidth="1000" MinHeight="640"
         Background="#16191E" Foreground="#E4E8EC" FontFamily="Yu Gothic UI" FontSize="13"
         Loaded="WindowLoaded" Closing="WindowClosing">
@@ -870,7 +870,7 @@
         </DockPanel>
       </TabItem>
 
-      <TabItem Header="飾りの文字" x:Name="DecorTab">
+      <TabItem Header="見出しと飾り" x:Name="DecorTab">
         <DockPanel Margin="4,10,4,0">
           <TextBlock x:Name="DecorNote" DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap"
                      Margin="2,0,2,10"/>
