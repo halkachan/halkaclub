@@ -49,9 +49,9 @@ Check("sprite path safety", ProjectPaths.SpritePath(project, "Assets/Content/Wor
 Check("malformed JSON", Throws(() => MapFormat.ParseMap("{not json}")));
 Check("catalog v3 and action point serialization", catalog.FormatVersion == 3 &&
     catalog.ObjectById["bed_basic"].ActionPoints.Single().PoseKey == "bed_sleep" &&
-    catalog.ObjectById["bed_basic"].ActionPoints.Single().PlayerCellOffset == new GridCell(0, 1));
+    catalog.ObjectById["bed_basic"].ActionPoints.Single().PlayerCellOffset == new GridCell(0, -1));
 Check("bed sleep world cell", MapRules.ActionCell(new ObjectPlacement { RootCell = new GridCell(-5, 0) },
-    catalog.ObjectById["bed_basic"].ActionPoints.Single()) == new GridCell(-5, 1));
+    catalog.ObjectById["bed_basic"].ActionPoints.Single()) == new GridCell(-5, -1));
 Check("palette has no map type limits", catalog.Objects.All(o => o.AllowedMapTypes.Count == 0) &&
     catalog.Surfaces.All(s => s.AllowedMapTypes.Count == 0 && s.EditorSelectable));
 Check("passable cushion metadata", !catalog.ObjectById["cushion_basic"].BlocksMovement &&
@@ -142,7 +142,7 @@ var bed = houseMap.Objects.Single(o => o.DefinitionId == "bed_basic");
 Check("bed two by three", MapRules.FootprintCells(bed, catalog.ObjectById["bed_basic"]).Count() == 6 &&
     MapRules.BlocksMovement(houseMap, catalog, bed.RootCell));
 var actionOutside = MapFormat.Clone(houseMap);
-actionOutside.Objects.Single().RootCell = new GridCell(-6, 4);
+actionOutside.Objects.Single().RootCell = new GridCell(-6, -4);
 Check("action point outside map validation", MapRules.Validate(actionOutside, catalog).Any(i => i.Code == "actionBounds"));
 var oldJson = """
     {"format":"halka-world-map","formatVersion":1,"mapId":"legacy_field","displayName":"Legacy","bounds":{"minX":-10,"maxX":10,"minY":-6,"maxY":6},"surfaces":[],"objects":[],"markers":{"playerSpawn":{"x":0,"y":0},"crowSpawn":{"x":7,"y":2},"houseDoor":{"x":-7,"y":-4},"outsideEntry":{"x":-7,"y":-5},"houseFootprint":{"width":5,"height":2},"roadEnds":{"north":{"x":0,"y":6},"east":{"x":10,"y":-1},"south":{"x":2,"y":-6},"west":{"x":-10,"y":0}}}}

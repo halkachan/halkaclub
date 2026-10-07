@@ -83,7 +83,7 @@ namespace Halka.Game.Editor
             finally { UnityEngine.Object.DestroyImmediate(movedFixture); }
             var bed = interior.Objects.Single(item => item.Definition.StableId == "bed_basic").Definition;
             Check(bed.ActionPoints.Count == 1 && bed.ActionPoints[0].Id == "sleep_main" &&
-                bed.ActionPoints[0].PlayerCellOffset == new Vector2Int(0, 1) &&
+                bed.ActionPoints[0].PlayerCellOffset == new Vector2Int(0, -1) &&
                 bed.ActionPoints[0].PlayerFacing == WorldFacing.Up &&
                 bed.ActionPoints[0].ActionType == WorldActionType.Sleep &&
                 bed.ActionPoints[0].PoseKey == "bed_sleep" &&
@@ -375,8 +375,9 @@ namespace Halka.Game.Editor
                         root.GetComponentsInChildren<GridObstacle>().Length ==
                         definitions[index].EffectiveBlockedOffsets().Count(),
                         ids[index] + " runtime sprite, root position and blocked cells");
-                    Check(root.GetComponent<ExamineInteractable>() != null ==
-                        (definitions[index].Behavior == WorldObjectBehavior.Examine),
+                    Check((root.GetComponent<ExamineInteractable>() != null ||
+                           root.GetComponent<WorldObjectActionInteractable>() != null) ==
+                        (definitions[index].ActionPoints.Count > 0),
                         ids[index] + " runtime examine component");
                     if (ids[index] == "sign_basic")
                         Check(new SerializedObject(root.GetComponent<ExamineInteractable>())

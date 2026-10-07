@@ -37,7 +37,9 @@ namespace Halka.Game.UI
                     normal = { textColor = Color.black }
                 };
             }
-            GUI.Label(new Rect(Screen.width - 110f, 10f, 100f, 28f), GameVersion.Label, versionStyle);
+            GameBitmapFont.Draw(new Rect(Screen.width - 110f, 10f, 100f, 28f),
+                GameVersion.Label, 18, versionStyle.normal.textColor,
+                TextAnchor.MiddleRight, messageFont);
 
             var text = message.TextAt(Time.unscaledTime);
             if (string.IsNullOrEmpty(text)) return;
@@ -63,7 +65,8 @@ namespace Halka.Game.UI
             GUI.color = Color.white;
             var inner = new Rect(x + 2f, y + 2f, width - 4f, height - 4f);
             GUI.DrawTexture(inner, Texture2D.whiteTexture);
-            GUI.Label(inner, text, messageStyle);
+            GameBitmapFont.Draw(inner, text, 26, Color.black,
+                TextAnchor.MiddleCenter, messageFont);
         }
     }
 }

@@ -155,7 +155,15 @@ namespace Halka.Game.World
             var root = new GameObject(name);
             root.transform.SetParent(objectRoot, false);
             root.transform.position = world.CellToWorld(cell);
-            if (definition.Behavior == WorldObjectBehavior.Examine)
+            var authoredAction = definition.ActionPoints.Count > 0 &&
+                (definition.Footprint.x > 1 || definition.Footprint.y > 1 ||
+                 definition.Behavior == WorldObjectBehavior.None);
+            if (authoredAction)
+            {
+                var action = root.AddComponent<WorldObjectActionInteractable>();
+                action.Configure(definition, player, world, hud, placement.SignText);
+            }
+            else if (definition.Behavior == WorldObjectBehavior.Examine)
             {
                 var examine = root.AddComponent<ExamineInteractable>();
                 var message = definition.StableId == "sign_basic" &&
@@ -173,7 +181,7 @@ namespace Halka.Game.World
             var artRenderer = artwork.AddComponent<SpriteRenderer>();
             artRenderer.sprite = definition.PreviewSprite;
             artRenderer.sortingOrder = definition.RootedArtwork ? playerRenderer.sortingOrder - 1 : definition.SortingOrder;
-            if (definition.Behavior == WorldObjectBehavior.Examine)
+            if (authoredAction || definition.Behavior == WorldObjectBehavior.Examine)
                 artwork.AddComponent<BoxCollider2D>().size = definition.PreviewSprite.bounds.size;
             if (definition.RootedArtwork)
             {

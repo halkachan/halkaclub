@@ -1,3 +1,4 @@
+using Halka.Game.UI;
 using UnityEngine;
 
 namespace Halka.Game.Input
@@ -6,6 +7,7 @@ namespace Halka.Game.Input
     public sealed class TouchActionButton : MonoBehaviour
     {
         [SerializeField] private TouchDpad dpad;
+        [SerializeField] private Font fallbackFont;
         [SerializeField, Range(0.12f, 0.3f)] private float buttonFraction = 0.21f;
         [SerializeField, Min(48f)] private float minButtonPixels = 64f;
         [SerializeField, Min(64f)] private float maxButtonPixels = 152f;
@@ -80,7 +82,8 @@ namespace Halka.Game.Input
             GUI.color = activeFingerId != -1 || mouseHeld ? Color.white : new Color(1f, 1f, 1f, 0.78f);
             GUI.DrawTexture(bounds, background);
             GUI.color = Color.white;
-            GUI.Label(bounds, "A", labelStyle);
+            GameBitmapFont.Draw(bounds, "A", 28, Color.white,
+                TextAnchor.MiddleCenter, fallbackFont);
         }
 
         private void EnsureStyle()

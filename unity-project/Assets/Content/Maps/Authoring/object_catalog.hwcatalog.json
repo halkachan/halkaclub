@@ -260,7 +260,7 @@
           "id": "sleep_main",
           "playerCellOffset": {
             "x": 0,
-            "y": 1
+            "y": -1
           },
           "playerFacing": "up",
           "actionType": "sleep",

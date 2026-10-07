@@ -34,16 +34,18 @@ namespace Halka.Game.Editor
         private const string FootstepPath = "Assets/Content/Audio/footstep_one_step.wav";
         private const string CrowVoicePath = "Assets/Content/Audio/crow_voice.mp3";
         private const string MessageFontPath = "Assets/Content/Fonts/k8x12L.ttf";
+        private const string GameFontAtlasPath = "Assets/Resources/asobi_ui_atlas.png";
         private const string PlayerGrassMaskPath = "Assets/Content/World/player_grass_mask.png";
         private const string GrassPrefabPath = "Assets/Content/World/GrassDecoration.prefab";
         private const string GridPath = "Assets/Content/World/grid.png";
         private const float SpritePixelsPerUnit = 64f;
         internal const float ArtworkFootOffset = GridWorld2D.TileWorldSize / 2f;
 
-        [MenuItem("HALKA/Prepare ver2.2 scene")]
+        [MenuItem("HALKA/Prepare ver2.3 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
+            ConfigureGameFontAtlas();
             MapAuthoringImporter.SyncAll();
             var map = AssetDatabase.LoadAssetAtPath<MapDefinition>(MapPath);
             var houseMap = AssetDatabase.LoadAssetAtPath<MapDefinition>(HouseMapPath);
@@ -240,6 +242,7 @@ namespace Halka.Game.Editor
             var messageFont = AssetDatabase.LoadAssetAtPath<Font>(MessageFontPath);
             if (messageFont == null) throw new InvalidOperationException("k8x12L font is missing");
             SetReference(hud, "messageFont", messageFont);
+            SetReference(actionButton, "fallbackFont", messageFont);
             var interactionObject = new GameObject("Interaction Router");
             var interaction = interactionObject.AddComponent<InteractionRouter>();
             SetReference(interaction, "worldCamera", camera);
@@ -439,6 +442,14 @@ namespace Halka.Game.Editor
             PrepareScene();
             var output = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "halkaworld", "webgl"));
             Directory.CreateDirectory(output);
+            var buildFolder = Path.Combine(output, "Build");
+            if (Directory.Exists(buildFolder))
+                foreach (var file in Directory.GetFiles(buildFolder))
+                    if (file.EndsWith(".wasm", StringComparison.OrdinalIgnoreCase) ||
+                        file.EndsWith(".data", StringComparison.OrdinalIgnoreCase) ||
+                        file.EndsWith(".loader.js", StringComparison.OrdinalIgnoreCase) ||
+                        file.EndsWith(".framework.js", StringComparison.OrdinalIgnoreCase))
+                        File.Delete(file);
             var options = new BuildPlayerOptions
             {
                 scenes = new[] { ScenePath },
@@ -714,6 +725,22 @@ namespace Halka.Game.Editor
             var serialized = new SerializedObject(target);
             serialized.FindProperty(field).stringValue = value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ConfigureGameFontAtlas()
+        {
+            var importer = AssetImporter.GetAtPath(GameFontAtlasPath) as TextureImporter;
+            if (importer == null) throw new InvalidOperationException("Rasterized game UI glyph atlas is missing");
+            if (importer.textureType == TextureImporterType.Default &&
+                importer.filterMode == FilterMode.Bilinear && !importer.mipmapEnabled &&
+                importer.textureCompression == TextureImporterCompression.Uncompressed &&
+                importer.npotScale == TextureImporterNPOTScale.None) return;
+            importer.textureType = TextureImporterType.Default;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.mipmapEnabled = false;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.SaveAndReimport();
         }
 
         private static void SetVector2Int(UnityEngine.Object target, string field, Vector2Int value)
