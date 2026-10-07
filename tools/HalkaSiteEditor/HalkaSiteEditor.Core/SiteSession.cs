@@ -60,13 +60,17 @@ public sealed class SiteSession
     public PageTextDocument? UtamazeText { get; }
     /// <summary>はるかくらぶのページの文章。そのページが無ければ null。</summary>
     public PageTextDocument? ClubText { get; }
+    /// <summary>うたまぜ！の規約3ページの文章。無ければ null。</summary>
+    public PageTextDocument? LegalText { get; }
+    /// <summary>HALKA WORLD の更新履歴。そのページが無ければ null。</summary>
+    public WorldHistory? World { get; }
 
     /// <summary>文章を直せるページを、まとめて並べます。</summary>
     public IReadOnlyList<PageTextPage> TextPages =>
         TextDocuments.SelectMany(document => document.Pages).ToArray();
 
     private IEnumerable<PageTextDocument> TextDocuments =>
-        new[] { CommissionText, UtamazeText, ClubText }.OfType<PageTextDocument>();
+        new[] { CommissionText, UtamazeText, ClubText, LegalText }.OfType<PageTextDocument>();
     public UtamazeRelease? Utamaze { get; }
     public NewsDocument? News { get; }
     public ParagraphRun? ClubUpdate { get; }
@@ -99,14 +103,17 @@ public sealed class SiteSession
     public IEnumerable<EditField> Fields => Groups.SelectMany(group => group.Fields);
     public bool HasChanges => Fields.Any(field => field.Changed) || Works.HasChanges || TextDocuments.Any(document => document.HasChanges) || Utamaze?.HasChanges == true
         || News?.HasChanges == true || ClubUpdate?.Changed == true || Games?.HasChanges == true
-        || Images.Any(image => image.Changed) || Links?.HasChanges == true;
+        || Images.Any(image => image.Changed) || Links?.HasChanges == true
+        || World?.HasChanges == true;
     public bool HasError => Fields.Any(field => field.HasError) || Works.HasError || TextDocuments.Any(document => document.HasError) || Utamaze?.HasError == true
         || News?.HasError == true || ClubUpdate?.HasError == true || Games?.HasError == true
-        || Images.Any(image => image.HasError) || Links?.HasError == true;
+        || Images.Any(image => image.HasError) || Links?.HasError == true
+        || World?.HasError == true;
 
     private SiteSession(string root, List<SiteFile> files, IReadOnlyList<EditGroup> groups,
         WorksDocument works, PageTextDocument commissionText, PageTextDocument? utamazeText,
-        PageTextDocument? clubText, UtamazeRelease? utamaze,
+        PageTextDocument? clubText, PageTextDocument? legalText, WorldHistory? world,
+        UtamazeRelease? utamaze,
         SiteFile? worksPage, NewsDocument? news, ParagraphRun? clubUpdate, GameDocument? games,
         PageMetaDocument? meta, ImageSlot? profile, LinkGrid? links)
     {
@@ -117,6 +124,8 @@ public sealed class SiteSession
         CommissionText = commissionText;
         UtamazeText = utamazeText;
         ClubText = clubText;
+        LegalText = legalText;
+        World = world;
         Utamaze = utamaze;
         this.worksPage = worksPage;
         News = news;
@@ -242,8 +251,28 @@ public sealed class SiteSession
         var clubText = clubFile == null ? null : PageTextDocument.Load(PageTextDocument.Club,
             ("はるかくらぶ", clubFile, SitePaths.Relative(root, clubFile.Path), "/club/"));
 
+        // うたまぜ！の規約のページ。あるものだけを並べます。
+        var legalSources = new[]
+            {
+                ("特定商取引法に基づく表記", "legal"),
+                ("使用許諾契約（EULA）", "eula"),
+                ("プライバシーポリシー", "privacy"),
+            }
+            .Select(page => (page.Item1, Path.Combine(root, "utamaze", page.Item2, "index.html"), page.Item2))
+            .Where(page => File.Exists(page.Item2))
+            .Select(page => (Title: page.Item1, File: Open(page.Item2),
+                Relative: SitePaths.Relative(root, page.Item2), Url: $"/utamaze/{page.Item3}/"))
+            .ToArray();
+        var legalText = legalSources.Length == 0 ? null : PageTextDocument.Load(PageTextDocument.Legal, legalSources);
+
+        // HALKA WORLD の更新履歴。
+        var worldPath = Path.Combine(root, "halkaworld", "index.html");
+        var world = File.Exists(worldPath)
+            ? WorldHistory.Load(Open(worldPath), SitePaths.Relative(root, worldPath))
+            : null;
+
         var session = new SiteSession(root, files, groups, works, commissionText, utamazeText, clubText,
-            utamaze, worksPage, news, clubUpdate, games, meta, profile, links);
+            legalText, world, utamaze, worksPage, news, clubUpdate, games, meta, profile, links);
         session.Backups = backups ?? SaveBackups.For(root);
         return session;
     }
@@ -291,7 +320,7 @@ public sealed class SiteSession
     }
 
     /// <summary>
-    /// 黄色いテープの文字と、トップページのフッター。
+    /// ページの大見出しと、黄色いテープの文字と、トップページのフッター。
     /// どのページにも同じ形で入っているので、ページごとに1行ずつ並べます。
     /// </summary>
     private static EditGroup? BuildDecor(string root, IReadOnlyList<SiteFile> files)
@@ -299,43 +328,89 @@ public sealed class SiteSession
         const string TapeLeft = @"(<div class=""yellow-tape""[^>]*>\s*<span>)([^<]*)(</span>)";
         const string TapeRight =
             @"(<div class=""yellow-tape""[^>]*>\s*<span>[^<]*</span>\s*<span>)([^<]*)(</span>)";
+        const string Heading = @"(<h1 id=""[^""]*"">)([^<]*)(</h1>)";
+        // 大見出しの上に出ている英語。「うれしいこと」の年は「トップページ」タブの受け持ちなので外します。
+        const string Kicker = @"(<p>)([^<]*)(</p>\s*<h1 id=""(?!news-title)[^""]*"">)";
+        // ランダム作品の小見出し（大見出しが無いので、閉じ括弧で見分けます）。
+        const string LoneKicker = @"(<p>)([^<]*)(</p>\s*</div>)";
+        const string RandomWatch = @"(<span class=""random-work-watch"">)([^<]*)(</span>)";
         const string Copyright = @"(<footer>\s*<p>)([^<]*)(</p>)";
         const string ToTop = @"(<a href=""#top"">)([^<]*)(</a>)";
 
         var fields = new List<EditField>();
         var rows = new List<FieldRow>();
 
-        EditField Field(SiteFile file, string pattern, string id, string label)
+        EditField Field(SiteFile file, string pattern, int index, string id, string label)
         {
-            var field = new EditField(file, SitePaths.Relative(root, file.Path), new ValueSlot(pattern),
+            var field = new EditField(file, SitePaths.Relative(root, file.Path), new ValueSlot(pattern, index),
                 id, label, FieldKind.HtmlText);
             fields.Add(field);
             return field;
         }
 
-        foreach (var file in files
-                     .Where(file => file.Path.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
-                     .Where(file => new ValueSlot(TapeRight).Count(file.Text) > 0)
-                     .OrderBy(file => SitePaths.Relative(root, file.Path), StringComparer.Ordinal))
+        var pages = files
+            .Where(file => file.Path.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(file => SitePaths.Relative(root, file.Path), StringComparer.Ordinal)
+            .ToArray();
+
+        // ページの大見出し（「リンク」「うれしいこと」「作品一覧」「ゲーム集」など）。
+        foreach (var file in pages)
         {
             var relative = SitePaths.Relative(root, file.Path);
-            rows.Add(new FieldRow(relative,
-                new FieldCell("左", Field(file, TapeLeft, $"decor.{relative}.left", $"{relative}：テープの左")),
-                new FieldCell("右", Field(file, TapeRight, $"decor.{relative}.right", $"{relative}：テープの右"))));
+            var found = ValueSlot.ReadAll(file.Text, Heading);
+            if (found.Count == 0) continue;
+
+            rows.Add(new FieldRow($"{relative} の見出し", found
+                .Select((heading, index) => new FieldCell(heading,
+                    Field(file, Heading, index, $"heading.{relative}.{index}", $"{relative}：{heading}")))
+                .ToArray()));
+
+            var kickers = ValueSlot.ReadAll(file.Text, Kicker);
+            if (kickers.Count > 0)
+            {
+                rows.Add(new FieldRow($"{relative} の英語の小見出し", kickers
+                    .Select((kicker, index) => new FieldCell("見出しの上に出る文字",
+                        Field(file, Kicker, index, $"kicker.{relative}.{index}", $"{relative}：{kicker}")))
+                    .ToArray()));
+            }
+        }
+
+        foreach (var file in pages.Where(file => new ValueSlot(TapeRight).Count(file.Text) > 0))
+        {
+            var relative = SitePaths.Relative(root, file.Path);
+            rows.Add(new FieldRow($"{relative} のテープ",
+                new FieldCell("左", Field(file, TapeLeft, 0, $"decor.{relative}.left", $"{relative}：テープの左")),
+                new FieldCell("右", Field(file, TapeRight, 0, $"decor.{relative}.right", $"{relative}：テープの右"))));
         }
 
         var home = files.FirstOrDefault(file =>
             string.Equals(file.Path, Path.GetFullPath(SitePaths.IndexHtml(root)), StringComparison.OrdinalIgnoreCase));
+
+        // トップページの「ランダムに1本」まわり。
+        if (home != null && new ValueSlot(RandomWatch).Count(home.Text) > 0)
+        {
+            var cells = new List<FieldCell>
+            {
+                new("見るボタンの文字", Field(home, RandomWatch, 0, "decor.randomWatch", "ランダム作品：見るボタンの文字")),
+            };
+            if (new ValueSlot(LoneKicker).Count(home.Text) > 0)
+            {
+                cells.Insert(0, new FieldCell("小見出し",
+                    Field(home, LoneKicker, 0, "decor.randomKicker", "ランダム作品：小見出し")));
+            }
+            rows.Add(new FieldRow("トップページのランダム作品", cells.ToArray()));
+        }
         if (home != null && new ValueSlot(Copyright).Count(home.Text) > 0)
         {
             rows.Add(new FieldRow("トップページの下",
-                new FieldCell("著作権の表示", Field(home, Copyright, "decor.copyright", "著作権の表示")),
-                new FieldCell("いちばん上へ戻る文字", Field(home, ToTop, "decor.toTop", "いちばん上へ戻る文字"))));
+                new FieldCell("著作権の表示", Field(home, Copyright, 0, "decor.copyright", "著作権の表示")),
+                new FieldCell("いちばん上へ戻る文字", Field(home, ToTop, 0, "decor.toTop", "いちばん上へ戻る文字"))));
         }
 
         return rows.Count == 0 ? null : new EditGroup(
-            "飾りの文字",
-            "ページの上にある黄色いテープの文字と、トップページのいちばん下です。意味よりも雰囲気のための文字です。",
+            "見出しと飾り",
+            "各ページの大見出しと、上にある黄色いテープの文字、トップページのいちばん下です。" +
+            "ページの中の文章は「ページの文章」タブで直します。",
             fields, null, rows);
     }
 
@@ -505,6 +580,7 @@ public sealed class SiteSession
         .Concat(Games?.Changes() ?? Array.Empty<ChangeRow>())
         .Concat(Images.Select(image => image.Change()).OfType<ChangeRow>())
         .Concat(Links?.Changes() ?? Array.Empty<ChangeRow>())
+        .Concat(World?.Changes() ?? Array.Empty<ChangeRow>())
         .ToArray();
 
     /// <summary>入力内容をファイルへ書き込みます。</summary>
@@ -546,6 +622,7 @@ public sealed class SiteSession
         ClubUpdate?.Apply();
         Games?.Apply();
         Links?.Apply();
+        World?.Apply();
         // 画像を差し替えるときは、読み込み側の `?v=` も上げます。
         // 上げないと、見る人のブラウザが古い画像をしばらく掴んだままになります。
         foreach (var image in Images) image.Bump(files);
@@ -567,6 +644,7 @@ public sealed class SiteSession
         ClubUpdate?.MarkSaved();
         Games?.MarkSaved();
         Links?.MarkSaved();
+        World?.MarkSaved();
         // 保存したあとは、戻せる手を数え直します（戻しても保存前には戻らないため）。
         Undo.Clear();
     }
@@ -581,6 +659,7 @@ public sealed class SiteSession
         ClubUpdate?.Revert();
         Games?.Revert();
         Links?.Revert();
+        World?.Revert();
         foreach (var image in Images) image.Clear();
         Undo.Clear();
     }

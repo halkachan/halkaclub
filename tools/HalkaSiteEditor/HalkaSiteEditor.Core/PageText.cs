@@ -163,7 +163,9 @@ public sealed class PageTextDocument
         new Regex(
             @"<pre class=""template-text"" id=""request-template-text"">(?<raw>[\s\S]*?)</pre>" +
             @"|(?<ul><ul class=""(?:dot-list|caution-list|quote-list[^""]*)"">)(?<ulInner>[\s\S]*?)</ul>" +
-            @"|(?<cp><p class=""(?:request-lead|note-lead|note-strong|plan-sub-note|template-intro|template-note|payment-en)"">)(?<cpInner>[\s\S]*?)</p>" +
+            @"|(?<cp><h1>|<h2 id=""[^""]*"">|<h4 class=""plan-block-title"">|<span class=""plan-name"">" +
+            @"|<p class=""(?:request-lead|note-lead|note-strong|plan-sub-note|template-intro|template-note|payment-en)"">)" +
+            @"(?<cpInner>[\s\S]*?)</(?:h1|h2|h4|span|p)>" +
             @"|(?<run>(?:[ \t]*<p>(?:(?!</p>)[\s\S])*</p>\r?\n)+)",
             RegexOptions.CultureInvariant),
         new[]
@@ -174,6 +176,9 @@ public sealed class PageTextDocument
         },
         name => name switch
         {
+            "plan-name" => "項目の名前",
+            "h1" or "h2" => "見出し",
+            // plan-block-title は、その見出しそのものを名前に使うので null のままにします。
             "request-lead" => "リード文",
             "note-lead" => "書き出し",
             "note-strong" => "強調した注意",
@@ -239,6 +244,29 @@ public sealed class PageTextDocument
             "club-kicker" => "英語の小見出し",
             "entrance-note" => "入口の注意",
             "h1" or "h2" => "見出し",
+            _ => null,
+        },
+        "<br />",
+        value => !value.Contains('<') && !value.Contains('&'),
+        "ページ上部");
+
+    /// <summary>うたまぜ！の規約のページ（特定商取引法・使用許諾契約・プライバシーポリシー）。</summary>
+    public static readonly TextProfile Legal = new(
+        new Regex(
+            @"(?<ul><ul>|<ol>)(?<ulInner>[\s\S]*?)</(?:ul|ol)>" +
+            @"|(?<cp><h1 class=""doc-title"">|<h2>|<dt>|<dd>)(?<cpInner>[^<]*)</(?:h1|h2|dt|dd)>" +
+            @"|(?<run>(?:[ \t]*<p>(?:(?!</p>)[\s\S])*</p>\r?\n)+)",
+            RegexOptions.CultureInvariant),
+        new[]
+        {
+            new Regex(@"<h2>([^<]*)</h2>"),
+            new Regex(@"<dt>([^<]*)</dt>"),
+        },
+        name => name switch
+        {
+            "doc-title" => "ページの見出し",
+            "h2" => "見出し",
+            "dt" => "項目の名前",
             _ => null,
         },
         "<br />",
@@ -433,6 +461,9 @@ public sealed class PageTextDocument
 
             case BlockShape.List:
             {
+                // 開きタグから札の名前を取ります（<ul> でも <ol> でも同じ形で戻せます）。
+                var listTag = Regex.Match(match.Groups["ul"].Value, @"^<([a-z0-9]+)").Groups[1].Value;
+                if (listTag.Length == 0) listTag = "ul";
                 var builder = new StringBuilder(match.Groups["ul"].Value);
                 for (var i = 0; i < items.Length; i++)
                 {
@@ -440,7 +471,7 @@ public sealed class PageTextDocument
                     builder.Append('\n').Append(layout.Indent).Append(Element(profile, "li", items[i], layout));
                 }
                 var close = block.Layouts.Count > 0 ? block.Layouts[0].CloseIndent : "";
-                return builder.Append('\n').Append(close).Append("</ul>").ToString();
+                return builder.Append('\n').Append(close).Append($"</{listTag}>").ToString();
             }
 
             case BlockShape.ClassedParagraph:

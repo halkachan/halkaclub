@@ -37,6 +37,20 @@ static void CopySite(string from, string to)
         File.Copy(source, destination, overwrite: true);
     }
 
+    // うたまぜ！の規約と HALKA WORLD も、文章を直せるので複写します。
+    foreach (var relative in new[]
+             {
+                 "utamaze/legal/index.html", "utamaze/eula/index.html", "utamaze/privacy/index.html",
+                 "halkaworld/index.html",
+             })
+    {
+        var source = Path.Combine(from, relative.Replace('/', Path.DirectorySeparatorChar));
+        if (!File.Exists(source)) continue;
+        var destination = Path.Combine(to, relative.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+        File.Copy(source, destination, overwrite: true);
+    }
+
     // 画像も、差し替えの確認に使うので複写します。
     foreach (var image in Directory.GetFiles(Path.Combine(from, "assets", "ogp"), "*.png")
                  .Append(Path.Combine(from, "assets", "profile", "halgif1.gif")))
@@ -307,7 +321,14 @@ Check("文章のかたまりを両ページから拾う",
     jaPage.Blocks.Any(block => block.Label.Contains("歌ってみたMIX")) &&
     jaPage.Blocks.Any(block => block.Label.Contains("テンプレート本文")));
 Check("箇条書きは空行区切りで読める",
-    jaPage.Blocks.First(block => block.Label.Contains("歌ってみたMIX")).Text.Contains("ピッチ補正\n\nリズム補正"));
+    jaPage.Blocks.First(block => block.Label == "歌ってみたMIX：箇条書き")
+        .Text.Contains("ピッチ補正\n\nリズム補正"));
+Check("見出しと項目の名前も直せる",
+    jaPage.Blocks.Any(block => block.Label == "ページ上部：見出し" && block.Text == "依頼について") &&
+    jaPage.Blocks.Any(block => block.Label == "歌ってみたMIX：項目の名前" && block.Text == "歌ってみたMIX") &&
+    jaPage.Blocks.Any(block => block.Label == "依頼一覧：見出し" && block.Text == "依頼一覧") &&
+    jaPage.Blocks.Any(block => block.Label == "歌ってみたMIX：追加プラン" && block.Text == "追加プラン") &&
+    enPage.Blocks.Any(block => block.Label.EndsWith("：項目の名前")));
 Check("<br /> は改行として読める",
     jaPage.Blocks.Any(block => block.Text.Contains("\n") && !block.Text.Contains("<br")));
 Check("HTMLの印は画面に出さない",
@@ -330,12 +351,12 @@ Check("依頼ページ（日本語）は組み立て直しても1文字も変わ
 Check("依頼ページ（英語）は組み立て直しても1文字も変わらない", text.Rebuild(enPage) == enPage.CurrentText);
 Check("最初は変更なし", !text.HasChanges && !v5.HasChanges);
 
-var listBlock = jaPage.Blocks.First(block => block.Label.Contains("歌ってみたMIX"));
+var listBlock = jaPage.Blocks.First(block => block.Label == "歌ってみたMIX：箇条書き");
 listBlock.Text = "ピッチ補正\n\nリズム補正\n\nあたらしい項目";
 Check("箇条書きの増減が変更一覧に出る",
     text.HasChanges && v5.Changes().Any(row => row.Label.Contains("依頼ページ（日本語）")));
 
-var paragraph = jaPage.Blocks.First(block => block.Label.Contains("リテイク"));
+var paragraph = jaPage.Blocks.First(block => block.Label == "リテイクについて：説明");
 var paragraphWas = paragraph.Text;
 paragraph.Text = "ためしの説明。\n2行目。";
 
@@ -356,9 +377,9 @@ Check("保存すると変更なしに戻る", !v5.HasChanges && !text.HasChanges
 var afterSave = SiteSession.Load(sandbox);
 var afterJa = afterSave.CommissionText.Pages.Single(page => page.Title == "依頼ページ（日本語）");
 Check("書いた箇条書きが読み直せる",
-    afterJa.Blocks.First(block => block.Label.Contains("歌ってみたMIX")).Text.EndsWith("あたらしい項目"));
+    afterJa.Blocks.First(block => block.Label == "歌ってみたMIX：箇条書き").Text.EndsWith("あたらしい項目"));
 Check("書いた段落が読み直せる",
-    afterJa.Blocks.First(block => block.Label.Contains("リテイク")).Text == "ためしの説明。\n2行目。");
+    afterJa.Blocks.First(block => block.Label == "リテイクについて：説明").Text == "ためしの説明。\n2行目。");
 Check("保存後も組み立て直しで1文字も変わらない",
     afterSave.CommissionText.Rebuild(afterJa) == afterJa.CurrentText);
 Check("料金と文章を同じファイルで同時に直せる",
@@ -366,12 +387,12 @@ Check("料金と文章を同じファイルで同時に直せる",
     File.ReadAllText(Path.Combine(sandbox, "commission", "index.html")).Contains("plan-amount"));
 
 // 2回続けて保存しても、位置を見失わないこと。
-var again = afterJa.Blocks.First(block => block.Label.Contains("リテイク"));
+var again = afterJa.Blocks.First(block => block.Label == "リテイクについて：説明");
 again.Text = "もう一度ためす。";
 afterSave.Save();
 Check("続けて保存しても見失わない",
     SiteSession.Load(sandbox).CommissionText.Pages[0].Blocks
-        .First(block => block.Label.Contains("リテイク")).Text == "もう一度ためす。");
+        .First(block => block.Label == "リテイクについて：説明").Text == "もう一度ためす。");
 
 // --- v0.6：うたまぜ！のリリース切り替え -----------------------------------
 
@@ -753,8 +774,9 @@ var metaHome = meta.Pages.Single(page => page.Url == "/");
 var metaClub = meta.Pages.Single(page => page.Url == "/club/");
 
 Check("OGPのあるページだけ並べる",
-    meta.Pages.Count == 9 &&
+    meta.Pages.Count == 13 &&
     meta.Pages.Any(page => page.Url == "/game/gyugyu-rinchan/") &&
+    meta.Pages.Any(page => page.Url == "/utamaze/legal/") &&
     meta.Pages.All(page => page.Url != "/game/mine-dungeon/"));
 Check("ページの顔を読める",
     metaHome.Fields.Single(field => field.Id.EndsWith(".title")).Value == "HALKA" &&
@@ -1034,10 +1056,13 @@ Check("見出しの改行は <br> で戻る",
     File.ReadAllText(utamazeHtml).Contains("<h2>まずはFREEから。<br>もっと詰めたい人にはPRO。</h2>"));
 Check("うたまぜ！も保存後は組み立て直しで1文字も変わらない",
     afterV12.UtamazeText!.Rebuild(afterUtamaze) == afterUtamaze.CurrentText);
-Check("文章を直せるページが4枚ならぶ",
-    afterV12.TextPages.Count == 4 &&
-    afterV12.TextPages.Select(page => page.Url)
-        .SequenceEqual(new[] { "/commission/", "/commission/en/", "/utamaze/", "/club/" }));
+Check("文章を直せるページが7枚ならぶ",
+    afterV12.TextPages.Count == 7 &&
+    afterV12.TextPages.Select(page => page.Url).SequenceEqual(new[]
+    {
+        "/commission/", "/commission/en/", "/utamaze/", "/club/",
+        "/utamaze/legal/", "/utamaze/eula/", "/utamaze/privacy/",
+    }));
 
 // --- v1.3：1手ずつ戻す・保存の控え・近道 ------------------------------------
 
@@ -1242,12 +1267,17 @@ Check("くらぶは組み立て直しても1文字も変わらない",
 Check("くらぶを読んだ直後は変更なし", !clubText.HasChanges && !v15.HasChanges);
 
 // 飾りの文字。
-var decor = v15.Groups.Single(group => group.Title == "飾りの文字");
+var decor = v15.Groups.Single(group => group.Title == "見出しと飾り");
 Check("テープの文字を読める",
-    decor.Rows.Any(row => row.Label == "index.html" &&
+    decor.Rows.Any(row => row.Label == "index.html のテープ" &&
         row.Cells[0].Field.Value == "HALKA" && row.Cells[1].Field.Value == "tap a note to open ↗") &&
-    decor.Rows.Any(row => row.Label == "club/index.html" &&
+    decor.Rows.Any(row => row.Label == "club/index.html のテープ" &&
         row.Cells[0].Field.Value == "HALKA CLUB"));
+Check("ページの大見出しを読める",
+    decor.Rows.Single(row => row.Label == "index.html の見出し").Cells
+        .Select(cell => cell.Field.Value).SequenceEqual(new[] { "リンク", "うれしいこと" }) &&
+    decor.Rows.Single(row => row.Label == "works/index.html の見出し").Cells[0].Field.Value == "作品一覧" &&
+    decor.Rows.Single(row => row.Label == "game/index.html の見出し").Cells[0].Field.Value == "ゲーム集");
 Check("トップページの下も読める",
     decor.Rows.Single(row => row.Label == "トップページの下").Cells[0].Field.Value == "© 2026 HALKA");
 
@@ -1255,16 +1285,19 @@ Check("トップページの下も読める",
 var rules = clubPage.Blocks.Single(block =>
     block.Label.Contains("【利用ルール】") && block.Label.EndsWith("箇条書き"));
 rules.Text = rules.Text + "\n\nためしのルール。";
-decor.Rows.Single(row => row.Label == "index.html").Cells[1].Field.Value = "tap a note ↗";
+decor.Rows.Single(row => row.Label == "index.html のテープ").Cells[1].Field.Value = "tap a note ↗";
+decor.Rows.Single(row => row.Label == "works/index.html の見出し").Cells[0].Field.Value = "さくひん一覧";
 v15.Save();
 
 var afterV15 = SiteSession.Load(sandbox, v15.Backups);
 Check("くらぶの文章が読み直せる",
     afterV15.ClubText!.Pages.Single().Blocks.Any(block => block.Text.EndsWith("ためしのルール。")) &&
     File.ReadAllText(clubHtml).Contains("<li>ためしのルール。</li>"));
-Check("飾りの文字が読み直せる",
-    afterV15.Groups.Single(group => group.Title == "飾りの文字").Rows
-        .Single(row => row.Label == "index.html").Cells[1].Field.Value == "tap a note ↗");
+Check("見出しと飾りが読み直せる",
+    afterV15.Groups.Single(group => group.Title == "見出しと飾り").Rows
+        .Single(row => row.Label == "index.html のテープ").Cells[1].Field.Value == "tap a note ↗" &&
+    File.ReadAllText(Path.Combine(sandbox, "works", "index.html"))
+        .Contains("<h1 id=\"works-title\">さくひん一覧</h1>"));
 Check("くらぶも保存後は組み立て直しで1文字も変わらない",
     afterV15.ClubText!.Rebuild(afterV15.ClubText.Pages.Single()) ==
         afterV15.ClubText.Pages.Single().CurrentText);
@@ -1278,6 +1311,198 @@ Check("ゲームごとのカード画像がある",
     afterV15.Meta.Pages.Single(page => page.Url == "/game/kagamine-challenge/").Card!.Current
         is { Width: 1200, Height: 630 });
 
+// --- v1.7：規約の文章と、HALKA WORLD の更新履歴 -----------------------------
+
+var v17 = SiteSession.Load(sandbox, new SaveBackups(
+    Path.Combine(Path.GetTempPath(), "halka-v17-" + Guid.NewGuid().ToString("N"))));
+var legal = v17.LegalText ?? throw new Exception("規約の文章が読めません");
+var legalPage = legal.Pages.Single(page => page.Url == "/utamaze/legal/");
+var world = v17.World ?? throw new Exception("HALKA WORLD の更新履歴が読めません");
+var worldHtml = Path.Combine(sandbox, "halkaworld", "index.html");
+
+Check("規約3ページを読める",
+    legal.Pages.Count == 3 &&
+    legal.Pages.Select(page => page.Url).SequenceEqual(
+        new[] { "/utamaze/legal/", "/utamaze/eula/", "/utamaze/privacy/" }));
+Check("特定商取引法の項目を読める",
+    legalPage.Blocks.Any(block => block.Label == "製品名：項目の名前" && block.Text == "製品名") &&
+    legalPage.Blocks.Any(block => block.Label == "製品名：説明" &&
+        block.Text.StartsWith("Utamaze! PRO")) &&
+    legalPage.Blocks.Any(block => block.Label.StartsWith("販売価格")));
+Check("リンクが入っている項目には触らない",
+    legalPage.Blocks.All(block => !block.Text.Contains('<')));
+Check("規約は組み立て直しても1文字も変わらない",
+    legal.Pages.All(page => legal.Rebuild(page) == page.CurrentText));
+Check("番号つきの箇条書きも戻せる",
+    legal.Pages.Single(page => page.Url == "/utamaze/eula/").Blocks
+        .Any(block => block.Label.EndsWith("箇条書き")));
+
+Check("HALKA WORLD の更新履歴を読める",
+    world.Archives.Count == 2 &&
+    world.Archives[0].Entries[0].Version == "ver2.2" &&
+    world.Archives[0].Entries[0].Date == "2026-10-07" &&
+    world.Archives[1].Summary == "ver0.1 ～ ver2.0" &&
+    world.Archives[1].Entries.Any(worldEntry => worldEntry.ItemLines().Count == 3));
+Check("いまの版も読める", world.CurrentVersion!.Value == "ver2.2");
+Check("HALKA WORLD は組み立て直しても1文字も変わらない",
+    world.Rebuild() == File.ReadAllText(worldHtml));
+Check("読んだ直後は変更なし", !world.HasChanges && !legal.HasChanges && !v17.HasChanges);
+Check("版はそろっている", !world.CanAlignVersion && world.VersionSummary.Contains("そろっています"));
+
+// 新しい版を足す。
+var worldEntry = world.AddNewEntry()!;
+Check("前の版から1つ進める", worldEntry.Version == "ver2.3" && world.Archives[0].Entries[0] == worldEntry);
+Check("中身が空なら誤りとして出る", worldEntry.HasError && world.HasError && v17.HasError);
+worldEntry.Items = "からすが2羽になりました。\nよるが来るようになりました。";
+Check("入れれば誤りが消える", !worldEntry.HasError && !world.HasError && world.HasChanges);
+Check("版が食い違ったことに気づく", world.CanAlignVersion && world.VersionSummary.Contains("ver2.3"));
+world.AlignVersion();
+Check("ページの表記をそろえる", world.CurrentVersion.Value == "ver2.3" && !world.CanAlignVersion);
+
+// 規約の文章も直す。
+var price = legalPage.Blocks.First(block => block.Label.StartsWith("販売価格") && block.Label.EndsWith("説明"));
+price.Text = "2,500円（税込）";
+
+v17.Save();
+
+var afterV17 = SiteSession.Load(sandbox, v17.Backups);
+var worldAfter = afterV17.World!;
+Check("足した版が読み直せる",
+    worldAfter.Archives[0].Entries[0].Version == "ver2.3" &&
+    worldAfter.Archives[0].Entries[0].ItemLines().Count == 2 &&
+    worldAfter.CurrentVersion!.Value == "ver2.3");
+Check("項目が2つ以上なら箇条書きで書く",
+    File.ReadAllText(worldHtml).Contains("<li>からすが2羽になりました。</li>"));
+Check("もとが段落の件は段落のまま",
+    File.ReadAllText(worldHtml).Contains("<p>せいかつきろくを追加。</p>"));
+Check("直した規約が読み直せる",
+    afterV17.LegalText!.Pages.Single(page => page.Url == "/utamaze/legal/").Blocks
+        .Any(block => block.Text == "2,500円（税込）"));
+Check("保存後も組み立て直しで1文字も変わらない",
+    worldAfter.Rebuild() == File.ReadAllText(worldHtml) &&
+    afterV17.LegalText.Pages.All(page => afterV17.LegalText.Rebuild(page) == page.CurrentText));
+
+// 箱を増やして、消して、元に戻せること。
+var shrinkV17 = SiteSession.Load(sandbox, v17.Backups);
+var newArchive = shrinkV17.World!.AddNewArchive();
+newArchive.Summary = "ver3.1 ～ ver4.0";
+Check("新しい箱を作れる",
+    shrinkV17.World.Archives.Count == 3 && shrinkV17.World.Archives[0] == newArchive &&
+    shrinkV17.HasChanges);
+shrinkV17.World.Archives[1].Entries.RemoveAt(0);
+Check("消すのも変更一覧に出る",
+    shrinkV17.Changes().Any(row => row.Label.Contains("HALKA WORLD")));
+shrinkV17.Revert();
+Check("HALKA WORLD も元に戻せる",
+    !shrinkV17.HasChanges && shrinkV17.World!.Archives.Count == 2 &&
+    shrinkV17.World.Archives[0].Entries[0].Version == "ver2.3");
+
+// --- v1.8：小さな抜けと、横断検索 -------------------------------------------
+
+var v18 = SiteSession.Load(sandbox, new SaveBackups(
+    Path.Combine(Path.GetTempPath(), "halka-v18-" + Guid.NewGuid().ToString("N"))));
+
+Check("HALKA WORLD の遊びかたの説明を読める",
+    v18.World!.Controls!.Value.StartsWith("WASD・矢印キーで"));
+
+var v18Decor = v18.Groups.Single(group => group.Title == "見出しと飾り");
+Check("英語の小見出しを読める",
+    v18Decor.Rows.Single(row => row.Label == "index.html の英語の小見出し")
+        .Cells.Single().Field.Value == "links" &&
+    v18Decor.Rows.Single(row => row.Label == "works/index.html の英語の小見出し")
+        .Cells.Single().Field.Value == "works archive");
+Check("「うれしいこと」の年は、こちらに出さない",
+    v18Decor.Rows.Where(row => row.Label.Contains("英語の小見出し"))
+        .SelectMany(row => row.Cells).All(cell => cell.Field.Value != "2026"));
+Check("ランダム作品の文字も読める",
+    v18Decor.Rows.Single(row => row.Label == "トップページのランダム作品").Cells
+        .Select(cell => cell.Field.Value).SequenceEqual(new[] { "random pick", "YouTubeで見る ▶" }));
+
+// 横断検索。
+Check("何も打たなければ何も出さない", SiteSearch.Find(v18, "").Count == 0);
+Check("タブをまたいで探せる",
+    SiteSearch.Find(v18, "ピッチ補正").Any(hit => hit.Tab == "ページの文章") &&
+    SiteSearch.Find(v18, "YouTube").Any(hit => hit.Tab == "リンク") &&
+    SiteSearch.Find(v18, "ゲーム置き場").Any(hit => hit.Tab == "リンク"));
+Check("どこにあるかが分かる",
+    SiteSearch.Find(v18, "WASD").Single() is { Tab: "ゲーム" } wasd &&
+    wasd.Where.Contains("遊びかたの説明"));
+Check("見つかったあたりを切り出す",
+    SiteSearch.Find(v18, "せいかつきろく").Any(hit =>
+        hit.Tab == "ゲーム" && hit.Where.Contains("HALKA WORLD") &&
+        hit.Excerpt.Contains("せいかつきろく") &&
+        (hit.Target as string) == SiteSearch.WorldTarget));
+Check("大文字小文字は区別しない",
+    SiteSearch.Find(v18, "halka world").Count > 0 &&
+    SiteSearch.Find(v18, "HALKA WORLD").Count > 0);
+Check("見つからなければ空", SiteSearch.Find(v18, "こんな文字はどこにもありません").Count == 0);
+// 作品の題名は前のテストで書き換わっているので、いまの中身から取ります。
+var someWork = v18.Works.Categories.First().Works.First().Title;
+Check("移り先の目印が付いている",
+    SiteSearch.Find(v18, "ピッチ補正").First(hit => hit.Tab == "ページの文章").Target is PageTextPage &&
+    SiteSearch.Find(v18, someWork).First(hit => hit.Tab == "作品一覧").Target is WorkCategory);
+
+// 直したものも、そのまま探せること。
+v18.World.Controls.Value = "あたらしい操作の説明";
+Check("直した中身で探せる",
+    SiteSearch.Find(v18, "あたらしい操作").Count == 1 &&
+    SiteSearch.Find(v18, "WASD").Count == 0);
+v18.World.Controls.Revert();
+
+// --- v1.9：新しいページを自分で見つける -------------------------------------
+
+// あとからページが増えても、ツールに書き足さずに出てくること。
+var newPage = Path.Combine(sandbox, "blog", "index.html");
+Directory.CreateDirectory(Path.GetDirectoryName(newPage)!);
+File.WriteAllText(newPage,
+    "<!doctype html>\n<html lang=\"ja\">\n  <head>\n    <meta charset=\"utf-8\" />\n" +
+    "    <meta name=\"description\" content=\"あたらしいページです。\" />\n" +
+    "    <title>にっき | HALKA</title>\n" +
+    "    <meta property=\"og:title\" content=\"にっき | HALKA\" />\n" +
+    "    <meta property=\"og:description\" content=\"あたらしいページです。\" />\n" +
+    "    <meta property=\"og:image\" content=\"https://halkaclub.com/assets/ogp/home.png?v=1\" />\n" +
+    "    <meta property=\"og:image:alt\" content=\"HALKA\" />\n" +
+    "    <link rel=\"stylesheet\" href=\"../style.css?v=1\" />\n  </head>\n" +
+    "  <body>\n    <h1 id=\"blog-title\">にっき</h1>\n  </body>\n</html>\n");
+
+var found = SitePages.ForSite(sandbox);
+Check("新しいページを自分で見つける",
+    found.Any(page => page.Url == "/blog/" && page.Label == "blog"));
+Check("名前が決まっているページは、名前と並び順そのまま",
+    found[0].Url == "/" && found[0].Label == "トップページ" &&
+    found.Single(page => page.Url == "/game/gyugyu-rinchan/").Label == "ゲーム：gyugyu-rinchan");
+Check("新しいページはうしろに並ぶ",
+    found.Select(page => page.Url).ToList().IndexOf("/blog/") >
+    found.Select(page => page.Url).ToList().IndexOf("/halkaworld/"));
+
+var withNew = SiteSession.Load(sandbox, new SaveBackups(
+    Path.Combine(Path.GetTempPath(), "halka-v19-" + Guid.NewGuid().ToString("N"))));
+Check("新しいページの顔も直せる",
+    withNew.Meta!.Pages.Any(page => page.Url == "/blog/" &&
+        page.Fields.Any(field => field.Value == "にっき | HALKA")));
+Check("新しいページも sitemap に入る", Sitemap.Urls(sandbox).Contains("/blog/"));
+
+// 書き出されたプレイヤー（同じフォルダに Build があるもの）は、ページとして数えない。
+var player = Path.Combine(sandbox, "halkaworld", "webgl", "index.html");
+Directory.CreateDirectory(Path.Combine(sandbox, "halkaworld", "webgl", "Build"));
+File.WriteAllText(player, "<!doctype html><html><head><title>HALKA WORLD</title></head><body></body></html>");
+Check("書き出されたプレイヤーは数えない",
+    SitePages.ForSite(sandbox).All(page => page.Url != "/halkaworld/webgl/"));
+
+// 転送するだけのページも数えない。
+var moved = Path.Combine(sandbox, "mukashi", "index.html");
+Directory.CreateDirectory(Path.GetDirectoryName(moved)!);
+File.WriteAllText(moved,
+    "<!doctype html><html><head><meta http-equiv=\"refresh\" content=\"0; url=../\" />" +
+    "<title>移動しました | HALKA</title></head><body></body></html>");
+Check("転送するだけのページも数えない",
+    SitePages.ForSite(sandbox).All(page => page.Url != "/mukashi/"));
+
+Directory.Delete(Path.Combine(sandbox, "blog"), recursive: true);
+Directory.Delete(Path.Combine(sandbox, "mukashi"), recursive: true);
+Directory.Delete(Path.Combine(sandbox, "halkaworld", "webgl"), recursive: true);
+Check("片づけたら元どおり", SitePages.ForSite(sandbox).Count == 13);
+
 // --- プレビュー用サーバー -------------------------------------------------
 
 Check("URLから実ファイルへ",
@@ -1287,14 +1512,15 @@ Check("URLから実ファイルへ",
     PreviewServer.ResolveFile(sandbox, "/style.css") == Path.Combine(sandbox, "style.css"));
 Check("無いものは配らない",
     PreviewServer.ResolveFile(sandbox, "/nothing.html") == null &&
-    PreviewServer.ResolveFile(sandbox, "/halkaworld/") == null);
+    PreviewServer.ResolveFile(sandbox, "/harukaijiri/") == null);
 Check("フォルダーの外へは出られない",
     PreviewServer.ResolveFile(sandbox, "/../../windows/win.ini") == null &&
     PreviewServer.ResolveFile(sandbox, "/commission/../../..") == null);
 
 Check("出せるページだけ並べる",
     SitePages.ForSite(sandbox).Select(page => page.Url).SequenceEqual(
-        new[] { "/", "/commission/", "/commission/en/", "/works/", "/club/", "/utamaze/", "/game/",
+        new[] { "/", "/commission/", "/commission/en/", "/works/", "/club/", "/utamaze/",
+                "/utamaze/legal/", "/utamaze/eula/", "/utamaze/privacy/", "/game/", "/halkaworld/",
                 "/game/gyugyu-rinchan/", "/game/kagamine-challenge/" }));
 Check("転送だけのページは並べない",
     SitePages.ForSite(sandbox).All(page => page.Url != "/game/mine-dungeon/"));
