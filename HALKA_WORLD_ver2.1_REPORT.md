@@ -30,5 +30,7 @@
 ## HP、公開、今後
 
 - HP更新履歴の先頭へ `ver2.1 / 2026-10-07 / 左上メニューを追加し、AUTO設定をメニュー内へ移動。` を追加。既存ver2.0以下とdetails初期閉状態を維持した。
-- 公開コミット、GitHub push、Pages deployment、最終`git status`は公開後に追記する。
+- 実装・Production WebGLの公開コミットは `bf8a316e23745693db1a3b6a8a066a944659946b`。`origin/main`へ通常push成功（force pushなし）。GitHub Pages実行 [37622488528](https://github.com/halkachan/halkaclub/actions/runs/37622488528) はbuild / deployとも成功。
+- 公開URL: https://halkaclub.com/halkaworld/ 。公開ページ、WebGLページ、新WasmはいずれもHTTP 200。公開HTMLで更新履歴 `ver2.1` / `2026-10-07`、WebGL HTMLで`productVersion: 2.1`と新Wasm参照を確認。公開サイト上のプレイ操作は未実施（ローカルProduction WebGLで実操作）。
+- 公開後の`git status --short`は既存未追跡 `backup-v05-20261006-174557/` のみ。レポート追記コミット後もこのバックアップはコミットしない。
 - ver2.2候補はMenu内の「せいかつきろく」。歩数・プレイ時間・生活記録の本体は今回未実装。Settings、Save拡張、新Map、MAP EDITOR v0.7も今回含めない。
