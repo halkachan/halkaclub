@@ -17,6 +17,9 @@ public static class SitePages
         ("作品一覧", "/works/"),
         ("はるかくらぶ", "/club/"),
         ("うたまぜ！", "/utamaze/"),
+        ("うたまぜ！：特定商取引法", "/utamaze/legal/"),
+        ("うたまぜ！：使用許諾契約", "/utamaze/eula/"),
+        ("うたまぜ！：プライバシー", "/utamaze/privacy/"),
         ("ゲーム", "/game/"),
         ("HALKA WORLD", "/halkaworld/"),
     };
