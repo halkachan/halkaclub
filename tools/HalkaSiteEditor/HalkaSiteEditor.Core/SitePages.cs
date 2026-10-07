@@ -6,10 +6,15 @@ public sealed record SitePage(string Label, string Url)
     public override string ToString() => Label;
 }
 
+/// <summary>
+/// サイトにあるページを数えます。
+/// **一覧は持ちません。** フォルダを見て見つけるので、あとからページが増えても、
+/// ここに書き足さなくてもプレビュー・「ページの顔」・sitemap に出てきます。
+/// </summary>
 public static class SitePages
 {
-    // 左が表示名、右がサイト内のURL。実際に存在するものだけを並べます。
-    private static readonly (string Label, string Url)[] Candidates =
+    /// <summary>名前と並び順が決まっているページ。ここに無いページも、見つけたら並べます。</summary>
+    private static readonly (string Label, string Url)[] Known =
     {
         ("トップページ", "/"),
         ("依頼ページ", "/commission/"),
@@ -24,25 +29,59 @@ public static class SitePages
         ("HALKA WORLD", "/halkaworld/"),
     };
 
-    public static IReadOnlyList<SitePage> ForSite(string root) => Candidates
-        .Where(page => PreviewServer.ResolveFile(root, page.Url) != null)
-        .Select(page => new SitePage(page.Label, page.Url))
-        .Concat(GamePages(root))
-        .ToArray();
-
-    /// <summary>ゲーム1本ずつのページ。フォルダーがある分だけ並べます。</summary>
-    private static IEnumerable<SitePage> GamePages(string root)
+    public static IReadOnlyList<SitePage> ForSite(string root)
     {
-        var folder = Path.Combine(root, "game");
-        if (!Directory.Exists(folder)) return Array.Empty<SitePage>();
+        var labels = Known.ToDictionary(page => page.Url, page => page.Label, StringComparer.Ordinal);
+        var order = Known.Select((page, at) => (page.Url, At: at))
+            .ToDictionary(page => page.Url, page => page.At, StringComparer.Ordinal);
 
-        return Directory.GetDirectories(folder)
-            .Select(Path.GetFileName)
-            .OfType<string>()
-            .OrderBy(slug => slug, StringComparer.Ordinal)
-            .Where(slug => SitePaths.IsGamePage(SitePaths.GamePage(root, slug)))
-            .Select(slug => new SitePage($"ゲーム：{slug}", $"/game/{slug}/"))
+        return Discover(root)
+            .Select(url => new SitePage(labels.TryGetValue(url, out var label) ? label : Name(url), url))
+            .OrderBy(page => order.TryGetValue(page.Url, out var at) ? at : int.MaxValue)
+            .ThenBy(page => page.Url, StringComparer.Ordinal)
             .ToArray();
+    }
+
+    /// <summary>サイトの中のページを見つけます。</summary>
+    private static IEnumerable<string> Discover(string root)
+    {
+        foreach (var page in SitePaths.AllPages(root))
+        {
+            // よそへ飛ばすだけのページと、Unity などが書き出したプレイヤーは、サイトのページとして数えません。
+            if (IsRedirect(page) || IsPlayer(page)) continue;
+            yield return UrlOf(root, page);
+        }
+    }
+
+    private static bool IsRedirect(string page)
+    {
+        try { return File.ReadAllText(page).Contains("http-equiv=\"refresh\""); }
+        catch (Exception) { return true; }
+    }
+
+    /// <summary>同じフォルダに `Build` があれば、書き出されたプレイヤーです。</summary>
+    private static bool IsPlayer(string page)
+    {
+        var folder = Path.GetDirectoryName(page);
+        return folder != null && Directory.Exists(Path.Combine(folder, "Build"));
+    }
+
+    /// <summary>ファイルの場所を、サイトの中のURLへ。</summary>
+    private static string UrlOf(string root, string page)
+    {
+        var relative = SitePaths.Relative(root, page);
+        if (string.Equals(relative, "index.html", StringComparison.OrdinalIgnoreCase)) return "/";
+        return relative.EndsWith("/index.html", StringComparison.OrdinalIgnoreCase)
+            ? "/" + relative[..^"index.html".Length]
+            : "/" + relative;
+    }
+
+    /// <summary>名前が決まっていないページの、画面に出す名前。</summary>
+    private static string Name(string url)
+    {
+        var parts = url.Trim('/').Split('/');
+        var last = parts.LastOrDefault() ?? "";
+        return parts.Length > 1 && parts[0] == "game" ? $"ゲーム：{last}" : last;
     }
 
     /// <summary>編集中のタブに合わせて、最初に開くページを選びます。</summary>

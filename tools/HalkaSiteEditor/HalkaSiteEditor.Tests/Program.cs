@@ -1449,6 +1449,60 @@ Check("直した中身で探せる",
     SiteSearch.Find(v18, "WASD").Count == 0);
 v18.World.Controls.Revert();
 
+// --- v1.9：新しいページを自分で見つける -------------------------------------
+
+// あとからページが増えても、ツールに書き足さずに出てくること。
+var newPage = Path.Combine(sandbox, "blog", "index.html");
+Directory.CreateDirectory(Path.GetDirectoryName(newPage)!);
+File.WriteAllText(newPage,
+    "<!doctype html>\n<html lang=\"ja\">\n  <head>\n    <meta charset=\"utf-8\" />\n" +
+    "    <meta name=\"description\" content=\"あたらしいページです。\" />\n" +
+    "    <title>にっき | HALKA</title>\n" +
+    "    <meta property=\"og:title\" content=\"にっき | HALKA\" />\n" +
+    "    <meta property=\"og:description\" content=\"あたらしいページです。\" />\n" +
+    "    <meta property=\"og:image\" content=\"https://halkaclub.com/assets/ogp/home.png?v=1\" />\n" +
+    "    <meta property=\"og:image:alt\" content=\"HALKA\" />\n" +
+    "    <link rel=\"stylesheet\" href=\"../style.css?v=1\" />\n  </head>\n" +
+    "  <body>\n    <h1 id=\"blog-title\">にっき</h1>\n  </body>\n</html>\n");
+
+var found = SitePages.ForSite(sandbox);
+Check("新しいページを自分で見つける",
+    found.Any(page => page.Url == "/blog/" && page.Label == "blog"));
+Check("名前が決まっているページは、名前と並び順そのまま",
+    found[0].Url == "/" && found[0].Label == "トップページ" &&
+    found.Single(page => page.Url == "/game/gyugyu-rinchan/").Label == "ゲーム：gyugyu-rinchan");
+Check("新しいページはうしろに並ぶ",
+    found.Select(page => page.Url).ToList().IndexOf("/blog/") >
+    found.Select(page => page.Url).ToList().IndexOf("/halkaworld/"));
+
+var withNew = SiteSession.Load(sandbox, new SaveBackups(
+    Path.Combine(Path.GetTempPath(), "halka-v19-" + Guid.NewGuid().ToString("N"))));
+Check("新しいページの顔も直せる",
+    withNew.Meta!.Pages.Any(page => page.Url == "/blog/" &&
+        page.Fields.Any(field => field.Value == "にっき | HALKA")));
+Check("新しいページも sitemap に入る", Sitemap.Urls(sandbox).Contains("/blog/"));
+
+// 書き出されたプレイヤー（同じフォルダに Build があるもの）は、ページとして数えない。
+var player = Path.Combine(sandbox, "halkaworld", "webgl", "index.html");
+Directory.CreateDirectory(Path.Combine(sandbox, "halkaworld", "webgl", "Build"));
+File.WriteAllText(player, "<!doctype html><html><head><title>HALKA WORLD</title></head><body></body></html>");
+Check("書き出されたプレイヤーは数えない",
+    SitePages.ForSite(sandbox).All(page => page.Url != "/halkaworld/webgl/"));
+
+// 転送するだけのページも数えない。
+var moved = Path.Combine(sandbox, "mukashi", "index.html");
+Directory.CreateDirectory(Path.GetDirectoryName(moved)!);
+File.WriteAllText(moved,
+    "<!doctype html><html><head><meta http-equiv=\"refresh\" content=\"0; url=../\" />" +
+    "<title>移動しました | HALKA</title></head><body></body></html>");
+Check("転送するだけのページも数えない",
+    SitePages.ForSite(sandbox).All(page => page.Url != "/mukashi/"));
+
+Directory.Delete(Path.Combine(sandbox, "blog"), recursive: true);
+Directory.Delete(Path.Combine(sandbox, "mukashi"), recursive: true);
+Directory.Delete(Path.Combine(sandbox, "halkaworld", "webgl"), recursive: true);
+Check("片づけたら元どおり", SitePages.ForSite(sandbox).Count == 13);
+
 // --- プレビュー用サーバー -------------------------------------------------
 
 Check("URLから実ファイルへ",
