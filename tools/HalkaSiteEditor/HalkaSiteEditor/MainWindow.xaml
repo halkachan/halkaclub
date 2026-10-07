@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:HalkaSiteEditor"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="HALKA SITE EDITOR v0.4" Icon="Assets/site-editor.ico"
+        Title="HALKA SITE EDITOR v0.9" Icon="Assets/site-editor.ico"
         Width="1660" Height="900" MinWidth="1000" MinHeight="640"
         Background="#16191E" Foreground="#E4E8EC" FontFamily="Yu Gothic UI" FontSize="13"
         Loaded="WindowLoaded" Closing="WindowClosing">
@@ -117,6 +117,135 @@
       </Border>
     </DataTemplate>
 
+    <!-- 追加プラン（名前と金額を日英で） -->
+    <DataTemplate x:Key="OptionTemplate">
+      <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,8" Padding="12,10">
+        <StackPanel>
+          <TextBlock Text="{Binding Label}" FontSize="14" Margin="0,0,0,7"/>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="150"/>
+              <ColumnDefinition Width="150"/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+              <TextBlock Text="名前（日本語）" Style="{StaticResource Caption}"/>
+              <TextBox Text="{Binding Name.Ja.Value, UpdateSourceTrigger=PropertyChanged}" BorderThickness="2"
+                       BorderBrush="{Binding Name.Ja.Changed, Converter={StaticResource ChangedToBrush}}"/>
+              <TextBlock DataContext="{Binding Name.Ja}" Style="{StaticResource ErrorText}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Margin="0,0,8,0">
+              <TextBlock Text="名前（英語）" Style="{StaticResource Caption}"/>
+              <TextBox Text="{Binding Name.En.Value, UpdateSourceTrigger=PropertyChanged}" BorderThickness="2"
+                       BorderBrush="{Binding Name.En.Changed, Converter={StaticResource ChangedToBrush}}"/>
+              <TextBlock DataContext="{Binding Name.En}" Style="{StaticResource ErrorText}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Margin="0,0,8,0">
+              <TextBlock Text="金額（日本語）" Style="{StaticResource Caption}"/>
+              <TextBox Text="{Binding Price.Ja.Value, UpdateSourceTrigger=PropertyChanged}" BorderThickness="2"
+                       BorderBrush="{Binding Price.Ja.Changed, Converter={StaticResource ChangedToBrush}}"/>
+              <TextBlock DataContext="{Binding Price.Ja}" Style="{StaticResource ErrorText}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="3" Margin="0,0,8,0">
+              <TextBlock Text="金額（英語）" Style="{StaticResource Caption}"/>
+              <TextBox Text="{Binding Price.En.Value, UpdateSourceTrigger=PropertyChanged}" BorderThickness="2"
+                       BorderBrush="{Binding Price.En.Changed, Converter={StaticResource ChangedToBrush}}"/>
+              <TextBlock DataContext="{Binding Price.En}" Style="{StaticResource ErrorText}"/>
+            </StackPanel>
+            <Button Grid.Column="4" Content="英語を合わせる" VerticalAlignment="Bottom"
+                    Click="SyncOptionEnglishClick" Tag="{Binding}"
+                    IsEnabled="{Binding CanSyncEnglish, Mode=OneWay}"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+
+    <!-- 文章のかたまり1つ -->
+    <DataTemplate x:Key="TextBlockTemplate">
+      <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,8" Padding="12,10">
+        <StackPanel>
+          <DockPanel Margin="0,0,0,5">
+            <TextBlock DockPanel.Dock="Left" Text="{Binding Label}" FontSize="14"/>
+            <TextBlock Text="{Binding Hint}" Foreground="#8C97A6" FontSize="11" Margin="12,2,0,0"/>
+          </DockPanel>
+          <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                   AcceptsReturn="True" TextWrapping="Wrap" MinHeight="54" MaxHeight="260"
+                   VerticalScrollBarVisibility="Auto" BorderThickness="2"
+                   BorderBrush="{Binding Changed, Converter={StaticResource ChangedToBrush}}"
+                   FontFamily="Yu Gothic UI"/>
+          <TextBlock Foreground="#FF8A8A" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
+                     Text="{Binding Error}"
+                     Visibility="{Binding Error, Converter={StaticResource TextToVisibility}}"/>
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+
+    <!-- リリースの切り替え1つ -->
+    <DataTemplate x:Key="ReleaseTemplate">
+      <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,7" Padding="12,9">
+        <DockPanel>
+          <CheckBox DockPanel.Dock="Left" IsChecked="{Binding MakeLive, Mode=TwoWay}" Width="140"
+                    Content="公開の形にする" Foreground="#DDE2E8" VerticalAlignment="Center"/>
+          <Border DockPanel.Dock="Right" Width="64" Height="26" CornerRadius="13" Margin="10,0,0,0"
+                  Background="#242A33" BorderBrush="#586170" BorderThickness="1" VerticalAlignment="Center">
+            <TextBlock Text="{Binding StateText}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       FontSize="12"/>
+          </Border>
+          <StackPanel>
+            <TextBlock Text="{Binding Label}" FontSize="14"/>
+            <TextBlock Text="{Binding Note}" Foreground="#8C97A6" FontSize="11" TextWrapping="Wrap"
+                       Margin="0,2,0,0"/>
+            <TextBlock Text="{Binding Missing}" Foreground="#FF8A8A" FontSize="11" TextWrapping="Wrap"
+                       Margin="0,3,0,0"
+                       Visibility="{Binding Missing, Converter={StaticResource TextToVisibility}}"/>
+          </StackPanel>
+        </DockPanel>
+      </Border>
+    </DataTemplate>
+
+    <!-- うれしいこと 1件 -->
+    <DataTemplate x:Key="NewsTemplate">
+      <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,6" Padding="10,8">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Margin="0,0,10,0" VerticalAlignment="Top">
+            <Button Content="↑" Click="NewsUpClick" Tag="{Binding}" Width="30" Padding="0,3"/>
+            <Button Content="↓" Click="NewsDownClick" Tag="{Binding}" Width="30" Padding="0,3"/>
+            <Button Content="✕" Click="NewsDeleteClick" Tag="{Binding}" Width="30" Padding="0,3"
+                    ToolTip="このお知らせを消します"/>
+          </StackPanel>
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="150"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
+              <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                <TextBlock Text="日付" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding Date, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="「2/21投稿」「4/25〜4/26開催」のように、自由に書けます。"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1">
+                <TextBlock Text="見出し" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"/>
+              </StackPanel>
+            </Grid>
+            <TextBlock Text="説明（いらなければ空のまま）" Style="{StaticResource Caption}" Margin="0,6,0,3"/>
+            <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"/>
+            <TextBlock Text="受賞・参加など（1行＝1つ。いらなければ空のまま）" Style="{StaticResource Caption}"
+                       Margin="0,6,0,3"/>
+            <TextBox Text="{Binding Achievements, UpdateSourceTrigger=PropertyChanged}"
+                     AcceptsReturn="True" TextWrapping="Wrap" MinHeight="46" MaxHeight="120"
+                     VerticalScrollBarVisibility="Auto"/>
+            <TextBlock Foreground="#FF8A8A" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
+                       Text="{Binding Error}"
+                       Visibility="{Binding Error, Converter={StaticResource TextToVisibility}}"/>
+          </StackPanel>
+        </DockPanel>
+      </Border>
+    </DataTemplate>
+
     <!-- 作品一覧の1件 -->
     <DataTemplate x:Key="WorkTemplate">
       <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,6" Padding="10,8">
@@ -147,6 +276,105 @@
                 <TextBox Text="{Binding YouTubeUrl, UpdateSourceTrigger=PropertyChanged}"/>
               </StackPanel>
             </Grid>
+            <TextBlock Foreground="#FF8A8A" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
+                       Text="{Binding Error}"
+                       Visibility="{Binding Error, Converter={StaticResource TextToVisibility}}"/>
+          </StackPanel>
+        </DockPanel>
+      </Border>
+    </DataTemplate>
+
+    <!-- ゲーム集のカード1枚 -->
+    <DataTemplate x:Key="GameCardTemplate">
+      <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,6" Padding="10,8">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Margin="0,0,10,0" VerticalAlignment="Top">
+            <Button Content="↑" Click="GameCardUpClick" Tag="{Binding}" Width="30" Padding="0,3"/>
+            <Button Content="↓" Click="GameCardDownClick" Tag="{Binding}" Width="30" Padding="0,3"/>
+            <Button Content="✕" Click="GameCardDeleteClick" Tag="{Binding}" Width="30" Padding="0,3"
+                    ToolTip="このカードを一覧から外します（ゲームのページは残ります）"/>
+          </StackPanel>
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="200"/>
+              </Grid.ColumnDefinitions>
+              <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                <TextBlock Text="名前" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1">
+                <TextBlock Text="ゲームページの場所" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding Href, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="gyugyu-rinchan/ のように、フォルダー名と / で書きます。"/>
+              </StackPanel>
+            </Grid>
+            <Grid Margin="0,6,0,0">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="200"/>
+              </Grid.ColumnDefinitions>
+              <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                <TextBlock Text="説明（1行＝1行）" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="54" MaxHeight="140"
+                         VerticalScrollBarVisibility="Auto"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1">
+                <TextBlock Text="札（1行＝1つ）" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding Tags, UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="54" MaxHeight="140"
+                         VerticalScrollBarVisibility="Auto"
+                         ToolTip="「スマホ対応」「縦画面推奨」「ver 1.2」などを1行ずつ。"/>
+              </StackPanel>
+            </Grid>
+            <TextBlock Foreground="#FF8A8A" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
+                       Text="{Binding Error}"
+                       Visibility="{Binding Error, Converter={StaticResource TextToVisibility}}"/>
+          </StackPanel>
+        </DockPanel>
+      </Border>
+    </DataTemplate>
+
+    <!-- 更新履歴の1件 -->
+    <DataTemplate x:Key="ChangelogTemplate">
+      <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,6" Padding="10,8">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Margin="0,0,10,0" VerticalAlignment="Top">
+            <Button Content="↑" Click="ChangelogUpClick" Tag="{Binding}" Width="30" Padding="0,3"/>
+            <Button Content="↓" Click="ChangelogDownClick" Tag="{Binding}" Width="30" Padding="0,3"/>
+            <Button Content="✕" Click="ChangelogDeleteClick" Tag="{Binding}" Width="30" Padding="0,3"
+                    ToolTip="この版の履歴を消します"/>
+          </StackPanel>
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="160"/>
+                <ColumnDefinition Width="160"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
+              <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                <TextBlock Text="版" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding Version, UpdateSourceTrigger=PropertyChanged}"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                <TextBlock Text="日付" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding Date, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="2026-09-10 の形。ページには 2026.9.10 の形で出ます。"/>
+              </StackPanel>
+              <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                <TextBlock Text="ページに出る日付" Style="{StaticResource Caption}"/>
+                <TextBlock Text="{Binding Display}" Foreground="#AEB8C3" Margin="0,4,0,0"/>
+              </StackPanel>
+            </Grid>
+            <TextBlock Text="内容（1行＝1つ。**ここ** で強調できます）" Style="{StaticResource Caption}"
+                       Margin="0,6,0,3"/>
+            <TextBox Text="{Binding Items, UpdateSourceTrigger=PropertyChanged}"
+                     AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" MaxHeight="200"
+                     VerticalScrollBarVisibility="Auto"/>
+            <TextBlock Text="補足（いらなければ空のまま）" Style="{StaticResource Caption}" Margin="0,6,0,3"/>
+            <TextBox Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}"/>
             <TextBlock Foreground="#FF8A8A" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
                        Text="{Binding Error}"
                        Visibility="{Binding Error, Converter={StaticResource TextToVisibility}}"/>
@@ -244,7 +472,27 @@
           <TextBlock x:Name="CommissionNote" DockPanel.Dock="Top" Foreground="#AEB8C3"
                      TextWrapping="Wrap" Margin="2,0,2,10"/>
           <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <ItemsControl x:Name="CommissionItems" ItemTemplate="{StaticResource PairTemplate}" Margin="2,0,10,10"/>
+            <StackPanel Margin="2,0,10,10">
+              <ItemsControl x:Name="CommissionItems" ItemTemplate="{StaticResource PairTemplate}"/>
+              <TextBlock Text="追加プラン" FontSize="15" Margin="2,10,0,7" Foreground="#FFCB75"/>
+              <ItemsControl x:Name="OptionItems" ItemTemplate="{StaticResource OptionTemplate}"/>
+            </StackPanel>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="依頼ページの文章">
+        <DockPanel Margin="4,10,4,0">
+          <TextBlock DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap" Margin="2,0,2,10"
+                     Text="依頼ページの説明文・箇条書き・注意書き・テンプレートです。HTMLの印は出てきません。日本語版と英語版は段落の作りが少し違うので、ページを選んで直します。"/>
+          <DockPanel DockPanel.Dock="Top" Margin="2,0,10,10">
+            <TextBlock Text="ページ" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#AEB8C3"/>
+            <ComboBox x:Name="TextPagePicker" MinWidth="220" HorizontalAlignment="Left"
+                      SelectionChanged="TextPageChanged"/>
+          </DockPanel>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="TextBlockItems" ItemTemplate="{StaticResource TextBlockTemplate}"
+                          Margin="2,0,10,10"/>
           </ScrollViewer>
         </DockPanel>
       </TabItem>
@@ -257,10 +505,85 @@
           <DockPanel DockPanel.Dock="Top" Margin="2,0,10,10">
             <TextBlock Text="分類" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#AEB8C3"/>
             <Button DockPanel.Dock="Right" Content="この分類に作品を追加" Click="WorkAddClick" Padding="14,5"/>
+            <Button DockPanel.Dock="Right" Content="最近の動画から選ぶ" Click="PickVideosClick" Padding="14,5"
+                    ToolTip="YouTubeの新着から、まだ入っていないものを選んで足します。"/>
             <ComboBox x:Name="CategoryPicker" MinWidth="240" SelectionChanged="CategoryPickerChanged"/>
           </DockPanel>
           <ScrollViewer VerticalScrollBarVisibility="Auto">
             <ItemsControl x:Name="WorkItems" ItemTemplate="{StaticResource WorkTemplate}" Margin="2,0,10,10"/>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="うれしいこと">
+        <DockPanel Margin="4,10,4,0">
+          <TextBlock DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap" Margin="2,0,2,10"
+                     Text="トップページの「うれしいこと」欄です。受賞やイベント参加のお知らせを、追加・並べ替え・削除できます。新しいお知らせは一番下に足されます。"/>
+          <DockPanel DockPanel.Dock="Top" Margin="2,0,10,10">
+            <Button DockPanel.Dock="Right" Content="お知らせを追加" Click="NewsAddClick" Padding="14,5"/>
+            <TextBlock Foreground="#8C97A6" FontSize="11" VerticalAlignment="Center"
+                       Text="見出しに出ている年は「トップページ」タブで直せます。"/>
+          </DockPanel>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="NewsItems" ItemTemplate="{StaticResource NewsTemplate}" Margin="2,0,10,10"/>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="ゲーム" x:Name="GameTab">
+        <DockPanel Margin="4,10,4,0">
+          <TextBlock x:Name="GameNote" DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap"
+                     Margin="2,0,2,10"/>
+          <DockPanel DockPanel.Dock="Top" Margin="2,0,10,10">
+            <TextBlock Text="編集するもの" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#AEB8C3"/>
+            <Button DockPanel.Dock="Right" x:Name="GameCardAddButton" Content="カードを追加"
+                    Click="GameCardAddClick" Padding="14,5"/>
+            <Button DockPanel.Dock="Right" x:Name="ChangelogAddButton" Content="新しい版を追加"
+                    Click="ChangelogAddClick" Padding="14,5"
+                    ToolTip="更新履歴の一番上に足します。版は前の版から1つ進めます。"/>
+            <ComboBox x:Name="GamePicker" MinWidth="260" SelectionChanged="GamePickerChanged"/>
+          </DockPanel>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="2,0,10,10">
+
+              <!-- ゲーム集（一覧ページ） -->
+              <StackPanel x:Name="GameListPanel">
+                <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,8"
+                        Padding="12,10">
+                  <StackPanel>
+                    <TextBlock Text="ゲーム集のひとこと" FontSize="14" Margin="0,0,0,6"/>
+                    <TextBox x:Name="GameLeadBox"/>
+                    <TextBlock x:Name="GameLeadError" Foreground="#FF8A8A" FontSize="11" TextWrapping="Wrap"
+                               Margin="0,4,0,0"/>
+                  </StackPanel>
+                </Border>
+                <ItemsControl x:Name="GameCardItems" ItemTemplate="{StaticResource GameCardTemplate}"/>
+              </StackPanel>
+
+              <!-- ゲーム1本ぶんのページ -->
+              <StackPanel x:Name="GamePagePanel">
+                <ItemsControl x:Name="GameRows" ItemTemplate="{StaticResource RowTemplate}"/>
+                <ItemsControl x:Name="GameDescription" ItemTemplate="{StaticResource TextBlockTemplate}"/>
+
+                <Border x:Name="ChangelogSection" Background="#1A1F26" BorderBrush="#2F3845" BorderThickness="1"
+                        Margin="0,4,0,0" Padding="12,10">
+                  <StackPanel>
+                    <DockPanel Margin="0,0,0,8">
+                      <TextBlock DockPanel.Dock="Left" Text="更新履歴" FontSize="15" Foreground="#FFCB75"/>
+                      <Button DockPanel.Dock="Right" x:Name="AlignVersionButton" Content="版をそろえる"
+                              Click="AlignVersionClick"
+                              ToolTip="更新履歴の一番上の版に、このページの表記と一覧の札をそろえます。"/>
+                      <TextBlock x:Name="VersionSummary" Margin="14,2,0,0" TextWrapping="Wrap"
+                                 Foreground="#E4E8EC"/>
+                    </DockPanel>
+                    <TextBlock TextWrapping="Wrap" Foreground="#8C97A6" FontSize="11" Margin="0,0,0,10"
+                               Text="新しいものが上です。「新しい版を追加」で一番上に足せます。内容は1行＝1つで、**ここ** と書くと太字になります。"/>
+                    <ItemsControl x:Name="ChangelogItems" ItemTemplate="{StaticResource ChangelogTemplate}"/>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+
+            </StackPanel>
           </ScrollViewer>
         </DockPanel>
       </TabItem>
@@ -292,6 +615,7 @@
                          HorizontalAlignment="Left" Stretch="Uniform"/>
                 </StackPanel>
               </Border>
+              <ItemsControl x:Name="TopRows" ItemTemplate="{StaticResource RowTemplate}" Margin="0,10,0,0"/>
             </StackPanel>
           </ScrollViewer>
         </DockPanel>
@@ -302,7 +626,22 @@
           <TextBlock x:Name="ClubNote" DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap"
                      Margin="2,0,2,10"/>
           <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <ItemsControl x:Name="ClubItems" ItemTemplate="{StaticResource RowTemplate}" Margin="2,0,10,10"/>
+            <StackPanel Margin="2,0,10,10">
+              <ItemsControl x:Name="ClubItems" ItemTemplate="{StaticResource RowTemplate}"/>
+              <Border x:Name="ClubUpdateBox" Background="#20262F" BorderBrush="#2F3845" BorderThickness="1"
+                      Padding="12,10">
+                <StackPanel>
+                  <DockPanel Margin="0,0,0,5">
+                    <TextBlock DockPanel.Dock="Left" Text="更新内容" FontSize="14"/>
+                    <TextBlock x:Name="ClubUpdateHint" Foreground="#8C97A6" FontSize="11" Margin="12,2,0,0"/>
+                  </DockPanel>
+                  <TextBox x:Name="ClubUpdateText" AcceptsReturn="True" TextWrapping="Wrap"
+                           MinHeight="70" MaxHeight="200" VerticalScrollBarVisibility="Auto"/>
+                  <TextBlock x:Name="ClubUpdateError" Foreground="#FF8A8A" FontSize="11" TextWrapping="Wrap"
+                             Margin="0,4,0,0"/>
+                </StackPanel>
+              </Border>
+            </StackPanel>
           </ScrollViewer>
         </DockPanel>
       </TabItem>
@@ -312,7 +651,41 @@
           <TextBlock x:Name="UtamazeNote" DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap"
                      Margin="2,0,2,10"/>
           <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <ItemsControl x:Name="UtamazeItems" ItemTemplate="{StaticResource RowTemplate}" Margin="2,0,10,10"/>
+            <StackPanel Margin="2,0,10,10">
+              <ItemsControl x:Name="UtamazeItems" ItemTemplate="{StaticResource RowTemplate}"/>
+
+              <Border x:Name="ReleaseSection" Background="#1A1F26" BorderBrush="#2F3845" BorderThickness="1"
+                      Margin="0,12,0,0" Padding="12,10">
+                <StackPanel>
+                  <DockPanel Margin="0,0,0,8">
+                    <TextBlock DockPanel.Dock="Left" Text="リリース手順" FontSize="15" Foreground="#FFCB75"/>
+                    <Button DockPanel.Dock="Right" Content="まとめて公開の形にする" Click="ReleaseAllClick"/>
+                    <TextBlock x:Name="ReleaseSummary" Margin="14,2,0,0" TextWrapping="Wrap"
+                               Foreground="#E4E8EC"/>
+                  </DockPanel>
+
+                  <TextBlock TextWrapping="Wrap" Foreground="#8C97A6" FontSize="11" Margin="0,0,0,10"
+                             Text="正式リリースのときに必要な場所を全部ならべています。どれか1つだけ変えて気づかない、を防ぐためのものです。準備中へ戻すこともできます。"/>
+
+                  <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*"/>
+                      <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                      <TextBlock Text="ダウンロードのURL" Style="{StaticResource Caption}"/>
+                      <TextBox x:Name="ReleaseDownload" Text="{Binding DownloadUrl, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                      <TextBlock Text="PROの購入URL（Lemon Squeezy の共有用）" Style="{StaticResource Caption}"/>
+                      <TextBox x:Name="ReleaseCheckout" Text="{Binding CheckoutUrl, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                  </Grid>
+
+                  <ItemsControl x:Name="ReleaseItems" ItemTemplate="{StaticResource ReleaseTemplate}"/>
+                </StackPanel>
+              </Border>
+            </StackPanel>
           </ScrollViewer>
         </DockPanel>
       </TabItem>

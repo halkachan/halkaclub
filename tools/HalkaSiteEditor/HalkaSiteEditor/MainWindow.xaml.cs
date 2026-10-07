@@ -18,6 +18,7 @@ public partial class MainWindow : Window
     private sealed class LocalSettings
     {
         public string SiteRoot { get; set; } = "";
+        public string YouTubeChannelId { get; set; } = "";
     }
 
     /// <summary>PC側プレビューで再現する画面の横幅（CSSピクセル）。</summary>
@@ -76,7 +77,11 @@ public partial class MainWindow : Window
         }
 
         RootText.Text = root;
-        SaveSettings(new LocalSettings { SiteRoot = root });
+        SaveSettings(new LocalSettings
+        {
+            SiteRoot = root,
+            YouTubeChannelId = LoadSettings().YouTubeChannelId,
+        });
         publisher = new GitPublisher(root);
 
         var commission = session.Groups.Single(group => group.Title == "依頼ページ");
@@ -90,14 +95,26 @@ public partial class MainWindow : Window
         LinkNote.Text = links.Note;
 
         CommissionItems.ItemsSource = commission.Pairs;
+        OptionItems.ItemsSource = commission.Options;
         ColorItems.ItemsSource = colors.Fields;
         LinkItems.ItemsSource = links.Rows;
+        TopRows.ItemsSource = top.Rows;
+
+        TextPagePicker.ItemsSource = session.CommissionText.Pages;
+        TextPagePicker.SelectedIndex = 0;
+        foreach (var page in session.CommissionText.Pages)
+        foreach (var block in page.Blocks)
+            block.PropertyChanged += TextBlockChanged;
 
         BindOptionalGroup("はるかくらぶ", ClubTab, ClubNote, ClubItems);
         BindOptionalGroup("うたまぜ！", UtamazeTab, UtamazeNote, UtamazeItems);
         BindWorks();
+        BindRelease();
+        BindNews();
+        BindClubUpdate();
+        BindGames();
 
-        videoField = top.Fields.Single();
+        videoField = top.Fields.Single(field => field.Id == "top.latestVideo");
         VideoLabel.Text = videoField.Label;
         VideoBox.SetBinding(TextBox.TextProperty, new Binding(nameof(EditField.Value))
         {
@@ -289,12 +306,295 @@ public partial class MainWindow : Window
 
     private void WorkChanged(object? sender, PropertyChangedEventArgs e) => RefreshChanges();
 
+    // --- うれしいこと -------------------------------------------------------
+
+    private void BindNews()
+    {
+        var news = session?.News;
+        if (news == null) return;
+
+        NewsItems.ItemsSource = news.Items;
+        news.Items.CollectionChanged += NewsCollectionChanged;
+        foreach (var item in news.Items) item.PropertyChanged += NewsChanged;
+    }
+
+    private void NewsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+            foreach (NewsItem item in e.NewItems) item.PropertyChanged += NewsChanged;
+        if (e.OldItems != null)
+            foreach (NewsItem item in e.OldItems) item.PropertyChanged -= NewsChanged;
+        RefreshChanges();
+    }
+
+    private void NewsChanged(object? sender, PropertyChangedEventArgs e) => RefreshChanges();
+
+    /// <summary>くらぶの更新内容（1行＝1項目）。</summary>
+    private void BindClubUpdate()
+    {
+        var update = session?.ClubUpdate;
+        if (update == null)
+        {
+            ClubUpdateBox.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        ClubUpdateBox.Visibility = Visibility.Visible;
+        ClubUpdateHint.Text = update.Hint;
+        ClubUpdateText.SetBinding(TextBox.TextProperty, new Binding(nameof(ParagraphRun.Text))
+        {
+            Source = update,
+            UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+        });
+        update.PropertyChanged += ClubUpdateChanged;
+        ClubUpdateError.Text = update.Error ?? "";
+    }
+
+    private void ClubUpdateChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        ClubUpdateError.Text = session?.ClubUpdate?.Error ?? "";
+        RefreshChanges();
+    }
+
+    private void NewsAddClick(object sender, RoutedEventArgs e)
+    {
+        session?.News?.AddNew();
+        StatusText.Text = "一番下にお知らせを足しました。日付と見出しを入れてください。";
+    }
+
+    private void NewsUpClick(object sender, RoutedEventArgs e) => MoveNews(sender, -1);
+
+    private void NewsDownClick(object sender, RoutedEventArgs e) => MoveNews(sender, 1);
+
+    private void MoveNews(object sender, int offset)
+    {
+        if (((FrameworkElement)sender).Tag is NewsItem item) session?.News?.Move(item, offset);
+    }
+
+    private void NewsDeleteClick(object sender, RoutedEventArgs e)
+    {
+        if (((FrameworkElement)sender).Tag is not NewsItem item) return;
+        var answer = MessageBox.Show(this, $"「{item.Title}」を消します。よろしいですか？",
+            "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.OK) return;
+        session?.News?.Items.Remove(item);
+    }
+
+    // --- ゲーム -------------------------------------------------------------
+
+    /// <summary>並びの先頭が一覧ページ、そのあとがゲーム1本ずつ。</summary>
+    private sealed record GameChoice(string Label, GamePage? Page)
+    {
+        public override string ToString() => Label;
+    }
+
+    private void BindGames()
+    {
+        var games = session?.Games;
+        if (games == null)
+        {
+            GameTab.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        GameTab.Visibility = Visibility.Visible;
+        GameNote.Text = session!.Groups.Single(group => group.Title == "ゲーム").Note;
+
+        GameLeadBox.SetBinding(TextBox.TextProperty, new Binding(nameof(EditField.Value))
+        {
+            Source = games.Lead,
+            UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+        });
+        GameCardItems.ItemsSource = games.Collection.Cards;
+        games.Collection.Cards.CollectionChanged += GameCardsCollectionChanged;
+        foreach (var card in games.Collection.Cards) card.PropertyChanged += GameCardChanged;
+
+        foreach (var page in games.Pages)
+        {
+            page.Changelog.CollectionChanged += ChangelogCollectionChanged;
+            foreach (var entry in page.Changelog) entry.PropertyChanged += ChangelogChanged;
+            if (page.Description != null) page.Description.PropertyChanged += ChangelogChanged;
+        }
+
+        GamePicker.ItemsSource = new[] { new GameChoice("ゲーム集（一覧ページ）", null) }
+            .Concat(games.Pages.Select(page => new GameChoice(page.Title.Value, page))).ToArray();
+        GamePicker.SelectedIndex = 0;
+    }
+
+    private void GameCardsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+            foreach (GameCard card in e.NewItems) card.PropertyChanged += GameCardChanged;
+        if (e.OldItems != null)
+            foreach (GameCard card in e.OldItems) card.PropertyChanged -= GameCardChanged;
+        RefreshChanges();
+    }
+
+    private void GameCardChanged(object? sender, PropertyChangedEventArgs e) => RefreshChanges();
+
+    private void ChangelogCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+            foreach (GameChangelogEntry entry in e.NewItems) entry.PropertyChanged += ChangelogChanged;
+        if (e.OldItems != null)
+            foreach (GameChangelogEntry entry in e.OldItems) entry.PropertyChanged -= ChangelogChanged;
+        RefreshChanges();
+    }
+
+    private void ChangelogChanged(object? sender, PropertyChangedEventArgs e) => RefreshChanges();
+
+    private GamePage? SelectedGame => (GamePicker?.SelectedItem as GameChoice)?.Page;
+
+    private void GamePickerChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // XAMLを読んでいる途中にも飛んできます。
+        if (GameListPanel == null || GamePagePanel == null) return;
+
+        var page = SelectedGame;
+        GameListPanel.Visibility = page == null ? Visibility.Visible : Visibility.Collapsed;
+        GamePagePanel.Visibility = page == null ? Visibility.Collapsed : Visibility.Visible;
+        GameCardAddButton.Visibility = page == null ? Visibility.Visible : Visibility.Collapsed;
+        ChangelogAddButton.Visibility = page?.HasChangelog == true ? Visibility.Visible : Visibility.Collapsed;
+
+        GameRows.ItemsSource = page?.Rows;
+        GameDescription.ItemsSource = page?.Description == null
+            ? null
+            : new[] { page.Description };
+        ChangelogSection.Visibility = page?.HasChangelog == true ? Visibility.Visible : Visibility.Collapsed;
+        ChangelogItems.ItemsSource = page?.Changelog;
+        RefreshVersionSummary();
+
+        // 見ているものに合わせて、右のプレビューも移します。
+        if (PagePicker?.ItemsSource is IReadOnlyList<SitePage> pages)
+        {
+            var url = page == null ? "/game/" : $"/game/{page.Slug}/";
+            var wanted = pages.FirstOrDefault(candidate => candidate.Url == url);
+            if (wanted != null) PagePicker.SelectedItem = wanted;
+        }
+    }
+
+    private void RefreshVersionSummary()
+    {
+        var page = SelectedGame;
+        VersionSummary.Text = page?.VersionSummary ?? "";
+        AlignVersionButton.IsEnabled = page?.CanAlignVersion == true;
+    }
+
+    private void GameCardAddClick(object sender, RoutedEventArgs e)
+    {
+        session?.Games?.Collection.AddNew();
+        StatusText.Text = "一番下にカードを足しました。名前とゲームページの場所を入れてください。";
+    }
+
+    private void GameCardUpClick(object sender, RoutedEventArgs e) => MoveGameCard(sender, -1);
+
+    private void GameCardDownClick(object sender, RoutedEventArgs e) => MoveGameCard(sender, 1);
+
+    private void MoveGameCard(object sender, int offset)
+    {
+        if (((FrameworkElement)sender).Tag is GameCard card) session?.Games?.Collection.Move(card, offset);
+    }
+
+    private void GameCardDeleteClick(object sender, RoutedEventArgs e)
+    {
+        if (((FrameworkElement)sender).Tag is not GameCard card) return;
+        var answer = MessageBox.Show(this,
+            $"「{card.Title}」を一覧から外します。ゲームのページ自体は残ります。よろしいですか？",
+            "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.OK) return;
+        session?.Games?.Collection.Cards.Remove(card);
+    }
+
+    private void ChangelogAddClick(object sender, RoutedEventArgs e)
+    {
+        var entry = SelectedGame?.AddNewEntry();
+        if (entry == null) return;
+        StatusText.Text = $"更新履歴の一番上に「{entry.Version}」を足しました。内容を入れてください。";
+    }
+
+    private void ChangelogUpClick(object sender, RoutedEventArgs e) => MoveChangelog(sender, -1);
+
+    private void ChangelogDownClick(object sender, RoutedEventArgs e) => MoveChangelog(sender, 1);
+
+    private void MoveChangelog(object sender, int offset)
+    {
+        if (((FrameworkElement)sender).Tag is GameChangelogEntry entry) SelectedGame?.MoveEntry(entry, offset);
+    }
+
+    private void ChangelogDeleteClick(object sender, RoutedEventArgs e)
+    {
+        if (((FrameworkElement)sender).Tag is not GameChangelogEntry entry) return;
+        var answer = MessageBox.Show(this, $"「{entry.Version}」の履歴を消します。よろしいですか？",
+            "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.OK) return;
+        SelectedGame?.Changelog.Remove(entry);
+    }
+
+    private void AlignVersionClick(object sender, RoutedEventArgs e)
+    {
+        SelectedGame?.AlignVersion();
+        RefreshChanges();
+    }
+
+    // --- うたまぜ！のリリース -----------------------------------------------
+
+    private void BindRelease()
+    {
+        var release = session?.Utamaze;
+        if (release == null)
+        {
+            ReleaseSection.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        ReleaseSection.Visibility = Visibility.Visible;
+        ReleaseSection.DataContext = release;
+        ReleaseItems.ItemsSource = release.Switches;
+        release.PropertyChanged += ReleaseChanged;
+        foreach (var step in release.Switches) step.PropertyChanged += ReleaseChanged;
+        ReleaseSummary.Text = release.Summary;
+    }
+
+    private void ReleaseChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (session?.Utamaze != null) ReleaseSummary.Text = session.Utamaze.Summary;
+        RefreshChanges();
+    }
+
+    private void ReleaseAllClick(object sender, RoutedEventArgs e)
+    {
+        session?.Utamaze?.MakeAllLive();
+        RefreshChanges();
+    }
+
     private WorkCategory? SelectedCategory => CategoryPicker?.SelectedItem as WorkCategory;
 
     private void CategoryPickerChanged(object sender, SelectionChangedEventArgs e)
     {
         if (WorkItems == null) return;
         WorkItems.ItemsSource = SelectedCategory?.Works;
+    }
+
+    private void PickVideosClick(object sender, RoutedEventArgs e)
+    {
+        if (session == null) return;
+
+        var saved = LoadSettings();
+        var channel = string.IsNullOrWhiteSpace(saved.YouTubeChannelId)
+            ? YouTubeFeed.DefaultChannelId
+            : saved.YouTubeChannelId;
+
+        var picker = new VideoPickerWindow(session, channel, SelectedCategory) { Owner = this };
+        picker.ShowDialog();
+
+        if (picker.ChannelId != channel)
+            SaveSettings(new LocalSettings { SiteRoot = session.Root, YouTubeChannelId = picker.ChannelId });
+
+        if (picker.AddedCount > 0)
+        {
+            StatusText.Text = $"{picker.AddedCount} 本を足しました。タイトルは直せます。保存を忘れずに。";
+            RefreshChanges();
+        }
     }
 
     private void WorkAddClick(object sender, RoutedEventArgs e)
@@ -331,8 +631,17 @@ public partial class MainWindow : Window
         ChangeList.ItemsSource = changes;
         ChangeCountText.Text = changes.Count == 0 ? "" : $"{changes.Count} 件";
 
-        var errors = session.Fields.Count(field => field.HasError)
-            + session.Works.Categories.Sum(category => category.Works.Count(work => work.HasError));
+        RefreshVersionSummary();
+        GameLeadError.Text = session.Games?.Lead.Error ?? "";
+
+        var errors = (session.Utamaze?.Switches.Count(step => step.HasError) ?? 0)
+            + session.Fields.Count(field => field.HasError)
+            + session.Works.Categories.Sum(category => category.Works.Count(work => work.HasError))
+            + session.CommissionText.Pages.Sum(page => page.Blocks.Count(block => block.HasError))
+            + (session.News?.Items.Count(item => item.HasError) ?? 0)
+            + (session.ClubUpdate?.HasError == true ? 1 : 0)
+            + (session.Games?.Collection.Cards.Count(card => card.HasError) ?? 0)
+            + (session.Games?.Pages.Sum(page => page.Changelog.Count(entry => entry.HasError)) ?? 0);
         SaveButton.IsEnabled = session.HasChanges && !session.HasError;
         RevertButton.IsEnabled = session.HasChanges;
 
@@ -396,6 +705,16 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (session.Utamaze?.IsMixed == true)
+        {
+            var proceed = MessageBox.Show(this,
+                "うたまぜ！のリリース設定が揃っていません。" + Environment.NewLine + Environment.NewLine +
+                session.Utamaze.Summary + Environment.NewLine + Environment.NewLine +
+                "一部だけ公開された状態になります。このまま進みますか？",
+                "確認", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+            if (proceed != MessageBoxResult.OK) return;
+        }
+
         var dialog = new PublishWindow(publisher, session.ManagedFiles, pending) { Owner = this };
         dialog.ShowDialog();
         RefreshPublishState();
@@ -449,6 +768,26 @@ public partial class MainWindow : Window
         if (((FrameworkElement)sender).Tag is FieldPair pair) pair.SyncEnglishFromJapanese();
     }
 
+    private void SyncOptionEnglishClick(object sender, RoutedEventArgs e)
+    {
+        if (((FrameworkElement)sender).Tag is OptionRow row) row.SyncEnglishFromJapanese();
+    }
+
+    // --- 依頼ページの文章 ---------------------------------------------------
+
+    private void TextBlockChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(CommissionTextBlock.Text) or nameof(CommissionTextBlock.Changed)
+            or nameof(CommissionTextBlock.Error))
+            RefreshChanges();
+    }
+
+    private void TextPageChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (TextBlockItems == null) return;
+        TextBlockItems.ItemsSource = (TextPagePicker.SelectedItem as CommissionTextPage)?.Blocks;
+    }
+
     private void SaveClick(object sender, RoutedEventArgs e)
     {
         if (session == null) return;
@@ -462,6 +801,10 @@ public partial class MainWindow : Window
             "まだ公開はされません。GitHub Desktop でコミットすると公開されます。",
             "保存しますか？", MessageBoxButton.OKCancel, MessageBoxImage.Question);
         if (answer != MessageBoxResult.OK) return;
+
+        // トップページのリンクを出し入れすると、リンクの数が変わります。
+        // 位置がずれるので、保存のあとに読み込み直します。
+        var needsReload = session.Utamaze?.StructureChanged == true;
 
         try
         {
@@ -481,10 +824,19 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (needsReload)
+        {
+            OpenSite(session.Root);
+            RefreshPreview();
+            StatusText.Text = $"{changes.Count} 件を保存して、読み込み直しました。右のプレビューで確かめてください。";
+            return;
+        }
+
         RefreshChanges();
         UpdateVideoPreview();
         RefreshPreview();
-        StatusText.Text = $"{changes.Count} 件を保存しました。右のプレビューで確かめてから、GitHub Desktop でコミットしてください。";
+        RefreshPublishState();
+        StatusText.Text = $"{changes.Count} 件を保存しました。右のプレビューで確かめてから「公開する」を押してください。";
     }
 
     private void RevertClick(object sender, RoutedEventArgs e)
@@ -495,7 +847,9 @@ public partial class MainWindow : Window
         if (answer != MessageBoxResult.OK) return;
 
         session.Revert();
-        BindWorks();   // 元に戻すと作品の一覧は作り直されるので、つなぎ直します。
+        BindWorks();
+        BindNews();   // 元に戻すと作品の一覧は作り直されるので、つなぎ直します。
+        BindGames();
         RefreshChanges();
         UpdateVideoPreview();
     }

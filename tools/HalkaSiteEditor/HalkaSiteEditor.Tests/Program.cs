@@ -27,6 +27,7 @@ static void CopySite(string from, string to)
                  "CNAME", "index.html", "style.css", "script.js",
                  "commission/index.html", "commission/en/index.html",
                  "works/index.html", "works/works-data.js",
+                 "utamaze/index.html",
                  "club/index.html", "utamaze/version.json",
              })
     {
@@ -34,6 +35,15 @@ static void CopySite(string from, string to)
         var destination = Path.Combine(to, relative.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         File.Copy(source, destination, overwrite: true);
+    }
+
+    // ゲームは本数が増えるので、フォルダーごと複写します。
+    foreach (var page in Directory.GetFiles(Path.Combine(from, "game"), "index.html",
+                 SearchOption.AllDirectories))
+    {
+        var destination = Path.Combine(to, Path.GetRelativePath(from, page));
+        Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+        File.Copy(page, destination, overwrite: true);
     }
 }
 
@@ -94,12 +104,12 @@ var top = session.Groups.Single(group => group.Title == "トップページ");
 Check("依頼ページを日英そろえて読む",
     commission.Pairs.Count >= 2 &&
     commission.Pairs[0].Label == "受付状況" &&
-    commission.Fields.Count == commission.Pairs.Count * 2);
+    commission.Fields.Count == commission.Pairs.Count * 2 + commission.Options.Count * 4);
 Check("見出しは日本語版の項目名", commission.Pairs.Skip(1).All(pair => !string.IsNullOrWhiteSpace(pair.Label)) &&
     commission.Pairs.Any(pair => pair.Label.Contains("歌ってみた")));
 Check("いまの受付状況を読めている", commission.Pairs[0].Ja.Value.Length > 0 && commission.Pairs[0].En.Value.Length > 0);
 Check("色を6つ読む", colors.Fields.Count == 6 && colors.Fields.All(field => CssColor.IsValid(field.Value)));
-Check("最新動画を読む", YouTubeUrl.ExtractId(top.Fields.Single().Value) != null);
+Check("最新動画を読む", YouTubeUrl.ExtractId(top.Fields.Single(field => field.Id == "top.latestVideo").Value) != null);
 Check("読んだ直後は変更なし", !session.HasChanges && !session.HasError && session.Changes().Count == 0);
 
 // --- 入力の検証 -----------------------------------------------------------
@@ -110,7 +120,7 @@ Check("おかしな色は誤りとして出る", yellow.HasError && session.HasE
 yellow.Revert();
 Check("元に戻せる", !yellow.HasError && !session.HasChanges);
 
-var video = top.Fields.Single();
+var video = top.Fields.Single(field => field.Id == "top.latestVideo");
 video.Value = "https://example.com/abc";
 Check("YouTube以外のURLは誤り", video.HasError);
 video.Revert();
@@ -169,7 +179,7 @@ Check("中途半端に書き込まれていない", File.ReadAllText(Path.Combin
 Check("誤りがあるまま保存しない", Throws(() =>
 {
     var broken = SiteSession.Load(sandbox);
-    broken.Groups.Single(group => group.Title == "トップページ").Fields.Single().Value = "だめなURL";
+    broken.Groups.Single(group => group.Title == "トップページ").Fields.Single(field => field.Id == "top.latestVideo").Value = "だめなURL";
     broken.Save();
 }));
 
@@ -249,6 +259,466 @@ static bool RoundTripTitle(string root, string title)
     return SiteSession.Load(root).Works.Categories.First().Works[0].Title == title;
 }
 
+// --- v0.5：追加プランと依頼ページの文章 -----------------------------------
+
+var v5 = SiteSession.Load(sandbox);
+var v5Commission = v5.Groups.Single(group => group.Title == "依頼ページ");
+
+Check("追加プランを日英の組で読む",
+    v5Commission.Options.Count == 8 &&
+    v5Commission.Options.All(row => row.Name.Ja.Value.Length > 0 && row.Price.Ja.Value.Length > 0) &&
+    v5Commission.Options.Any(row => row.Label.Contains("ハモリ")) &&
+    v5Commission.Options[0].Price.Ja.Value.Contains("4,000"));
+
+var option = v5Commission.Options[0];
+option.Price.Ja.Value = "＋9,000円";
+option.SyncEnglishFromJapanese();
+Check("追加プランの金額も英語へ写せる", option.Price.En.Value == "from 9,000 JPY" && v5.HasChanges);
+option.Price.Ja.Revert();
+option.Price.En.Revert();
+
+var text = v5.CommissionText;
+var jaPage = text.Pages.Single(page => page.Title == "日本語版");
+var enPage = text.Pages.Single(page => page.Title == "英語版");
+
+Check("文章のかたまりを両ページから拾う",
+    text.Pages.Count == 2 && jaPage.Blocks.Count > 30 && enPage.Blocks.Count > 30 &&
+    jaPage.Blocks.Any(block => block.Label.Contains("歌ってみたMIX")) &&
+    jaPage.Blocks.Any(block => block.Label.Contains("テンプレート本文")));
+Check("箇条書きは空行区切りで読める",
+    jaPage.Blocks.First(block => block.Label.Contains("歌ってみたMIX")).Text.Contains("ピッチ補正\n\nリズム補正"));
+Check("<br /> は改行として読める",
+    jaPage.Blocks.Any(block => block.Text.Contains("\n") && !block.Text.Contains("<br")));
+Check("HTMLの印は画面に出さない",
+    jaPage.Blocks.All(block => !block.Text.Contains("<li>") && !block.Text.Contains("<p>")));
+
+// ここが要：読んだだけなら1文字も変わらないこと。
+ShowFirstDifference(text.Rebuild(jaPage), jaPage.CurrentText);
+static void ShowFirstDifference(string rebuilt, string original)
+{
+    if (rebuilt == original) return;
+    var limit = Math.Min(rebuilt.Length, original.Length);
+    var at = 0;
+    while (at < limit && rebuilt[at] == original[at]) at++;
+    var from = Math.Max(0, at - 90);
+    Console.WriteLine("  [診断] 位置 " + at);
+    Console.WriteLine("  [元 ] " + original.Substring(from, Math.Min(240, original.Length - from)).Replace("\n", "\\n"));
+    Console.WriteLine("  [新 ] " + rebuilt.Substring(from, Math.Min(240, rebuilt.Length - from)).Replace("\n", "\\n"));
+}
+Check("日本語版は組み立て直しても1文字も変わらない", text.Rebuild(jaPage) == jaPage.CurrentText);
+Check("英語版は組み立て直しても1文字も変わらない", text.Rebuild(enPage) == enPage.CurrentText);
+Check("最初は変更なし", !text.HasChanges && !v5.HasChanges);
+
+var listBlock = jaPage.Blocks.First(block => block.Label.Contains("歌ってみたMIX"));
+listBlock.Text = "ピッチ補正\n\nリズム補正\n\nあたらしい項目";
+Check("箇条書きの増減が変更一覧に出る",
+    text.HasChanges && v5.Changes().Any(row => row.Label.Contains("日本語版")));
+
+var paragraph = jaPage.Blocks.First(block => block.Label.Contains("リテイク"));
+var paragraphWas = paragraph.Text;
+paragraph.Text = "ためしの説明。\n2行目。";
+
+Check("< > は誤りとして出る", NewError(jaPage, "<b>太字</b>"));
+static bool NewError(CommissionTextPage page, string bad)
+{
+    var block = page.Blocks.First();
+    var keep = block.Text;
+    block.Text = bad;
+    var bad1 = block.HasError;
+    block.Text = keep;
+    return bad1 && !block.HasError;
+}
+
+v5.Save();
+Check("保存すると変更なしに戻る", !v5.HasChanges && !text.HasChanges);
+
+var afterSave = SiteSession.Load(sandbox);
+var afterJa = afterSave.CommissionText.Pages.Single(page => page.Title == "日本語版");
+Check("書いた箇条書きが読み直せる",
+    afterJa.Blocks.First(block => block.Label.Contains("歌ってみたMIX")).Text.EndsWith("あたらしい項目"));
+Check("書いた段落が読み直せる",
+    afterJa.Blocks.First(block => block.Label.Contains("リテイク")).Text == "ためしの説明。\n2行目。");
+Check("保存後も組み立て直しで1文字も変わらない",
+    afterSave.CommissionText.Rebuild(afterJa) == afterJa.CurrentText);
+Check("料金と文章を同じファイルで同時に直せる",
+    File.ReadAllText(Path.Combine(sandbox, "commission", "index.html")).Contains("あたらしい項目") &&
+    File.ReadAllText(Path.Combine(sandbox, "commission", "index.html")).Contains("plan-amount"));
+
+// 2回続けて保存しても、位置を見失わないこと。
+var again = afterJa.Blocks.First(block => block.Label.Contains("リテイク"));
+again.Text = "もう一度ためす。";
+afterSave.Save();
+Check("続けて保存しても見失わない",
+    SiteSession.Load(sandbox).CommissionText.Pages[0].Blocks
+        .First(block => block.Label.Contains("リテイク")).Text == "もう一度ためす。");
+
+// --- v0.6：うたまぜ！のリリース切り替え -----------------------------------
+
+var v6 = SiteSession.Load(sandbox);
+var release = v6.Utamaze ?? throw new Exception("うたまぜ！のリリース手順が読めません");
+
+Check("リリース手順を6項目そろえる",
+    release.Switches.Count == 6 &&
+    release.Switches.All(step => !step.IsUnknown) &&
+    release.Switches.Any(step => step.Label.Contains("検索")) &&
+    release.Switches.Any(step => step.Label.Contains("PRO")) &&
+    release.Switches.Any(step => step.Label.Contains("トップページ")));
+Check("いまは全部準備中", release.LiveCount == 0 && !release.IsMixed &&
+    release.Summary.Contains("すべて準備中"));
+Check("version.json のダウンロード先を初期値にする", release.DownloadUrl.Contains("halkaclub.com"));
+
+// URLが足りないまま公開にしようとすると、誤りとして出る。
+var pro = release.Switches.First(step => step.Label.Contains("PRO"));
+pro.MakeLive = true;
+Check("購入URLが無いと誤りになる", pro.HasError && release.HasError && v6.HasError);
+release.CheckoutUrl = "https://halka.lemonsqueezy.com/buy/xxxx";
+Check("入れれば直る", !pro.HasError && !release.HasError);
+pro.MakeLive = false;
+
+// まとめて公開の形へ。
+release.MakeAllLive();
+Check("まとめて公開にできる", release.Switches.All(step => step.MakeLive) && release.HasChanges &&
+    !release.HasError && v6.Changes().Count(row => row.Label.StartsWith("うたまぜ！")) == 6);
+
+v6.Save();
+
+var utamazePage = File.ReadAllText(Path.Combine(sandbox, "utamaze", "index.html"));
+var topPage = File.ReadAllText(Path.Combine(sandbox, "index.html"));
+Check("noindex が外れる", !utamazePage.Contains("noindex"));
+Check("ダウンロードボタンがリンクになる",
+    utamazePage.Contains("<a class=\"button primary\" href=\"https://halkaclub.com/utamaze/\">ダウンロード</a>") &&
+    utamazePage.Contains("<a class=\"button ghost full\" href=\"https://halkaclub.com/utamaze/\">ダウンロード</a>"));
+Check("購入ボタンが購入URLになる",
+    utamazePage.Contains("<a class=\"button primary full\" href=\"https://halka.lemonsqueezy.com/buy/xxxx\">PROを購入する</a>"));
+Check("「公開準備中です」が消える", !utamazePage.Contains("pre-release"));
+Check("トップページにカードが出る",
+    topPage.Contains("href=\"/utamaze/\"") && topPage.Contains("<strong>うたまぜ！</strong>") &&
+    topPage.Contains("utamaze-link:start") && topPage.Contains("utamaze-link:end"));
+Check("ページの作りが変わったと分かる", release.StructureChanged == false);   // 保存後は変更なしに戻る
+
+var afterRelease = SiteSession.Load(sandbox).Utamaze!;
+Check("読み直すと全部公開になっている",
+    afterRelease.LiveCount == 6 && !afterRelease.IsMixed && !afterRelease.HasChanges &&
+    afterRelease.Summary.Contains("すべて公開"));
+
+// 準備中へ戻せること（間違えて公開してしまったときのため）。
+foreach (var step in afterRelease.Switches) step.MakeLive = false;
+Check("準備中へ戻す変更として出る", afterRelease.HasChanges && afterRelease.Changes().Count == 6);
+
+var back = SiteSession.Load(sandbox);
+foreach (var step in back.Utamaze!.Switches) step.MakeLive = false;
+back.Save();
+
+var restored = SiteSession.Load(sandbox).Utamaze!;
+Check("戻すと全部準備中に戻る", restored.LiveCount == 0);
+Check("戻したページは元どおり",
+    File.ReadAllText(Path.Combine(sandbox, "utamaze", "index.html")).Contains("noindex") &&
+    File.ReadAllText(Path.Combine(sandbox, "utamaze", "index.html")).Contains("PRO　準備中") &&
+    File.ReadAllText(Path.Combine(sandbox, "utamaze", "index.html")).Contains("pre-release") &&
+    !File.ReadAllText(Path.Combine(sandbox, "index.html")).Contains("href=\"/utamaze/\""));
+
+// 一部だけ公開した状態を見分けられること。
+var partial = SiteSession.Load(sandbox);
+partial.Utamaze!.Switches.First(step => step.Label.Contains("検索")).MakeLive = true;
+partial.Save();
+var mixed = SiteSession.Load(sandbox).Utamaze!;
+Check("揃っていないと分かる", mixed.IsMixed && mixed.LiveCount == 1 && mixed.Summary.Contains("揃っていません"));
+
+// --- v0.7：YouTubeの新着から作品を足す -------------------------------------
+
+const string feedSample = """
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns="http://www.w3.org/2005/Atom">
+  <title>HALKA</title>
+  <entry>
+    <id>yt:video:7dmyKo4D_3w</id>
+    <yt:videoId>7dmyKo4D_3w</yt:videoId>
+    <title>てすと Arrange coverの歌</title>
+    <published>2026-10-04T12:00:00+00:00</published>
+  </entry>
+  <entry>
+    <id>yt:video:XRIndSupS3A</id>
+    <yt:videoId>XRIndSupS3A</yt:videoId>
+    <title>脱法ロックｳﾀｯﾀ (Arrange cover)</title>
+    <published>2021-10-17T09:00:00+00:00</published>
+  </entry>
+  <entry>
+    <id>yt:video:zzzzzzzzzzz</id>
+    <yt:videoId>zzzzzzzzzzz</yt:videoId>
+    <title>引用"つきのタイトル</title>
+    <published>2026-01-02T15:30:00+00:00</published>
+  </entry>
+</feed>
+""";
+
+var feed = YouTubeFeed.Parse(feedSample);
+Check("新着を読み取れる",
+    feed.Count == 3 && feed[0].VideoId == "7dmyKo4D_3w" &&
+    feed[0].Title == "てすと Arrange coverの歌" &&
+    feed[0].Url == "https://youtu.be/7dmyKo4D_3w" &&
+    feed[0].PublishedAt.StartsWith("2026-10-0"));
+Check("チャンネルIDの形を見る",
+    YouTubeFeed.LooksLikeChannelId(YouTubeFeed.DefaultChannelId) &&
+    !YouTubeFeed.LooksLikeChannelId("HALKAchan") &&
+    !YouTubeFeed.LooksLikeChannelId("UC123") &&
+    !YouTubeFeed.LooksLikeChannelId(null));
+Check("取り出し先のURLを組み立てる",
+    YouTubeFeed.FeedUrl("UCxxxx").EndsWith("channel_id=UCxxxx"));
+
+var feedSession = SiteSession.Load(sandbox);
+var known = YouTubeFeed.KnownVideoIds(feedSession.Works);
+Check("もう入っている動画が分かる",
+    known.Contains("XRIndSupS3A") && !known.Contains("7dmyKo4D_3w") && known.Count > 20);
+
+// 新着のうち、まだ入っていないものだけを足せること。
+var target = feedSession.Works.Categories.First();
+var before = target.Works.Count;
+foreach (var feedItem in feed.Where(v => !known.Contains(v.VideoId)))
+{
+    var row = target.AddNew();
+    row.Title = feedItem.Title;
+    row.PublishedAt = feedItem.PublishedAt;
+    row.YouTubeUrl = feedItem.Url;
+}
+Check("入っていない2本だけ足される", target.Works.Count == before + 2 &&
+    target.Works.All(work => !work.HasError));
+
+feedSession.Save();
+var afterFeed = SiteSession.Load(sandbox).Works.Categories.First();
+Check("足した動画が読み直せる",
+    afterFeed.Works.Any(work => work.YouTubeUrl == "https://youtu.be/7dmyKo4D_3w") &&
+    afterFeed.Works.Any(work => work.Title == "引用\"つきのタイトル"));
+Check("足したあとは重複として扱われる",
+    YouTubeFeed.KnownVideoIds(SiteSession.Load(sandbox).Works).Contains("7dmyKo4D_3w"));
+
+// --- v0.8：作品を変えたら読み込み側の ?v= を上げる --------------------------
+// GitHub Pages は max-age=600 を返すので、番号を上げないと見る人が古いまま見てしまう。
+
+var worksHtml = Path.Combine(sandbox, "works", "index.html");
+
+var bust = SiteSession.Load(sandbox);
+var versionBefore = CacheBuster.Current(File.ReadAllText(worksHtml), "works-data.js");
+
+bust.Works.Categories.First().Works[0].Title = "番号が上がるか確かめる";
+bust.Save();
+
+var versionAfter = CacheBuster.Current(File.ReadAllText(worksHtml), "works-data.js");
+Check("作品を変えると ?v= が上がる", versionAfter == versionBefore + 1 && versionAfter >= 1);
+Check("読み込み行が壊れていない",
+    File.ReadAllText(worksHtml).Contains($"works-data.js?v={versionAfter}\" defer"));
+
+// 作品を触っていないときは上げない（意味のない差分を出さないため）。
+var untouched = SiteSession.Load(sandbox);
+untouched.Groups.Single(group => group.Title == "サイトの基本色")
+    .Fields.Single(field => field.Label.StartsWith("黄色")).Value = "#010203";
+untouched.Save();
+Check("作品を触らなければ上がらない",
+    CacheBuster.Current(File.ReadAllText(worksHtml), "works-data.js") == versionAfter);
+
+// ?v= がまだ無いファイルには付ける。
+Check("まだ番号が無ければ付ける", CacheBuster.Current("<script src=\"a.js\"></script>", "a.js") == 0);
+
+// --- v0.8：うれしいこと／くらぶの更新内容 ----------------------------------
+
+var v8 = SiteSession.Load(sandbox);
+var news = v8.News ?? throw new Exception("うれしいこと欄が読めません");
+var clubUpdate = v8.ClubUpdate ?? throw new Exception("くらぶの更新内容が読めません");
+
+Check("うれしいことを読み取れる",
+    news.Items.Count == 3 &&
+    news.Items[0].Date == "2/21投稿" &&
+    news.Items[0].Title.Contains("竹取オーバナイト") &&
+    news.Items[0].Description.Contains("ボカコレ") &&
+    news.Items[0].Achievements.Contains("超かぐや姫！賞"));
+Check("説明が無い件も読める",
+    news.Items[1].Description == "" && news.Items[1].Achievements.Contains("コンピCD"));
+Check("HTMLの印は画面に出さない",
+    news.Items.All(item => !item.Title.Contains("<") && !item.Achievements.Contains("<mark>")));
+Check("読んだだけなら1文字も変わらない", news.Rebuild() == File.ReadAllText(Path.Combine(sandbox, "index.html")));
+Check("最初は変更なし", !news.HasChanges && !clubUpdate.Changed && !v8.HasChanges);
+
+Check("くらぶの更新内容を読める", clubUpdate.Text == "・ページ作成");
+
+// 追加・並べ替え・削除。
+var addedNews = news.AddNew();
+addedNews.Date = "10/7";
+addedNews.Title = "ためしのお知らせ";
+addedNews.Achievements = "ためし賞　受賞\nもうひとつ";
+Check("追加が変更一覧に出る",
+    news.HasChanges && !news.HasError &&
+    v8.Changes().Any(row => row.Label.Contains("うれしいこと：追加") && row.After == "ためしのお知らせ"));
+
+news.Move(addedNews, -1);
+Check("並べ替えられる", news.Items[2] == addedNews);
+
+clubUpdate.Text = "・ページ作成\n・ステムを追加";
+Check("くらぶの更新内容を増やせる", clubUpdate.Changed &&
+    v8.Changes().Any(row => row.Label.Contains("くらぶ")));
+
+v8.Save();
+
+var newsSession = SiteSession.Load(sandbox);
+var newsAfter = newsSession.News!;
+Check("書いたお知らせが読み直せる",
+    newsAfter.Items.Count == 4 &&
+    newsAfter.Items[2].Title == "ためしのお知らせ" &&
+    newsAfter.Items[2].Achievements == "ためし賞　受賞\nもうひとつ" &&
+    newsAfter.Items[2].Description == "");
+Check("保存後も組み立て直しで1文字も変わらない",
+    newsAfter.Rebuild() == File.ReadAllText(Path.Combine(sandbox, "index.html")));
+Check("くらぶの更新内容が読み直せる", newsSession.ClubUpdate!.Text == "・ページ作成\n・ステムを追加");
+Check("説明が空なら、その行ごと出さない",
+    !File.ReadAllText(Path.Combine(sandbox, "index.html")).Contains("<p class=\"news-desc\"></p>"));
+
+// 削除して元の件数へ戻せること。
+var shrink = SiteSession.Load(sandbox);
+var remove = shrink.News!.Items.First(item => item.Title == "ためしのお知らせ");
+shrink.News.Items.Remove(remove);
+Check("削除が変更一覧に出る",
+    shrink.Changes().Any(row => row.Label.Contains("削除") && row.Before == "ためしのお知らせ"));
+shrink.Save();
+Check("消すと元の件数に戻る", SiteSession.Load(sandbox).News!.Items.Count == 3);
+
+// リンクの編集と同じファイルを触るので、両方残ること。
+var together = SiteSession.Load(sandbox);
+together.Groups.Single(group => group.Title == "リンク").Rows[0].Cells[0].Field.Value = "作品のまとめ";
+together.News!.Items[0].Title = "見出しを変えた";
+together.Save();
+var bothSaved = SiteSession.Load(sandbox);
+Check("リンクとお知らせを同時に直せる",
+    bothSaved.Groups.Single(group => group.Title == "リンク").Rows[0].Cells[0].Field.Value == "作品のまとめ" &&
+    bothSaved.News!.Items[0].Title == "見出しを変えた");
+
+// --- v0.9：ゲーム集と各ゲームのページ --------------------------------------
+
+var gameIndexPath = Path.Combine(sandbox, "game", "index.html");
+var rinchanPath = Path.Combine(sandbox, "game", "gyugyu-rinchan", "index.html");
+
+Check("強調の書き方を行き来できる",
+    GameMarkup.ToPlain("<strong>あ</strong>い") == "**あ**い" &&
+    GameMarkup.ToHtml("**あ**い") == "<strong>あ</strong>い" &&
+    GameMarkup.Validate("**あ**い") == null &&
+    GameMarkup.Validate("**あい") != null &&
+    GameMarkup.Validate("<b>あ</b>") != null);
+
+var v9 = SiteSession.Load(sandbox);
+var games = v9.Games ?? throw new Exception("ゲーム集が読めません");
+var rinchan = games.Pages.Single(page => page.Slug == "gyugyu-rinchan");
+var kagamine = games.Pages.Single(page => page.Slug == "kagamine-challenge");
+
+Check("転送だけのページは読まない", games.Pages.Count == 2);
+Check("一覧のカードを読める",
+    games.Collection.Cards.Count == 2 &&
+    games.Collection.Cards[0].Title == "かがみねちゃれんじ" &&
+    games.Collection.Cards[1].Slug == "gyugyu-rinchan" &&
+    games.Collection.Cards[1].TagLines().Contains("ver 1.2") &&
+    games.Collection.Cards[1].DescriptionLines().Count == 3);
+Check("ひとことを読める", games.Lead.Value == "なんか、変なゲーム");
+Check("ゲームのページを読める",
+    rinchan.Title.Value == "ぎゅうぎゅうりんちゃん" &&
+    rinchan.GameUrl.Value == "https://halkachan.github.io/gyugyu-rinchan/" &&
+    rinchan.Version!.Value == "ver 1.2" &&
+    rinchan.Description!.Lines().Count == 3);
+Check("更新履歴を読める",
+    rinchan.HasChangelog && rinchan.Changelog.Count == 3 &&
+    rinchan.Changelog[0].Version == "ver 1.2" &&
+    rinchan.Changelog[0].Date == "2026-09-10" &&
+    rinchan.Changelog[0].Display == "2026.9.10" &&
+    rinchan.Changelog[0].ItemLines().Count == 5 &&
+    rinchan.Changelog[0].ItemLines()[0].StartsWith("**記録を X に") &&
+    rinchan.Changelog[1].Note.StartsWith("ランキングはこの版からの"));
+Check("更新履歴が無いゲームもある", !kagamine.HasChangelog && kagamine.Version == null);
+Check("ゲーム集は読んだだけなら1文字も変わらない",
+    games.Collection.Rebuild() == File.ReadAllText(gameIndexPath));
+Check("更新履歴は読んだだけなら1文字も変わらない",
+    rinchan.Rebuild() == File.ReadAllText(rinchanPath));
+Check("ゲームを読んだ直後は変更なし", !games.HasChanges && !games.HasError && !v9.HasChanges);
+Check("版はそろっている", !rinchan.CanAlignVersion && rinchan.VersionSummary.Contains("そろっています"));
+
+// 新しい版を出す。
+var entry = rinchan.AddNewEntry();
+Check("前の版から1つ進める", entry.Version == "ver 1.3" && rinchan.Changelog[0] == entry);
+Check("中身が空なら誤りとして出る", entry.HasError && games.HasError);
+entry.Items = "**りんちゃんが増えました。**たくさん出ます\nおとの大きさを直しました";
+entry.Note = "この版から記録が別になります。";
+Check("入れれば誤りが消える", !entry.HasError && !games.HasError && games.HasChanges);
+Check("版が食い違ったことに気づく",
+    rinchan.CanAlignVersion && rinchan.VersionSummary.Contains("ver 1.3") &&
+    rinchan.VersionSummary.Contains("ver 1.2"));
+
+rinchan.AlignVersion();
+Check("ページと一覧の札をそろえる",
+    rinchan.Version!.Value == "ver 1.3" &&
+    rinchan.Card!.TagLines().Contains("ver 1.3") &&
+    !rinchan.Card.TagLines().Contains("ver 1.2") &&
+    !rinchan.CanAlignVersion);
+Check("ゲームの変更が一覧に出る",
+    v9.Changes().Any(row => row.Label.Contains("更新履歴を追加") && row.After == "ver 1.3") &&
+    v9.Changes().Any(row => row.Label.Contains("ゲーム集")));
+
+// カードの追加と並べ替え。
+games.Lead.Value = "なんか、変なゲームたち";
+var card = games.Collection.AddNew();
+card.Title = "ためしのゲーム";
+card.Description = "1行目\n2行目";
+card.Tags = "スマホ対応";
+card.Href = "tameshi/";
+games.Collection.Move(card, -1);
+Check("カードを足して並べ替えられる", games.Collection.Cards[1] == card && !games.HasError);
+
+v9.Save();
+
+var after = SiteSession.Load(sandbox);
+var gamesAfter = after.Games!;
+var rinchanAfter = gamesAfter.Pages.Single(page => page.Slug == "gyugyu-rinchan");
+Check("書いた更新履歴が読み直せる",
+    rinchanAfter.Changelog.Count == 4 &&
+    rinchanAfter.Changelog[0].Version == "ver 1.3" &&
+    rinchanAfter.Changelog[0].ItemLines().Count == 2 &&
+    rinchanAfter.Changelog[0].Note == "この版から記録が別になります。" &&
+    rinchanAfter.Version!.Value == "ver 1.3");
+Check("書いたカードが読み直せる",
+    gamesAfter.Collection.Cards.Count == 3 &&
+    gamesAfter.Collection.Cards[1].Title == "ためしのゲーム" &&
+    gamesAfter.Collection.Cards[1].DescriptionLines().Count == 2 &&
+    gamesAfter.Lead.Value == "なんか、変なゲームたち");
+
+var gameIndexText = File.ReadAllText(gameIndexPath);
+Check("番号は並び順どおりに振り直す",
+    gameIndexText.IndexOf(">01</p>", StringComparison.Ordinal) <
+    gameIndexText.IndexOf(">02</p>", StringComparison.Ordinal) &&
+    gameIndexText.Contains(">03</p>"));
+Check("強調はHTMLへ戻している",
+    File.ReadAllText(rinchanPath)
+        .Contains("<li><strong>りんちゃんが増えました。</strong>たくさん出ます</li>"));
+Check("ゲームも保存後は組み立て直しで1文字も変わらない",
+    gamesAfter.Collection.Rebuild() == File.ReadAllText(gameIndexPath) &&
+    rinchanAfter.Rebuild() == File.ReadAllText(rinchanPath));
+
+// 名前を変えると、ページの中の4か所が一度にそろう。
+rinchanAfter.Title.Value = "ぎゅうぎゅうりんちゃん！";
+after.Save();
+var renamed = File.ReadAllText(rinchanPath);
+Check("名前は4か所まとめて変わる",
+    renamed.Contains("<title>ぎゅうぎゅうりんちゃん！ | HALKA</title>") &&
+    renamed.Contains("<h1 id=\"game-title\">ぎゅうぎゅうりんちゃん！</h1>") &&
+    renamed.Contains("data-game-title=\"ぎゅうぎゅうりんちゃん！\"") &&
+    renamed.Contains("<p>ぎゅうぎゅうりんちゃん！</p>"));
+
+// 消したあと、元に戻せること。
+var shrinkGames = SiteSession.Load(sandbox);
+var rinchanShrink = shrinkGames.Games!.Pages.Single(page => page.Slug == "gyugyu-rinchan");
+shrinkGames.Games.Collection.Cards.Remove(
+    shrinkGames.Games.Collection.Cards.Single(item => item.Title == "ためしのゲーム"));
+rinchanShrink.Changelog.Remove(rinchanShrink.Changelog[0]);
+Check("消すのも変更一覧に出る",
+    shrinkGames.Changes().Any(row => row.Label.Contains("カードを削除")) &&
+    shrinkGames.Changes().Any(row => row.Label.Contains("更新履歴を削除")));
+shrinkGames.Revert();
+Check("ゲームも元に戻せる", !shrinkGames.HasChanges &&
+    shrinkGames.Games!.Collection.Cards.Count == 3 &&
+    shrinkGames.Games.Pages.Single(page => page.Slug == "gyugyu-rinchan").Changelog.Count == 4);
+
 // --- プレビュー用サーバー -------------------------------------------------
 
 Check("URLから実ファイルへ",
@@ -258,16 +728,20 @@ Check("URLから実ファイルへ",
     PreviewServer.ResolveFile(sandbox, "/style.css") == Path.Combine(sandbox, "style.css"));
 Check("無いものは配らない",
     PreviewServer.ResolveFile(sandbox, "/nothing.html") == null &&
-    PreviewServer.ResolveFile(sandbox, "/game/") == null);
+    PreviewServer.ResolveFile(sandbox, "/halkaworld/") == null);
 Check("フォルダーの外へは出られない",
     PreviewServer.ResolveFile(sandbox, "/../../windows/win.ini") == null &&
     PreviewServer.ResolveFile(sandbox, "/commission/../../..") == null);
 
 Check("出せるページだけ並べる",
     SitePages.ForSite(sandbox).Select(page => page.Url).SequenceEqual(
-        new[] { "/", "/commission/", "/commission/en/", "/works/", "/club/" }));
+        new[] { "/", "/commission/", "/commission/en/", "/works/", "/club/", "/utamaze/", "/game/",
+                "/game/gyugyu-rinchan/", "/game/kagamine-challenge/" }));
+Check("転送だけのページは並べない",
+    SitePages.ForSite(sandbox).All(page => page.Url != "/game/mine-dungeon/"));
 Check("タブに合うページを選ぶ",
     SitePages.ForGroup(SitePages.ForSite(sandbox), "依頼ページ")!.Url == "/commission/" &&
+    SitePages.ForGroup(SitePages.ForSite(sandbox), "ゲーム")!.Url == "/game/" &&
     SitePages.ForGroup(SitePages.ForSite(sandbox), "サイトの基本色")!.Url == "/");
 
 using (var server = new PreviewServer(sandbox))

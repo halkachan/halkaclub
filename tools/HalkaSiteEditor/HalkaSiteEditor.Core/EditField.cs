@@ -22,6 +22,7 @@ public sealed class EditField : INotifyPropertyChanged
 {
     private readonly SiteFile file;
     private readonly ValueSlot slot;
+    private readonly IReadOnlyList<ValueSlot> mirrors;
     private string value;
     private string? error;
 
@@ -31,10 +32,16 @@ public sealed class EditField : INotifyPropertyChanged
     public string FileRelative { get; }
     public string Original { get; private set; }
 
-    internal EditField(SiteFile file, string fileRelative, ValueSlot slot, string id, string label, FieldKind kind)
+    /// <param name="mirrors">
+    /// 同じ値が入っている別の場所（ゲームの名前が &lt;title&gt; や data-game-title にも出てくる、など）。
+    /// 読むのは <paramref name="slot"/> からだけで、書くときだけここにも同じ値を入れます。
+    /// </param>
+    internal EditField(SiteFile file, string fileRelative, ValueSlot slot, string id, string label, FieldKind kind,
+        IReadOnlyList<ValueSlot>? mirrors = null)
     {
         this.file = file;
         this.slot = slot;
+        this.mirrors = mirrors ?? Array.Empty<ValueSlot>();
         Id = id;
         Label = label;
         Kind = kind;
@@ -102,6 +109,8 @@ public sealed class EditField : INotifyPropertyChanged
     {
         if (!Changed) return;
         file.SetText(slot.Write(file.Text, Value));
+        // 同じ値が出てくる別の場所も、まとめてそろえます。
+        foreach (var mirror in mirrors) file.SetText(mirror.Write(file.Text, Value));
     }
 
     internal void MarkSaved()
@@ -159,6 +168,25 @@ public sealed class FieldRow
     }
 }
 
+/// <summary>追加プラン1つ（名前と金額を、日英それぞれ）。</summary>
+public sealed class OptionRow
+{
+    public string Label { get; }
+    public FieldPair Name { get; }
+    public FieldPair Price { get; }
+
+    public OptionRow(string label, FieldPair name, FieldPair price)
+    {
+        Label = label;
+        Name = name;
+        Price = price;
+    }
+
+    public bool CanSyncEnglish => Price.CanSyncEnglish;
+
+    public void SyncEnglishFromJapanese() => Price.SyncEnglishFromJapanese();
+}
+
 /// <summary>画面のひとかたまり（タブ1枚ぶん）。</summary>
 public sealed class EditGroup
 {
@@ -167,15 +195,18 @@ public sealed class EditGroup
     public IReadOnlyList<EditField> Fields { get; }
     public IReadOnlyList<FieldPair> Pairs { get; }
     public IReadOnlyList<FieldRow> Rows { get; }
+    public IReadOnlyList<OptionRow> Options { get; }
 
     public EditGroup(string title, string note, IReadOnlyList<EditField> fields,
-        IReadOnlyList<FieldPair>? pairs = null, IReadOnlyList<FieldRow>? rows = null)
+        IReadOnlyList<FieldPair>? pairs = null, IReadOnlyList<FieldRow>? rows = null,
+        IReadOnlyList<OptionRow>? options = null)
     {
         Title = title;
         Note = note;
         Fields = fields;
         Pairs = pairs ?? Array.Empty<FieldPair>();
         Rows = rows ?? Array.Empty<FieldRow>();
+        Options = options ?? Array.Empty<OptionRow>();
     }
 }
 
