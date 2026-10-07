@@ -60,13 +60,17 @@ public sealed class SiteSession
     public PageTextDocument? UtamazeText { get; }
     /// <summary>はるかくらぶのページの文章。そのページが無ければ null。</summary>
     public PageTextDocument? ClubText { get; }
+    /// <summary>うたまぜ！の規約3ページの文章。無ければ null。</summary>
+    public PageTextDocument? LegalText { get; }
+    /// <summary>HALKA WORLD の更新履歴。そのページが無ければ null。</summary>
+    public WorldHistory? World { get; }
 
     /// <summary>文章を直せるページを、まとめて並べます。</summary>
     public IReadOnlyList<PageTextPage> TextPages =>
         TextDocuments.SelectMany(document => document.Pages).ToArray();
 
     private IEnumerable<PageTextDocument> TextDocuments =>
-        new[] { CommissionText, UtamazeText, ClubText }.OfType<PageTextDocument>();
+        new[] { CommissionText, UtamazeText, ClubText, LegalText }.OfType<PageTextDocument>();
     public UtamazeRelease? Utamaze { get; }
     public NewsDocument? News { get; }
     public ParagraphRun? ClubUpdate { get; }
@@ -99,14 +103,17 @@ public sealed class SiteSession
     public IEnumerable<EditField> Fields => Groups.SelectMany(group => group.Fields);
     public bool HasChanges => Fields.Any(field => field.Changed) || Works.HasChanges || TextDocuments.Any(document => document.HasChanges) || Utamaze?.HasChanges == true
         || News?.HasChanges == true || ClubUpdate?.Changed == true || Games?.HasChanges == true
-        || Images.Any(image => image.Changed) || Links?.HasChanges == true;
+        || Images.Any(image => image.Changed) || Links?.HasChanges == true
+        || World?.HasChanges == true;
     public bool HasError => Fields.Any(field => field.HasError) || Works.HasError || TextDocuments.Any(document => document.HasError) || Utamaze?.HasError == true
         || News?.HasError == true || ClubUpdate?.HasError == true || Games?.HasError == true
-        || Images.Any(image => image.HasError) || Links?.HasError == true;
+        || Images.Any(image => image.HasError) || Links?.HasError == true
+        || World?.HasError == true;
 
     private SiteSession(string root, List<SiteFile> files, IReadOnlyList<EditGroup> groups,
         WorksDocument works, PageTextDocument commissionText, PageTextDocument? utamazeText,
-        PageTextDocument? clubText, UtamazeRelease? utamaze,
+        PageTextDocument? clubText, PageTextDocument? legalText, WorldHistory? world,
+        UtamazeRelease? utamaze,
         SiteFile? worksPage, NewsDocument? news, ParagraphRun? clubUpdate, GameDocument? games,
         PageMetaDocument? meta, ImageSlot? profile, LinkGrid? links)
     {
@@ -117,6 +124,8 @@ public sealed class SiteSession
         CommissionText = commissionText;
         UtamazeText = utamazeText;
         ClubText = clubText;
+        LegalText = legalText;
+        World = world;
         Utamaze = utamaze;
         this.worksPage = worksPage;
         News = news;
@@ -242,8 +251,28 @@ public sealed class SiteSession
         var clubText = clubFile == null ? null : PageTextDocument.Load(PageTextDocument.Club,
             ("はるかくらぶ", clubFile, SitePaths.Relative(root, clubFile.Path), "/club/"));
 
+        // うたまぜ！の規約のページ。あるものだけを並べます。
+        var legalSources = new[]
+            {
+                ("特定商取引法に基づく表記", "legal"),
+                ("使用許諾契約（EULA）", "eula"),
+                ("プライバシーポリシー", "privacy"),
+            }
+            .Select(page => (page.Item1, Path.Combine(root, "utamaze", page.Item2, "index.html"), page.Item2))
+            .Where(page => File.Exists(page.Item2))
+            .Select(page => (Title: page.Item1, File: Open(page.Item2),
+                Relative: SitePaths.Relative(root, page.Item2), Url: $"/utamaze/{page.Item3}/"))
+            .ToArray();
+        var legalText = legalSources.Length == 0 ? null : PageTextDocument.Load(PageTextDocument.Legal, legalSources);
+
+        // HALKA WORLD の更新履歴。
+        var worldPath = Path.Combine(root, "halkaworld", "index.html");
+        var world = File.Exists(worldPath)
+            ? WorldHistory.Load(Open(worldPath), SitePaths.Relative(root, worldPath))
+            : null;
+
         var session = new SiteSession(root, files, groups, works, commissionText, utamazeText, clubText,
-            utamaze, worksPage, news, clubUpdate, games, meta, profile, links);
+            legalText, world, utamaze, worksPage, news, clubUpdate, games, meta, profile, links);
         session.Backups = backups ?? SaveBackups.For(root);
         return session;
     }
@@ -522,6 +551,7 @@ public sealed class SiteSession
         .Concat(Games?.Changes() ?? Array.Empty<ChangeRow>())
         .Concat(Images.Select(image => image.Change()).OfType<ChangeRow>())
         .Concat(Links?.Changes() ?? Array.Empty<ChangeRow>())
+        .Concat(World?.Changes() ?? Array.Empty<ChangeRow>())
         .ToArray();
 
     /// <summary>入力内容をファイルへ書き込みます。</summary>
@@ -563,6 +593,7 @@ public sealed class SiteSession
         ClubUpdate?.Apply();
         Games?.Apply();
         Links?.Apply();
+        World?.Apply();
         // 画像を差し替えるときは、読み込み側の `?v=` も上げます。
         // 上げないと、見る人のブラウザが古い画像をしばらく掴んだままになります。
         foreach (var image in Images) image.Bump(files);
@@ -584,6 +615,7 @@ public sealed class SiteSession
         ClubUpdate?.MarkSaved();
         Games?.MarkSaved();
         Links?.MarkSaved();
+        World?.MarkSaved();
         // 保存したあとは、戻せる手を数え直します（戻しても保存前には戻らないため）。
         Undo.Clear();
     }
@@ -598,6 +630,7 @@ public sealed class SiteSession
         ClubUpdate?.Revert();
         Games?.Revert();
         Links?.Revert();
+        World?.Revert();
         foreach (var image in Images) image.Clear();
         Undo.Clear();
     }

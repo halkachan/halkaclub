@@ -250,6 +250,29 @@ public sealed class PageTextDocument
         value => !value.Contains('<') && !value.Contains('&'),
         "ページ上部");
 
+    /// <summary>うたまぜ！の規約のページ（特定商取引法・使用許諾契約・プライバシーポリシー）。</summary>
+    public static readonly TextProfile Legal = new(
+        new Regex(
+            @"(?<ul><ul>|<ol>)(?<ulInner>[\s\S]*?)</(?:ul|ol)>" +
+            @"|(?<cp><h1 class=""doc-title"">|<h2>|<dt>|<dd>)(?<cpInner>[^<]*)</(?:h1|h2|dt|dd)>" +
+            @"|(?<run>(?:[ \t]*<p>(?:(?!</p>)[\s\S])*</p>\r?\n)+)",
+            RegexOptions.CultureInvariant),
+        new[]
+        {
+            new Regex(@"<h2>([^<]*)</h2>"),
+            new Regex(@"<dt>([^<]*)</dt>"),
+        },
+        name => name switch
+        {
+            "doc-title" => "ページの見出し",
+            "h2" => "見出し",
+            "dt" => "項目の名前",
+            _ => null,
+        },
+        "<br />",
+        value => !value.Contains('<') && !value.Contains('&'),
+        "ページ上部");
+
     private readonly TextProfile profile;
 
     public IReadOnlyList<PageTextPage> Pages { get; }
@@ -438,6 +461,9 @@ public sealed class PageTextDocument
 
             case BlockShape.List:
             {
+                // 開きタグから札の名前を取ります（<ul> でも <ol> でも同じ形で戻せます）。
+                var listTag = Regex.Match(match.Groups["ul"].Value, @"^<([a-z0-9]+)").Groups[1].Value;
+                if (listTag.Length == 0) listTag = "ul";
                 var builder = new StringBuilder(match.Groups["ul"].Value);
                 for (var i = 0; i < items.Length; i++)
                 {
@@ -445,7 +471,7 @@ public sealed class PageTextDocument
                     builder.Append('\n').Append(layout.Indent).Append(Element(profile, "li", items[i], layout));
                 }
                 var close = block.Layouts.Count > 0 ? block.Layouts[0].CloseIndent : "";
-                return builder.Append('\n').Append(close).Append("</ul>").ToString();
+                return builder.Append('\n').Append(close).Append($"</{listTag}>").ToString();
             }
 
             case BlockShape.ClassedParagraph:

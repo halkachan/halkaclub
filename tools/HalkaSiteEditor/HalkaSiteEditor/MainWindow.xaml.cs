@@ -695,7 +695,7 @@ public partial class MainWindow : Window
     // --- ゲーム -------------------------------------------------------------
 
     /// <summary>並びの先頭が一覧ページ、そのあとがゲーム1本ずつ。</summary>
-    private sealed record GameChoice(string Label, GamePage? Page)
+    private sealed record GameChoice(string Label, GamePage? Page, bool IsWorld = false)
     {
         public override string ToString() => Label;
     }
@@ -728,9 +728,13 @@ public partial class MainWindow : Window
             if (page.Description != null) page.Description.PropertyChanged += ChangelogChanged;
         }
 
-        GamePicker.ItemsSource = new[] { new GameChoice("ゲーム集（一覧ページ）", null) }
-            .Concat(games.Pages.Select(page => new GameChoice(page.Title.Value, page))).ToArray();
+        var choices = new List<GameChoice> { new("ゲーム集（一覧ページ）", null) };
+        choices.AddRange(games.Pages.Select(page => new GameChoice(page.Title.Value, page)));
+        if (session.World != null) choices.Add(new GameChoice("HALKA WORLD", null, IsWorld: true));
+        GamePicker.ItemsSource = choices;
         GamePicker.SelectedIndex = 0;
+
+        BindWorld();
     }
 
     private void GameCardsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -757,16 +761,125 @@ public partial class MainWindow : Window
 
     private GamePage? SelectedGame => (GamePicker?.SelectedItem as GameChoice)?.Page;
 
+    private bool WorldSelected => (GamePicker?.SelectedItem as GameChoice)?.IsWorld == true;
+
+    // --- HALKA WORLD の更新履歴 ---------------------------------------------
+
+    private void BindWorld()
+    {
+        var world = session?.World;
+        if (world == null) return;
+
+        WorldItems.ItemsSource = world.Archives;
+        world.Archives.CollectionChanged += WorldCollectionChanged;
+        foreach (var archive in world.Archives) WatchArchive(archive);
+
+        if (world.CurrentVersion != null)
+        {
+            WorldVersionBox.SetBinding(TextBox.TextProperty, new Binding(nameof(EditField.Value))
+            {
+                Source = world.CurrentVersion,
+                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+            });
+            world.CurrentVersion.PropertyChanged += WorldChanged;
+        }
+    }
+
+    private void WatchArchive(WorldArchive archive)
+    {
+        archive.PropertyChanged += WorldChanged;
+        archive.Entries.CollectionChanged += WorldEntriesChanged;
+        foreach (var entry in archive.Entries) entry.PropertyChanged += WorldChanged;
+    }
+
+    private void WorldCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+            foreach (WorldArchive archive in e.NewItems) WatchArchive(archive);
+        RefreshChanges();
+    }
+
+    private void WorldEntriesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+            foreach (WorldEntry entry in e.NewItems) entry.PropertyChanged += WorldChanged;
+        if (e.OldItems != null)
+            foreach (WorldEntry entry in e.OldItems) entry.PropertyChanged -= WorldChanged;
+        RefreshChanges();
+    }
+
+    private void WorldChanged(object? sender, PropertyChangedEventArgs e) => RefreshChanges();
+
+    /// <summary>その件が入っている箱を探します。</summary>
+    private WorldArchive? ArchiveOf(WorldEntry entry) =>
+        session?.World?.Archives.FirstOrDefault(archive => archive.Entries.Contains(entry));
+
+    private void WorldUpClick(object sender, RoutedEventArgs e) => MoveWorld(sender, -1);
+
+    private void WorldDownClick(object sender, RoutedEventArgs e) => MoveWorld(sender, 1);
+
+    private void MoveWorld(object sender, int offset)
+    {
+        if (((FrameworkElement)sender).Tag is not WorldEntry entry) return;
+        var archive = ArchiveOf(entry);
+        if (archive == null || session?.World == null) return;
+        Moved("HALKA WORLD の履歴の並べ替え", entry, archive.Entries.IndexOf,
+            (item, by) => session.World.Move(archive, item, by), offset);
+    }
+
+    private void WorldDeleteClick(object sender, RoutedEventArgs e)
+    {
+        if (((FrameworkElement)sender).Tag is not WorldEntry entry) return;
+        var archive = ArchiveOf(entry);
+        if (archive == null) return;
+
+        var answer = MessageBox.Show(this, $"「{entry.Version}」の履歴を消します。よろしいですか？",
+            "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.OK) return;
+
+        var at = archive.Entries.IndexOf(entry);
+        archive.Entries.Remove(entry);
+        session?.Undo.Record($"HALKA WORLD「{entry.Version}」の削除", () => archive.Entries.Insert(at, entry));
+    }
+
+    private void WorldArchiveAddClick(object sender, RoutedEventArgs e)
+    {
+        var world = session?.World;
+        if (world == null) return;
+
+        var archive = world.AddNewArchive();
+        session?.Undo.Record("HALKA WORLD の箱の追加", () => world.Archives.Remove(archive));
+        RefreshChanges();
+        StatusText.Text = "いちばん上に箱を作りました。名前（「ver3.1 ～ ver4.0」など）を入れてください。";
+    }
+
+    private void WorldAlignClick(object sender, RoutedEventArgs e)
+    {
+        var world = session?.World;
+        if (world?.CurrentVersion == null) return;
+
+        var before = world.CurrentVersion.Value;
+        world.AlignVersion();
+        if (world.CurrentVersion.Value != before)
+            session?.Undo.Record("HALKA WORLD の版をそろえる", () => world.CurrentVersion!.Value = before);
+        RefreshChanges();
+    }
+
+
     private void GamePickerChanged(object sender, SelectionChangedEventArgs e)
     {
         // XAMLを読んでいる途中にも飛んできます。
         if (GameListPanel == null || GamePagePanel == null) return;
 
         var page = SelectedGame;
-        GameListPanel.Visibility = page == null ? Visibility.Visible : Visibility.Collapsed;
+        var world = WorldSelected;
+        GameListPanel.Visibility = page == null && !world ? Visibility.Visible : Visibility.Collapsed;
         GamePagePanel.Visibility = page == null ? Visibility.Collapsed : Visibility.Visible;
-        GameCardAddButton.Visibility = page == null ? Visibility.Visible : Visibility.Collapsed;
-        ChangelogAddButton.Visibility = page?.HasChangelog == true ? Visibility.Visible : Visibility.Collapsed;
+        WorldPanel.Visibility = world ? Visibility.Visible : Visibility.Collapsed;
+        GameCardAddButton.Visibility = page == null && !world ? Visibility.Visible : Visibility.Collapsed;
+        ChangelogAddButton.Visibility = page?.HasChangelog == true || world
+            ? Visibility.Visible : Visibility.Collapsed;
+        WorldArchiveAddButton.Visibility = world ? Visibility.Visible : Visibility.Collapsed;
 
         GameRows.ItemsSource = page?.Rows;
         GameDescription.ItemsSource = page?.Description == null
@@ -779,7 +892,7 @@ public partial class MainWindow : Window
         // 見ているものに合わせて、右のプレビューも移します。
         if (PagePicker?.ItemsSource is IReadOnlyList<SitePage> pages)
         {
-            var url = page == null ? "/game/" : $"/game/{page.Slug}/";
+            var url = world ? "/halkaworld/" : page == null ? "/game/" : $"/game/{page.Slug}/";
             var wanted = pages.FirstOrDefault(candidate => candidate.Url == url);
             if (wanted != null) PagePicker.SelectedItem = wanted;
         }
@@ -790,6 +903,10 @@ public partial class MainWindow : Window
         var page = SelectedGame;
         VersionSummary.Text = page?.VersionSummary ?? "";
         AlignVersionButton.IsEnabled = page?.CanAlignVersion == true;
+
+        if (WorldSummary == null) return;
+        WorldSummary.Text = session?.World?.VersionSummary ?? "";
+        WorldAlignButton.IsEnabled = session?.World?.CanAlignVersion == true;
     }
 
     private void GameCardAddClick(object sender, RoutedEventArgs e)
@@ -828,6 +945,17 @@ public partial class MainWindow : Window
 
     private void ChangelogAddClick(object sender, RoutedEventArgs e)
     {
+        if (WorldSelected)
+        {
+            var world = session?.World;
+            var added = world?.AddNewEntry();
+            if (added == null || world == null) return;
+            session?.Undo.Record($"HALKA WORLD「{added.Version}」の追加",
+                () => world.Archives.First().Entries.Remove(added));
+            StatusText.Text = $"いちばん上に「{added.Version}」を足しました。内容を入れてください。";
+            return;
+        }
+
         var page = SelectedGame;
         var entry = page?.AddNewEntry();
         if (entry == null || page == null) return;
@@ -1013,7 +1141,9 @@ public partial class MainWindow : Window
             + (session.Games?.Pages.Sum(page => page.Changelog.Count(entry => entry.HasError)) ?? 0)
             + session.Images.Count(image => image.HasError)
             + session.Works.Categories.Count(category => category.HasError)
-            + (session.Links?.Cards.Count(card => card.HasError) ?? 0);
+            + (session.Links?.Cards.Count(card => card.HasError) ?? 0)
+            + (session.World?.Archives.Sum(archive =>
+                archive.Entries.Count(entry => entry.HasError)) ?? 0);
         SaveButton.IsEnabled = session.HasChanges && !session.HasError;
         RevertButton.IsEnabled = session.HasChanges;
         UndoButton.IsEnabled = session.Undo.CanUndo;

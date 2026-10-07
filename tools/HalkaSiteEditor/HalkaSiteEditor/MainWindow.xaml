@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:HalkaSiteEditor"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="HALKA SITE EDITOR v1.6" Icon="Assets/site-editor.ico"
+        Title="HALKA SITE EDITOR v1.7" Icon="Assets/site-editor.ico"
         Width="1660" Height="900" MinWidth="1000" MinHeight="640"
         Background="#16191E" Foreground="#E4E8EC" FontFamily="Yu Gothic UI" FontSize="13"
         Loaded="WindowLoaded" Closing="WindowClosing">
@@ -441,6 +441,63 @@
       </Border>
     </DataTemplate>
 
+    <!-- HALKA WORLD：更新履歴の1件 -->
+    <DataTemplate x:Key="WorldEntryTemplate">
+      <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,6" Padding="10,8">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Margin="0,0,10,0" VerticalAlignment="Top">
+            <Button Content="↑" Click="WorldUpClick" Tag="{Binding}" Width="30" Padding="0,3"/>
+            <Button Content="↓" Click="WorldDownClick" Tag="{Binding}" Width="30" Padding="0,3"/>
+            <Button Content="✕" Click="WorldDeleteClick" Tag="{Binding}" Width="30" Padding="0,3"
+                    ToolTip="この版の履歴を消します"/>
+          </StackPanel>
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="140"/>
+                <ColumnDefinition Width="160"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
+              <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                <TextBlock Text="版" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding Version, UpdateSourceTrigger=PropertyChanged}"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                <TextBlock Text="日付" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding Date, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="2026-10-07 の形です。"/>
+              </StackPanel>
+              <StackPanel Grid.Column="2">
+                <TextBlock Text="内容（1行＝1つ）" Style="{StaticResource Caption}"/>
+                <TextBox Text="{Binding Items, UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="46" MaxHeight="160"
+                         VerticalScrollBarVisibility="Auto"/>
+              </StackPanel>
+            </Grid>
+            <TextBlock Foreground="#FF8A8A" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
+                       Text="{Binding Error}"
+                       Visibility="{Binding Error, Converter={StaticResource TextToVisibility}}"/>
+          </StackPanel>
+        </DockPanel>
+      </Border>
+    </DataTemplate>
+
+    <!-- HALKA WORLD：更新履歴をまとめている箱 -->
+    <DataTemplate x:Key="WorldArchiveTemplate">
+      <Border Background="#1A1F26" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,10" Padding="12,10">
+        <StackPanel>
+          <DockPanel Margin="0,0,0,8">
+            <TextBlock DockPanel.Dock="Left" Text="箱の名前" Style="{StaticResource Caption}"
+                       VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <TextBox Text="{Binding Summary, UpdateSourceTrigger=PropertyChanged}" MaxWidth="320"
+                     HorizontalAlignment="Left" MinWidth="220"
+                     ToolTip="たたんで表示される見出しです（「ver2.1 ～ ver3.0」など）。"/>
+          </DockPanel>
+          <ItemsControl ItemsSource="{Binding Entries}" ItemTemplate="{StaticResource WorldEntryTemplate}"/>
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+
     <!-- 色：色見本つきの1行 -->
     <DataTemplate x:Key="ColorTemplate">
       <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,8" Padding="12,10">
@@ -643,6 +700,8 @@
             <TextBlock Text="編集するもの" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#AEB8C3"/>
             <Button DockPanel.Dock="Right" x:Name="GameCardAddButton" Content="カードを追加"
                     Click="GameCardAddClick" Padding="14,5"/>
+            <Button DockPanel.Dock="Right" x:Name="WorldArchiveAddButton" Content="新しい箱を作る"
+                    Click="WorldArchiveAddClick" Padding="14,5"/>
             <Button DockPanel.Dock="Right" x:Name="ChangelogAddButton" Content="新しい版を追加"
                     Click="ChangelogAddClick" Padding="14,5"
                     ToolTip="更新履歴の一番上に足します。版は前の版から1つ進めます。"/>
@@ -686,6 +745,26 @@
                     <ItemsControl x:Name="ChangelogItems" ItemTemplate="{StaticResource ChangelogTemplate}"/>
                   </StackPanel>
                 </Border>
+              </StackPanel>
+
+              <!-- HALKA WORLD の更新履歴 -->
+              <StackPanel x:Name="WorldPanel">
+                <Border Background="#20262F" BorderBrush="#2F3845" BorderThickness="1" Margin="0,0,0,8"
+                        Padding="12,10">
+                  <DockPanel>
+                    <TextBlock DockPanel.Dock="Left" Text="いまの版" Width="90" VerticalAlignment="Center"
+                               FontSize="14"/>
+                    <Button DockPanel.Dock="Right" x:Name="WorldAlignButton" Content="版をそろえる"
+                            Click="WorldAlignClick"
+                            ToolTip="更新履歴の一番上の版に、ページの表記をそろえます。"/>
+                    <TextBox x:Name="WorldVersionBox" MaxWidth="180" HorizontalAlignment="Left"
+                             MinWidth="140"/>
+                  </DockPanel>
+                </Border>
+                <TextBlock x:Name="WorldSummary" Foreground="#E4E8EC" TextWrapping="Wrap" Margin="2,0,0,8"/>
+                <TextBlock TextWrapping="Wrap" Foreground="#8C97A6" FontSize="11" Margin="2,0,0,10"
+                           Text="新しいものが上です。「新しい版を追加」で、いちばん上の箱の先頭に足します。箱がいっぱいになったら「新しい箱を作る」で分けてください。ゲーム本体の差し替えは、これまでどおり Unity 側の手順です。"/>
+                <ItemsControl x:Name="WorldItems" ItemTemplate="{StaticResource WorldArchiveTemplate}"/>
               </StackPanel>
 
             </StackPanel>
