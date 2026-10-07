@@ -52,3 +52,12 @@
 - 正式Map SHA-256は前記の開始時値と一致。`first_field.hwmap.json`の開始時からの改行差と既存未追跡BackupはCommitへ含めない。MAP EDITOR v0.6、GameVersion 2.3、HPのver2.3履歴を維持。
 - 公開前Raw Font scan: Git追跡ファイルとUnity Assets/WebGL内に「遊びメモ書き」のRaw TTF/OTF/WOFF/WOFF2/公式ZIPはなし。WebGL `.data`内にもRaw Font名・拡張子の一致はなし。Bitmap Atlas/metricsは保持。
 - Production WebGLは既存の最終成功Buildを使用。今回の公開再開でUnityのゲームソースを変更していないため再Buildしない。
+
+## 7. main公開と公開後確認
+
+- `origin/main`の`099e4be`を取り込んだ後、公開前検証の修正を`3419a8d`へCommit。`git fetch origin main`後に`origin/main`がHEADの祖先であることを確認し、`git push origin HEAD:main`で`099e4be..3419a8d`を通常push。force pushは使用していない。ゲーム本編はver2.3、MAP EDITORはv0.6のまま。
+- GitHub Pages `pages-build-deployment` run `37697683372`はHEAD `3419a8d2e6570c01e7986c54a9813e1165bd8bc8`でbuild/deployとも成功。[公開URL](https://halkaclub.com/halkaworld/)はHTTP 200。公開HPの現在Versionはver2.3で、上Archiveは初期Closed、開くとver2.3→ver2.2→ver2.1の順と2026-10-07の日付を確認。下Archiveも初期Closed。
+- 公開WebGLはHTTP 200で起動し、canvas内にver2.3が表示された。`280a90b18ae4463ce46d09d032f98222.wasm`は24,139,697 bytes・SHA-256 `9389827198E768A168F4158506FF8B7759D873B8D4606CFDAB896ADA0D550878`、`2b032dd69e5d490196584ba044397927.data`は5,042,097 bytes・SHA-256 `E52E74EF82B94F0732E4911F8C65B4A2B69BBD83087C99B81148BF0B9C25EB81`。いずれもローカル最終Buildと一致。wasmのMIMEは`application/wasm`、dataは`application/octet-stream`。
+- 公開WebGLのブラウザ目視でGame Version、Menu、AUTO、せいかつきろく、あるいたかず、プレイじかん、もどるに太さ調整後の遊びメモ書きBitmap Fontが表示された。公開版のMessageとTouch Aは今回未操作で、ローカルWebGLでは前記のとおり確認済み。物理スマホは未確認。
+- 公開`origin/main`の追跡ファイル一覧に遊びメモ書きのRaw `.ttf/.otf/.woff/.woff2/.zip`なし。公開wasm/dataはローカルBuildと同一ハッシュで、前記Raw Font scan結果がそのまま適用される。Rasterize済みAtlasとmetricsのみ配布。
+- 最終Git状態は作業開始時からの`M unity-project/Assets/Content/Maps/Authoring/first_field.hwmap.json`（改行差、配置内容とSHA-256は不変）と`?? backup-v05-20261006-174557/`のみ。いずれも今回のCommitとpushには含めていない。
