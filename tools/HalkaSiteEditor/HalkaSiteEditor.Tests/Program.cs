@@ -199,11 +199,12 @@ var links = fresh.Groups.Single(group => group.Title == "リンク");
 var club = fresh.Groups.Single(group => group.Title == "はるかくらぶ");
 var utamaze = fresh.Groups.Single(group => group.Title == "うたまぜ！");
 
-Check("リンクを名前・説明・リンク先の組で読む",
-    links.Rows.Count >= 10 && links.Fields.Count == links.Rows.Count * 3 &&
+Check("大きいリンクを名前・説明・リンク先の組で読む",
+    links.Rows.Count == 4 && links.Fields.Count == links.Rows.Count * 3 &&
     links.Rows.All(row => row.Cells.Count == 3) &&
-    links.Rows.Any(row => row.Label == "YouTube") &&
-    links.Rows.Single(row => row.Label == "YouTube").Cells[2].Field.Value.StartsWith("https://"));
+    links.Rows.Any(row => row.Label == "作品一覧") &&
+    links.Rows.Any(row => row.Label == "はるかくらぶ") &&
+    links.Rows.Single(row => row.Label == "作品一覧").Cells[2].Field.Value == "works/index.html");
 Check("サイト内の相対パスもリンク先として認める",
     LinkUrl.Validate("commission/") == null && LinkUrl.Validate("https://example.com") == null &&
     LinkUrl.Validate("") != null && LinkUrl.Validate("a b") != null && LinkUrl.Validate("\"") != null);
@@ -882,6 +883,99 @@ Check("作り直したら番号が上がる",
     CacheBuster.Current(File.ReadAllText(Path.Combine(sandbox, "works", "index.html")), "assets/ogp/works.png")
         == worksBefore + 1 &&
     !regen.HasChanges);
+
+// --- v1.1：リンク集と、作品の分類 -------------------------------------------
+
+var v11 = SiteSession.Load(sandbox);
+var grid = v11.Links ?? throw new Exception("リンク集が読めません");
+var indexPath = Path.Combine(sandbox, "index.html");
+
+Check("リンク集のカードを読める",
+    grid.Cards.Count >= 10 &&
+    grid.Cards[0].Name == "YouTube" && grid.Cards[0].Main &&
+    grid.Cards[0].Mark == "♪" && grid.Cards[0].Note == "主な活動はここ" &&
+    grid.Cards[0].External &&
+    grid.Cards.Any(card => card.Name == "ゲーム置き場" && !card.External));
+Check("大きいリンクとくらぶは、リンク集に入れない",
+    grid.Cards.All(card => card.Name != "作品一覧" && card.Name != "はるかくらぶ"));
+Check("リンク集は読んだだけなら1文字も変わらない", grid.Rebuild() == File.ReadAllText(indexPath));
+Check("リンク集を読んだ直後は変更なし", !grid.HasChanges && !grid.HasError && !v11.HasChanges);
+
+var newLink = grid.AddNew();
+newLink.Mark = "新";
+newLink.Name = "ためしのリンク";
+newLink.Note = "ためし";
+newLink.Href = "https://example.com/";
+newLink.Aria = "ためしのリンクを開く";
+grid.Move(newLink, -3);
+Check("リンクを足して並べ替えられる",
+    grid.Cards[grid.Cards.Count - 4] == newLink && !grid.HasError &&
+    v11.Changes().Any(row => row.Label.Contains("リンク集：追加") && row.After == "ためしのリンク"));
+
+newLink.Href = "だめ な URL";
+Check("おかしなリンク先は誤りとして出る", newLink.HasError && v11.HasError);
+newLink.Href = "https://example.com/";
+
+// 作品の分類。
+var v11Works = v11.Works;
+Check("分類を読める",
+    v11Works.Categories.Count == 4 &&
+    v11Works.Categories[0].Id == "utattemita" &&
+    v11Works.Categories[0].Name == "歌ってみた" &&
+    v11Works.Categories[0].Description.StartsWith("Arrange cover") &&
+    v11Works.Categories[0].Display.StartsWith("歌ってみた（"));
+Check("分類ごと読んだだけなら1文字も変わらない",
+    v11Works.Serialize() == File.ReadAllText(Path.Combine(sandbox, "works", "works-data.js")));
+
+var newCategory = v11Works.AddNewCategory();
+newCategory.Name = "ためしシリーズ";
+newCategory.Description = "ためし";
+newCategory.Id = "tameshi";
+newCategory.Works.Add(new WorkItem("ためしの曲", "2026-10-07", "https://youtu.be/RFQw7HejNZ0"));
+v11Works.MoveCategory(newCategory, -1);
+Check("分類を足して並べ替えられる",
+    v11Works.Categories[3] == newCategory && v11Works.HasChanges && !v11Works.HasError &&
+    v11.Changes().Any(row => row.Label.Contains("分類を追加") && row.After == "ためしシリーズ"));
+
+newCategory.Id = "ためし";
+Check("合い言葉は英小文字だけ", newCategory.HasError && v11Works.HasError);
+newCategory.Id = "tameshi";
+
+v11Works.Categories[0].Name = "歌ってみた！";
+Check("名前を変えると並びの表示も変わる",
+    v11Works.Categories[0].Display.StartsWith("歌ってみた！（") &&
+    v11.Changes().Any(row => row.Label.Contains("分類を変更") && row.After == "歌ってみた！"));
+
+v11.Save();
+
+var afterV11 = SiteSession.Load(sandbox);
+Check("足したリンクが読み直せる",
+    afterV11.Links!.Cards.Any(card => card.Name == "ためしのリンク" && card.Mark == "新") &&
+    File.ReadAllText(indexPath).Contains(
+        "<a class=\"link-card\" href=\"https://example.com/\" target=\"_blank\" rel=\"noreferrer\" aria-label=\"ためしのリンクを開く\">"));
+Check("うたまぜ！の印はそのまま残る",
+    File.ReadAllText(indexPath).Contains("<!-- utamaze-link:start") &&
+    File.ReadAllText(indexPath).Contains("<!-- utamaze-link:end -->"));
+Check("足した分類が読み直せる",
+    afterV11.Works.Categories.Count == 5 &&
+    afterV11.Works.Categories[3].Id == "tameshi" &&
+    afterV11.Works.Categories[3].Works.Single().Title == "ためしの曲" &&
+    afterV11.Works.Categories[0].Name == "歌ってみた！");
+Check("保存後も組み立て直しで1文字も変わらない",
+    afterV11.Links!.Rebuild() == File.ReadAllText(indexPath) &&
+    afterV11.Works.Serialize() == File.ReadAllText(Path.Combine(sandbox, "works", "works-data.js")));
+
+// 消して、元に戻せること。
+var shrinkV11 = SiteSession.Load(sandbox);
+shrinkV11.Links!.Cards.Remove(shrinkV11.Links.Cards.Single(card => card.Name == "ためしのリンク"));
+shrinkV11.Works.Categories.Remove(shrinkV11.Works.Categories.Single(category => category.Id == "tameshi"));
+Check("消すのも変更一覧に出る",
+    shrinkV11.Changes().Any(row => row.Label.Contains("リンク集：削除")) &&
+    shrinkV11.Changes().Any(row => row.Label.Contains("分類を削除")));
+shrinkV11.Revert();
+Check("リンクと分類も元に戻せる", !shrinkV11.HasChanges &&
+    shrinkV11.Links!.Cards.Any(card => card.Name == "ためしのリンク") &&
+    shrinkV11.Works.Categories.Count == 5);
 
 // --- プレビュー用サーバー -------------------------------------------------
 

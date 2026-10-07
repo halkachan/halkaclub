@@ -77,18 +77,86 @@ public sealed class WorkItem : INotifyPropertyChanged
 }
 
 /// <summary>作品一覧の分類（歌ってみた・ひらがな一文字シリーズ など）。</summary>
-public sealed class WorkCategory
+public sealed class WorkCategory : INotifyPropertyChanged
 {
-    public string Name { get; }
-    public ObservableCollection<WorkItem> Works { get; }
+    private static readonly Regex IdPattern = new(@"^[a-z0-9][a-z0-9-]*$");
 
-    internal WorkCategory(string name, IEnumerable<WorkItem> works)
+    private string id;
+    private string name;
+    private string description;
+
+    /// <summary>作品一覧ページが使う合い言葉。英小文字・数字・ハイフンだけです。</summary>
+    public string Id
     {
-        Name = name;
-        Works = new ObservableCollection<WorkItem>(works);
+        get => id;
+        set { if (Set(ref id, value)) RaiseAll(); }
     }
 
-    public override string ToString() => $"{Name}（{Works.Count}件）";
+    public string Name
+    {
+        get => name;
+        set { if (Set(ref name, value)) RaiseAll(); }
+    }
+
+    public string Description
+    {
+        get => description;
+        set { if (Set(ref description, value)) RaiseAll(); }
+    }
+
+    public ObservableCollection<WorkItem> Works { get; }
+
+    internal WorkCategory(string id, string name, string description, IEnumerable<WorkItem> works)
+    {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        Works = new ObservableCollection<WorkItem>(works);
+        Works.CollectionChanged += (_, _) => RaiseAll();
+    }
+
+    /// <summary>並びの中に出す1行。名前を変えたらその場で変わります。</summary>
+    public string Display => $"{Name}（{Works.Count}件）";
+
+    public string? Error
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Name)) return "分類の名前を入れてください。";
+            if (!IdPattern.IsMatch(Id.Trim()))
+                return "合い言葉は英小文字・数字・ハイフンだけで入れてください（例：hiragana）。";
+            foreach (var value in new[] { Name, Description })
+            {
+                var problem = value.Length == 0 ? null : HtmlText.Validate(value);
+                if (problem != null) return problem;
+            }
+            if (Name.Contains('\n') || Description.Contains('\n')) return "名前と説明は1行で入れてください。";
+            return null;
+        }
+    }
+
+    public bool HasError => Error != null;
+
+    public (string, string, string) Snapshot() => (Id.Trim(), Name.Trim(), Description.Trim());
+
+    public override string ToString() => Display;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private bool Set(ref string storage, string? value, [CallerMemberName] string? field = null)
+    {
+        var next = (value ?? "").Replace("\r\n", "\n");
+        if (string.Equals(storage, next, StringComparison.Ordinal)) return false;
+        storage = next;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(field));
+        return true;
+    }
+
+    private void RaiseAll()
+    {
+        foreach (var raised in new[] { nameof(Display), nameof(Error), nameof(HasError) })
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(raised));
+    }
 
     public WorkItem AddNew()
     {
@@ -113,107 +181,173 @@ public sealed class WorkCategory
 /// </summary>
 public sealed class WorksDocument
 {
-    // 各分類の works 配列（    works: [ から 4つ空けた ], まで）。
-    private static readonly Regex ArrayBlock = new(@"    works: \[[\s\S]*?\r?\n    \],", RegexOptions.CultureInvariant);
-    private static readonly Regex NameLine = new(@"    name: ""((?:[^""\\]|\\.)*)"",", RegexOptions.CultureInvariant);
+    // const worksData = [ ... ]; の中身ぜんぶ。手前の説明コメントには触れません。
+    private static readonly Regex DataBlock =
+        new(@"(const worksData = \[)([\s\S]*)(\r?\n\];)", RegexOptions.CultureInvariant);
+    private static readonly Regex CategoryBlock = new(
+        @"\{\s*id: ""((?:[^""\\]|\\.)*)"",\s*name: ""((?:[^""\\]|\\.)*)"",\s*" +
+        @"description: ""((?:[^""\\]|\\.)*)"",\s*works: \[([\s\S]*?)\r?\n    \],\s*\},",
+        RegexOptions.CultureInvariant);
     private static readonly Regex ItemPattern = new(
         @"\{\s*title:\s*""((?:[^""\\]|\\.)*)"",\s*publishedAt:\s*""([^""]*)"",\s*youtubeUrl:\s*""([^""]*)"",?\s*\}",
         RegexOptions.CultureInvariant);
 
     private readonly SiteFile file;
     private readonly string newline;
-    private readonly string originalText;
-    private List<List<(string, string, string)>> originalSnapshots;
+    private List<(string, string, string)> savedCategories;
+    private List<List<(string, string, string)>> savedWorks;
 
     public string FileRelative { get; }
-    public IReadOnlyList<WorkCategory> Categories { get; private set; }
+    public ObservableCollection<WorkCategory> Categories { get; }
 
-    private WorksDocument(SiteFile file, string fileRelative, IReadOnlyList<WorkCategory> categories)
+    private WorksDocument(SiteFile file, string fileRelative, IEnumerable<WorkCategory> categories)
     {
         this.file = file;
         FileRelative = fileRelative;
-        Categories = categories;
-        originalText = file.Text;
+        Categories = new ObservableCollection<WorkCategory>(categories);
         newline = file.Text.Contains("\r\n") ? "\r\n" : "\n";
-        originalSnapshots = Snapshots();
+        savedCategories = CategorySnapshots();
+        savedWorks = Snapshots();
     }
 
     public static WorksDocument Load(SiteFile file, string fileRelative) =>
         new(file, fileRelative, Parse(file.Text));
 
-    private static IReadOnlyList<WorkCategory> Parse(string text)
+    private static IEnumerable<WorkCategory> Parse(string text)
     {
-        var names = NameLine.Matches(text).Select(m => Unescape(m.Groups[1].Value)).ToArray();
-        var blocks = ArrayBlock.Matches(text);
-        if (names.Length != blocks.Count)
-        {
-            throw new InvalidDataException(
-                $"works-data.js の形が想定と違います（分類名 {names.Length} 個 / works配列 {blocks.Count} 個）。");
-        }
+        var block = DataBlock.Match(text);
+        if (!block.Success)
+            throw new InvalidDataException("works-data.js の形が想定と違います（worksData が見つかりません）。");
 
-        var categories = new List<WorkCategory>();
-        for (var i = 0; i < blocks.Count; i++)
-        {
-            var items = ItemPattern.Matches(blocks[i].Value).Select(m => new WorkItem(
-                Unescape(m.Groups[1].Value), m.Groups[2].Value, m.Groups[3].Value));
-            categories.Add(new WorkCategory(names[i], items));
-        }
-        return categories;
+        return CategoryBlock.Matches(block.Groups[2].Value).Select(category => new WorkCategory(
+            Unescape(category.Groups[1].Value),
+            Unescape(category.Groups[2].Value),
+            Unescape(category.Groups[3].Value),
+            ItemPattern.Matches(category.Groups[4].Value).Select(item => new WorkItem(
+                Unescape(item.Groups[1].Value), item.Groups[2].Value, item.Groups[3].Value))));
     }
 
-    /// <summary>いまの中身でファイル全体の文字列を作ります。配列の外は元のままです。</summary>
-    public string Serialize()
+    /// <summary>分類を一番下に足します。</summary>
+    public WorkCategory AddNewCategory()
     {
-        var index = 0;
-        return ArrayBlock.Replace(originalText, _ => Block(Categories[index++]));
+        var category = new WorkCategory(UnusedId(), "新しい分類", "", Array.Empty<WorkItem>());
+        Categories.Add(category);
+        return category;
     }
 
-    private string Block(WorkCategory category)
+    private string UnusedId()
     {
-        if (category.Works.Count == 0) return "    works: [],";
-
-        var builder = new StringBuilder("    works: [");
-        foreach (var work in category.Works)
+        for (var i = 1; ; i++)
         {
-            builder.Append(newline).Append("      {");
-            builder.Append(newline).Append("        title: \"").Append(Escape(work.Title)).Append("\",");
-            builder.Append(newline).Append("        publishedAt: \"").Append(work.PublishedAt.Trim()).Append("\",");
-            builder.Append(newline).Append("        youtubeUrl: \"").Append(work.YouTubeUrl.Trim()).Append("\",");
-            builder.Append(newline).Append("      },");
+            var candidate = i == 1 ? "new-series" : $"new-series-{i}";
+            if (Categories.All(category => category.Id != candidate)) return candidate;
         }
-        builder.Append(newline).Append("    ],");
+    }
+
+    public void MoveCategory(WorkCategory category, int offset)
+    {
+        var from = Categories.IndexOf(category);
+        var to = from + offset;
+        if (from < 0 || to < 0 || to >= Categories.Count) return;
+        Categories.Move(from, to);
+    }
+
+    /// <summary>いまの中身でファイル全体の文字列を作ります。手前の説明コメントは元のままです。</summary>
+    public string Serialize() => DataBlock.Replace(file.Text,
+        match => match.Groups[1].Value + Block() + match.Groups[3].Value, 1);
+
+    private string Block()
+    {
+        var builder = new StringBuilder();
+        foreach (var category in Categories)
+        {
+            builder.Append(newline).Append("  {");
+            builder.Append(newline).Append("    id: \"").Append(Escape(category.Id.Trim())).Append("\",");
+            builder.Append(newline).Append("    name: \"").Append(Escape(category.Name.Trim())).Append("\",");
+            builder.Append(newline).Append("    description: \"")
+                   .Append(Escape(category.Description.Trim())).Append("\",");
+
+            if (category.Works.Count == 0)
+            {
+                builder.Append(newline).Append("    works: [],");
+            }
+            else
+            {
+                builder.Append(newline).Append("    works: [");
+                foreach (var work in category.Works)
+                {
+                    builder.Append(newline).Append("      {");
+                    builder.Append(newline).Append("        title: \"").Append(Escape(work.Title)).Append("\",");
+                    builder.Append(newline).Append("        publishedAt: \"").Append(work.PublishedAt.Trim()).Append("\",");
+                    builder.Append(newline).Append("        youtubeUrl: \"").Append(work.YouTubeUrl.Trim()).Append("\",");
+                    builder.Append(newline).Append("      },");
+                }
+                builder.Append(newline).Append("    ],");
+            }
+
+            builder.Append(newline).Append("  },");
+        }
         return builder.ToString();
     }
+
+    private List<(string, string, string)> CategorySnapshots() =>
+        Categories.Select(category => category.Snapshot()).ToList();
 
     private List<List<(string, string, string)>> Snapshots() =>
         Categories.Select(category => category.Works.Select(work => work.Snapshot()).ToList()).ToList();
 
-    public bool HasChanges => !Snapshots()
-        .Select((list, i) => list.SequenceEqual(originalSnapshots[i]))
-        .All(same => same);
+    public bool HasChanges =>
+        !CategorySnapshots().SequenceEqual(savedCategories) ||
+        !Snapshots().Select((list, i) => i < savedWorks.Count && list.SequenceEqual(savedWorks[i])).All(same => same);
 
-    public bool HasError => Categories.Any(category => category.Works.Any(work => work.HasError));
+    public bool HasError => Categories.Any(category => category.HasError) ||
+        Categories.Any(category => category.Works.Any(work => work.HasError)) ||
+        Categories.Select(category => category.Id.Trim()).Distinct(StringComparer.Ordinal).Count() != Categories.Count;
 
     public IReadOnlyList<ChangeRow> Changes()
     {
         var rows = new List<ChangeRow>();
         var now = Snapshots();
 
+        // 分類そのものの増減と、名前の変更。
+        var categories = CategorySnapshots();
+        foreach (var added in categories.Select(category => category.Item1)
+                     .Except(savedCategories.Select(category => category.Item1)))
+            rows.Add(new ChangeRow("作品一覧：分類を追加", "", Categories.First(c => c.Id.Trim() == added).Name, FileRelative));
+        foreach (var removed in savedCategories.Where(category =>
+                     categories.All(now2 => now2.Item1 != category.Item1)))
+            rows.Add(new ChangeRow("作品一覧：分類を削除", removed.Item2, "", FileRelative));
+        foreach (var before in savedCategories)
+        {
+            var after = categories.FirstOrDefault(category => category.Item1 == before.Item1);
+            if (after == default || after == before) continue;
+            rows.Add(new ChangeRow("作品一覧：分類を変更", before.Item2, after.Item2, FileRelative));
+        }
+        if (categories.Count == savedCategories.Count &&
+            categories.Select(category => category.Item1)
+                .SequenceEqual(savedCategories.Select(category => category.Item1)) == false &&
+            categories.Select(category => category.Item1).OrderBy(id => id, StringComparer.Ordinal)
+                .SequenceEqual(savedCategories.Select(category => category.Item1)
+                    .OrderBy(id => id, StringComparer.Ordinal)))
+            rows.Add(new ChangeRow("作品一覧：分類の並び順を変更", "", "", FileRelative));
+
         for (var i = 0; i < Categories.Count; i++)
         {
-            var before = originalSnapshots[i];
+            var before = savedCategories.FindIndex(category => category.Item1 == Categories[i].Id.Trim());
+            if (before < 0 || before >= savedWorks.Count) continue;
             var after = now[i];
-            if (before.SequenceEqual(after)) continue;
+            if (savedWorks[before].SequenceEqual(after)) continue;
 
             var name = Categories[i].Name;
-            var added = after.Select(work => work.Item1).Except(before.Select(work => work.Item1)).ToArray();
-            var removed = before.Select(work => work.Item1).Except(after.Select(work => work.Item1)).ToArray();
+            var beforeWorks = savedWorks[before];
+            var added = after.Select(work => work.Item1).Except(beforeWorks.Select(work => work.Item1)).ToArray();
+            var removed = beforeWorks.Select(work => work.Item1).Except(after.Select(work => work.Item1)).ToArray();
 
             foreach (var title in added) rows.Add(new ChangeRow($"{name}：作品を追加", "", title, FileRelative));
             foreach (var title in removed) rows.Add(new ChangeRow($"{name}：作品を削除", title, "", FileRelative));
             if (added.Length == 0 && removed.Length == 0)
                 rows.Add(new ChangeRow($"{name}：内容または並び順を変更",
-                    $"{before.Count}件", $"{after.Count}件", FileRelative));
+                    $"{beforeWorks.Count}件", $"{after.Count}件", FileRelative));
         }
         return rows;
     }
@@ -223,12 +357,17 @@ public sealed class WorksDocument
         if (HasChanges) file.SetText(Serialize());
     }
 
-    internal void MarkSaved() => originalSnapshots = Snapshots();
+    internal void MarkSaved()
+    {
+        savedCategories = CategorySnapshots();
+        savedWorks = Snapshots();
+    }
 
     public void Revert()
     {
-        Categories = Parse(originalText);
-        originalSnapshots = Snapshots();
+        Categories.Clear();
+        foreach (var category in Parse(file.Text)) Categories.Add(category);
+        MarkSaved();
     }
 
     private static string Escape(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");

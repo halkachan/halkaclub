@@ -21,9 +21,14 @@ public sealed class SiteSession
     private const string OptionPrice = @"(<span class=""plan-option-price"">)([^<]*)(</span>)";
     private const string LatestVideo = @"(const latestVideoUrl = "")([^""]*)("";)";
     private const string NewsYear = @"(<p>)([^<]*)(</p>\r?\n[ \t]*<h1 id=""news-title"">)";
-    private const string LinkHref = @"(<a class=""link-card[^""]*"" href="")([^""]*)("")";
-    private const string LinkName = @"(<strong>)([^<]*)(</strong>)";
-    private const string LinkNote = @"(<small>)([^<]*)(</small>)";
+    // 大きいリンク（作品一覧・インスト置き場・依頼）と、一番下のはるかくらぶ。
+    // リンク集（link-grid）の中身は LinkGrid が受け持つので、ここでは拾いません。
+    private const string CtaHref = @"(<div class=""works-cta"">[\s\S]*?<a class=""link-card"" href="")([^""]*)("")";
+    private const string CtaName = @"(<div class=""works-cta"">[\s\S]*?<strong>)([^<]*)(</strong>)";
+    private const string CtaNote = @"(<div class=""works-cta"">[\s\S]*?<small>)([^<]*)(</small>)";
+    private const string ClubLinkHref = @"(<a class=""link-card club-link"" href="")([^""]*)("")";
+    private const string ClubLinkName = @"(class=""link-card club-link""[\s\S]*?<strong>)([^<]*)(</strong>)";
+    private const string ClubLinkNote = @"(class=""link-card club-link""[\s\S]*?<small>)([^<]*)(</small>)";
     private const string ClubDate = @"(<p class=""club-date"">)([^<]*)(</p>)";
     private const string KoofrUrl = @"(<a class=""entrance-button"" href="")([^""]*)("")";
 
@@ -56,6 +61,7 @@ public sealed class SiteSession
     public ParagraphRun? ClubUpdate { get; }
     public GameDocument? Games { get; }
     public PageMetaDocument? Meta { get; }
+    public LinkGrid? Links { get; }
     /// <summary>トップページのﾊﾙｶﾁｬﾝ。</summary>
     public ImageSlot? Profile { get; }
 
@@ -76,15 +82,15 @@ public sealed class SiteSession
     public IEnumerable<EditField> Fields => Groups.SelectMany(group => group.Fields);
     public bool HasChanges => Fields.Any(field => field.Changed) || Works.HasChanges || CommissionText.HasChanges || Utamaze?.HasChanges == true
         || News?.HasChanges == true || ClubUpdate?.Changed == true || Games?.HasChanges == true
-        || Images.Any(image => image.Changed);
+        || Images.Any(image => image.Changed) || Links?.HasChanges == true;
     public bool HasError => Fields.Any(field => field.HasError) || Works.HasError || CommissionText.HasError || Utamaze?.HasError == true
         || News?.HasError == true || ClubUpdate?.HasError == true || Games?.HasError == true
-        || Images.Any(image => image.HasError);
+        || Images.Any(image => image.HasError) || Links?.HasError == true;
 
     private SiteSession(string root, List<SiteFile> files, IReadOnlyList<EditGroup> groups,
         WorksDocument works, CommissionTextDocument commissionText, UtamazeRelease? utamaze,
         SiteFile? worksPage, NewsDocument? news, ParagraphRun? clubUpdate, GameDocument? games,
-        PageMetaDocument? meta, ImageSlot? profile)
+        PageMetaDocument? meta, ImageSlot? profile, LinkGrid? links)
     {
         Root = root;
         this.files = files;
@@ -98,6 +104,7 @@ public sealed class SiteSession
         Games = games;
         Meta = meta;
         Profile = profile;
+        Links = links;
     }
 
     public static SiteSession Load(string root)
@@ -162,6 +169,9 @@ public sealed class SiteSession
                 games.Fields.ToArray()));
         }
 
+        // トップページのリンク集（増やす・並べ替える・減らす）。
+        var links = LinkGrid.Load(home, SitePaths.Relative(root, home.Path));
+
         // ページの顔（タイトルとOGP）と、差し替えられる画像。
         var meta = PageMetaDocument.Load(root, Open);
         if (meta != null)
@@ -190,18 +200,18 @@ public sealed class SiteSession
             ("日本語版", ja, SitePaths.Relative(root, ja.Path)),
             ("英語版", en, SitePaths.Relative(root, en.Path)));
         return new SiteSession(root, files, groups, works, commissionText, utamaze, worksPage,
-            news, clubUpdate, games, meta, profile);
+            news, clubUpdate, games, meta, profile, links);
     }
 
     private static EditGroup BuildLinks(string root, SiteFile home)
     {
         var relative = SitePaths.Relative(root, home.Path);
-        var names = ValueSlot.ReadAll(home.Text, LinkName);
-        var count = new ValueSlot(LinkHref).Count(home.Text);
+        var names = ValueSlot.ReadAll(home.Text, CtaName);
+        var count = new ValueSlot(CtaHref).Count(home.Text);
         if (names.Count != count)
         {
             throw new InvalidDataException(
-                $"トップページのリンクの形が想定と違います（リンク {count} 個 / 名前 {names.Count} 個）。");
+                $"トップページの大きいリンクの形が想定と違います（リンク {count} 個 / 名前 {names.Count} 個）。");
         }
 
         var fields = new List<EditField>();
@@ -214,18 +224,24 @@ public sealed class SiteSession
             return field;
         }
 
-        for (var i = 0; i < count; i++)
+        void Row(string label, string namePattern, string notePattern, string hrefPattern, int index, string id)
         {
-            var label = names[i];
             rows.Add(new FieldRow(label,
-                new FieldCell("名前", Field(LinkName, i, $"link.{i}.name", $"{label}：名前", FieldKind.HtmlText), 180),
-                new FieldCell("説明", Field(LinkNote, i, $"link.{i}.note", $"{label}：説明", FieldKind.HtmlText), 220),
-                new FieldCell("リンク先", Field(LinkHref, i, $"link.{i}.url", $"{label}：リンク先", FieldKind.Url))));
+                new FieldCell("名前", Field(namePattern, index, $"{id}.name", $"{label}：名前", FieldKind.HtmlText), 180),
+                new FieldCell("説明", Field(notePattern, index, $"{id}.note", $"{label}：説明", FieldKind.HtmlText), 220),
+                new FieldCell("リンク先", Field(hrefPattern, index, $"{id}.url", $"{label}：リンク先", FieldKind.Url))));
         }
+
+        for (var i = 0; i < count; i++) Row(names[i], CtaName, CtaNote, CtaHref, i, $"link.{i}");
+
+        // はるかくらぶの入口（一番下）。
+        if (new ValueSlot(ClubLinkHref).Count(home.Text) > 0)
+            Row(ValueSlot.ReadAll(home.Text, ClubLinkName).FirstOrDefault() ?? "はるかくらぶ",
+                ClubLinkName, ClubLinkNote, ClubLinkHref, 0, "link.club");
 
         return new EditGroup(
             "リンク",
-            "トップページに並んでいるリンクです。名前・説明・リンク先を直せます（並べ替えと増減はHTMLの作業です）。",
+            "トップページのリンクです。上の大きいリンクは置き場所が決まっています。下のリンク集は、追加・並べ替え・削除ができます。",
             fields, null, rows);
     }
 
@@ -394,6 +410,7 @@ public sealed class SiteSession
         .Concat(ClubUpdate?.Change() is { } clubRow ? new[] { clubRow } : Array.Empty<ChangeRow>())
         .Concat(Games?.Changes() ?? Array.Empty<ChangeRow>())
         .Concat(Images.Select(image => image.Change()).OfType<ChangeRow>())
+        .Concat(Links?.Changes() ?? Array.Empty<ChangeRow>())
         .ToArray();
 
     /// <summary>入力内容をファイルへ書き込みます。</summary>
@@ -421,6 +438,7 @@ public sealed class SiteSession
         News?.Apply();
         ClubUpdate?.Apply();
         Games?.Apply();
+        Links?.Apply();
         // 画像を差し替えるときは、読み込み側の `?v=` も上げます。
         // 上げないと、見る人のブラウザが古い画像をしばらく掴んだままになります。
         foreach (var image in Images) image.Bump(files);
@@ -434,6 +452,7 @@ public sealed class SiteSession
         News?.MarkSaved();
         ClubUpdate?.MarkSaved();
         Games?.MarkSaved();
+        Links?.MarkSaved();
     }
 
     public void Revert()
@@ -445,6 +464,7 @@ public sealed class SiteSession
         News?.Revert();
         ClubUpdate?.Revert();
         Games?.Revert();
+        Links?.Revert();
         foreach (var image in Images) image.Clear();
     }
 }

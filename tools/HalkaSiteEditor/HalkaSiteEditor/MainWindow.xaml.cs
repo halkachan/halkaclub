@@ -114,6 +114,7 @@ public partial class MainWindow : Window
         BindClubUpdate();
         BindGames();
         BindMeta();
+        BindLinkGrid();
 
         videoField = top.Fields.Single(field => field.Id == "top.latestVideo");
         VideoLabel.Text = videoField.Label;
@@ -289,11 +290,113 @@ public partial class MainWindow : Window
         CategoryPicker.ItemsSource = session.Works.Categories;
         CategoryPicker.SelectedIndex = 0;
 
-        foreach (var category in session.Works.Categories)
+        session.Works.Categories.CollectionChanged += CategoriesCollectionChanged;
+        foreach (var category in session.Works.Categories) Watch(category);
+    }
+
+    private void Watch(WorkCategory category)
+    {
+        category.PropertyChanged += WorkChanged;
+        category.Works.CollectionChanged += WorksCollectionChanged;
+        foreach (var work in category.Works) work.PropertyChanged += WorkChanged;
+    }
+
+    private void CategoriesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+            foreach (WorkCategory category in e.NewItems) Watch(category);
+        RefreshChanges();
+    }
+
+    private void CategoryAddClick(object sender, RoutedEventArgs e)
+    {
+        var category = session?.Works.AddNewCategory();
+        if (category == null) return;
+        CategoryPicker.SelectedItem = category;
+        StatusText.Text = "一番下に分類を足しました。名前と合い言葉を入れてください。";
+    }
+
+    private void CategoryUpClick(object sender, RoutedEventArgs e) => MoveCategory(-1);
+
+    private void CategoryDownClick(object sender, RoutedEventArgs e) => MoveCategory(1);
+
+    private void MoveCategory(int offset)
+    {
+        var category = SelectedCategory;
+        if (category == null) return;
+        session?.Works.MoveCategory(category, offset);
+        CategoryPicker.SelectedItem = category;
+    }
+
+    private void CategoryDeleteClick(object sender, RoutedEventArgs e)
+    {
+        var category = SelectedCategory;
+        if (category == null || session == null) return;
+        if (session.Works.Categories.Count <= 1)
         {
-            category.Works.CollectionChanged += WorksCollectionChanged;
-            foreach (var work in category.Works) work.PropertyChanged += WorkChanged;
+            MessageBox.Show(this, "分類は1つ以上必要です。", "確認", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
         }
+
+        var answer = MessageBox.Show(this,
+            $"分類「{category.Name}」を、中の作品{category.Works.Count}件ごと一覧から外します。よろしいですか？",
+            "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.OK) return;
+
+        session.Works.Categories.Remove(category);
+        CategoryPicker.SelectedIndex = 0;
+    }
+
+    // --- トップページのリンク集 ---------------------------------------------
+
+    private void BindLinkGrid()
+    {
+        var grid = session?.Links;
+        if (grid == null)
+        {
+            LinkGridBox.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        LinkGridBox.Visibility = Visibility.Visible;
+        LinkCardItems.ItemsSource = grid.Cards;
+        grid.Cards.CollectionChanged += LinkCardsCollectionChanged;
+        foreach (var card in grid.Cards) card.PropertyChanged += LinkCardChanged;
+    }
+
+    private void LinkCardsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+            foreach (LinkCard card in e.NewItems) card.PropertyChanged += LinkCardChanged;
+        if (e.OldItems != null)
+            foreach (LinkCard card in e.OldItems) card.PropertyChanged -= LinkCardChanged;
+        RefreshChanges();
+    }
+
+    private void LinkCardChanged(object? sender, PropertyChangedEventArgs e) => RefreshChanges();
+
+    private void LinkAddClick(object sender, RoutedEventArgs e)
+    {
+        session?.Links?.AddNew();
+        StatusText.Text = "一番下にリンクを足しました。名前とリンク先を入れてください。";
+    }
+
+    private void LinkUpClick(object sender, RoutedEventArgs e) => MoveLink(sender, -1);
+
+    private void LinkDownClick(object sender, RoutedEventArgs e) => MoveLink(sender, 1);
+
+    private void MoveLink(object sender, int offset)
+    {
+        if (((FrameworkElement)sender).Tag is LinkCard card) session?.Links?.Move(card, offset);
+    }
+
+    private void LinkDeleteClick(object sender, RoutedEventArgs e)
+    {
+        if (((FrameworkElement)sender).Tag is not LinkCard card) return;
+        var answer = MessageBox.Show(this, $"「{card.Name}」をリンク集から外します。よろしいですか？",
+            "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.OK) return;
+        session?.Links?.Cards.Remove(card);
     }
 
     private void WorksCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -754,8 +857,10 @@ public partial class MainWindow : Window
 
     private void CategoryPickerChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (WorkItems == null) return;
+        if (WorkItems == null || CategoryBox == null) return;
         WorkItems.ItemsSource = SelectedCategory?.Works;
+        CategoryBox.DataContext = SelectedCategory;
+        CategoryBox.Visibility = SelectedCategory == null ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void PickVideosClick(object sender, RoutedEventArgs e)
@@ -826,7 +931,9 @@ public partial class MainWindow : Window
             + (session.ClubUpdate?.HasError == true ? 1 : 0)
             + (session.Games?.Collection.Cards.Count(card => card.HasError) ?? 0)
             + (session.Games?.Pages.Sum(page => page.Changelog.Count(entry => entry.HasError)) ?? 0)
-            + session.Images.Count(image => image.HasError);
+            + session.Images.Count(image => image.HasError)
+            + session.Works.Categories.Count(category => category.HasError)
+            + (session.Links?.Cards.Count(card => card.HasError) ?? 0);
         SaveButton.IsEnabled = session.HasChanges && !session.HasError;
         RevertButton.IsEnabled = session.HasChanges;
 
@@ -1035,6 +1142,7 @@ public partial class MainWindow : Window
         BindWorks();
         BindNews();   // 元に戻すと作品の一覧は作り直されるので、つなぎ直します。
         BindGames();
+        BindLinkGrid();
         RefreshChanges();
         UpdateVideoPreview();
     }
