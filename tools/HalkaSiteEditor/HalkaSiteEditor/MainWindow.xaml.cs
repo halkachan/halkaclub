@@ -113,6 +113,7 @@ public partial class MainWindow : Window
         BindNews();
         BindClubUpdate();
         BindGames();
+        BindMeta();
 
         videoField = top.Fields.Single(field => field.Id == "top.latestVideo");
         VideoLabel.Text = videoField.Label;
@@ -380,6 +381,188 @@ public partial class MainWindow : Window
         session?.News?.Items.Remove(item);
     }
 
+    // --- ページの顔（タイトルとOGP）と画像 ----------------------------------
+
+    private void BindMeta()
+    {
+        var meta = session?.Meta;
+        if (meta == null)
+        {
+            MetaTab.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            MetaTab.Visibility = Visibility.Visible;
+            MetaNote.Text = session!.Groups.Single(group => group.Title == "ページの顔").Note;
+            MetaPagePicker.ItemsSource = meta.Pages;
+            MetaPagePicker.SelectedIndex = 0;
+            CardImagesButton.IsEnabled = CardImages.IsAvailable(session.Root);
+        }
+
+        ProfileBox.Visibility = session?.Profile == null ? Visibility.Collapsed : Visibility.Visible;
+        foreach (var image in session?.Images ?? Array.Empty<ImageSlot>())
+            image.PropertyChanged += ImageChanged;
+        RefreshImages();
+    }
+
+    private void ImageChanged(object? sender, PropertyChangedEventArgs e) => RefreshChanges();
+
+    private MetaPage? SelectedMetaPage => MetaPagePicker?.SelectedItem as MetaPage;
+
+    private void MetaPageChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // XAMLを読んでいる途中にも飛んできます。
+        if (MetaRows == null || CardBox == null) return;
+
+        var page = SelectedMetaPage;
+        MetaRows.ItemsSource = page?.Rows;
+        CardBox.Visibility = page?.Card == null ? Visibility.Collapsed : Visibility.Visible;
+        RefreshImages();
+
+        if (PagePicker?.ItemsSource is IReadOnlyList<SitePage> pages && page != null)
+        {
+            var wanted = pages.FirstOrDefault(candidate => candidate.Url == page.Url);
+            if (wanted != null) PagePicker.SelectedItem = wanted;
+        }
+    }
+
+    /// <summary>画像の見本と、いまの状態の1行を出し直します。</summary>
+    private void RefreshImages()
+    {
+        var card = SelectedMetaPage?.Card;
+        if (CardSummary != null)
+        {
+            CardSummary.Text = card?.Summary ?? "";
+            CardError.Text = card?.Error ?? "";
+            CardClearButton.IsEnabled = card?.SourcePath != null;
+            CardPreview.Source = LoadImage(card?.SourcePath ?? card?.Path);
+        }
+
+        var profile = session?.Profile;
+        if (ProfileSummary != null && profile != null)
+        {
+            ProfileSummary.Text = profile.Summary;
+            ProfileError.Text = profile.Error ?? "";
+            ProfileClearButton.IsEnabled = profile.SourcePath != null;
+            ProfilePreview.Source = LoadImage(profile.SourcePath ?? profile.Path);
+        }
+    }
+
+    /// <summary>見本用。読み終わったら手を離すので、あとで差し替えられます。</summary>
+    private static BitmapImage? LoadImage(string? path)
+    {
+        if (path == null || !File.Exists(path)) return null;
+        try
+        {
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.UriSource = new Uri(path);
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+            image.EndInit();
+            return image;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private ImageSlot? SlotFor(object sender) =>
+        (((FrameworkElement)sender).Tag as string) == "profile" ? session?.Profile : SelectedMetaPage?.Card;
+
+    private void CardChooseClick(object sender, RoutedEventArgs e)
+    {
+        var slot = SlotFor(sender);
+        if (slot == null) return;
+
+        var dialog = new OpenFileDialog
+        {
+            Title = $"{slot.Label}に使う画像を選んでください",
+            Filter = slot.CardSize ? "PNG画像|*.png" : "GIF画像|*.gif",
+        };
+        if (dialog.ShowDialog(this) != true) return;
+
+        slot.Choose(dialog.FileName);
+        RefreshImages();
+        StatusText.Text = slot.HasError
+            ? slot.Error!
+            : $"{slot.Label}を差し替えます。「保存する」で入れ替わります。";
+    }
+
+    private void CardClearClick(object sender, RoutedEventArgs e)
+    {
+        SlotFor(sender)?.Clear();
+        RefreshImages();
+    }
+
+    private void CardImagesClick(object sender, RoutedEventArgs e)
+    {
+        if (session?.Meta == null) return;
+
+        var cards = session.Meta.Cards.ToArray();
+        var answer = MessageBox.Show(this,
+            $"カード画像{cards.Length}枚を作り直します。\n\n" +
+            "tools/ogp/generate-ogp.py を動かします（Python と Pillow が必要です）。\n" +
+            "画像はすぐ入れ替わり、読み込み側の番号は「保存する」で上がります。",
+            "作り直しますか？", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.OK) return;
+
+        Cursor = System.Windows.Input.Cursors.Wait;
+        CardImages.Result result;
+        try
+        {
+            result = CardImages.Run(session.Root, cards.Select(card => card.Relative));
+        }
+        finally
+        {
+            Cursor = null;
+        }
+
+        if (!result.Ok)
+        {
+            MessageBox.Show(this, result.Output, "作り直せませんでした",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        foreach (var card in cards.Where(card => result.Changed.Contains(card.Relative)))
+            card.MarkRegenerated();
+
+        RefreshImages();
+        RefreshChanges();
+        RefreshPreview();
+        StatusText.Text = result.Changed.Count == 0
+            ? "作り直しましたが、絵は変わりませんでした。"
+            : $"{result.Changed.Count}枚が変わりました。「保存する」で番号を上げてください。";
+    }
+
+    private void SitemapClick(object sender, RoutedEventArgs e)
+    {
+        if (session == null) return;
+
+        var urls = Sitemap.Urls(session.Root);
+        var answer = MessageBox.Show(this,
+            $"いま検索に載せられるページは{urls.Count}枚です。\n\n" +
+            string.Join("\n", urls.Select(url => "・" + url)) + "\n\n" +
+            "この一覧で sitemap.xml と robots.txt を作り直します。",
+            "作り直しますか？", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.OK) return;
+
+        try
+        {
+            var written = Sitemap.Write(session.Root);
+            StatusText.Text = written.Count == 0
+                ? "sitemap.xml と robots.txt は、すでに最新でした。"
+                : string.Join("と", written) + " を書き直しました。「公開する」で出せます。";
+            RefreshPublishState();
+        }
+        catch (Exception error)
+        {
+            MessageBox.Show(this, error.Message, "書けませんでした", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     // --- ゲーム -------------------------------------------------------------
 
     /// <summary>並びの先頭が一覧ページ、そのあとがゲーム1本ずつ。</summary>
@@ -632,6 +815,7 @@ public partial class MainWindow : Window
         ChangeCountText.Text = changes.Count == 0 ? "" : $"{changes.Count} 件";
 
         RefreshVersionSummary();
+        RefreshImages();
         GameLeadError.Text = session.Games?.Lead.Error ?? "";
 
         var errors = (session.Utamaze?.Switches.Count(step => step.HasError) ?? 0)
@@ -641,7 +825,8 @@ public partial class MainWindow : Window
             + (session.News?.Items.Count(item => item.HasError) ?? 0)
             + (session.ClubUpdate?.HasError == true ? 1 : 0)
             + (session.Games?.Collection.Cards.Count(card => card.HasError) ?? 0)
-            + (session.Games?.Pages.Sum(page => page.Changelog.Count(entry => entry.HasError)) ?? 0);
+            + (session.Games?.Pages.Sum(page => page.Changelog.Count(entry => entry.HasError)) ?? 0)
+            + session.Images.Count(image => image.HasError);
         SaveButton.IsEnabled = session.HasChanges && !session.HasError;
         RevertButton.IsEnabled = session.HasChanges;
 

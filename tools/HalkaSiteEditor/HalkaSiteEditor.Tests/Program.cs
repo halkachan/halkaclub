@@ -37,6 +37,15 @@ static void CopySite(string from, string to)
         File.Copy(source, destination, overwrite: true);
     }
 
+    // 画像も、差し替えの確認に使うので複写します。
+    foreach (var image in Directory.GetFiles(Path.Combine(from, "assets", "ogp"), "*.png")
+                 .Append(Path.Combine(from, "assets", "profile", "halgif1.gif")))
+    {
+        var destination = Path.Combine(to, Path.GetRelativePath(from, image));
+        Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+        File.Copy(image, destination, overwrite: true);
+    }
+
     // ゲームは本数が増えるので、フォルダーごと複写します。
     foreach (var page in Directory.GetFiles(Path.Combine(from, "game"), "index.html",
                  SearchOption.AllDirectories))
@@ -718,6 +727,161 @@ shrinkGames.Revert();
 Check("ゲームも元に戻せる", !shrinkGames.HasChanges &&
     shrinkGames.Games!.Collection.Cards.Count == 3 &&
     shrinkGames.Games.Pages.Single(page => page.Slug == "gyugyu-rinchan").Changelog.Count == 4);
+
+// --- v1.0：ページの顔・画像の差し替え・sitemap -----------------------------
+
+Check("PNGとGIFの形を読む",
+    ImageInfo.Read(Path.Combine(sandbox, "assets", "ogp", "home.png")) is { Format: "png", Width: 1200, Height: 630 } &&
+    ImageInfo.Read(Path.Combine(sandbox, "assets", "profile", "halgif1.gif")) is { Format: "gif" } &&
+    ImageInfo.Read(Path.Combine(sandbox, "index.html")) == null);
+
+var v10 = SiteSession.Load(sandbox);
+var meta = v10.Meta ?? throw new Exception("ページの顔が読めません");
+var metaHome = meta.Pages.Single(page => page.Url == "/");
+var metaClub = meta.Pages.Single(page => page.Url == "/club/");
+
+Check("OGPのあるページだけ並べる",
+    meta.Pages.Count == 7 && meta.Pages.All(page => page.Url != "/game/gyugyu-rinchan/"));
+Check("ページの顔を読める",
+    metaHome.Fields.Single(field => field.Id.EndsWith(".title")).Value == "HALKA" &&
+    metaHome.Fields.Single(field => field.Id.EndsWith(".ogDescription")).Value.StartsWith("HALKAのリンク集。歌ってみた") &&
+    metaHome.Fields.Single(field => field.Id.EndsWith(".ogAlt")).Value == "HALKA リンク集");
+Check("説明が無いページは欄も出さない",
+    metaClub.Fields.All(field => !field.Id.EndsWith(".description")) &&
+    metaClub.Rows.All(row => row.Label != "検索結果の説明"));
+Check("カード画像を見つける",
+    metaHome.Card!.Relative == "assets/ogp/home.png" && metaHome.Card.Current!.Width == 1200);
+Check("ﾊﾙｶﾁｬﾝも差し替えられる", v10.Profile!.Relative == "assets/profile/halgif1.gif");
+Check("画像も公開の対象に入る",
+    v10.ManagedFiles.Contains("assets/ogp/home.png") &&
+    v10.ManagedFiles.Contains("assets/profile/halgif1.gif"));
+Check("ページの顔を読んだ直後は変更なし", !v10.HasChanges && !v10.HasError);
+
+// 文章を直す。
+var ogDescription = metaHome.Fields.Single(field => field.Id.EndsWith(".ogDescription"));
+ogDescription.Value = "HALKAの入口です。";
+Check("カードの説明が変更一覧に出る",
+    v10.Changes().Any(row => row.Label.Contains("カードの説明") && row.After == "HALKAの入口です。"));
+
+// 画像の差し替え。大きさが違うものは断る。
+var wrongSize = Path.Combine(sandbox, "wrong.png");
+var header = new byte[32];
+new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }.CopyTo(header, 0);
+new byte[] { 0, 0, 0, 0x0D, 0x49, 0x48, 0x44, 0x52 }.CopyTo(header, 8);
+header[18] = 0x02;   // 幅 512
+header[22] = 0x02;   // 高さ 512
+File.WriteAllBytes(wrongSize, header);
+
+metaHome.Card!.Choose(wrongSize);
+Check("大きさが違うカード画像は断る",
+    metaHome.Card.HasError && metaHome.Card.Error!.Contains("1200×630") && v10.HasError);
+metaHome.Card.Choose(Path.Combine(sandbox, "assets", "ogp", "game.png"));
+Check("形も大きさも合えば受け取る", !metaHome.Card.HasError && metaHome.Card.Changed && !v10.HasError);
+Check("ﾊﾙｶﾁｬﾝにPNGは入れられない",
+    !Throws(() => v10.Profile!.Choose(Path.Combine(sandbox, "assets", "ogp", "game.png"))) &&
+    v10.Profile!.HasError && v10.Profile.Error!.Contains("GIF"));
+v10.Profile.Clear();
+Check("選び直しは取り消せる", !v10.Profile.Changed && !v10.HasError);
+
+var homeCardBefore = CacheBuster.Current(File.ReadAllText(Path.Combine(sandbox, "index.html")), "assets/ogp/home.png");
+v10.Save();
+
+Check("画像が写っている",
+    File.ReadAllBytes(Path.Combine(sandbox, "assets", "ogp", "home.png")).SequenceEqual(
+        File.ReadAllBytes(Path.Combine(sandbox, "assets", "ogp", "game.png"))));
+Check("画像を替えたら番号が上がる",
+    CacheBuster.Current(File.ReadAllText(Path.Combine(sandbox, "index.html")), "assets/ogp/home.png")
+        == homeCardBefore + 1);
+Check("写したあとは待ちが無い", !v10.HasChanges && !metaHome.Card.Changed);
+
+var metaAfter = SiteSession.Load(sandbox).Meta!;
+Check("直した文章が読み直せる",
+    metaAfter.Pages.Single(page => page.Url == "/").Fields
+        .Single(field => field.Id.EndsWith(".ogDescription")).Value == "HALKAの入口です。");
+
+// ﾊﾙｶﾁｬﾝは index.html と script.js の2か所から読まれている。
+var gifSession = SiteSession.Load(sandbox);
+var gifCopy = Path.Combine(sandbox, "newgif.gif");
+File.Copy(Path.Combine(sandbox, "assets", "profile", "halgif1.gif"), gifCopy, overwrite: true);
+var indexGifBefore = CacheBuster.Current(File.ReadAllText(Path.Combine(sandbox, "index.html")), "assets/profile/halgif1.gif");
+var scriptGifBefore = CacheBuster.Current(File.ReadAllText(Path.Combine(sandbox, "script.js")), "assets/profile/halgif1.gif");
+gifSession.Profile!.Choose(gifCopy);
+gifSession.Save();
+Check("ﾊﾙｶﾁｬﾝは読んでいる2か所とも番号が上がる",
+    CacheBuster.Current(File.ReadAllText(Path.Combine(sandbox, "index.html")), "assets/profile/halgif1.gif")
+        == indexGifBefore + 1 &&
+    CacheBuster.Current(File.ReadAllText(Path.Combine(sandbox, "script.js")), "assets/profile/halgif1.gif")
+        == scriptGifBefore + 1);
+
+// sitemap と robots。
+var urls = Sitemap.Urls(sandbox);
+Check("ドメインはCNAMEから", Sitemap.Origin(sandbox) == "https://halkaclub.com");
+Check("検索に載せるページだけ並べる",
+    urls.Contains("/") && urls.Contains("/works/") && urls.Contains("/game/") &&
+    urls.Contains("/game/gyugyu-rinchan/") &&
+    !urls.Contains("/club/") &&          // noindex なので載せない
+    !urls.Contains("/game/mine-dungeon/"));   // 転送するだけのページ
+Check("公開の形にしたページは載る", urls.Contains("/utamaze/"));   // 前の節で noindex を外しました
+
+var sitemap = Sitemap.BuildSitemap(sandbox);
+Check("sitemapの形",
+    sitemap.StartsWith("<?xml version=\"1.0\" encoding=\"UTF-8\"?>") &&
+    sitemap.Contains("<url><loc>https://halkaclub.com/</loc></url>") &&
+    sitemap.TrimEnd().EndsWith("</urlset>"));
+Check("robotsは載せないページを断る",
+    Sitemap.BuildRobots(sandbox).Contains("Disallow: /club/") &&
+    Sitemap.BuildRobots(sandbox).Contains("Sitemap: https://halkaclub.com/sitemap.xml"));
+
+Check("2つのファイルを書き出す",
+    Sitemap.Write(sandbox).OrderBy(name => name, StringComparer.Ordinal)
+        .SequenceEqual(new[] { "robots.txt", "sitemap.xml" }) &&
+    File.Exists(Path.Combine(sandbox, "sitemap.xml")));
+Check("中身が同じなら書き直さない", Sitemap.Write(sandbox).Count == 0);
+
+// カード画像の作り直し。本物の generate-ogp.py は Pillow などが要るので、
+// ここでは同じ場所に置いた短い Python で、動かす仕組みだけを確かめます。
+var pyRoot = Path.Combine(Path.GetTempPath(), "halka-site-editor-py-" + Guid.NewGuid().ToString("N"));
+Directory.CreateDirectory(Path.Combine(pyRoot, "tools", "ogp"));
+Directory.CreateDirectory(Path.Combine(pyRoot, "assets", "ogp"));
+File.WriteAllText(Path.Combine(pyRoot, "assets", "ogp", "a.png"), "まえ");
+File.WriteAllText(Path.Combine(pyRoot, "assets", "ogp", "b.png"), "そのまま");
+
+Check("スクリプトが無ければ動かさない",
+    !CardImages.IsAvailable(pyRoot) &&
+    !CardImages.Run(pyRoot, new[] { "assets/ogp/a.png" }).Ok);
+
+File.WriteAllText(Path.Combine(pyRoot, "tools", "ogp", "generate-ogp.py"),
+    "from pathlib import Path\n" +
+    "Path('assets/ogp/a.png').write_text('あと', encoding='utf-8')\n" +
+    "print('できました')\n");
+
+var cards = CardImages.Run(pyRoot, new[] { "assets/ogp/a.png", "assets/ogp/b.png" });
+if (cards.Output.Contains("Python が見つかりません"))
+{
+    Console.WriteLine("SKIP カード画像の作り直し（このPCに Python がありません）");
+}
+else
+{
+    Check("作り直して、変わった画像だけを返す",
+        cards.Ok && cards.Output.Contains("できました") &&
+        cards.Changed.SequenceEqual(new[] { "assets/ogp/a.png" }));
+}
+try { Directory.Delete(pyRoot, recursive: true); } catch (Exception) { }
+
+// 作り直した印を付けると、番号を上げる対象になる。
+var regen = SiteSession.Load(sandbox);
+var regenCard = regen.Meta!.Pages.Single(page => page.Url == "/works/").Card!;
+var worksBefore = CacheBuster.Current(File.ReadAllText(Path.Combine(sandbox, "works", "index.html")),
+    "assets/ogp/works.png");
+regenCard.MarkRegenerated();
+Check("作り直しは変更一覧に出る",
+    regenCard.Changed && regen.HasChanges &&
+    regen.Changes().Any(row => row.Label.Contains("作り直し")));
+regen.Save();
+Check("作り直したら番号が上がる",
+    CacheBuster.Current(File.ReadAllText(Path.Combine(sandbox, "works", "index.html")), "assets/ogp/works.png")
+        == worksBefore + 1 &&
+    !regen.HasChanges);
 
 // --- プレビュー用サーバー -------------------------------------------------
 

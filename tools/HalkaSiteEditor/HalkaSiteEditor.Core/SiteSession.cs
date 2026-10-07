@@ -55,20 +55,36 @@ public sealed class SiteSession
     public NewsDocument? News { get; }
     public ParagraphRun? ClubUpdate { get; }
     public GameDocument? Games { get; }
+    public PageMetaDocument? Meta { get; }
+    /// <summary>トップページのﾊﾙｶﾁｬﾝ。</summary>
+    public ImageSlot? Profile { get; }
+
+    /// <summary>差し替えられる画像をまとめて。</summary>
+    public IEnumerable<ImageSlot> Images =>
+        (Meta?.Cards ?? Array.Empty<ImageSlot>()).Concat(
+            Profile == null ? Array.Empty<ImageSlot>() : new[] { Profile });
 
     /// <summary>このツールが書き換えるファイル（サイトのフォルダーからの相対パス）。公開もこれだけを対象にします。</summary>
-    public IReadOnlyList<string> ManagedFiles =>
-        files.Select(file => SitePaths.Relative(Root, file.Path)).OrderBy(path => path, StringComparer.Ordinal).ToArray();
+    public IReadOnlyList<string> ManagedFiles => files
+        .Select(file => SitePaths.Relative(Root, file.Path))
+        .Concat(Images.Select(image => image.Relative))
+        .Concat(new[] { "sitemap.xml", "robots.txt" }
+            .Where(name => File.Exists(Path.Combine(Root, name))))
+        .Distinct(StringComparer.Ordinal)
+        .OrderBy(path => path, StringComparer.Ordinal).ToArray();
 
     public IEnumerable<EditField> Fields => Groups.SelectMany(group => group.Fields);
     public bool HasChanges => Fields.Any(field => field.Changed) || Works.HasChanges || CommissionText.HasChanges || Utamaze?.HasChanges == true
-        || News?.HasChanges == true || ClubUpdate?.Changed == true || Games?.HasChanges == true;
+        || News?.HasChanges == true || ClubUpdate?.Changed == true || Games?.HasChanges == true
+        || Images.Any(image => image.Changed);
     public bool HasError => Fields.Any(field => field.HasError) || Works.HasError || CommissionText.HasError || Utamaze?.HasError == true
-        || News?.HasError == true || ClubUpdate?.HasError == true || Games?.HasError == true;
+        || News?.HasError == true || ClubUpdate?.HasError == true || Games?.HasError == true
+        || Images.Any(image => image.HasError);
 
     private SiteSession(string root, List<SiteFile> files, IReadOnlyList<EditGroup> groups,
         WorksDocument works, CommissionTextDocument commissionText, UtamazeRelease? utamaze,
-        SiteFile? worksPage, NewsDocument? news, ParagraphRun? clubUpdate, GameDocument? games)
+        SiteFile? worksPage, NewsDocument? news, ParagraphRun? clubUpdate, GameDocument? games,
+        PageMetaDocument? meta, ImageSlot? profile)
     {
         Root = root;
         this.files = files;
@@ -80,6 +96,8 @@ public sealed class SiteSession
         News = news;
         ClubUpdate = clubUpdate;
         Games = games;
+        Meta = meta;
+        Profile = profile;
     }
 
     public static SiteSession Load(string root)
@@ -144,6 +162,21 @@ public sealed class SiteSession
                 games.Fields.ToArray()));
         }
 
+        // ページの顔（タイトルとOGP）と、差し替えられる画像。
+        var meta = PageMetaDocument.Load(root, Open);
+        if (meta != null)
+        {
+            groups.Add(new EditGroup(
+                "ページの顔",
+                "検索結果とSNSに出る文章です。カード画像も、ここで差し替えられます。",
+                meta.AllFields.ToArray()));
+        }
+
+        var profilePath = Path.Combine(root, "assets", "profile", "halgif1.gif");
+        var profile = File.Exists(profilePath)
+            ? new ImageSlot(root, "assets/profile/halgif1.gif", "ﾊﾙｶﾁｬﾝ", cardSize: false)
+            : null;
+
         // トップページの「うれしいこと」と、くらぶの更新内容。
         var news = NewsDocument.Load(home, SitePaths.Relative(root, home.Path));
         var clubUpdate = clubFile == null ? null : ParagraphRun.Create(
@@ -157,7 +190,7 @@ public sealed class SiteSession
             ("日本語版", ja, SitePaths.Relative(root, ja.Path)),
             ("英語版", en, SitePaths.Relative(root, en.Path)));
         return new SiteSession(root, files, groups, works, commissionText, utamaze, worksPage,
-            news, clubUpdate, games);
+            news, clubUpdate, games, meta, profile);
     }
 
     private static EditGroup BuildLinks(string root, SiteFile home)
@@ -360,6 +393,7 @@ public sealed class SiteSession
         .Concat(News?.Changes() ?? Array.Empty<ChangeRow>())
         .Concat(ClubUpdate?.Change() is { } clubRow ? new[] { clubRow } : Array.Empty<ChangeRow>())
         .Concat(Games?.Changes() ?? Array.Empty<ChangeRow>())
+        .Concat(Images.Select(image => image.Change()).OfType<ChangeRow>())
         .ToArray();
 
     /// <summary>入力内容をファイルへ書き込みます。</summary>
@@ -387,7 +421,12 @@ public sealed class SiteSession
         News?.Apply();
         ClubUpdate?.Apply();
         Games?.Apply();
+        // 画像を差し替えるときは、読み込み側の `?v=` も上げます。
+        // 上げないと、見る人のブラウザが古い画像をしばらく掴んだままになります。
+        foreach (var image in Images) image.Bump(files);
         foreach (var file in files) file.Save();
+        // 画像を写すのは、文章の書き込みが全部すんでからにします。
+        foreach (var image in Images) image.Copy();
         foreach (var field in Fields) field.MarkSaved();
         Works.MarkSaved();
         CommissionText.MarkSaved();
@@ -406,5 +445,6 @@ public sealed class SiteSession
         News?.Revert();
         ClubUpdate?.Revert();
         Games?.Revert();
+        foreach (var image in Images) image.Clear();
     }
 }

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:HalkaSiteEditor"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="HALKA SITE EDITOR v0.9" Icon="Assets/site-editor.ico"
+        Title="HALKA SITE EDITOR v1.0" Icon="Assets/site-editor.ico"
         Width="1660" Height="900" MinWidth="1000" MinHeight="640"
         Background="#16191E" Foreground="#E4E8EC" FontFamily="Yu Gothic UI" FontSize="13"
         Loaded="WindowLoaded" Closing="WindowClosing">
@@ -615,6 +615,25 @@
                          HorizontalAlignment="Left" Stretch="Uniform"/>
                 </StackPanel>
               </Border>
+              <Border x:Name="ProfileBox" Background="#20262F" BorderBrush="#2F3845" BorderThickness="1"
+                      Margin="0,10,0,0" Padding="12,10">
+                <StackPanel>
+                  <DockPanel Margin="0,0,0,8">
+                    <TextBlock DockPanel.Dock="Left" Text="ﾊﾙｶﾁｬﾝ" FontSize="14"/>
+                    <Button DockPanel.Dock="Right" Content="画像を選ぶ..." Click="CardChooseClick"
+                            Tag="profile" Padding="14,5"/>
+                    <Button DockPanel.Dock="Right" x:Name="ProfileClearButton" Content="選び直しをやめる"
+                            Click="CardClearClick" Tag="profile"/>
+                    <TextBlock x:Name="ProfileSummary" Margin="14,3,0,0" Foreground="#AEB8C3"/>
+                  </DockPanel>
+                  <TextBlock TextWrapping="Wrap" Foreground="#8C97A6" FontSize="11" Margin="0,0,0,8"
+                             Text="トップページでつつけるGIFです。差し替えると、読み込んでいる2か所の番号を自動で上げます（古い絵が残らないように）。"/>
+                  <Image x:Name="ProfilePreview" Width="96" Height="96" HorizontalAlignment="Left"
+                         Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                  <TextBlock x:Name="ProfileError" Foreground="#FF8A8A" FontSize="11" TextWrapping="Wrap"
+                             Margin="0,6,0,0"/>
+                </StackPanel>
+              </Border>
               <ItemsControl x:Name="TopRows" ItemTemplate="{StaticResource RowTemplate}" Margin="0,10,0,0"/>
             </StackPanel>
           </ScrollViewer>
@@ -683,6 +702,46 @@
                   </Grid>
 
                   <ItemsControl x:Name="ReleaseItems" ItemTemplate="{StaticResource ReleaseTemplate}"/>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="ページの顔" x:Name="MetaTab">
+        <DockPanel Margin="4,10,4,0">
+          <TextBlock x:Name="MetaNote" DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap"
+                     Margin="2,0,2,10"/>
+          <DockPanel DockPanel.Dock="Top" Margin="2,0,10,10">
+            <TextBlock Text="ページ" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#AEB8C3"/>
+            <Button DockPanel.Dock="Right" Content="sitemap を作り直す" Click="SitemapClick" Padding="14,5"
+                    ToolTip="いまサイトにあるページから sitemap.xml と robots.txt を作り直します。"/>
+            <Button DockPanel.Dock="Right" x:Name="CardImagesButton" Content="カード画像を作り直す"
+                    Click="CardImagesClick" Padding="14,5"
+                    ToolTip="tools/ogp/generate-ogp.py を動かして、8枚のカード画像を作り直します。"/>
+            <ComboBox x:Name="MetaPagePicker" MinWidth="240" SelectionChanged="MetaPageChanged"/>
+          </DockPanel>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="2,0,10,10">
+              <ItemsControl x:Name="MetaRows" ItemTemplate="{StaticResource RowTemplate}"/>
+
+              <Border x:Name="CardBox" Background="#1A1F26" BorderBrush="#2F3845" BorderThickness="1"
+                      Margin="0,4,0,0" Padding="12,10">
+                <StackPanel>
+                  <DockPanel Margin="0,0,0,8">
+                    <TextBlock DockPanel.Dock="Left" Text="カード画像" FontSize="15" Foreground="#FFCB75"/>
+                    <Button DockPanel.Dock="Right" Content="画像を選ぶ..." Click="CardChooseClick"
+                            Tag="card" Padding="14,5"/>
+                    <Button DockPanel.Dock="Right" x:Name="CardClearButton" Content="選び直しをやめる"
+                            Click="CardClearClick" Tag="card"/>
+                    <TextBlock x:Name="CardSummary" Margin="14,3,0,0" Foreground="#E4E8EC"/>
+                  </DockPanel>
+                  <TextBlock TextWrapping="Wrap" Foreground="#8C97A6" FontSize="11" Margin="0,0,0,8"
+                             Text="XやDiscordにURLを貼ると、この絵が出ます。1200×630 のPNGです。絵柄と中の文字は tools/ogp/generate-ogp.py で決まっていて、上の文章とは別です。"/>
+                  <Image x:Name="CardPreview" MaxHeight="210" HorizontalAlignment="Left" Stretch="Uniform"/>
+                  <TextBlock x:Name="CardError" Foreground="#FF8A8A" FontSize="11" TextWrapping="Wrap"
+                             Margin="0,6,0,0"/>
                 </StackPanel>
               </Border>
             </StackPanel>

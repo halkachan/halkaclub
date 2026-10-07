@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /club/
+Disallow: /utamaze/
+
+Sitemap: https://halkaclub.com/sitemap.xml

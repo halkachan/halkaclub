@@ -14,6 +14,9 @@ public static class CacheBuster
     /// <summary>
     /// `src="works-data.js?v=3"` の数字を1つ上げます。
     /// `?v=` がまだ無ければ `?v=1` を付けます。変えた場所の数を返します。
+    ///
+    /// 引用符の中にあれば場所は問いません（`src=` `href=` `content=` のほか、
+    /// `script.js` の中の文字列でも上がります）。
     /// </summary>
     public static int Bump(SiteFile file, string resource)
     {
@@ -21,7 +24,7 @@ public static class CacheBuster
         var text = file.Text;
         var changed = 0;
 
-        var versioned = new Regex($@"((?:src|href)=""[^""]*{name}\?v=)(\d+)(["" &])");
+        var versioned = new Regex($@"([""'][^""'<>]*{name}\?v=)(\d+)([""' &])");
         text = versioned.Replace(text, match =>
         {
             changed++;
@@ -31,7 +34,7 @@ public static class CacheBuster
 
         if (changed == 0)
         {
-            var plain = new Regex($@"((?:src|href)=""[^""]*{name})("")");
+            var plain = new Regex($@"([""'][^""'<>]*{name})([""'])");
             text = plain.Replace(text, match =>
             {
                 changed++;
@@ -46,7 +49,7 @@ public static class CacheBuster
     /// <summary>いま付いている番号（無ければ 0）。</summary>
     public static int Current(string text, string resource)
     {
-        var match = Regex.Match(text, $@"(?:src|href)=""[^""]*{Regex.Escape(resource)}\?v=(\d+)""");
+        var match = Regex.Match(text, $@"[""'][^""'<>]*{Regex.Escape(resource)}\?v=(\d+)[""']");
         return match.Success && int.TryParse(match.Groups[1].Value, out var value) ? value : 0;
     }
 }
