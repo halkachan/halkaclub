@@ -1,6 +1,6 @@
 # HALKA WORLD MAP EDITOR v0.6
 
-ゲーム本編は **ver2.1** です。開発専用の .NET 8 / WPF / SkiaSharp Windows アプリで、ゲーム画面には出ません。
+ゲーム本編は **ver2.2** です。開発専用の .NET 8 / WPF / SkiaSharp Windows アプリで、ゲーム画面には出ません。
 
 ## 起動と保存
 
@@ -43,13 +43,13 @@ Unity Importerが両MapのJSONとCatalogを読み、MapDefinition/Definition ass
 
 `dotnet run --project tools/HalkaWorldMapEditor/HalkaWorldMapEditor.Tests -c Release`
 
-Unity側は `Halka.Game.Editor.MapAuthoringChecks.Run` と `Halka.Game.Editor.Version21Checks.Run`（ver2.0回帰も実行）。GameVersionは2.1です。GUIの破壊操作は正式Mapを直接使わず、コピーで確認してください。
+Unity側は `Halka.Game.Editor.MapAuthoringChecks.Run` と `Halka.Game.Editor.Version22Checks.Run`（ver2.0回帰も実行）。GameVersionは2.2です。GUIの破壊操作は正式Mapを直接使わず、コピーで確認してください。
 
 ## Action Pointと通行判定
 
 Catalog v3の各Objectには `actionPoints` 配列があります。各点は `id`、Root相対の整数セル `playerCellOffset`、`playerFacing`（up/down/left/right）、`actionType`（none/examine/sit/sleep）、任意の `poseKey` と `interactionText` を持ちます。World座標は `rootCell + playerCellOffset` で算出し、Map JSONには重複保存しません。InspectorのLocal/World座標とCanvas上の E/S/Z + 矢印で確認できます。Object移動、Undo/Redo、Copy/Pasteにもこの計算が追従します。
 
-`blockedCellOffsets` は通行不可の範囲です。Action PointはPlayerの行動位置であり、両者は独立です。ベッドのsleep点は自身のblocked範囲にあっても構いません。クッションはblocked offsetsが空で通行可能な定義です。examineの立ち位置が塞がれた場合は警告として表示します。sit/sleepとPose Keyは将来用メタデータで、本編ver2.1では実行しません。石・花・木の既存メッセージはAction Pointの `interactionText` をUnity Definitionへ同期し、現行RuntimeのExamine表示を維持します。家の入退室は既存の移動遷移のままです。
+`blockedCellOffsets` は通行不可の範囲です。Action PointはPlayerの行動位置であり、両者は独立です。ベッドのsleep点は自身のblocked範囲にあっても構いません。クッションはblocked offsetsが空で通行可能な定義です。examineの立ち位置が塞がれた場合は警告として表示します。sit/sleepとPose Keyは将来用メタデータで、本編ver2.2では実行しません。石・花・木の既存メッセージはAction Pointの `interactionText` をUnity Definitionへ同期し、現行RuntimeのExamine表示を維持します。家の入退室は既存の移動遷移のままです。
 
 ## v0.4の正式World Object素材
 
@@ -61,7 +61,7 @@ Catalog v3の各Objectには `actionPoints` 配列があります。各点は `i
 | `sign_basic` | `sign.png` | 32×32 / Rootの1セル | (0,-1)、上向き `examine`、文面は配置ごとの `signText` |
 | `well_basic` | `well.png` | 32×32 / Rootの1セル | (0,-1)、上向き `examine` / 「いど。」 |
 
-机とベンチは左下セルをRootとし、見た目の右セルにも通行不可判定を置きます。看板は見た目も通行不可判定もRootの1セルです。クッションは床置きで上を歩けます。看板画像には文字も矢印も描いていません。sit/sleepは引き続き将来用メタデータで、本編ver2.1の座る・寝る処理はありません。正式Mapにはこれらを自動配置しません。
+机とベンチは左下セルをRootとし、見た目の右セルにも通行不可判定を置きます。看板は見た目も通行不可判定もRootの1セルです。クッションは床置きで上を歩けます。看板画像には文字も矢印も描いていません。sit/sleepは引き続き将来用メタデータで、本編ver2.2の座る・寝る処理はありません。正式Mapにはこれらを自動配置しません。
 
 画像の原本は `SourceGeneratedArt/map_editor_v04_objects` に保存し、ゲーム用PNGは `Assets/Content/World` に置きます。追加素材は透明RGBA、32pxセルの整数倍、PPU64、Point、Single Sprite、mipmap無効、無圧縮を守ります。絵は画像生成機能で制作し、技術的後処理では透明化、切り抜き、Nearest縮小、色数整理だけを行います。Catalogのstable IDとSprite path、Visual寸法、Root Anchor、blocked offsets、Action Pointを設定してからUnity同期とCore/Unity検証を実行してください。Map内の配置場所はStandalone Editorで決めます。
 

@@ -1,6 +1,6 @@
 # HALKA WORLD MAP EDITOR v0.6
 
-.NET 8 / WPF / SkiaSharpのWindows専用マップ編集アプリです。ゲーム本編のバージョンはver2.1です。
+.NET 8 / WPF / SkiaSharpのWindows専用マップ編集アプリです。ゲーム本編のバージョンはver2.2です。
 
 ## Build
 

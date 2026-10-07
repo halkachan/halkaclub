@@ -8,6 +8,7 @@ namespace Halka.Game.UI
     public sealed class GameMenuController : MonoBehaviour
     {
         [SerializeField] private AutoModeController autoMode;
+        [SerializeField] private LifeLogController lifeLog;
         [SerializeField] private GameHud hud;
         [SerializeField] private Font font;
 
@@ -19,6 +20,7 @@ namespace Halka.Game.UI
         private bool suppressTouchUntilRelease;
 
         public bool IsOpen { get; private set; }
+        public bool IsLifeLogOpen { get; private set; }
         public bool BlocksGameplayInput => IsOpen || suppressTouchUntilRelease ||
             Time.unscaledTime < pointerCaptureUntil;
 
@@ -27,14 +29,29 @@ namespace Halka.Game.UI
             if (open && hud != null && hud.HasActiveMessage) return;
             if (IsOpen == open) return;
             IsOpen = open;
+            IsLifeLogOpen = false;
             pointerCaptureUntil = now + 0.25f;
             if (autoMode != null) autoMode.SetMenuSuspended(open, now);
         }
 
         public void ToggleAuto(float now)
         {
-            if (!IsOpen || autoMode == null) return;
+            if (!IsOpen || IsLifeLogOpen || autoMode == null) return;
             autoMode.SetAutoEnabled(!autoMode.AutoEnabled, now);
+            pointerCaptureUntil = now + 0.25f;
+        }
+
+        public void OpenLifeLog(float now)
+        {
+            if (!IsOpen || IsLifeLogOpen) return;
+            IsLifeLogOpen = true;
+            pointerCaptureUntil = now + 0.25f;
+        }
+
+        public void BackFromLifeLog(float now)
+        {
+            if (!IsOpen || !IsLifeLogOpen) return;
+            IsLifeLogOpen = false;
             pointerCaptureUntil = now + 0.25f;
         }
 
@@ -54,7 +71,9 @@ namespace Halka.Game.UI
                 var point = ToGui(touch.position);
                 var now = Time.unscaledTime;
                 if (ButtonRect().Contains(point)) SetOpen(!IsOpen, now);
-                else if (IsOpen && AutoRect().Contains(point)) ToggleAuto(now);
+                else if (IsOpen && IsLifeLogOpen && BackRect().Contains(point)) BackFromLifeLog(now);
+                else if (IsOpen && !IsLifeLogOpen && AutoRect().Contains(point)) ToggleAuto(now);
+                else if (IsOpen && !IsLifeLogOpen && LifeLogRect().Contains(point)) OpenLifeLog(now);
                 else if (IsOpen && !PanelRect().Contains(point)) SetOpen(false, now);
                 else if (!IsOpen) continue;
                 pointerCaptureUntil = now + 0.25f;
@@ -81,16 +100,34 @@ namespace Halka.Game.UI
             var panel = PanelRect();
             Fill(panel, Color.black);
             Fill(Inset(panel, 2f), new Color(0.96f, 0.96f, 0.91f));
-            GUI.Label(new Rect(panel.x + 12f, panel.y + 8f, panel.width - 24f, 24f), "メニュー", titleStyle);
-            GUI.Label(new Rect(panel.x + 12f, panel.y + 53f, 70f, 32f), "AUTO", itemStyle);
-            var autoButton = AutoRect();
-            Fill(autoButton, autoMode != null && autoMode.AutoEnabled ? new Color(0.2f, 0.25f, 0.19f) : Color.black);
-            Fill(Inset(autoButton, 2f), autoMode != null && autoMode.AutoEnabled
-                ? new Color(0.28f, 0.35f, 0.25f) : Color.white);
-            valueStyle.normal.textColor = autoMode != null && autoMode.AutoEnabled ? Color.white : Color.black;
-            GUI.Label(autoButton, autoMode != null && autoMode.AutoEnabled ? "ON" : "OFF", valueStyle);
-            if (useMouse && GUI.Button(autoButton, GUIContent.none, GUIStyle.none))
-                ToggleAuto(Time.unscaledTime);
+            if (IsLifeLogOpen)
+            {
+                GUI.Label(new Rect(panel.x + 12f, panel.y + 8f, panel.width - 24f, 24f), "せいかつきろく", titleStyle);
+                GUI.Label(new Rect(panel.x + 12f, panel.y + 42f, panel.width - 24f, 24f), "あるいたかず", itemStyle);
+                GUI.Label(new Rect(panel.x + 12f, panel.y + 66f, panel.width - 24f, 26f), lifeLog != null ? lifeLog.StepsLabel : "0", itemStyle);
+                GUI.Label(new Rect(panel.x + 12f, panel.y + 104f, panel.width - 24f, 24f), "プレイじかん", itemStyle);
+                GUI.Label(new Rect(panel.x + 12f, panel.y + 128f, panel.width - 24f, 26f), lifeLog != null ? lifeLog.TimeLabel : "0:00:00", itemStyle);
+                var back = BackRect();
+                DrawTextButton(back, "もどる", Color.white);
+                if (useMouse && GUI.Button(back, GUIContent.none, GUIStyle.none)) BackFromLifeLog(Time.unscaledTime);
+            }
+            else
+            {
+                GUI.Label(new Rect(panel.x + 12f, panel.y + 8f, panel.width - 24f, 24f), "メニュー", titleStyle);
+                GUI.Label(new Rect(panel.x + 12f, panel.y + 53f, 70f, 32f), "AUTO", itemStyle);
+                var autoButton = AutoRect();
+                Fill(autoButton, autoMode != null && autoMode.AutoEnabled ? new Color(0.2f, 0.25f, 0.19f) : Color.black);
+                Fill(Inset(autoButton, 2f), autoMode != null && autoMode.AutoEnabled
+                    ? new Color(0.28f, 0.35f, 0.25f) : Color.white);
+                valueStyle.normal.textColor = autoMode != null && autoMode.AutoEnabled ? Color.white : Color.black;
+                GUI.Label(autoButton, autoMode != null && autoMode.AutoEnabled ? "ON" : "OFF", valueStyle);
+                if (useMouse && GUI.Button(autoButton, GUIContent.none, GUIStyle.none))
+                    ToggleAuto(Time.unscaledTime);
+                var lifeButton = LifeLogRect();
+                DrawTextButton(lifeButton, "せいかつきろく", Color.white);
+                if (useMouse && GUI.Button(lifeButton, GUIContent.none, GUIStyle.none))
+                    OpenLifeLog(Time.unscaledTime);
+            }
 
             var current = Event.current;
             if (useMouse && current.type == EventType.MouseDown && current.button == 0 &&
@@ -111,8 +148,8 @@ namespace Halka.Game.UI
         {
             var safe = Screen.safeArea;
             var button = ButtonRect();
-            var width = Mathf.Min(200f, Mathf.Max(120f, safe.width - 24f));
-            var height = 104f;
+            var width = Mathf.Min(IsLifeLogOpen ? 240f : 200f, Mathf.Max(120f, safe.width - 24f));
+            var height = IsLifeLogOpen ? 208f : 150f;
             var y = Mathf.Min(button.yMax + 6f, Screen.height - safe.yMin - height - 4f);
             return new Rect(button.x, y, width, height);
         }
@@ -121,6 +158,26 @@ namespace Halka.Game.UI
         {
             var panel = PanelRect();
             return new Rect(panel.xMax - 80f, panel.y + 48f, 66f, 38f);
+        }
+
+        private Rect LifeLogRect()
+        {
+            var panel = PanelRect();
+            return new Rect(panel.x + 12f, panel.y + 98f, panel.width - 24f, 38f);
+        }
+
+        private Rect BackRect()
+        {
+            var panel = PanelRect();
+            return new Rect(panel.x + 12f, panel.y + 162f, panel.width - 24f, 36f);
+        }
+
+        private void DrawTextButton(Rect rect, string label, Color background)
+        {
+            Fill(rect, Color.black);
+            Fill(Inset(rect, 2f), background);
+            valueStyle.normal.textColor = Color.black;
+            GUI.Label(rect, label, valueStyle);
         }
 
         private static Vector2 ToGui(Vector2 screenPosition) =>
