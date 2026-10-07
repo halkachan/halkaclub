@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7333b7c63ac1a534d85d98463325eff1, type: 3}
   m_Name: first_field
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.MapDefinition
-  dataVersion: 3
+  dataVersion: 4
   mapId: first_field
   displayName: First Field
   mapType: outdoor
@@ -225,3 +225,4 @@ MonoBehaviour:
     Definition: {fileID: 11400000, guid: 5c79467cf3296704a8720f33cfa33bd6, type: 2}
     Cell: {x: 0, y: 0}
     Facing: down
+  areaTransitions: []

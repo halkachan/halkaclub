@@ -36,7 +36,7 @@ namespace Halka.Game.Editor
                 {
                     var source = JsonUtility.FromJson<MapDto>(File.ReadAllText(file));
                     if (source == null || source.entitySpawns == null)
-                        throw new InvalidDataException("Map is missing v3 Entity Spawns: " + file);
+                        throw new InvalidDataException("Map is missing Entity Spawns: " + file);
                     playerCount += source.entitySpawns.Count(item => item != null && item.definitionId == "player_main");
                 }
                 if (playerCount != 1)
@@ -45,8 +45,25 @@ namespace Halka.Game.Editor
                 EnsureCatalogDefinitions(catalog);
                 var entities = ParseEntityCatalog();
                 EnsureEntityDefinitions(entities);
+                var sources = files.Select(file => JsonUtility.FromJson<MapDto>(File.ReadAllText(file))).ToArray();
+                var mapIds = new HashSet<string>(sources.Select(source => source.mapId), StringComparer.Ordinal);
+                foreach (var source in sources)
+                    foreach (var transition in source.areaTransitions ?? Array.Empty<AreaTransitionDto>())
+                        if (!mapIds.Contains(transition.destinationMapId))
+                            throw new InvalidDataException("Missing destination Map: " + transition.destinationMapId);
                 foreach (var file in files)
                     SyncMapFromFile(file, catalog, entities);
+                foreach (var source in sources)
+                foreach (var transition in source.areaTransitions ?? Array.Empty<AreaTransitionDto>())
+                {
+                    var destination = AssetDatabase.LoadAssetAtPath<MapDefinition>(
+                        "Assets/Content/Maps/" + transition.destinationMapId + ".asset");
+                    if (destination == null || !destination.Contains(transition.destinationCell.ToVector()) ||
+                        MapPlacementRules.BlocksMovement(destination, transition.destinationCell.ToVector()) ||
+                        (destination.TryGetEntitySpawn("crow_main", out var crowSpawn) &&
+                         crowSpawn.Cell == transition.destinationCell.ToVector()))
+                        throw new InvalidDataException("Invalid transition destination: " + source.mapId + "/" + transition.transitionId);
+                }
                 AssetDatabase.SaveAssets();
             }
             finally { syncing = false; }
@@ -71,10 +88,10 @@ namespace Halka.Game.Editor
             try { source = JsonUtility.FromJson<MapDto>(File.ReadAllText(fullPath)); }
             catch (Exception error)
             { throw new InvalidDataException("Map " + expectedId + " JSON parse error: " + error.Message, error); }
-            if (source == null || source.format != "halka-world-map" || source.formatVersion != 3 ||
+            if (source == null || source.format != "halka-world-map" || source.formatVersion != 4 ||
                 source.mapId != expectedId || !Regex.IsMatch(source.mapId ?? "", "^[a-z0-9_-]+$") ||
                 source.bounds == null || source.markers == null || source.surfaces == null || source.objects == null ||
-                source.entitySpawns == null ||
+                source.entitySpawns == null || source.areaTransitions == null ||
                 (source.mapType != "outdoor" && source.mapType != "interior") ||
                 (source.grassMode != "auto" && source.grassMode != "none"))
                 throw new InvalidDataException("Map " + expectedId + " JSON parse error: missing or invalid format, mapId, bounds, placements or markers.");
@@ -135,6 +152,16 @@ namespace Halka.Game.Editor
                 spawns.Add(new EntitySpawnPlacement { InstanceId = item.instanceId,
                     Definition = definition, Cell = item.cell.ToVector(), Facing = item.facing });
             }
+            var transitions = new List<AreaTransitionPlacement>();
+            foreach (var item in source.areaTransitions)
+            {
+                if (item == null || item.sourceCell == null || item.destinationCell == null)
+                    throw new InvalidDataException("Map " + expectedId + ": invalid Area Transition.");
+                transitions.Add(new AreaTransitionPlacement { InstanceId = item.instanceId,
+                    TransitionId = item.transitionId, SourceCell = item.sourceCell.ToVector(),
+                    ExitDirection = item.exitDirection, DestinationMapId = item.destinationMapId,
+                    DestinationCell = item.destinationCell.ToVector(), ArrivalFacing = item.arrivalFacing });
+            }
             ValidateCatalog(catalog, surfaces, objects);
             var minimum = new Vector2Int(source.bounds.minX, source.bounds.minY);
             var maximum = new Vector2Int(source.bounds.maxX, source.bounds.maxY);
@@ -143,7 +170,7 @@ namespace Halka.Game.Editor
             {
                 temporary.ReplaceFromAuthoring(source.mapId, source.displayName, source.mapType,
                     baseSurface, source.grassMode, backdrop, minimum, maximum,
-                    surfaces, objects, markers, spawns);
+                    surfaces, objects, markers, spawns, transitions);
                 var errors = MapPlacementRules.Validate(temporary);
                 if (errors.Count != 0)
                     throw new InvalidDataException("Map " + expectedId + " validation error: " + string.Join("; ", errors));
@@ -159,7 +186,7 @@ namespace Halka.Game.Editor
                 {
                     asset.ReplaceFromAuthoring(source.mapId, source.displayName, source.mapType,
                         baseSurface, source.grassMode, backdrop, minimum, maximum,
-                        surfaces, objects, markers, spawns);
+                        surfaces, objects, markers, spawns, transitions);
                     EditorUtility.SetDirty(asset);
                 }
                 return asset;
@@ -420,6 +447,9 @@ namespace Halka.Game.Editor
         [Serializable] private sealed class MarkerDto { public string id; public CellDto cell; }
         [Serializable] private sealed class EntitySpawnDto
         { public string instanceId, definitionId, facing; public CellDto cell; }
+        [Serializable] private sealed class AreaTransitionDto
+        { public string instanceId, transitionId, exitDirection, destinationMapId, arrivalFacing;
+          public CellDto sourceCell, destinationCell; }
         [Serializable] private sealed class MapDto
         {
             public string format, mapId, displayName;
@@ -430,6 +460,7 @@ namespace Halka.Game.Editor
             public ObjectDto[] objects;
             public MarkerDto[] markers;
             public EntitySpawnDto[] entitySpawns;
+            public AreaTransitionDto[] areaTransitions;
         }
         [Serializable] private sealed class WanderRegionDto { public int minX, maxX, minY, maxY; }
         [Serializable] private sealed class EntityDto

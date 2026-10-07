@@ -13,14 +13,16 @@ namespace Halka.Game.Editor
 {
     public static class MapAuthoringChecks
     {
+        private const System.Reflection.BindingFlags Hidden =
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
         private const string OfficialPath = "Assets/Content/Maps/first_field.asset";
         private const string FixtureAssetPath = "Assets/Content/Maps/standalone_contract_fixture.asset";
 
-        [MenuItem("HALKA WORLD/Build v0.5 WebGL regression to Temp")]
+        [MenuItem("HALKA WORLD/Build v0.6 WebGL regression to Temp")]
         public static void BuildWebGLRegression()
         {
             ProjectBuilder.PrepareScene();
-            var output = Path.Combine(Path.GetTempPath(), "HalkaMapEditorV05WebGLRegression");
+            var output = Path.Combine(Path.GetTempPath(), "HalkaMapEditorV06WebGLRegression");
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions {
                 scenes = new[] { "Assets/Scenes/FirstDay.unity" },
                 locationPathName = output,
@@ -29,10 +31,10 @@ namespace Halka.Game.Editor
             });
             Check(report.summary.result == BuildResult.Succeeded,
                 "WebGL regression build succeeded");
-            Debug.Log("HALKA WORLD Map Editor v0.5 WebGL regression built to " + output);
+            Debug.Log("HALKA WORLD Map Editor v0.6 WebGL regression built to " + output);
         }
 
-        [MenuItem("HALKA WORLD/Validate Standalone Map Contract v0.5")]
+        [MenuItem("HALKA WORLD/Validate Standalone Map Contract v0.6")]
         public static void Run()
         {
             MapAuthoringImporter.SyncAll();
@@ -43,8 +45,9 @@ namespace Halka.Game.Editor
             Check(interior != null && interior.MapId == "halka_house" &&
                 interior.MapType == "interior" && interior.GrassMode == "none" &&
                 interior.BaseSurface.StableId == "house_floor", "indoor map is imported");
-            Check(official.DataVersion == 3 && interior.DataVersion == 3 &&
+            Check(official.DataVersion == 4 && interior.DataVersion == 4 &&
                 official.EntitySpawns.Count == 2 && interior.EntitySpawns.Count == 0 &&
+                official.AreaTransitions.Count == 0 && interior.AreaTransitions.Count == 0 &&
                 official.Markers.All(item => item.StableId != "player_start" && item.StableId != "crow_spawn"),
                 "v3 Entity Spawns replace actor markers");
             var playerSpawn = EntityRuntimeFactory2D.Required(official, "player_main");
@@ -145,6 +148,7 @@ namespace Halka.Game.Editor
             ValidateRuntimeSpriteFixtures();
             ValidateCrossMapRuntimeFixtures();
             ValidateIndoorCrowRuntimeFixture(interior, crowSpawn, playerSpawn);
+            ValidateAreaTransitionRuntimeFixture();
             var before = JsonUtility.ToJson(official);
             var authoringPath = Path.GetFullPath(Path.Combine(Application.dataPath,
                 "Content/Maps/Authoring/first_field.hwmap.json"));
@@ -189,7 +193,7 @@ namespace Halka.Game.Editor
                 Check(rejected, "invalid JSON rejected");
                 Check(JsonUtility.ToJson(official) == before,
                     "invalid JSON leaves official generated cache unchanged");
-                Debug.Log("HALKA WORLD Standalone Map Contract v0.5: passed.");
+                Debug.Log("HALKA WORLD Standalone Map Contract v0.6: passed.");
             }
             finally
             {
@@ -204,6 +208,120 @@ namespace Halka.Game.Editor
         private static void Check(bool condition, string name)
         {
             if (!condition) throw new InvalidOperationException("Standalone Map Contract failed: " + name);
+        }
+
+        private static void ValidateAreaTransitionRuntimeFixture()
+        {
+            var a = ScriptableObject.CreateInstance<MapDefinition>();
+            var b = ScriptableObject.CreateInstance<MapDefinition>();
+            var root = new GameObject("v0.6 area transition fixture");
+            var areaA = new GameObject("Area A");
+            var areaB = new GameObject("Area B");
+            areaA.transform.SetParent(root.transform, false);
+            areaB.transform.SetParent(root.transform, false);
+            try
+            {
+                var boundsMin = Vector2Int.zero;
+                var boundsMax = new Vector2Int(2, 2);
+                var playerDef = AssetDatabase.LoadAssetAtPath<EntityDefinition>(
+                    "Assets/Content/Maps/player_main.asset");
+                a.ReplaceFromAuthoring("fixture_a", "Fixture A", "outdoor", null, "none", Color.black,
+                    boundsMin, boundsMax, new System.Collections.Generic.List<SurfacePlacement>(),
+                    new System.Collections.Generic.List<WorldObjectPlacement>(),
+                    new System.Collections.Generic.List<LockedMapMarker>(),
+                    new System.Collections.Generic.List<EntitySpawnPlacement> {
+                        new EntitySpawnPlacement { InstanceId = "fixture_player", Definition = playerDef,
+                            Cell = new Vector2Int(1, 2), Facing = "up" }
+                    }, new System.Collections.Generic.List<AreaTransitionPlacement> {
+                        new AreaTransitionPlacement { InstanceId = "exit_a", TransitionId = "north_exit",
+                            SourceCell = new Vector2Int(1, 2), ExitDirection = "up", DestinationMapId = "fixture_b",
+                            DestinationCell = Vector2Int.zero, ArrivalFacing = "left" }
+                    });
+                b.ReplaceFromAuthoring("fixture_b", "Fixture B", "outdoor", null, "none", Color.black,
+                    boundsMin, boundsMax, new System.Collections.Generic.List<SurfacePlacement>(),
+                    new System.Collections.Generic.List<WorldObjectPlacement>(),
+                    new System.Collections.Generic.List<LockedMapMarker>(), null,
+                    new System.Collections.Generic.List<AreaTransitionPlacement> {
+                        new AreaTransitionPlacement { InstanceId = "exit_b", TransitionId = "south_exit",
+                            SourceCell = Vector2Int.zero, ExitDirection = "down", DestinationMapId = "fixture_a",
+                            DestinationCell = new Vector2Int(1, 2), ArrivalFacing = "up" }
+                    });
+                Check(MapPlacementRules.Validate(a).Count == 0 && MapPlacementRules.Validate(b).Count == 0,
+                    "fixture A/B edges and destinations validate");
+                var grid = root.AddComponent<GridWorld2D>();
+                var playerObject = new GameObject("Player");
+                playerObject.transform.SetParent(root.transform, false);
+                var player = playerObject.AddComponent<PlayerMover>();
+                typeof(PlayerMover).GetField("world", Hidden).SetValue(player, grid);
+                var renderer = playerObject.AddComponent<SpriteRenderer>();
+                var hud = root.AddComponent<GameHud>();
+                var loaders = new MapRuntimeLoader2D[2];
+                var areas = new[] { areaA, areaB };
+                var definitions = new[] { a, b };
+                for (var i = 0; i < 2; i++)
+                {
+                    var surfaces = new GameObject("Surfaces");
+                    surfaces.transform.SetParent(areas[i].transform, false);
+                    var objects = new GameObject("Objects");
+                    objects.transform.SetParent(areas[i].transform, false);
+                    var loader = areas[i].AddComponent<MapRuntimeLoader2D>();
+                    loader.SetMap(definitions[i]);
+                    typeof(MapRuntimeLoader2D).GetField("world", Hidden).SetValue(loader, grid);
+                    typeof(MapRuntimeLoader2D).GetField("surfaceField", Hidden).SetValue(loader,
+                        surfaces.AddComponent<GroundSurfaceField2D>());
+                    typeof(MapRuntimeLoader2D).GetField("surfaceRoot", Hidden).SetValue(loader, surfaces.transform);
+                    typeof(MapRuntimeLoader2D).GetField("objectRoot", Hidden).SetValue(loader, objects.transform);
+                    typeof(MapRuntimeLoader2D).GetField("entityRoot", Hidden).SetValue(loader, areas[i].transform);
+                    typeof(MapRuntimeLoader2D).GetField("player", Hidden).SetValue(loader, player);
+                    typeof(MapRuntimeLoader2D).GetField("playerRenderer", Hidden).SetValue(loader, renderer);
+                    typeof(MapRuntimeLoader2D).GetField("hud", Hidden).SetValue(loader, hud);
+                    loaders[i] = loader;
+                }
+                var cameraObject = new GameObject("Camera");
+                cameraObject.transform.SetParent(root.transform, false);
+                var camera = cameraObject.AddComponent<Camera>();
+                camera.orthographic = true;
+                camera.orthographicSize = 2f;
+                var follow = cameraObject.AddComponent<Halka.Game.CameraControl.CameraFollow2D>();
+                typeof(Halka.Game.CameraControl.CameraFollow2D).GetField("target", Hidden).SetValue(follow, playerObject.transform);
+                typeof(Halka.Game.CameraControl.CameraFollow2D).GetField("cameraComponent", Hidden).SetValue(follow, camera);
+                var controller = root.AddComponent<MapWorldController2D>();
+                typeof(MapWorldController2D).GetField("maps", Hidden).SetValue(controller, definitions);
+                typeof(MapWorldController2D).GetField("loaders", Hidden).SetValue(controller, loaders);
+                typeof(MapWorldController2D).GetField("roots", Hidden).SetValue(controller, areas);
+                typeof(MapWorldController2D).GetField("player", Hidden).SetValue(controller, player);
+                typeof(MapWorldController2D).GetField("cameraFollow", Hidden).SetValue(controller, follow);
+                typeof(PlayerMover).GetField("mapController", Hidden).SetValue(player, controller);
+                typeof(MapWorldController2D).GetMethod("Awake", Hidden).Invoke(controller, null);
+                loaders[0].Build();
+                typeof(PlayerMover).GetMethod("Awake", Hidden).Invoke(player, null);
+                var steps = 0;
+                player.StepStarted += _ => steps++;
+                player.ApplyDirection(Vector2Int.up);
+                Check(controller.ActiveMapId == "fixture_b" && player.Cell == Vector2Int.zero &&
+                    player.Facing == FacingDirection.Left && areas[1].activeSelf && !areas[0].activeSelf &&
+                    follow.transform.position == follow.TargetPosition && steps == 0,
+                    "manual A to B transition cuts camera without movement Step");
+                Check(controller.ActiveMapId == "fixture_b" && player.Cell == Vector2Int.zero,
+                    "arrival does not automatically bounce");
+                Check(!player.TryStep(Vector2Int.down) && controller.ActiveMapId == "fixture_b",
+                    "AUTO step cannot trigger an area exit");
+                typeof(PlayerMover).GetMethod("Tick", Hidden).Invoke(player,
+                    new object[] { 0.01f, Vector2Int.zero });
+                player.ApplyDirection(Vector2Int.down);
+                Check(controller.ActiveMapId == "fixture_a" && player.Cell == new Vector2Int(1, 2) &&
+                    player.Facing == FacingDirection.Up && areas[0].activeSelf && !areas[1].activeSelf &&
+                    follow.transform.position == follow.TargetPosition && steps == 0,
+                    "manual B to A separately authored return transition");
+                Check(!controller.TryExit(new Vector2Int(1, 2), Vector2Int.left) &&
+                    controller.ActiveMapId == "fixture_a", "unconfigured direction cannot transition");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(a);
+                UnityEngine.Object.DestroyImmediate(b);
+            }
         }
 
         private static void ValidateRuntimeSpriteFixtures()

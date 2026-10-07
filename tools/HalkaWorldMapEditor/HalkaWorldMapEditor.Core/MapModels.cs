@@ -60,6 +60,17 @@ public sealed class EntitySpawn
     public string Facing { get; set; } = "down";
 }
 
+public sealed class AreaTransition
+{
+    public string InstanceId { get; set; } = "";
+    public string TransitionId { get; set; } = "";
+    public GridCell SourceCell { get; set; }
+    public string ExitDirection { get; set; } = "up";
+    public string DestinationMapId { get; set; } = "";
+    public GridCell DestinationCell { get; set; }
+    public string ArrivalFacing { get; set; } = "up";
+}
+
 public sealed class WanderRegion
 {
     public int MinX { get; set; }
@@ -107,7 +118,7 @@ public sealed class MapMarkers
 public sealed class MapDocument
 {
     public string Format { get; set; } = "halka-world-map";
-    public int FormatVersion { get; set; } = 3;
+    public int FormatVersion { get; set; } = 4;
     public string MapId { get; set; } = "";
     public string DisplayName { get; set; } = "";
     public string MapType { get; set; } = "outdoor";
@@ -119,6 +130,7 @@ public sealed class MapDocument
     public List<ObjectPlacement> Objects { get; set; } = [];
     public List<MapMarker> Markers { get; set; } = [];
     public List<EntitySpawn> EntitySpawns { get; set; } = [];
+    public List<AreaTransition> AreaTransitions { get; set; } = [];
 
     public GridCell? Marker(string id) => Markers.FirstOrDefault(item => item.Id == id)?.Cell;
 }

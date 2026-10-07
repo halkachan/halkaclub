@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://halkaclub.com/schemas/halka-world-map-v3.json",
-  "title": "HALKA WORLD Map Authoring v3",
+  "$id": "https://halkaclub.com/schemas/halka-world-map-v4.json",
+  "title": "HALKA WORLD Map Authoring v4",
   "type": "object",
   "additionalProperties": false,
-  "required": ["format", "formatVersion", "mapId", "displayName", "mapType", "baseSurfaceDefinitionId", "grassMode", "backdropColor", "bounds", "surfaces", "objects", "markers", "entitySpawns"],
+  "required": ["format", "formatVersion", "mapId", "displayName", "mapType", "baseSurfaceDefinitionId", "grassMode", "backdropColor", "bounds", "surfaces", "objects", "markers", "entitySpawns", "areaTransitions"],
   "properties": {
     "format": { "const": "halka-world-map" },
-    "formatVersion": { "const": 3 },
+    "formatVersion": { "const": 4 },
     "mapId": { "type": "string", "pattern": "^[a-z0-9_-]+$" },
     "displayName": { "type": "string", "minLength": 1 },
     "mapType": { "enum": ["outdoor", "interior"] },
@@ -45,6 +45,19 @@
         "definitionId": { "type": "string", "minLength": 1 },
         "cell": { "$ref": "#/$defs/cell" },
         "facing": { "enum": ["up", "down", "left", "right"] }
+      }
+    } },
+    "areaTransitions": { "type": "array", "items": {
+      "type": "object", "additionalProperties": false,
+      "required": ["instanceId", "transitionId", "sourceCell", "exitDirection", "destinationMapId", "destinationCell", "arrivalFacing"],
+      "properties": {
+        "instanceId": { "type": "string", "minLength": 1 },
+        "transitionId": { "type": "string", "pattern": "^[a-z0-9_-]+$" },
+        "sourceCell": { "$ref": "#/$defs/cell" },
+        "exitDirection": { "enum": ["up", "down", "left", "right"] },
+        "destinationMapId": { "type": "string", "pattern": "^[a-z0-9_-]+$" },
+        "destinationCell": { "$ref": "#/$defs/cell" },
+        "arrivalFacing": { "enum": ["up", "down", "left", "right"] }
       }
     } }
   },

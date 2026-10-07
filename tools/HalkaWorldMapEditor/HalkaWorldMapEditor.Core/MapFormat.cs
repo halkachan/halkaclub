@@ -73,13 +73,14 @@ public static class MapFormat
             { Require(placement, "instanceId", "definitionId", "rootCell"); Require(placement.GetProperty("rootCell"), "x", "y"); }
             var map = JsonSerializer.Deserialize<MapDocument>(json, Options) ??
                 throw new InvalidDataException("Map JSON is empty.");
-            if (map.Format != "halka-world-map" || map.FormatVersion is not (2 or 3))
+            if (map.Format != "halka-world-map" || map.FormatVersion is not (2 or 3 or 4))
                 throw new InvalidDataException($"Unsupported map format {map.Format} v{map.FormatVersion}.");
+            var inputVersion = map.FormatVersion;
             if (map.Bounds == null || map.Surfaces == null || map.Objects == null ||
                 map.Markers == null)
                 throw new InvalidDataException("Map JSON is missing a required section.");
             MigrateLegacySigns(map);
-            if (map.FormatVersion == 2) MigrateSpawns(map);
+            if (inputVersion == 2) MigrateSpawns(map);
             else
             {
                 Require(root, "entitySpawns");
@@ -88,6 +89,18 @@ public static class MapFormat
                 if (map.Markers.Any(item => item.Id is "player_start" or "crow_spawn"))
                     throw new InvalidDataException("Entity marker duplicates entitySpawns.");
             }
+            if (inputVersion == 4)
+            {
+                Require(root, "areaTransitions");
+                foreach (var transition in root.GetProperty("areaTransitions").EnumerateArray())
+                {
+                    Require(transition, "instanceId", "transitionId", "sourceCell", "exitDirection",
+                        "destinationMapId", "destinationCell", "arrivalFacing");
+                    Require(transition.GetProperty("sourceCell"), "x", "y");
+                    Require(transition.GetProperty("destinationCell"), "x", "y");
+                }
+            }
+            else map.FormatVersion = 4;
             return map;
         }
         catch (InvalidOperationException error)
@@ -111,7 +124,7 @@ public static class MapFormat
                 Cell = marker.Cell, Facing = player ? "down" : "right" });
             map.Markers.Remove(marker);
         }
-        map.FormatVersion = 3;
+        map.FormatVersion = 4;
     }
 
     public static EntityCatalogDocument ParseEntityCatalog(string json)
@@ -231,6 +244,8 @@ public static class MapFormat
         map.Markers = map.Markers.OrderBy(item => item.Id, StringComparer.Ordinal).ToList();
         map.EntitySpawns = map.EntitySpawns.OrderBy(item => item.DefinitionId, StringComparer.Ordinal)
             .ThenBy(item => item.Cell.Y).ThenBy(item => item.Cell.X)
+            .ThenBy(item => item.InstanceId, StringComparer.Ordinal).ToList();
+        map.AreaTransitions = map.AreaTransitions.OrderBy(item => item.TransitionId, StringComparer.Ordinal)
             .ThenBy(item => item.InstanceId, StringComparer.Ordinal).ToList();
         return JsonSerializer.Serialize(map, Options) + "\n";
     }

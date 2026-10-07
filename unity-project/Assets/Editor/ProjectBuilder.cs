@@ -49,17 +49,20 @@ namespace Halka.Game.Editor
             var houseMap = AssetDatabase.LoadAssetAtPath<MapDefinition>(HouseMapPath);
             if (map == null) throw new InvalidOperationException("first_field MapDefinition is missing");
             if (houseMap == null) throw new InvalidOperationException("halka_house MapDefinition is missing");
+            var authoredMaps = Directory.GetFiles(MapAuthoringImporter.AuthoringFolder, "*.hwmap.json")
+                .Select(path => AssetDatabase.LoadAssetAtPath<MapDefinition>("Assets/Content/Maps/" +
+                    Path.GetFileName(path).Replace(".hwmap.json", ".asset")))
+                .Where(item => item != null).ToArray();
             var mapProblems = MapPlacementRules.Validate(map);
             if (mapProblems.Count != 0)
                 throw new InvalidOperationException("Invalid MapDefinition: " + string.Join("; ", mapProblems));
             var houseProblems = MapPlacementRules.Validate(houseMap);
             if (houseProblems.Count != 0)
                 throw new InvalidOperationException("Invalid halka_house: " + string.Join("; ", houseProblems));
-            var startMap = map.TryGetEntitySpawn("player_main", out var playerStart) ? map : houseMap;
-            if (startMap == houseMap)
-                playerStart = EntityRuntimeFactory2D.Required(houseMap, "player_main");
-            var crowSpawn = map.TryGetEntitySpawn("crow_main", out var outdoorCrow)
-                ? outdoorCrow : EntityRuntimeFactory2D.Required(houseMap, "crow_main");
+            var startMap = authoredMaps.Single(item => item.TryGetEntitySpawn("player_main", out _));
+            var playerStart = EntityRuntimeFactory2D.Required(startMap, "player_main");
+            var crowMap = authoredMaps.First(item => item.TryGetEntitySpawn("crow_main", out _));
+            var crowSpawn = EntityRuntimeFactory2D.Required(crowMap, "crow_main");
             var crowWanderMinimum = crowSpawn.Definition.WanderMinimum;
             var crowWanderMaximum = crowSpawn.Definition.WanderMaximum;
             var frames = LoadFrames("front_idle");
@@ -324,12 +327,70 @@ namespace Halka.Game.Editor
             SetReference(interiorLoader, "hud", hud);
             SetReference(interiorLoader, "crow", crowWander);
 
+            var registeredMaps = new List<MapDefinition> { map, houseMap };
+            var registeredLoaders = new List<MapRuntimeLoader2D> { loader, interiorLoader };
+            var registeredRoots = new List<GameObject> { exteriorRoot, interiorRoot };
+            var registeredGrass = new List<GrassField2D> { grassField, interiorGrassField };
+            foreach (var extraMap in authoredMaps.Where(item => item != map && item != houseMap))
+            {
+                var extraRoot = new GameObject("Area - " + extraMap.MapId);
+                extraRoot.SetActive(false);
+                var extraGround = new GameObject("Area ground");
+                extraGround.transform.SetParent(extraRoot.transform, false);
+                extraGround.transform.localScale = new Vector3(
+                    (extraMap.MaxCell.x - extraMap.MinCell.x + 1) * GridWorld2D.TileWorldSize,
+                    (extraMap.MaxCell.y - extraMap.MinCell.y + 1) * GridWorld2D.TileWorldSize, 1f);
+                extraGround.transform.position = new Vector3(
+                    (extraMap.MinCell.x + extraMap.MaxCell.x) * GridWorld2D.TileWorldSize * 0.5f,
+                    (extraMap.MinCell.y + extraMap.MaxCell.y) * GridWorld2D.TileWorldSize * 0.5f, 0f);
+                var extraGroundRenderer = extraGround.AddComponent<SpriteRenderer>();
+                extraGroundRenderer.sprite = pixel;
+                extraGroundRenderer.color = extraMap.BackdropColor;
+                extraGroundRenderer.sortingOrder = -10;
+                var extraSurfaces = new GameObject("Area surfaces");
+                extraSurfaces.transform.SetParent(extraRoot.transform, false);
+                var extraSurfaceField = extraSurfaces.AddComponent<GroundSurfaceField2D>();
+                var extraObjects = new GameObject("Area objects");
+                extraObjects.transform.SetParent(extraRoot.transform, false);
+                var extraGrass = new GameObject("Area grass");
+                extraGrass.transform.SetParent(extraRoot.transform, false);
+                var extraGrassField = extraGrass.AddComponent<GrassField2D>();
+                SetReference(extraGrassField, "world", world);
+                SetReference(extraGrassField, "player", mover);
+                SetReference(extraGrassField, "idleSprite", grassSprite);
+                SetSprites(extraGrassField, "rustleFrames", rustleFrames);
+                var extraLoaderObject = new GameObject("Area map loader");
+                extraLoaderObject.transform.SetParent(extraRoot.transform, false);
+                var extraLoader = extraLoaderObject.AddComponent<MapRuntimeLoader2D>();
+                extraLoader.SetMap(extraMap);
+                SetReference(extraLoader, "world", world);
+                SetReference(extraLoader, "surfaceField", extraSurfaceField);
+                SetReference(extraLoader, "grassField", extraGrassField);
+                SetReference(extraLoader, "grassPrefab", grassPrefab);
+                SetReference(extraLoader, "surfaceRoot", extraSurfaces.transform);
+                SetReference(extraLoader, "objectRoot", extraObjects.transform);
+                SetReference(extraLoader, "entityRoot", extraRoot.transform);
+                SetReference(extraLoader, "player", mover);
+                SetReference(extraLoader, "playerRenderer", playerRenderer);
+                SetReference(extraLoader, "hud", hud);
+                SetReference(extraLoader, "crow", crowWander);
+                registeredMaps.Add(extraMap);
+                registeredLoaders.Add(extraLoader);
+                registeredRoots.Add(extraRoot);
+                registeredGrass.Add(extraGrassField);
+            }
+
             var mapControllerObject = new GameObject("Map runtime controller");
             var mapController = mapControllerObject.AddComponent<MapWorldController2D>();
-            SetReferences(mapController, "maps", map, houseMap);
-            SetReferences(mapController, "loaders", loader, interiorLoader);
-            SetReferences(mapController, "roots", exteriorRoot, interiorRoot);
+            SetReferences(mapController, "maps", registeredMaps.ToArray());
+            SetReferences(mapController, "loaders", registeredLoaders.ToArray());
+            SetReferences(mapController, "roots", registeredRoots.ToArray());
+            SetReferences(mapController, "grassFields", registeredGrass.ToArray());
             SetReference(mapController, "player", mover);
+            SetReference(mapController, "grassOcclusion", grassOcclusion);
+            SetReference(mapController, "cameraFollow", follow);
+            SetReference(mapController, "worldCamera", camera);
+            SetReference(mover, "mapController", mapController);
 
             var areaObject = new GameObject("House area switch");
             var houseArea = areaObject.AddComponent<HouseArea2D>();
@@ -341,6 +402,7 @@ namespace Halka.Game.Editor
             SetReference(houseArea, "maps", mapController);
             SetReference(houseArea, "worldCamera", camera);
             SetReference(houseArea, "cameraFollow", follow);
+            SetReference(mapController, "houseArea", houseArea);
 
             var autoObject = new GameObject("UI - auto living toggle");
             var autoMode = autoObject.AddComponent<AutoModeController>();

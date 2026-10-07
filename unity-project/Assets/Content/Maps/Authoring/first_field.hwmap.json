@@ -1,6 +1,6 @@
 {
   "format": "halka-world-map",
-  "formatVersion": 3,
+  "formatVersion": 4,
   "mapId": "first_field",
   "displayName": "First Field",
   "mapType": "outdoor",
@@ -620,5 +620,6 @@
       },
       "facing": "down"
     }
-  ]
+  ],
+  "areaTransitions": []
 }

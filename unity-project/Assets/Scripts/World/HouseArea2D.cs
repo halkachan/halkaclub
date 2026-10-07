@@ -24,6 +24,8 @@ namespace Halka.Game.World
         public Vector2Int HouseDoorCell => maps.GetMap("first_field").HouseDoorCell;
         public Vector2Int OutsideEntryCell => maps.GetMap("first_field").OutsideEntryCell;
 
+        public void NotifyAreaTransition(string mapId) => IsInside = mapId == "halka_house";
+
         private void Awake()
         {
             IsInside = maps.ActiveMapId == "halka_house";
@@ -58,8 +60,9 @@ namespace Halka.Game.World
 
         private void OnStepCompleted(Vector2Int cell)
         {
-            if (!IsInside && cell == HouseDoorCell) Enter();
-            else if (IsInside && maps.GetMap("halka_house").TryGetMarker("interior_exit", out var exit) &&
+            if (!IsInside && maps.ActiveMapId == "first_field" && cell == HouseDoorCell) Enter();
+            else if (IsInside && maps.ActiveMapId == "halka_house" &&
+                maps.GetMap("halka_house").TryGetMarker("interior_exit", out var exit) &&
                 cell == exit) Exit();
         }
 

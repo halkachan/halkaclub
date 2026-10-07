@@ -167,6 +167,74 @@ public sealed class MapSession
         return true;
     }
 
+    public IReadOnlyList<MapDocument> WorldMaps() => OtherMaps().Append(Map).ToArray();
+
+    public bool AddTransition(GridCell source, out string reason)
+    {
+        if (!Map.Bounds.Contains(source) || MapRules.BlocksMovement(Map, Catalog, source))
+        { reason = "出口は通行可能なMap内のCellに配置してください。"; return false; }
+        var direction = source.Y == Map.Bounds.MaxY ? "up" :
+            source.Y == Map.Bounds.MinY ? "down" :
+            source.X == Map.Bounds.MaxX ? "right" :
+            source.X == Map.Bounds.MinX ? "left" : "";
+        if (direction.Length == 0)
+        { reason = "Area TransitionはMap端へ配置してください。"; return false; }
+        if (Map.AreaTransitions.Any(item => item.SourceCell == source && item.ExitDirection == direction))
+        { reason = "この出口には既にTransitionがあります。"; return false; }
+        var destination = WorldMaps().FirstOrDefault(item => item.MapId != Map.MapId) ?? Map;
+        var arrival = destination.EntitySpawns.FirstOrDefault(item => item.DefinitionId == "player_main")?.Cell ??
+            destination.Markers.FirstOrDefault(item => item.Id == "interior_entry")?.Cell ??
+            new GridCell(destination.Bounds.MinX, destination.Bounds.MinY);
+        if (MapRules.BlocksMovement(destination, Catalog, arrival))
+        {
+            var found = false;
+            for (var y = destination.Bounds.MinY; y <= destination.Bounds.MaxY && !found; y++)
+            for (var x = destination.Bounds.MinX; x <= destination.Bounds.MaxX; x++)
+                if (!MapRules.BlocksMovement(destination, Catalog, new GridCell(x, y)))
+                { arrival = new GridCell(x, y); found = true; break; }
+            if (!found) { reason = "行き先Mapに通行可能なCellがありません。"; return false; }
+        }
+        var serial = 1;
+        string id;
+        do { id = $"exit_{direction}_{serial++}"; }
+        while (Map.AreaTransitions.Any(item => item.TransitionId == id));
+        Change(() => Map.AreaTransitions.Add(new AreaTransition {
+            InstanceId = "transition_" + Guid.NewGuid().ToString("N"), TransitionId = id,
+            SourceCell = source, ExitDirection = direction, DestinationMapId = destination.MapId,
+            DestinationCell = arrival, ArrivalFacing = direction }));
+        reason = "";
+        return true;
+    }
+
+    public bool UpdateTransition(string instanceId, string transitionId, GridCell source, string exitDirection,
+        string destinationMapId, GridCell destination, string arrivalFacing, out string reason)
+    {
+        var item = Map.AreaTransitions.FirstOrDefault(value => value.InstanceId == instanceId);
+        if (item == null) { reason = "Transitionが見つかりません。"; return false; }
+        var candidate = new AreaTransition { InstanceId = instanceId, TransitionId = transitionId.Trim(),
+            SourceCell = source, ExitDirection = exitDirection, DestinationMapId = destinationMapId,
+            DestinationCell = destination, ArrivalFacing = arrivalFacing };
+        var probe = MapFormat.Clone(Map);
+        var index = probe.AreaTransitions.FindIndex(value => value.InstanceId == instanceId);
+        probe.AreaTransitions[index] = candidate;
+        var errors = MapRules.Validate(probe, Catalog, OtherMaps().Append(probe))
+            .Where(issue => !issue.IsWarning && issue.Cell == source &&
+                issue.Code.StartsWith("transition", StringComparison.Ordinal)).ToArray();
+        if (errors.Length > 0) { reason = errors[0].Message; return false; }
+        Change(() => { item.TransitionId = candidate.TransitionId; item.SourceCell = source;
+            item.ExitDirection = exitDirection; item.DestinationMapId = destinationMapId;
+            item.DestinationCell = destination; item.ArrivalFacing = arrivalFacing; });
+        reason = "";
+        return true;
+    }
+
+    public bool DeleteTransition(string instanceId)
+    {
+        if (!Map.AreaTransitions.Any(item => item.InstanceId == instanceId)) return false;
+        Change(() => Map.AreaTransitions.RemoveAll(item => item.InstanceId == instanceId));
+        return true;
+    }
+
     private IEnumerable<MapDocument> OtherMaps()
     {
         var folder = Path.GetDirectoryName(FilePath);
@@ -195,7 +263,7 @@ public sealed class MapSession
     public void Save()
     {
         EndStroke();
-        var issues = MapRules.Validate(Map, Catalog);
+        var issues = MapRules.Validate(Map, Catalog, WorldMaps());
         var errors = issues.Where(item => !item.IsWarning).ToArray();
         if (errors.Length > 0) throw new InvalidDataException(
             "Map validation failed: " + string.Join("; ", errors.Take(5).Select(item => item.Message)));

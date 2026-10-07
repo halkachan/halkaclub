@@ -1,6 +1,6 @@
 {
   "format": "halka-world-map",
-  "formatVersion": 3,
+  "formatVersion": 4,
   "mapId": "halka_house",
   "displayName": "ﾊﾙｶﾁｬﾝの家",
   "mapType": "interior",
@@ -391,5 +391,6 @@
       }
     }
   ],
-  "entitySpawns": []
+  "entitySpawns": [],
+  "areaTransitions": []
 }

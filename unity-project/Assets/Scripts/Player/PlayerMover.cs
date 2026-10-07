@@ -12,10 +12,12 @@ namespace Halka.Game.Player
         [SerializeField] private GameInput input;
         [SerializeField] private GridWorld2D world;
         [SerializeField] private DynamicGridOccupancy2D occupancy;
+        [SerializeField] private MapWorldController2D mapController;
         [SerializeField, Min(0.05f)] private float stepSeconds = DefaultStepSeconds;
         [SerializeField] private string initialFacing = "down";
 
         private GridStepMotion motion;
+        private bool areaExitNeedsRelease;
 
         public Vector2Int Cell => motion != null ? motion.Cell : Vector2Int.zero;
         public FacingDirection Facing { get; private set; } = FacingDirection.Down;
@@ -40,6 +42,7 @@ namespace Halka.Game.Player
 
         private void Tick(float deltaTime, Vector2Int direction)
         {
+            if (direction == Vector2Int.zero) areaExitNeedsRelease = false;
             if (!motion.IsMoving) ApplyDirection(direction);
             var wasMoving = motion.IsMoving;
             motion.Advance(deltaTime);
@@ -54,13 +57,20 @@ namespace Halka.Game.Player
             }
         }
 
-        public void ApplyDirection(Vector2Int direction) => TryStep(direction);
+        public void ApplyDirection(Vector2Int direction) => TryStepInternal(direction, true);
 
-        public bool TryStep(Vector2Int direction)
+        public bool TryStep(Vector2Int direction) => TryStepInternal(direction, false);
+
+        private bool TryStepInternal(Vector2Int direction, bool manualInput)
         {
             if (motion.IsMoving || Mathf.Abs(direction.x) + Mathf.Abs(direction.y) != 1) return false;
             Facing = FacingDirectionExtensions.FromVector(direction);
             var target = motion.Cell + direction;
+            if (manualInput && !areaExitNeedsRelease && mapController != null &&
+                (target.x < world.MinCell.x || target.x > world.MaxCell.x ||
+                 target.y < world.MinCell.y || target.y > world.MaxCell.y) &&
+                mapController.TryExit(motion.Cell, direction))
+            { areaExitNeedsRelease = true; return true; }
             if (motion.TryBegin(direction,
                 cell => world.CanEnter(cell) && (occupancy == null || occupancy.CanPlayerEnter(cell)),
                 stepSeconds))

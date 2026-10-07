@@ -16,7 +16,7 @@ namespace HalkaWorldMapEditor;
 public partial class MainWindow : Window
 {
     private static readonly SKTypeface MarkerTypeface = SKTypeface.FromFamilyName("Yu Gothic UI") ?? SKTypeface.Default;
-    private enum EditorTool { Select, Paint, Erase }
+    private enum EditorTool { Select, Paint, Erase, Transition }
     private sealed record PaletteEntry(string DefinitionId, string DisplayName, bool IsSurface,
         bool RestoresBase, BitmapImage? PreviewIcon, string Tooltip, string Category = "オブジェクト", bool IsEntity = false)
     {
@@ -38,6 +38,7 @@ public partial class MainWindow : Window
         public bool ShowMarkers { get; set; } = true;
         public bool ShowActionPoints { get; set; } = true;
         public bool ShowEntities { get; set; } = true;
+        public bool ShowTransitions { get; set; } = true;
     }
 
     private readonly Dictionary<string, SKBitmap?> spriteCache = new(StringComparer.OrdinalIgnoreCase);
@@ -58,6 +59,10 @@ public partial class MainWindow : Window
     private bool rightErase;
     private Point lastPointer;
     private bool loading;
+    private bool pickingDestination;
+    private string? pickSourcePath;
+    private string? pickTransitionInstanceId;
+    private string? pickDestinationMapId;
     private double zoom = 32;
     private double panX;
     private double panY;
@@ -76,6 +81,7 @@ public partial class MainWindow : Window
             MarkerCheck.IsChecked = settings.ShowMarkers;
             ActionPointCheck.IsChecked = settings.ShowActionPoints;
             EntityCheck.IsChecked = settings.ShowEntities;
+            TransitionCheck.IsChecked = settings.ShowTransitions;
             var found = ProjectPaths.IsUnityProject(settings.ProjectRoot) ? settings.ProjectRoot :
                 ProjectPaths.FindNear(AppContext.BaseDirectory) ?? ProjectPaths.FindNear(Environment.CurrentDirectory);
             if (found != null) OpenProject(found, settings.MapFile, fit: settings.MapFile.Length == 0);
@@ -117,6 +123,7 @@ public partial class MainWindow : Window
         settings.ShowMarkers = MarkerCheck.IsChecked == true;
         settings.ShowActionPoints = ActionPointCheck.IsChecked == true;
         settings.ShowEntities = EntityCheck.IsChecked == true;
+        settings.ShowTransitions = TransitionCheck.IsChecked == true;
         Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
         File.WriteAllText(settingsPath, JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true }));
     }
@@ -186,7 +193,7 @@ public partial class MainWindow : Window
     {
         if (catalog == null) return;
         var loaded = MapSession.Open(path, catalog);
-        var issues = MapRules.Validate(loaded.Map, catalog);
+        var issues = MapRules.Validate(loaded.Map, catalog, loaded.WorldMaps());
         session = loaded;
         PopulatePalette(loaded.Map);
         selectedInstanceId = null; selectedCell = null;
@@ -203,20 +210,23 @@ public partial class MainWindow : Window
     {
         if (session == null || catalog == null) return;
         var map = session.Map;
-        Title = "HALKA WORLD MAP EDITOR v0.5 — " + map.MapId + (session.IsDirty ? " *" : "");
+        Title = "HALKA WORLD MAP EDITOR v0.6 — " + map.MapId + (session.IsDirty ? " *" : "");
         DirtyText.Text = session.IsDirty ? "● 未保存" : "保存済み";
         ActivePaletteText.Text = tool switch
         {
             EditorTool.Select => "選択",
             EditorTool.Erase => "消去",
+            EditorTool.Transition => "Area Transition: 出口Cellを選択",
             _ when PaletteList.SelectedItem is PaletteEntry palette =>
                 $"配置: {palette.DisplayName}  |  {(palette.IsSurface ? "地面" : palette.IsEntity ? "Entity" : "オブジェクト")}",
             _ => "配置: 未選択"
         };
-        MapInfo.Text = $"{map.DisplayName} ({map.MapId})\nType: {map.MapType}  Base: {map.BaseSurfaceDefinitionId}  Grass: {map.GrassMode}\nBounds: X {map.Bounds.MinX}..{map.Bounds.MaxX}, Y {map.Bounds.MinY}..{map.Bounds.MaxY}\nSurface: {map.Surfaces.Count}\nObject: {map.Objects.Count}\nEntity: {map.EntitySpawns.Count}\nDerived Grass: {CountGrass()}\nTool: {tool}";
+        MapInfo.Text = $"{map.DisplayName} ({map.MapId})\nType: {map.MapType}  Base: {map.BaseSurfaceDefinitionId}  Grass: {map.GrassMode}\nBounds: X {map.Bounds.MinX}..{map.Bounds.MaxX}, Y {map.Bounds.MinY}..{map.Bounds.MaxY}\nSurface: {map.Surfaces.Count}\nObject: {map.Objects.Count}\nEntity: {map.EntitySpawns.Count}\nTransitions: {map.AreaTransitions.Count}\nDerived Grass: {CountGrass()}\nTool: {tool}";
         var selected = SelectedObject();
         var selectedEntity = SelectedEntity();
-        SelectedKind.Text = selectedEntity != null ?
+        var selectedTransition = SelectedTransition();
+        SelectedKind.Text = selectedTransition != null ?
+            $"Area Transition ({selectedTransition.TransitionId})\nSource: {selectedTransition.SourceCell} {selectedTransition.ExitDirection}\nDestination: {selectedTransition.DestinationMapId} {selectedTransition.DestinationCell}" : selectedEntity != null ?
             $"{catalog.EntityCatalog.ById[selectedEntity.DefinitionId].DisplayName} ({selectedEntity.DefinitionId})\nMap: {map.MapId}\nSpawn: {selectedEntity.Cell}" :
             selected == null ? selectedCell.HasValue ? $"Cell {selectedCell.Value}" : "セルを選択してください" :
             catalog.ObjectById.TryGetValue(selected.DefinitionId, out var definition)
@@ -231,9 +241,21 @@ public partial class MainWindow : Window
         SignTextSection.Visibility = selected?.DefinitionId == "sign_basic" ? Visibility.Visible : Visibility.Collapsed;
         if (selected?.DefinitionId == "sign_basic" && !SignTextBox.IsKeyboardFocusWithin)
             SignTextBox.Text = selected.SignText ?? "";
-        InstanceText.Text = selected?.InstanceId ?? selectedEntity?.InstanceId ?? "";
-        RootX.Text = selected?.RootCell.X.ToString() ?? selectedEntity?.Cell.X.ToString() ?? selectedCell?.X.ToString() ?? "";
-        RootY.Text = selected?.RootCell.Y.ToString() ?? selectedEntity?.Cell.Y.ToString() ?? selectedCell?.Y.ToString() ?? "";
+        TransitionSection.Visibility = selectedTransition != null ? Visibility.Visible : Visibility.Collapsed;
+        if (selectedTransition != null && !TransitionIdBox.IsKeyboardFocusWithin)
+        {
+            TransitionIdBox.Text = selectedTransition.TransitionId;
+            ExitDirectionPicker.SelectedValue = selectedTransition.ExitDirection;
+            DestinationMapPicker.ItemsSource = MapPicker.ItemsSource;
+            DestinationMapPicker.SelectedItem = MapPicker.Items.OfType<MapChoice>()
+                .FirstOrDefault(item => item.MapId == selectedTransition.DestinationMapId);
+            DestinationX.Text = selectedTransition.DestinationCell.X.ToString();
+            DestinationY.Text = selectedTransition.DestinationCell.Y.ToString();
+            ArrivalFacingPicker.SelectedValue = selectedTransition.ArrivalFacing;
+        }
+        InstanceText.Text = selected?.InstanceId ?? selectedEntity?.InstanceId ?? selectedTransition?.InstanceId ?? "";
+        RootX.Text = selected?.RootCell.X.ToString() ?? selectedEntity?.Cell.X.ToString() ?? selectedTransition?.SourceCell.X.ToString() ?? selectedCell?.X.ToString() ?? "";
+        RootY.Text = selected?.RootCell.Y.ToString() ?? selectedEntity?.Cell.Y.ToString() ?? selectedTransition?.SourceCell.Y.ToString() ?? selectedCell?.Y.ToString() ?? "";
         ValidateNow();
         MapCanvas.InvalidateVisual();
     }
@@ -249,11 +271,12 @@ public partial class MainWindow : Window
 
     private ObjectPlacement? SelectedObject() => session?.Map.Objects.FirstOrDefault(item => item.InstanceId == selectedInstanceId);
     private EntitySpawn? SelectedEntity() => session?.Map.EntitySpawns.FirstOrDefault(item => item.InstanceId == selectedInstanceId);
+    private AreaTransition? SelectedTransition() => session?.Map.AreaTransitions.FirstOrDefault(item => item.InstanceId == selectedInstanceId);
 
     private void ValidateNow()
     {
         if (session == null || catalog == null) return;
-        var issues = MapRules.Validate(session.Map, catalog);
+        var issues = MapRules.Validate(session.Map, catalog, session.WorldMaps());
         ValidationList.ItemsSource = issues.Count == 0 ? ["問題なし"] : issues.Select(item => $"{(item.IsWarning ? "WARNING" : "ERROR")} {item.Code}  {item.Cell?.ToString() ?? ""}  {item.Message}").ToArray();
     }
 
@@ -291,11 +314,12 @@ public partial class MainWindow : Window
         if (entity?.DefinitionId == "player_main" && MessageBox.Show(this,
             "ﾊﾙｶﾁｬﾝ開始位置を削除しますか？ 保存前に再配置が必要です。", "開始位置の削除",
             MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
-        if (entity != null ? session.DeleteEntity(selectedInstanceId) : session.DeleteObject(selectedInstanceId))
+        if (SelectedTransition() != null ? session.DeleteTransition(selectedInstanceId) :
+            entity != null ? session.DeleteEntity(selectedInstanceId) : session.DeleteObject(selectedInstanceId))
         { selectedInstanceId = null; RefreshView(); }
     }
     private void ValidateClick(object sender, RoutedEventArgs e) => ValidateNow();
-    private void AboutClick(object sender, RoutedEventArgs e) => MessageBox.Show(this, "HALKA WORLD MAP EDITOR v0.5\nStandalone Edition\nMap JSONを編集します。UnityのMapDefinitionは生成キャッシュです。", "このツールについて");
+    private void AboutClick(object sender, RoutedEventArgs e) => MessageBox.Show(this, "HALKA WORLD MAP EDITOR v0.6\nStandalone Edition\nMap JSONを編集します。UnityのMapDefinitionは生成キャッシュです。", "このツールについて");
     private void PaletteSearchChanged(object sender, TextChangedEventArgs e)
     {
         if (PaletteList?.ItemsSource is { } source)
@@ -304,6 +328,7 @@ public partial class MainWindow : Window
     private void SelectToolClick(object sender, RoutedEventArgs e) { tool = EditorTool.Select; PaletteList.SelectedIndex = -1; RefreshView(); }
     private void PaintToolClick(object sender, RoutedEventArgs e) { tool = EditorTool.Paint; if (PaletteList.SelectedIndex < 0) PaletteList.SelectedIndex = 0; RefreshView(); }
     private void EraseToolClick(object sender, RoutedEventArgs e) { tool = EditorTool.Erase; PaletteList.SelectedIndex = -1; RefreshView(); }
+    private void TransitionToolClick(object sender, RoutedEventArgs e) { tool = EditorTool.Transition; PaletteList.SelectedIndex = -1; RefreshView(); }
     private void FitClick(object sender, RoutedEventArgs e) { FitMap(); MapCanvas.InvalidateVisual(); }
     private void PaletteChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -333,6 +358,16 @@ public partial class MainWindow : Window
     private void OverlayChanged(object sender, RoutedEventArgs e) => MapCanvas?.InvalidateVisual();
     private void MapPickerChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (loading) return;
+        if (pickingDestination)
+        {
+            loading = true;
+            MapPicker.SelectedItem = MapPicker.Items.OfType<MapChoice>()
+                .FirstOrDefault(item => item.Path == session?.FilePath);
+            loading = false;
+            StatusText.Text = "行き先選択中です。Cellをクリックするか右クリックでキャンセルしてください。";
+            return;
+        }
         if (loading || projectRoot == null || MapPicker.SelectedItem is not MapChoice choice) return;
         var path = choice.Path;
         if (session?.FilePath == path) return;
@@ -358,6 +393,7 @@ public partial class MainWindow : Window
     private void MoveObjectClick(object sender, RoutedEventArgs e)
     {
         if (session == null || selectedInstanceId == null) return;
+        if (SelectedTransition() != null) { ApplyTransitionClick(sender, e); return; }
         if (!int.TryParse(RootX.Text, out var x) || !int.TryParse(RootY.Text, out var y)) { StatusText.Text = "座標は整数で入力してください。"; return; }
         string reason;
         var moved = SelectedEntity() != null
@@ -381,6 +417,85 @@ public partial class MainWindow : Window
         SignTextBox.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
         RefreshView();
     }
+    private void ApplyTransitionClick(object sender, RoutedEventArgs e)
+    {
+        if (session == null || selectedInstanceId == null || SelectedTransition() == null) return;
+        if (!int.TryParse(RootX.Text, out var sx) || !int.TryParse(RootY.Text, out var sy) ||
+            !int.TryParse(DestinationX.Text, out var dx) || !int.TryParse(DestinationY.Text, out var dy) ||
+            ExitDirectionPicker.SelectedValue is not string exit ||
+            ArrivalFacingPicker.SelectedValue is not string facing ||
+            DestinationMapPicker.SelectedItem is not MapChoice destinationMap)
+        { StatusText.Text = "方向・行き先Map・Cell座標を入力してください。"; return; }
+        if (!session.UpdateTransition(selectedInstanceId, TransitionIdBox.Text,
+            new GridCell(sx, sy), exit, destinationMap.MapId, new GridCell(dx, dy), facing, out var reason))
+            StatusText.Text = reason;
+        else StatusText.Text = "Transitionを反映しました。";
+        RefreshView();
+    }
+
+    private void PickDestinationClick(object sender, RoutedEventArgs e)
+    {
+        if (session == null || SelectedTransition() is not { } selected ||
+            DestinationMapPicker.SelectedItem is not MapChoice destination) return;
+        if (session.IsDirty)
+        {
+            if (MessageBox.Show(this, "行き先Mapの表示前に現在のMapを保存します。続けますか？",
+                "未保存のMap", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+            SaveMap(sender, e);
+            if (session.IsDirty) return;
+        }
+        pickSourcePath = session.FilePath;
+        pickTransitionInstanceId = selected.InstanceId;
+        pickDestinationMapId = destination.MapId;
+        pickingDestination = true;
+        loading = true;
+        MapPicker.SelectedItem = destination;
+        loading = false;
+        LoadMap(destination.Path, true);
+        StatusText.Text = "到着Cellをクリックしてください。右クリックでキャンセル。";
+    }
+
+    private void CompleteDestinationPick(GridCell arrival)
+    {
+        var sourcePath = pickSourcePath;
+        var instanceId = pickTransitionInstanceId;
+        var destinationId = pickDestinationMapId;
+        if (sourcePath == null || instanceId == null || destinationId == null) return;
+        pickingDestination = false;
+        LoadMap(sourcePath, true);
+        loading = true;
+        MapPicker.SelectedItem = MapPicker.Items.OfType<MapChoice>()
+            .FirstOrDefault(item => item.Path == sourcePath);
+        loading = false;
+        selectedInstanceId = instanceId;
+        if (SelectedTransition() is { } transition && session != null)
+        {
+            if (!session.UpdateTransition(instanceId, transition.TransitionId, transition.SourceCell,
+                transition.ExitDirection, destinationId, arrival, transition.ArrivalFacing, out var reason))
+                StatusText.Text = reason;
+            else StatusText.Text = $"到着先: {destinationId} {arrival}";
+        }
+        pickSourcePath = pickTransitionInstanceId = pickDestinationMapId = null;
+        RefreshView();
+    }
+
+    private void CancelDestinationPick()
+    {
+        if (!pickingDestination || pickSourcePath == null) return;
+        var source = pickSourcePath;
+        var instance = pickTransitionInstanceId;
+        pickingDestination = false;
+        LoadMap(source, true);
+        loading = true;
+        MapPicker.SelectedItem = MapPicker.Items.OfType<MapChoice>()
+            .FirstOrDefault(item => item.Path == source);
+        loading = false;
+        selectedInstanceId = instance;
+        pickSourcePath = pickTransitionInstanceId = pickDestinationMapId = null;
+        StatusText.Text = "到着Cell選択をキャンセルしました。";
+        RefreshView();
+    }
+    private void CancelDestinationPickClick(object sender, RoutedEventArgs e) => CancelDestinationPick();
     private void SignTextKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key != Key.Return) return;
@@ -390,7 +505,7 @@ public partial class MainWindow : Window
     private void ValidationDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (session == null || catalog == null || ValidationList.SelectedIndex < 0) return;
-        var issues = MapRules.Validate(session.Map, catalog);
+        var issues = MapRules.Validate(session.Map, catalog, session.WorldMaps());
         if (ValidationList.SelectedIndex >= issues.Count || issues[ValidationList.SelectedIndex].Cell is not { } cell) return;
         selectedCell = cell; panX = -(cell.X + .5) * zoom; panY = (cell.Y + .5) * zoom; RefreshView();
     }
@@ -436,6 +551,7 @@ public partial class MainWindow : Window
         if (e.Key == Key.D1) { tool = EditorTool.Select; PaletteList.SelectedIndex = -1; }
         else if (e.Key == Key.D2) { tool = EditorTool.Paint; if (PaletteList.SelectedIndex < 0) PaletteList.SelectedIndex = 0; }
         else if (e.Key == Key.D3) { tool = EditorTool.Erase; PaletteList.SelectedIndex = -1; }
+        else if (e.Key == Key.D4) { tool = EditorTool.Transition; PaletteList.SelectedIndex = -1; }
         else if (e.Key == Key.F) FitMap();
         else if (e.Key == Key.G) GridCheck.IsChecked = GridCheck.IsChecked != true;
         else if (e.Key == Key.Delete) DeleteClick(sender, e);
@@ -461,6 +577,15 @@ public partial class MainWindow : Window
     {
         if (session == null || catalog == null) return;
         var point = e.GetPosition(MapCanvas);
+        if (pickingDestination)
+        {
+            if (e.ChangedButton == MouseButton.Right) { CancelDestinationPick(); return; }
+            var arrival = CellAt(point);
+            if (!session.Map.Bounds.Contains(arrival) || MapRules.BlocksMovement(session.Map, catalog, arrival))
+            { StatusText.Text = "到着先は通行可能なCellを選んでください。"; return; }
+            CompleteDestinationPick(arrival);
+            return;
+        }
         lastPointer = point;
         if (e.ChangedButton == MouseButton.Middle || (e.ChangedButton == MouseButton.Left && Keyboard.IsKeyDown(Key.Space)))
         { dragPan = true; MapCanvas.CaptureMouse(); return; }
@@ -470,7 +595,16 @@ public partial class MainWindow : Window
         rightErase = e.ChangedButton == MouseButton.Right;
         if (tool == EditorTool.Select && !rightErase)
         {
-            selectedInstanceId = HitEntity(point)?.InstanceId ?? HitObject(point)?.InstanceId;
+            selectedInstanceId = session.Map.AreaTransitions.FirstOrDefault(item =>
+                TransitionCheck.IsChecked == true && item.SourceCell == cell)?.InstanceId ??
+                HitEntity(point)?.InstanceId ?? HitObject(point)?.InstanceId;
+        }
+        else if (tool == EditorTool.Transition && !rightErase)
+        {
+            var previous = session.Map.AreaTransitions.Select(item => item.InstanceId).ToHashSet();
+            if (session.AddTransition(cell, out var reason))
+                selectedInstanceId = session.Map.AreaTransitions.First(item => !previous.Contains(item.InstanceId)).InstanceId;
+            else StatusText.Text = reason;
         }
         else if (tool == EditorTool.Erase || rightErase)
         {
@@ -535,6 +669,9 @@ public partial class MainWindow : Window
     private void EraseCell(Point point, GridCell cell)
     {
         if (session == null) return;
+        var transition = session.Map.AreaTransitions.FirstOrDefault(item => item.SourceCell == cell);
+        if (transition != null && TransitionCheck.IsChecked == true)
+        { session.DeleteTransition(transition.InstanceId); if (selectedInstanceId == transition.InstanceId) selectedInstanceId = null; return; }
         var selected = HitObject(point);
         var entity = HitEntity(point);
         if (entity != null) { selectedInstanceId = entity.InstanceId; DeleteClick(this, new RoutedEventArgs()); }
@@ -736,6 +873,23 @@ public partial class MainWindow : Window
                     Text(canvas, symbol + arrow, rect.MidX - (highlighted ? 10 : 7), rect.MidY + 4,
                         color, highlighted ? 14 : 10);
                 }
+            }
+        }
+        if (TransitionCheck.IsChecked == true)
+        {
+            foreach (var transition in map.AreaTransitions)
+            {
+                var rect = ToSkia(CellRect(transition.SourceCell));
+                var highlighted = transition.InstanceId == selectedInstanceId;
+                Fill(canvas, new SKRect(rect.MidX - 13, rect.MidY - 12,
+                    rect.MidX + 13, rect.MidY + 12), highlighted
+                        ? new SKColor(18, 35, 45, 235) : new SKColor(18, 35, 45, 170));
+                Text(canvas, transition.ExitDirection switch {
+                    "up" => "↑", "down" => "↓", "left" => "←", _ => "→" },
+                    rect.MidX - 8, rect.MidY + 6, highlighted ? SKColors.Yellow : SKColors.Cyan, 20);
+                if (highlighted)
+                    Text(canvas, "→ " + transition.DestinationMapId,
+                        rect.Left, rect.Top - 3, SKColors.Yellow, 11);
             }
         }
         if (selectedCell is { } active)

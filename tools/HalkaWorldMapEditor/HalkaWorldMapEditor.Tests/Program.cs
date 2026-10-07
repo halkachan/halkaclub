@@ -107,7 +107,7 @@ var houseMapPath = Path.Combine(ProjectPaths.AuthoringFolder(project), "halka_ho
 var houseSource = File.ReadAllText(houseMapPath);
 var houseMap = MapFormat.LoadMap(houseMapPath);
 Check("multiple map IDs", map.MapId == "first_field" && houseMap.MapId == "halka_house" &&
-    map.MapType == "outdoor" && houseMap.MapType == "interior" && map.FormatVersion == 3 && houseMap.FormatVersion == 3);
+    map.MapType == "outdoor" && houseMap.MapType == "interior" && map.FormatVersion == 4 && houseMap.FormatVersion == 4);
 Check("base surfaces and grass policies", map.BaseSurfaceDefinitionId == "base_ground" &&
     map.GrassMode == "auto" && houseMap.BaseSurfaceDefinitionId == "house_floor" &&
     houseMap.GrassMode == "none" && !MapRules.HasGrass(houseMap, catalog, new GridCell(0, 0)));
@@ -148,7 +148,7 @@ var oldJson = """
     {"format":"halka-world-map","formatVersion":1,"mapId":"legacy_field","displayName":"Legacy","bounds":{"minX":-10,"maxX":10,"minY":-6,"maxY":6},"surfaces":[],"objects":[],"markers":{"playerSpawn":{"x":0,"y":0},"crowSpawn":{"x":7,"y":2},"houseDoor":{"x":-7,"y":-4},"outsideEntry":{"x":-7,"y":-5},"houseFootprint":{"width":5,"height":2},"roadEnds":{"north":{"x":0,"y":6},"east":{"x":10,"y":-1},"south":{"x":2,"y":-6},"west":{"x":-10,"y":0}}}}
     """;
 var migrated = MapFormat.ParseMap(oldJson);
-Check("v1 to v3 migration", migrated.FormatVersion == 3 && migrated.MapId == "legacy_field" &&
+Check("v1 to v4 migration", migrated.FormatVersion == 4 && migrated.MapId == "legacy_field" &&
     migrated.Objects.Single(o => o.DefinitionId == "house_main").RootCell == new GridCell(-7, -4) &&
     migrated.EntitySpawns.Single(e => e.DefinitionId == "player_main").Cell == new GridCell(0, 0) &&
     migrated.Marker("road_north") == new GridCell(0, 6));
@@ -348,10 +348,11 @@ Check("entity catalog two definitions", entityCatalog.Entities.Count == 2 &&
     entityCatalog.ById.ContainsKey("player_main") && entityCatalog.ById.ContainsKey("crow_main"));
 Check("player entity metadata", entityCatalog.ById["player_main"].SpawnMode == "game-start" &&
     entityCatalog.ById["player_main"].MaxInstances == 1);
-var region = entityCatalog.ById["crow_main"].WanderRegion!;
-Check("crow relative wander metadata", region != null &&
+var region = entityCatalog.ById["crow_main"].WanderRegion
+    ?? throw new InvalidOperationException("Crow wander region is required.");
+Check("crow relative wander metadata",
     region.MinX == -3 && region.MaxX == 1 && region.MinY == -2 && region.MaxY == 2);
-Check("official entity spawns", map.FormatVersion == 3 && map.EntitySpawns.Count == 2 &&
+Check("official entity spawns", map.FormatVersion == 4 && map.EntitySpawns.Count == 2 &&
     houseMap.EntitySpawns.Count == 0 && !map.Markers.Any(m => m.Id is "player_start" or "crow_spawn"));
 Check("entity stable IDs", map.EntitySpawns.Select(e => e.InstanceId).Distinct().Count() == 2 &&
     map.EntitySpawns.All(e => !string.IsNullOrWhiteSpace(e.InstanceId)));
@@ -393,6 +394,67 @@ Check("entity save reload", entityReload.EntitySpawns.Single(e => e.InstanceId =
     entityReload.EntitySpawns.Single(e => e.InstanceId == playerId).Cell == movedPlayer);
 Check("entity stable serialization", MapFormat.SerializeMap(entityReload) == MapFormat.SerializeMap(entitySession.Map));
 Check("house permits crow placement", MapRules.CanPlaceEntity(houseMap, catalog, "crow_main", new GridCell(0, 0), out _));
+
+// v0.6: edge exits are authored independently in each Map and stay out of official Maps.
+var oldV3 = JsonNode.Parse(source)!.AsObject();
+oldV3["formatVersion"] = 3;
+oldV3.Remove("areaTransitions");
+var upgraded = MapFormat.ParseMap(oldV3.ToJsonString());
+Check("v3 to v4 migration", upgraded.FormatVersion == 4 && upgraded.AreaTransitions.Count == 0);
+Check("v3 placements preserved", MapFormat.SerializeMap(upgraded) == MapFormat.SerializeMap(map));
+var missingTransitions = JsonNode.Parse(source)!.AsObject();
+missingTransitions.Remove("areaTransitions");
+Check("v4 requires areaTransitions", Throws(() => MapFormat.ParseMap(missingTransitions.ToJsonString())));
+Check("official transition arrays empty", map.AreaTransitions.Count == 0 && houseMap.AreaTransitions.Count == 0);
+var a = new MapDocument { MapId = "area_a", DisplayName = "Area A", MapType = "outdoor",
+    Bounds = new MapBounds { MinX = 0, MaxX = 2, MinY = 0, MaxY = 2 } };
+var b = MapFormat.Clone(a);
+b.MapId = "area_b";
+b.DisplayName = "Area B";
+var aPath = Path.Combine(tempDir, "area_a.hwmap.json");
+var bPath = Path.Combine(tempDir, "area_b.hwmap.json");
+MapFormat.SaveAtomic(a, aPath);
+MapFormat.SaveAtomic(b, bPath);
+var areaSession = MapSession.Open(aPath, catalog);
+Check("transition adds at north edge", areaSession.AddTransition(new GridCell(1, 2), out _) &&
+    areaSession.Map.AreaTransitions.Single().ExitDirection == "up");
+var transition = areaSession.Map.AreaTransitions.Single();
+var transitionInstance = transition.InstanceId;
+Check("transition default destination exists", transition.DestinationMapId == "area_b" &&
+    !MapRules.BlocksMovement(b, catalog, transition.DestinationCell));
+Check("transition rejects interior source", !areaSession.AddTransition(new GridCell(1, 1), out _));
+Check("transition rejects duplicate edge", !areaSession.AddTransition(new GridCell(1, 2), out _));
+Check("transition validates world", MapRules.Validate(areaSession.Map, catalog, areaSession.WorldMaps()).Count == 0);
+Check("transition edits all fields", areaSession.UpdateTransition(transitionInstance, "north_exit",
+    new GridCell(2, 2), "up", "area_b", new GridCell(1, 0), "left", out _) &&
+    areaSession.Map.AreaTransitions.Single().ArrivalFacing == "left");
+areaSession.Undo();
+Check("transition update undo", areaSession.Map.AreaTransitions.Single().TransitionId != "north_exit");
+areaSession.Redo();
+Check("transition update redo", areaSession.Map.AreaTransitions.Single().TransitionId == "north_exit");
+Check("transition rejects missing map", !areaSession.UpdateTransition(transitionInstance, "broken",
+    new GridCell(2, 2), "up", "missing", new GridCell(0, 0), "up", out _));
+Check("transition rejects wrong edge", !areaSession.UpdateTransition(transitionInstance, "wrong_edge",
+    new GridCell(1, 1), "up", "area_b", new GridCell(0, 0), "up", out _));
+Check("transition rejects invalid facing", !areaSession.UpdateTransition(transitionInstance, "bad_facing",
+    new GridCell(2, 2), "up", "area_b", new GridCell(0, 0), "diagonal", out _));
+Check("transition rejects invalid destination", !areaSession.UpdateTransition(transitionInstance, "bad_cell",
+    new GridCell(2, 2), "up", "area_b", new GridCell(20, 20), "up", out _));
+areaSession.Save();
+Check("transition save reload", MapFormat.LoadMap(aPath).AreaTransitions.Single().TransitionId == "north_exit");
+Check("transition stable serialization", MapFormat.SerializeMap(MapFormat.LoadMap(aPath)) ==
+    MapFormat.SerializeMap(areaSession.Map));
+var returnSession = MapSession.Open(bPath, catalog);
+Check("reverse transition independently authored", returnSession.AddTransition(new GridCell(1, 0), out _) &&
+    returnSession.Map.AreaTransitions.Single().ExitDirection == "down");
+returnSession.Save();
+Check("two-map connection validates", MapRules.Validate(areaSession.Map, catalog, areaSession.WorldMaps()).Count == 0 &&
+    MapRules.Validate(returnSession.Map, catalog, returnSession.WorldMaps()).Count == 0);
+Check("transition delete", areaSession.DeleteTransition(transitionInstance) && areaSession.Map.AreaTransitions.Count == 0);
+areaSession.Undo();
+Check("transition delete undo", areaSession.Map.AreaTransitions.Count == 1);
+areaSession.Redo();
+Check("transition delete redo", areaSession.Map.AreaTransitions.Count == 0);
 }
 finally { Directory.Delete(tempDir, true); }
 Check("formal map never written", File.ReadAllText(mapPath) == source);

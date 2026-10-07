@@ -137,7 +137,7 @@ namespace Halka.Game.World
                     if (!occupiedCells.Add(cell)) problems.Add("ERROR: Overlapping Object footprint at " + cell);
                 }
             }
-            if (map.MapType == "outdoor")
+            if (map.MapType == "outdoor" && map.TryGetHouseRoot(out _))
             {
                 if (!map.TryGetHouseRoot(out var door) || !map.Contains(door + Vector2Int.down) ||
                     BlocksMovement(map, door) || BlocksMovement(map, door + Vector2Int.down))
@@ -160,6 +160,28 @@ namespace Halka.Game.World
                 entityCounts[id] = ++count;
                 if (count > spawn.Definition.MaxInstances)
                     problems.Add("ERROR: Entity Spawn exceeds maxInstances for " + id);
+            }
+            var transitionIds = new HashSet<string>();
+            var transitionInstances = new HashSet<string>();
+            var exits = new HashSet<string>();
+            foreach (var transition in map.AreaTransitions)
+            {
+                if (string.IsNullOrWhiteSpace(transition.InstanceId) || !transitionInstances.Add(transition.InstanceId) ||
+                    string.IsNullOrWhiteSpace(transition.TransitionId) || !transitionIds.Add(transition.TransitionId))
+                    problems.Add("ERROR: Duplicate or empty Area Transition ID.");
+                var cell = transition.SourceCell;
+                if (!map.Contains(cell) || BlocksMovement(map, cell))
+                    problems.Add("ERROR: Area Transition source blocked or out of bounds: " + cell);
+                var edge = transition.ExitDirection == "up" ? cell.y == map.MaxCell.y :
+                    transition.ExitDirection == "down" ? cell.y == map.MinCell.y :
+                    transition.ExitDirection == "right" ? cell.x == map.MaxCell.x :
+                    transition.ExitDirection == "left" && cell.x == map.MinCell.x;
+                if (!edge || !exits.Add(cell + ":" + transition.ExitDirection))
+                    problems.Add("ERROR: Invalid or duplicate Area Transition edge: " + cell);
+                if (string.IsNullOrWhiteSpace(transition.DestinationMapId) ||
+                    (transition.ArrivalFacing != "up" && transition.ArrivalFacing != "down" &&
+                     transition.ArrivalFacing != "left" && transition.ArrivalFacing != "right"))
+                    problems.Add("ERROR: Invalid Area Transition destination or facing.");
             }
             return problems;
         }

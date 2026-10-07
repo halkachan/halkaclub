@@ -13,6 +13,7 @@ public static class MapRules
 
     public static bool IsProtected(MapDocument map, GridCell cell) =>
         map.Markers.Any(item => item.Cell == cell) || map.EntitySpawns.Any(item => item.Cell == cell) ||
+        map.AreaTransitions.Any(item => item.SourceCell == cell) ||
         OutsideEntry(map) == cell || HouseRoot(map) == cell;
 
     public static bool CanPlaceEntity(MapDocument map, CatalogDocument catalog, string definitionId,
@@ -131,10 +132,11 @@ public static class MapRules
         return true;
     }
 
-    public static IReadOnlyList<MapIssue> Validate(MapDocument map, CatalogDocument catalog)
+    public static IReadOnlyList<MapIssue> Validate(MapDocument map, CatalogDocument catalog,
+        IEnumerable<MapDocument>? worldMaps = null)
     {
         var issues = new List<MapIssue>();
-        if (map.Format != "halka-world-map" || map.FormatVersion != 3)
+        if (map.Format != "halka-world-map" || map.FormatVersion != 4)
             issues.Add(new("format", "Map format/versionが未対応です。"));
         if (string.IsNullOrWhiteSpace(map.MapId) ||
             !System.Text.RegularExpressions.Regex.IsMatch(map.MapId, "^[a-z0-9_-]+$"))
@@ -221,10 +223,8 @@ public static class MapRules
                 if (!occupied.Add(cell)) issues.Add(new("overlap", "ObjectのBlocked Footprintが重なります。", cell));
             }
         }
-        if (map.MapType == "outdoor")
+        if (map.MapType == "outdoor" && HouseRoot(map) is not null)
         {
-            if (map.Objects.Count(item => item.DefinitionId == "house_main") != 1)
-                issues.Add(new("house", "屋外Mapには家が1つ必要です。"));
             if (HouseRoot(map) is { } door &&
                 (map.Markers.Any(item => item.Cell == door) ||
                  map.Objects.Any(item => item.DefinitionId != "house_main" &&
@@ -237,7 +237,7 @@ public static class MapRules
             if (OutsideEntry(map) is not { } entry || !map.Bounds.Contains(entry) || BlocksMovement(map, catalog, entry))
                 issues.Add(new("houseEntry", "家の入口前が使用できません。"));
         }
-        else
+        else if (map.Marker("interior_entry") is not null || map.Marker("interior_exit") is not null)
         {
             foreach (var id in new[] { "interior_entry", "interior_exit" })
                 if (map.Marker(id) is not { } cell || BlocksMovement(map, catalog, cell))
@@ -250,6 +250,45 @@ public static class MapRules
             if (map.Objects.Any(item => catalog.ObjectById.TryGetValue(item.DefinitionId, out var definition) &&
                 FootprintCells(item, definition).Contains(spawn.Cell)))
                 issues.Add(new("entityBlocked", "Entity SpawnがObjectと重なります。", spawn.Cell));
+        var destinations = (worldMaps ?? new[] { map }).GroupBy(item => item.MapId, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Last(), StringComparer.Ordinal);
+        var transitionInstances = new HashSet<string>(StringComparer.Ordinal);
+        var transitionNames = new HashSet<string>(StringComparer.Ordinal);
+        var sourceDirections = new HashSet<(GridCell, string)>();
+        foreach (var transition in map.AreaTransitions)
+        {
+            var source = transition.SourceCell;
+            if (string.IsNullOrWhiteSpace(transition.InstanceId) ||
+                !transitionInstances.Add(transition.InstanceId))
+                issues.Add(new("transitionInstanceId", "Transition instanceIdが空または重複しています。", source));
+            if (string.IsNullOrWhiteSpace(transition.TransitionId) ||
+                !System.Text.RegularExpressions.Regex.IsMatch(transition.TransitionId, "^[a-z0-9_-]+$") ||
+                !transitionNames.Add(transition.TransitionId))
+                issues.Add(new("transitionId", "Transition IDが空・不正・重複しています。", source));
+            if (transition.ExitDirection is not ("up" or "down" or "left" or "right"))
+                issues.Add(new("transitionDirection", "出口方向が不正です。", source));
+            else if (!sourceDirections.Add((source, transition.ExitDirection)))
+                issues.Add(new("transitionDuplicate", "同じCellと方向に出口が重複しています。", source));
+            if (!map.Bounds.Contains(source) || BlocksMovement(map, catalog, source))
+                issues.Add(new("transitionSource", "出口Cellが範囲外または通行不可です。", source));
+            else if (transition.ExitDirection switch {
+                "up" => source.Y != map.Bounds.MaxY,
+                "down" => source.Y != map.Bounds.MinY,
+                "left" => source.X != map.Bounds.MinX,
+                "right" => source.X != map.Bounds.MaxX,
+                _ => false })
+                issues.Add(new("transitionEdge", "出口Cellが指定方向のMap端ではありません。", source));
+            if (transition.ArrivalFacing is not ("up" or "down" or "left" or "right"))
+                issues.Add(new("transitionFacing", "到着後の向きが不正です。", source));
+            if (!destinations.TryGetValue(transition.DestinationMapId, out var destination))
+                issues.Add(new("transitionMissingMap", "行き先Mapがありません: " + transition.DestinationMapId, source));
+            else if (!destination.Bounds.Contains(transition.DestinationCell) ||
+                BlocksMovement(destination, catalog, transition.DestinationCell))
+                issues.Add(new("transitionDestination", "到着Cellが範囲外または通行不可です。", source));
+            else if (destination.EntitySpawns.Any(item => item.DefinitionId == "crow_main" &&
+                item.Cell == transition.DestinationCell))
+                issues.Add(new("transitionDestinationEntity", "到着CellがCrow Spawnと重なります。", source));
+        }
         return issues;
     }
 }

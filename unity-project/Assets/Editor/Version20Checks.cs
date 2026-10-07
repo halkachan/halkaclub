@@ -42,7 +42,7 @@ namespace Halka.Game.Editor
             Check(field != null && room != null && maps != null && area != null && world != null,
                 "both maps and runtime controller exist");
             Check(field.MapId == "first_field" && room.MapId == "halka_house" &&
-                field.DataVersion == 3 && room.DataVersion == 3 &&
+                field.DataVersion == 4 && room.DataVersion == 4 &&
                 field.MapType == "outdoor" && room.MapType == "interior" &&
                 field.GrassMode == "auto" && room.GrassMode == "none" &&
                 room.BaseSurface.StableId == "house_floor", "map identities, base and grass policy");
@@ -120,7 +120,7 @@ namespace Halka.Game.Editor
                 "outdoor grass is rebuilt after return");
             Check(maps.GetMap("first_field") == field && maps.GetMap("halka_house") == room,
                 "map registry resolves stable IDs");
-            Debug.Log("HALKA ver2.0 regression checks with Map Editor v0.5 passed.");
+            Debug.Log("HALKA ver2.0 regression checks with Map Editor v0.6 passed.");
         }
 
         [MenuItem("HALKA/Validate v0.3 moved house fixture")]
