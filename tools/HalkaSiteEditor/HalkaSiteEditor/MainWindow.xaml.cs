@@ -774,6 +774,17 @@ public partial class MainWindow : Window
         world.Archives.CollectionChanged += WorldCollectionChanged;
         foreach (var archive in world.Archives) WatchArchive(archive);
 
+        if (world.Controls != null)
+        {
+            WorldControlsText.SetBinding(TextBox.TextProperty, new Binding(nameof(EditField.Value))
+            {
+                Source = world.Controls,
+                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+            });
+            world.Controls.PropertyChanged += WorldChanged;
+        }
+        WorldControlsBox.Visibility = world.Controls == null ? Visibility.Collapsed : Visibility.Visible;
+
         if (world.CurrentVersion != null)
         {
             WorldVersionBox.SetBinding(TextBox.TextProperty, new Binding(nameof(EditField.Value))
@@ -1248,6 +1259,54 @@ public partial class MainWindow : Window
         MessageBox.Show(this,
             "デスクトップとスタートメニューに近道を作りました。\n\n" + string.Join("\n", result.Created),
             "作りました", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    /// <summary>Ctrl+F で探す画面を開きます。</summary>
+    public static readonly System.Windows.Input.RoutedUICommand FindCommand =
+        new("探す", "Find", typeof(MainWindow));
+
+    private void FindExecuted(object sender, System.Windows.Input.ExecutedRoutedEventArgs e) =>
+        SearchClick(this, new RoutedEventArgs());
+
+    private void SearchClick(object sender, RoutedEventArgs e)
+    {
+        if (session == null) return;
+
+        var window = new SearchWindow(session) { Owner = this };
+        window.ShowDialog();
+        if (window.Chosen != null) GoTo(window.Chosen);
+    }
+
+    /// <summary>探した結果のところへ移ります。</summary>
+    private void GoTo(SearchHit hit)
+    {
+        var tab = Tabs.Items.OfType<TabItem>()
+            .FirstOrDefault(item => (item.Header as string) == hit.Tab);
+        if (tab == null) return;
+        Tabs.SelectedItem = tab;
+
+        switch (hit.Target)
+        {
+            case PageTextPage page:
+                TextPagePicker.SelectedItem = page;
+                break;
+            case WorkCategory category:
+                CategoryPicker.SelectedItem = category;
+                break;
+            case GamePage game:
+                GamePicker.SelectedItem = (GamePicker.ItemsSource as IEnumerable<GameChoice>)?
+                    .FirstOrDefault(choice => choice.Page == game);
+                break;
+            case MetaPage meta:
+                MetaPagePicker.SelectedItem = meta;
+                break;
+            case string marker when marker == SiteSearch.WorldTarget:
+                GamePicker.SelectedItem = (GamePicker.ItemsSource as IEnumerable<GameChoice>)?
+                    .FirstOrDefault(choice => choice.IsWorld);
+                break;
+        }
+
+        StatusText.Text = $"「{hit.Where}」のところへ移りました。";
     }
 
     private void CheckClick(object sender, RoutedEventArgs e)

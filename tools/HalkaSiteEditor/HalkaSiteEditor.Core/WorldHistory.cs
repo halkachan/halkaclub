@@ -167,6 +167,11 @@ public sealed class WorldHistory
     public ObservableCollection<WorldArchive> Archives { get; }
     /// <summary>ページの上に出ている「いまの版」。</summary>
     public EditField? CurrentVersion { get; private set; }
+    /// <summary>遊びかたの説明（キーの案内）。</summary>
+    public EditField? Controls { get; private set; }
+
+    private IEnumerable<EditField> Fields =>
+        new[] { CurrentVersion, Controls }.OfType<EditField>();
 
     private WorldHistory(SiteFile file, string fileRelative, IEnumerable<WorldArchive> archives,
         string archiveIndent, string entryIndent)
@@ -196,10 +201,16 @@ public sealed class WorldHistory
             history.CurrentVersion = new EditField(file, fileRelative, new ValueSlot(VersionSlot),
                 "world.version", "いまの版", FieldKind.HtmlText);
         }
+        if (new ValueSlot(ControlsSlot).Count(file.Text) > 0)
+        {
+            history.Controls = new EditField(file, fileRelative, new ValueSlot(ControlsSlot),
+                "world.controls", "遊びかたの説明", FieldKind.HtmlText);
+        }
         return history;
     }
 
     private const string VersionSlot = @"(<p class=""game-current-version"">)([^<]*)(</p>)";
+    private const string ControlsSlot = @"(<p class=""game-controls"">)([^<]*)(</p>)";
 
     private static IEnumerable<WorldArchive> Parse(string inner) =>
         Archive.Matches(inner).Select(archive => new WorldArchive(
@@ -341,11 +352,12 @@ public sealed class WorldHistory
     {
         get
         {
-            return CurrentVersion?.Changed == true || ArchivesChanged;
+            return Fields.Any(field => field.Changed) || ArchivesChanged;
         }
     }
 
-    public bool HasError => Archives.Any(archive => archive.HasError) || CurrentVersion?.HasError == true;
+    public bool HasError => Archives.Any(archive => archive.HasError) ||
+        Fields.Any(field => field.HasError);
 
     public IReadOnlyList<ChangeRow> Changes()
     {
@@ -353,11 +365,8 @@ public sealed class WorldHistory
 
         var now = Snapshots();
         var rows = new List<ChangeRow>();
-        if (CurrentVersion?.Changed == true)
-        {
-            rows.Add(new ChangeRow("HALKA WORLD：いまの版",
-                CurrentVersion.Original, CurrentVersion.Value, FileRelative));
-        }
+        foreach (var field in Fields.Where(field => field.Changed))
+            rows.Add(new ChangeRow($"HALKA WORLD：{field.Label}", field.Original, field.Value, FileRelative));
         var nowVersions = now.SelectMany(archive => archive.Item2).Select(entry => entry.Item1).ToArray();
         var savedVersions = saved.SelectMany(archive => archive.Item2).Select(entry => entry.Item1).ToArray();
 
@@ -373,8 +382,8 @@ public sealed class WorldHistory
 
     internal void Apply()
     {
-        CurrentVersion?.Apply();
-        // 更新履歴は「いまの版」を書いたあとのファイルから組み立て直します（どちらも残るように）。
+        foreach (var field in Fields) field.Apply();
+        // 更新履歴は、上の欄を書いたあとのファイルから組み立て直します（どちらも残るように）。
         if (ArchivesChanged) file.SetText(Rebuild());
     }
 
@@ -395,13 +404,13 @@ public sealed class WorldHistory
 
     internal void MarkSaved()
     {
-        CurrentVersion?.MarkSaved();
+        foreach (var field in Fields) field.MarkSaved();
         saved = Snapshots();
     }
 
     public void Revert()
     {
-        CurrentVersion?.Revert();
+        foreach (var field in Fields) field.Revert();
 
         var block = Block.Match(file.Text);
         Archives.Clear();

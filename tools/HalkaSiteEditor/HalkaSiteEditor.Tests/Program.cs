@@ -1397,6 +1397,58 @@ Check("HALKA WORLD も元に戻せる",
     !shrinkV17.HasChanges && shrinkV17.World!.Archives.Count == 2 &&
     shrinkV17.World.Archives[0].Entries[0].Version == "ver2.3");
 
+// --- v1.8：小さな抜けと、横断検索 -------------------------------------------
+
+var v18 = SiteSession.Load(sandbox, new SaveBackups(
+    Path.Combine(Path.GetTempPath(), "halka-v18-" + Guid.NewGuid().ToString("N"))));
+
+Check("HALKA WORLD の遊びかたの説明を読める",
+    v18.World!.Controls!.Value.StartsWith("WASD・矢印キーで"));
+
+var v18Decor = v18.Groups.Single(group => group.Title == "見出しと飾り");
+Check("英語の小見出しを読める",
+    v18Decor.Rows.Single(row => row.Label == "index.html の英語の小見出し")
+        .Cells.Single().Field.Value == "links" &&
+    v18Decor.Rows.Single(row => row.Label == "works/index.html の英語の小見出し")
+        .Cells.Single().Field.Value == "works archive");
+Check("「うれしいこと」の年は、こちらに出さない",
+    v18Decor.Rows.Where(row => row.Label.Contains("英語の小見出し"))
+        .SelectMany(row => row.Cells).All(cell => cell.Field.Value != "2026"));
+Check("ランダム作品の文字も読める",
+    v18Decor.Rows.Single(row => row.Label == "トップページのランダム作品").Cells
+        .Select(cell => cell.Field.Value).SequenceEqual(new[] { "random pick", "YouTubeで見る ▶" }));
+
+// 横断検索。
+Check("何も打たなければ何も出さない", SiteSearch.Find(v18, "").Count == 0);
+Check("タブをまたいで探せる",
+    SiteSearch.Find(v18, "ピッチ補正").Any(hit => hit.Tab == "ページの文章") &&
+    SiteSearch.Find(v18, "YouTube").Any(hit => hit.Tab == "リンク") &&
+    SiteSearch.Find(v18, "ゲーム置き場").Any(hit => hit.Tab == "リンク"));
+Check("どこにあるかが分かる",
+    SiteSearch.Find(v18, "WASD").Single() is { Tab: "ゲーム" } wasd &&
+    wasd.Where.Contains("遊びかたの説明"));
+Check("見つかったあたりを切り出す",
+    SiteSearch.Find(v18, "せいかつきろく").Any(hit =>
+        hit.Tab == "ゲーム" && hit.Where.Contains("HALKA WORLD") &&
+        hit.Excerpt.Contains("せいかつきろく") &&
+        (hit.Target as string) == SiteSearch.WorldTarget));
+Check("大文字小文字は区別しない",
+    SiteSearch.Find(v18, "halka world").Count > 0 &&
+    SiteSearch.Find(v18, "HALKA WORLD").Count > 0);
+Check("見つからなければ空", SiteSearch.Find(v18, "こんな文字はどこにもありません").Count == 0);
+// 作品の題名は前のテストで書き換わっているので、いまの中身から取ります。
+var someWork = v18.Works.Categories.First().Works.First().Title;
+Check("移り先の目印が付いている",
+    SiteSearch.Find(v18, "ピッチ補正").First(hit => hit.Tab == "ページの文章").Target is PageTextPage &&
+    SiteSearch.Find(v18, someWork).First(hit => hit.Tab == "作品一覧").Target is WorkCategory);
+
+// 直したものも、そのまま探せること。
+v18.World.Controls.Value = "あたらしい操作の説明";
+Check("直した中身で探せる",
+    SiteSearch.Find(v18, "あたらしい操作").Count == 1 &&
+    SiteSearch.Find(v18, "WASD").Count == 0);
+v18.World.Controls.Revert();
+
 // --- プレビュー用サーバー -------------------------------------------------
 
 Check("URLから実ファイルへ",

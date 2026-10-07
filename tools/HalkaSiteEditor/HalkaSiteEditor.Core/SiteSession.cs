@@ -329,6 +329,11 @@ public sealed class SiteSession
         const string TapeRight =
             @"(<div class=""yellow-tape""[^>]*>\s*<span>[^<]*</span>\s*<span>)([^<]*)(</span>)";
         const string Heading = @"(<h1 id=""[^""]*"">)([^<]*)(</h1>)";
+        // 大見出しの上に出ている英語。「うれしいこと」の年は「トップページ」タブの受け持ちなので外します。
+        const string Kicker = @"(<p>)([^<]*)(</p>\s*<h1 id=""(?!news-title)[^""]*"">)";
+        // ランダム作品の小見出し（大見出しが無いので、閉じ括弧で見分けます）。
+        const string LoneKicker = @"(<p>)([^<]*)(</p>\s*</div>)";
+        const string RandomWatch = @"(<span class=""random-work-watch"">)([^<]*)(</span>)";
         const string Copyright = @"(<footer>\s*<p>)([^<]*)(</p>)";
         const string ToTop = @"(<a href=""#top"">)([^<]*)(</a>)";
 
@@ -359,6 +364,15 @@ public sealed class SiteSession
                 .Select((heading, index) => new FieldCell(heading,
                     Field(file, Heading, index, $"heading.{relative}.{index}", $"{relative}：{heading}")))
                 .ToArray()));
+
+            var kickers = ValueSlot.ReadAll(file.Text, Kicker);
+            if (kickers.Count > 0)
+            {
+                rows.Add(new FieldRow($"{relative} の英語の小見出し", kickers
+                    .Select((kicker, index) => new FieldCell("見出しの上に出る文字",
+                        Field(file, Kicker, index, $"kicker.{relative}.{index}", $"{relative}：{kicker}")))
+                    .ToArray()));
+            }
         }
 
         foreach (var file in pages.Where(file => new ValueSlot(TapeRight).Count(file.Text) > 0))
@@ -371,6 +385,21 @@ public sealed class SiteSession
 
         var home = files.FirstOrDefault(file =>
             string.Equals(file.Path, Path.GetFullPath(SitePaths.IndexHtml(root)), StringComparison.OrdinalIgnoreCase));
+
+        // トップページの「ランダムに1本」まわり。
+        if (home != null && new ValueSlot(RandomWatch).Count(home.Text) > 0)
+        {
+            var cells = new List<FieldCell>
+            {
+                new("見るボタンの文字", Field(home, RandomWatch, 0, "decor.randomWatch", "ランダム作品：見るボタンの文字")),
+            };
+            if (new ValueSlot(LoneKicker).Count(home.Text) > 0)
+            {
+                cells.Insert(0, new FieldCell("小見出し",
+                    Field(home, LoneKicker, 0, "decor.randomKicker", "ランダム作品：小見出し")));
+            }
+            rows.Add(new FieldRow("トップページのランダム作品", cells.ToArray()));
+        }
         if (home != null && new ValueSlot(Copyright).Count(home.Text) > 0)
         {
             rows.Add(new FieldRow("トップページの下",

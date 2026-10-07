@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:HalkaSiteEditor"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="HALKA SITE EDITOR v1.7" Icon="Assets/site-editor.ico"
+        Title="HALKA SITE EDITOR v1.8" Icon="Assets/site-editor.ico"
         Width="1660" Height="900" MinWidth="1000" MinHeight="640"
         Background="#16191E" Foreground="#E4E8EC" FontFamily="Yu Gothic UI" FontSize="13"
         Loaded="WindowLoaded" Closing="WindowClosing">
@@ -522,6 +522,14 @@
     </DataTemplate>
   </Window.Resources>
 
+  <Window.InputBindings>
+    <KeyBinding Key="F" Modifiers="Control" Command="{x:Static local:MainWindow.FindCommand}"/>
+  </Window.InputBindings>
+
+  <Window.CommandBindings>
+    <CommandBinding Command="{x:Static local:MainWindow.FindCommand}" Executed="FindExecuted"/>
+  </Window.CommandBindings>
+
   <DockPanel>
 
     <!-- 上：サイトのフォルダー -->
@@ -567,6 +575,8 @@
                   ToolTip="halkaclub.com をブラウザーで開きます。"/>
           <Button DockPanel.Dock="Left" Content="点検する" Click="CheckClick" Margin="3"
                   ToolTip="リンク切れ・画像の欠け・?v= の付け忘れなどを、まとめて見ます。"/>
+          <Button DockPanel.Dock="Left" Content="探す" Click="SearchClick" Margin="3"
+                  ToolTip="直せるところを全部まとめて探します（Ctrl+F）。"/>
           <TextBlock/>
         </DockPanel>
         <ListView x:Name="ChangeList" Background="#242A33" Foreground="#EDF0F3" BorderBrush="#2F3845">
@@ -760,6 +770,15 @@
                     <TextBox x:Name="WorldVersionBox" MaxWidth="180" HorizontalAlignment="Left"
                              MinWidth="140"/>
                   </DockPanel>
+                </Border>
+                <Border x:Name="WorldControlsBox" Background="#20262F" BorderBrush="#2F3845"
+                        BorderThickness="1" Margin="0,0,0,8" Padding="12,10">
+                  <StackPanel>
+                    <TextBlock Text="遊びかたの説明" FontSize="14" Margin="0,0,0,6"/>
+                    <TextBox x:Name="WorldControlsText"/>
+                    <TextBlock Foreground="#8C97A6" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"
+                               Text="ゲームの下に出ている、キーの案内です。操作を変えたらここも直します。"/>
+                  </StackPanel>
                 </Border>
                 <TextBlock x:Name="WorldSummary" Foreground="#E4E8EC" TextWrapping="Wrap" Margin="2,0,0,8"/>
                 <TextBlock TextWrapping="Wrap" Foreground="#8C97A6" FontSize="11" Margin="2,0,0,10"
