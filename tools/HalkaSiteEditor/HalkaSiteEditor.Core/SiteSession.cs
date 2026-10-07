@@ -55,7 +55,16 @@ public sealed class SiteSession
     public string Root { get; }
     public IReadOnlyList<EditGroup> Groups { get; }
     public WorksDocument Works { get; }
-    public CommissionTextDocument CommissionText { get; }
+    public PageTextDocument CommissionText { get; }
+    /// <summary>うたまぜ！の紹介ページの文章。そのページが無ければ null。</summary>
+    public PageTextDocument? UtamazeText { get; }
+
+    /// <summary>文章を直せるページを、まとめて並べます。</summary>
+    public IReadOnlyList<PageTextPage> TextPages =>
+        CommissionText.Pages.Concat(UtamazeText?.Pages ?? Array.Empty<PageTextPage>()).ToArray();
+
+    private IEnumerable<PageTextDocument> TextDocuments =>
+        UtamazeText == null ? new[] { CommissionText } : new[] { CommissionText, UtamazeText };
     public UtamazeRelease? Utamaze { get; }
     public NewsDocument? News { get; }
     public ParagraphRun? ClubUpdate { get; }
@@ -80,15 +89,16 @@ public sealed class SiteSession
         .OrderBy(path => path, StringComparer.Ordinal).ToArray();
 
     public IEnumerable<EditField> Fields => Groups.SelectMany(group => group.Fields);
-    public bool HasChanges => Fields.Any(field => field.Changed) || Works.HasChanges || CommissionText.HasChanges || Utamaze?.HasChanges == true
+    public bool HasChanges => Fields.Any(field => field.Changed) || Works.HasChanges || TextDocuments.Any(document => document.HasChanges) || Utamaze?.HasChanges == true
         || News?.HasChanges == true || ClubUpdate?.Changed == true || Games?.HasChanges == true
         || Images.Any(image => image.Changed) || Links?.HasChanges == true;
-    public bool HasError => Fields.Any(field => field.HasError) || Works.HasError || CommissionText.HasError || Utamaze?.HasError == true
+    public bool HasError => Fields.Any(field => field.HasError) || Works.HasError || TextDocuments.Any(document => document.HasError) || Utamaze?.HasError == true
         || News?.HasError == true || ClubUpdate?.HasError == true || Games?.HasError == true
         || Images.Any(image => image.HasError) || Links?.HasError == true;
 
     private SiteSession(string root, List<SiteFile> files, IReadOnlyList<EditGroup> groups,
-        WorksDocument works, CommissionTextDocument commissionText, UtamazeRelease? utamaze,
+        WorksDocument works, PageTextDocument commissionText, PageTextDocument? utamazeText,
+        UtamazeRelease? utamaze,
         SiteFile? worksPage, NewsDocument? news, ParagraphRun? clubUpdate, GameDocument? games,
         PageMetaDocument? meta, ImageSlot? profile, LinkGrid? links)
     {
@@ -97,6 +107,7 @@ public sealed class SiteSession
         Groups = groups;
         Works = works;
         CommissionText = commissionText;
+        UtamazeText = utamazeText;
         Utamaze = utamaze;
         this.worksPage = worksPage;
         News = news;
@@ -156,8 +167,8 @@ public sealed class SiteSession
 
         // うたまぜ！のリリース手順（準備中 ⇄ 公開の切り替え）。
         var utamazePath = SitePaths.UtamazePage(root);
-        var utamaze = UtamazeRelease.Load(root, File.Exists(utamazePath) ? Open(utamazePath) : null,
-            home, versionFile);
+        var utamazePage = File.Exists(utamazePath) ? Open(utamazePath) : null;
+        var utamaze = UtamazeRelease.Load(root, utamazePage, home, versionFile);
 
         // ゲーム集と、各ゲームのページ。
         var games = GameDocument.Load(root, Open);
@@ -196,10 +207,14 @@ public sealed class SiteSession
                 @"(<p class=""club-date"">[^<]*</p>\r?\n)((?:[ \t]*<p>[\s\S]*?</p>\r?\n)+)([ \t]*</section>)"));
 
         var works = WorksDocument.Load(worksFile, SitePaths.Relative(root, worksFile.Path));
-        var commissionText = CommissionTextDocument.Load(
-            ("日本語版", ja, SitePaths.Relative(root, ja.Path)),
-            ("英語版", en, SitePaths.Relative(root, en.Path)));
-        return new SiteSession(root, files, groups, works, commissionText, utamaze, worksPage,
+        var commissionText = PageTextDocument.Load(PageTextDocument.Commission,
+            ("依頼ページ（日本語）", ja, SitePaths.Relative(root, ja.Path), "/commission/"),
+            ("依頼ページ（英語）", en, SitePaths.Relative(root, en.Path), "/commission/en/"));
+
+        var utamazeText = utamazePage == null ? null : PageTextDocument.Load(PageTextDocument.Utamaze,
+            ("うたまぜ！", utamazePage, SitePaths.Relative(root, utamazePage.Path), "/utamaze/"));
+
+        return new SiteSession(root, files, groups, works, commissionText, utamazeText, utamaze, worksPage,
             news, clubUpdate, games, meta, profile, links);
     }
 
@@ -404,7 +419,7 @@ public sealed class SiteSession
         .Where(field => field.Changed)
         .Select(field => new ChangeRow(field.Label, field.Original, field.Value, field.FileRelative))
         .Concat(Works.Changes())
-        .Concat(CommissionText.Changes())
+        .Concat(TextDocuments.SelectMany(document => document.Changes()))
         .Concat(Utamaze?.Changes() ?? Array.Empty<ChangeRow>())
         .Concat(News?.Changes() ?? Array.Empty<ChangeRow>())
         .Concat(ClubUpdate?.Change() is { } clubRow ? new[] { clubRow } : Array.Empty<ChangeRow>())
@@ -433,7 +448,7 @@ public sealed class SiteSession
             CacheBuster.Bump(worksPage, "works-data.js");
 
         Works.Apply();
-        CommissionText.Apply();
+        foreach (var document in TextDocuments) document.Apply();
         Utamaze?.Apply();
         News?.Apply();
         ClubUpdate?.Apply();
@@ -447,7 +462,7 @@ public sealed class SiteSession
         foreach (var image in Images) image.Copy();
         foreach (var field in Fields) field.MarkSaved();
         Works.MarkSaved();
-        CommissionText.MarkSaved();
+        foreach (var document in TextDocuments) document.MarkSaved();
         Utamaze?.MarkSaved();
         News?.MarkSaved();
         ClubUpdate?.MarkSaved();
@@ -459,7 +474,7 @@ public sealed class SiteSession
     {
         foreach (var field in Fields) field.Revert();
         Works.Revert();
-        CommissionText.Revert();
+        foreach (var document in TextDocuments) document.Revert();
         Utamaze?.Revert();
         News?.Revert();
         ClubUpdate?.Revert();

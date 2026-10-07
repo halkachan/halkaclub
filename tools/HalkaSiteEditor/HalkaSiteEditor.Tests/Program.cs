@@ -288,8 +288,8 @@ option.Price.Ja.Revert();
 option.Price.En.Revert();
 
 var text = v5.CommissionText;
-var jaPage = text.Pages.Single(page => page.Title == "日本語版");
-var enPage = text.Pages.Single(page => page.Title == "英語版");
+var jaPage = text.Pages.Single(page => page.Title == "依頼ページ（日本語）");
+var enPage = text.Pages.Single(page => page.Title == "依頼ページ（英語）");
 
 Check("文章のかたまりを両ページから拾う",
     text.Pages.Count == 2 && jaPage.Blocks.Count > 30 && enPage.Blocks.Count > 30 &&
@@ -315,21 +315,21 @@ static void ShowFirstDifference(string rebuilt, string original)
     Console.WriteLine("  [元 ] " + original.Substring(from, Math.Min(240, original.Length - from)).Replace("\n", "\\n"));
     Console.WriteLine("  [新 ] " + rebuilt.Substring(from, Math.Min(240, rebuilt.Length - from)).Replace("\n", "\\n"));
 }
-Check("日本語版は組み立て直しても1文字も変わらない", text.Rebuild(jaPage) == jaPage.CurrentText);
-Check("英語版は組み立て直しても1文字も変わらない", text.Rebuild(enPage) == enPage.CurrentText);
+Check("依頼ページ（日本語）は組み立て直しても1文字も変わらない", text.Rebuild(jaPage) == jaPage.CurrentText);
+Check("依頼ページ（英語）は組み立て直しても1文字も変わらない", text.Rebuild(enPage) == enPage.CurrentText);
 Check("最初は変更なし", !text.HasChanges && !v5.HasChanges);
 
 var listBlock = jaPage.Blocks.First(block => block.Label.Contains("歌ってみたMIX"));
 listBlock.Text = "ピッチ補正\n\nリズム補正\n\nあたらしい項目";
 Check("箇条書きの増減が変更一覧に出る",
-    text.HasChanges && v5.Changes().Any(row => row.Label.Contains("日本語版")));
+    text.HasChanges && v5.Changes().Any(row => row.Label.Contains("依頼ページ（日本語）")));
 
 var paragraph = jaPage.Blocks.First(block => block.Label.Contains("リテイク"));
 var paragraphWas = paragraph.Text;
 paragraph.Text = "ためしの説明。\n2行目。";
 
 Check("< > は誤りとして出る", NewError(jaPage, "<b>太字</b>"));
-static bool NewError(CommissionTextPage page, string bad)
+static bool NewError(PageTextPage page, string bad)
 {
     var block = page.Blocks.First();
     var keep = block.Text;
@@ -343,7 +343,7 @@ v5.Save();
 Check("保存すると変更なしに戻る", !v5.HasChanges && !text.HasChanges);
 
 var afterSave = SiteSession.Load(sandbox);
-var afterJa = afterSave.CommissionText.Pages.Single(page => page.Title == "日本語版");
+var afterJa = afterSave.CommissionText.Pages.Single(page => page.Title == "依頼ページ（日本語）");
 Check("書いた箇条書きが読み直せる",
     afterJa.Blocks.First(block => block.Label.Contains("歌ってみたMIX")).Text.EndsWith("あたらしい項目"));
 Check("書いた段落が読み直せる",
@@ -976,6 +976,55 @@ shrinkV11.Revert();
 Check("リンクと分類も元に戻せる", !shrinkV11.HasChanges &&
     shrinkV11.Links!.Cards.Any(card => card.Name == "ためしのリンク") &&
     shrinkV11.Works.Categories.Count == 5);
+
+// --- v1.2：うたまぜ！のページの文章 ------------------------------------------
+
+var v12 = SiteSession.Load(sandbox);
+var utamazeText = v12.UtamazeText ?? throw new Exception("うたまぜ！の文章が読めません");
+var utaTextPage = utamazeText.Pages.Single();
+var utamazeHtml = Path.Combine(sandbox, "utamaze", "index.html");
+
+Check("うたまぜ！の文章を読める",
+    utaTextPage.Url == "/utamaze/" && utaTextPage.Blocks.Count >= 20 &&
+    utaTextPage.Blocks.Any(block => block.Text == "歌のMIXを、もっとわかりやすく。") &&
+    utaTextPage.Blocks.Any(block => block.Text.StartsWith("はじめてでも触りやすく")));
+Check("FAQの質問が見出しになる",
+    utaTextPage.Blocks.Any(block => block.Label.Contains("PROは何台のPCで使えますか？")));
+Check("見出しの中の改行も読める",
+    utaTextPage.Blocks.Any(block => block.Text == "まずはかんたん。\nもっと詰めたい人にはPRO。" ||
+        block.Text == "まずはかんたん。\n必要なら、ちゃんと細かく。"));
+Check("リンクが入っている文章には触らない",
+    utaTextPage.Blocks.All(block => !block.Text.Contains('<')) &&
+    utaTextPage.Blocks.All(block => !block.Text.Contains("お問い合わせフォーム")));
+Check("公開準備中の一文は、うたまぜ！タブの受け持ち",
+    utaTextPage.Blocks.All(block => !block.Text.Contains("現在は公開準備中")));
+Check("うたまぜ！は組み立て直しても1文字も変わらない",
+    utamazeText.Rebuild(utaTextPage) == utaTextPage.CurrentText);
+Check("うたまぜ！を読んだ直後は変更なし", !utamazeText.HasChanges && !v12.HasChanges);
+
+var lead = utaTextPage.Blocks.Single(block => block.Text == "歌のMIXを、もっとわかりやすく。");
+lead.Text = "歌のMIXを、もっとかんたんに。";
+var heading = utaTextPage.Blocks.First(block => block.Text.Contains("もっと詰めたい人にはPRO。"));
+heading.Text = "まずはFREEから。\nもっと詰めたい人にはPRO。";
+Check("直すと変更一覧に出る",
+    utamazeText.HasChanges && !utamazeText.HasError &&
+    v12.Changes().Any(row => row.Label.Contains("うたまぜ！")));
+
+v12.Save();
+
+var afterV12 = SiteSession.Load(sandbox);
+var afterUtamaze = afterV12.UtamazeText!.Pages.Single();
+Check("直した文章が読み直せる",
+    afterUtamaze.Blocks.Any(block => block.Text == "歌のMIXを、もっとかんたんに。") &&
+    File.ReadAllText(utamazeHtml).Contains("<p class=\"hero-lead\">歌のMIXを、もっとかんたんに。</p>"));
+Check("見出しの改行は <br> で戻る",
+    File.ReadAllText(utamazeHtml).Contains("<h2>まずはFREEから。<br>もっと詰めたい人にはPRO。</h2>"));
+Check("うたまぜ！も保存後は組み立て直しで1文字も変わらない",
+    afterV12.UtamazeText!.Rebuild(afterUtamaze) == afterUtamaze.CurrentText);
+Check("文章を直せるページが3枚ならぶ",
+    afterV12.TextPages.Count == 3 &&
+    afterV12.TextPages.Select(page => page.Url)
+        .SequenceEqual(new[] { "/commission/", "/commission/en/", "/utamaze/" }));
 
 // --- プレビュー用サーバー -------------------------------------------------
 

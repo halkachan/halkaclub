@@ -100,9 +100,9 @@ public partial class MainWindow : Window
         LinkItems.ItemsSource = links.Rows;
         TopRows.ItemsSource = top.Rows;
 
-        TextPagePicker.ItemsSource = session.CommissionText.Pages;
+        TextPagePicker.ItemsSource = session.TextPages;
         TextPagePicker.SelectedIndex = 0;
-        foreach (var page in session.CommissionText.Pages)
+        foreach (var page in session.TextPages)
         foreach (var block in page.Blocks)
             block.PropertyChanged += TextBlockChanged;
 
@@ -926,7 +926,7 @@ public partial class MainWindow : Window
         var errors = (session.Utamaze?.Switches.Count(step => step.HasError) ?? 0)
             + session.Fields.Count(field => field.HasError)
             + session.Works.Categories.Sum(category => category.Works.Count(work => work.HasError))
-            + session.CommissionText.Pages.Sum(page => page.Blocks.Count(block => block.HasError))
+            + session.TextPages.Sum(page => page.Blocks.Count(block => block.HasError))
             + (session.News?.Items.Count(item => item.HasError) ?? 0)
             + (session.ClubUpdate?.HasError == true ? 1 : 0)
             + (session.Games?.Collection.Cards.Count(card => card.HasError) ?? 0)
@@ -1069,15 +1069,23 @@ public partial class MainWindow : Window
 
     private void TextBlockChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(CommissionTextBlock.Text) or nameof(CommissionTextBlock.Changed)
-            or nameof(CommissionTextBlock.Error))
+        if (e.PropertyName is nameof(PageTextBlock.Text) or nameof(PageTextBlock.Changed)
+            or nameof(PageTextBlock.Error))
             RefreshChanges();
     }
 
     private void TextPageChanged(object sender, SelectionChangedEventArgs e)
     {
         if (TextBlockItems == null) return;
-        TextBlockItems.ItemsSource = (TextPagePicker.SelectedItem as CommissionTextPage)?.Blocks;
+        var page = TextPagePicker.SelectedItem as PageTextPage;
+        TextBlockItems.ItemsSource = page?.Blocks;
+
+        // 見ているページに合わせて、右のプレビューも移します。
+        if (page != null && PagePicker?.ItemsSource is IReadOnlyList<SitePage> pages)
+        {
+            var wanted = pages.FirstOrDefault(candidate => candidate.Url == page.Url);
+            if (wanted != null) PagePicker.SelectedItem = wanted;
+        }
     }
 
     private void SaveClick(object sender, RoutedEventArgs e)

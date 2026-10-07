@@ -47,7 +47,7 @@ public static class SitePages
     {
         var wanted = groupTitle switch
         {
-            "依頼ページ" or "依頼ページの文章" => "/commission/",
+            "依頼ページ" or "ページの文章" => "/commission/",
             "作品一覧" => "/works/",
             "はるかくらぶ" => "/club/",
             "うたまぜ！" => "/utamaze/",

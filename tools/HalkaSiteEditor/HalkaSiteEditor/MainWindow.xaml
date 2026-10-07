@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:HalkaSiteEditor"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="HALKA SITE EDITOR v1.1" Icon="Assets/site-editor.ico"
+        Title="HALKA SITE EDITOR v1.2" Icon="Assets/site-editor.ico"
         Width="1660" Height="900" MinWidth="1000" MinHeight="640"
         Background="#16191E" Foreground="#E4E8EC" FontFamily="Yu Gothic UI" FontSize="13"
         Loaded="WindowLoaded" Closing="WindowClosing">
@@ -539,10 +539,10 @@
         </DockPanel>
       </TabItem>
 
-      <TabItem Header="依頼ページの文章">
+      <TabItem Header="ページの文章">
         <DockPanel Margin="4,10,4,0">
           <TextBlock DockPanel.Dock="Top" Foreground="#AEB8C3" TextWrapping="Wrap" Margin="2,0,2,10"
-                     Text="依頼ページの説明文・箇条書き・注意書き・テンプレートです。HTMLの印は出てきません。日本語版と英語版は段落の作りが少し違うので、ページを選んで直します。"/>
+                     Text="依頼ページとうたまぜ！のページの、説明文・見出し・箇条書き・注意書き・テンプレートです。HTMLの印は出てきません。ページごとに段落の作りが違うので、ページを選んで直します。"/>
           <DockPanel DockPanel.Dock="Top" Margin="2,0,10,10">
             <TextBlock Text="ページ" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#AEB8C3"/>
             <ComboBox x:Name="TextPagePicker" MinWidth="220" HorizontalAlignment="Left"
