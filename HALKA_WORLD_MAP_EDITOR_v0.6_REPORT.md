@@ -30,7 +30,7 @@
 
 - `publish-win-x64.ps1` を実行し、`tools/HalkaWorldMapEditor/dist/win-x64/HALKA WORLD MAP EDITOR.exe` を Release 再発行した。最新版 EXE の起動、`HALKA WORLD MAP EDITOR v0.6` タイトル、応答を確認した。配布時は `dist/win-x64` 全体を使用する。
 - 本番 WebGL Build 成功。Development Build OFF、Unity Splash / Logo OFF、`stripEngineCode=false` を維持。Wasm `b678e2250cb547416bf6261f05ef806f.wasm` は 24,088,440 bytes、data `f221a286f5a520dbfe4c4f2e8eac9ced.data` は 4,854,012 bytes。公開先は [HALKA WORLD](https://halkaclub.com/halkaworld/)。
-- 実装コミットと main push、最終 `git status` は公開後の追記欄を参照。
+- 実装コミットと main push、最終 `git status` は公開後の記録を参照。
 
 ## 5. 今後の候補
 
@@ -38,6 +38,6 @@
 
 ## 公開後の記録
 
-- 実装コミット: 公開前
-- GitHub main push: 公開前
-- 最終 git status: 公開前
+- 実装コミット: `079ccc8` (`Add Map Editor v0.6 area transition authoring`)。
+- 既存 main のサイト更新を衝突なく取り込んだ統合コミット: `7f772fd`。その時点で `git push origin HEAD:main` 成功 (`9652737..7f772fd`)。`halkaworld/index.html` の OGP 設定、ver2.0 更新履歴、新 WebGL build URL が共存することを確認した。
+- このレポート追記時点の `git status`: 未追跡 `backup-v05-20261006-174557/` のみ。これは作業開始前から存在するユーザーバックアップで、コミット・削除しない。レポート自身の追記は別コミットで main へ送る。
