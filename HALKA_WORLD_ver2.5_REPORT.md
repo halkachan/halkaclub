@@ -54,14 +54,17 @@
 - Production WebGLをローカル`http://localhost:8765/halkaworld/webgl/`で実操作。ver2.5表示、ベンチと看板の描画、左右の着席/立ち上がり、座り姿でMenu/Life Log表示、看板文、House入室/退出、クッション通行、机の`つくえ。`を確認した。Crowの動作も画面で確認。PCではクリックで看板文を表示した。PC看板確認画像はrepo外Backupの`local-sign-pc.png`。
 - `?touchControls=1`ではD-padとAで左右ベンチ、看板、House、クッション、机を操作した。画面内のLife Logは歩行に伴って増えた。正式Mapを用いた確認である。
 - MAP EDITOR最新版EXEの起動プロセスは確認した。ただしこの環境のUI操作APIにはWindows native windowが公開されず、EXE画面上で正式Mapを開いて4件を目視する操作は未確認。Map JSON、Core保存/再読込、Unity Importでデータ経路を検証した。
-- PCローカルWebGLでMenuのAUTO=ONを確認して閉じ、60秒以上無入力で待った。Playerが元の看板前セルから別のセルへ移動し、Houseへ入らずCrowとも重ならなかった。60秒間の全Stepを動画記録したわけではない。物理スマホでの確認、公開WebGL上での操作は別途結果を追記する。確認していない項目を実操作済みとは扱わない。
+- PCローカルWebGLでMenuのAUTO=ONを確認して閉じ、60秒以上無入力で待った。Playerが元の看板前セルから別のセルへ移動し、Houseへ入らずCrowとも重ならなかった。60秒間の全Stepを動画記録したわけではない。物理スマホは未確認。
 
 ## 8. Build・HP・公開
 
 - Unity `ProjectBuilder.BuildWeb`成功。`BuildOptions.None`、Development OFF、Unity Splash/Logo OFF、`stripEngineCode=false`。WebGL `productVersion`は2.5。
 - `a7194efa5d01636d0eb0e291612e6ded.wasm`は24,143,653 bytes、`0e2a4ed553480a5039dd646d40c522f5.data`は5,048,751 bytes。新しいloaderは`306c4e5ecf14727b684df433b27a7448.loader.js`。wasm SHA-256=`BA482531C62F620001ED895153B092195CAEFC5FE35CF06E0369F10EA477EC06`。
 - HP現在VersionとWebGL参照をver2.5へ更新。既存の`ver2.1 ～ ver3.0`Archive最上段へ、実際の公開日2026-10-09で「看板を読めるようになり、家具を配置しました。」を追加。旧履歴は維持。
-- Git commit / push / Pages deployment / 公開WebGL操作 / 最終git status: 公開作業の結果を下記へ追記する。
+- 実装・Map・BuildのCommitは`71b56d98319168402d7374558fb37dce62500c8c`。開始HEADからfast-forwardできることを確認し、`origin/main`へ通常pushした。force pushは使用していない。
+- GitHub Pages run `37803938468`はbuild / deployとも成功。公開URL=`https://halkaclub.com/halkaworld/`。公開ページのver2.5と2026-10-09履歴を確認し、公開WebGLは読み込み完了。新しいwasm / data / loaderへHTTP HEADで各200を確認した。
+- 公開WebGLを実操作し、ベンチ左座席への着席と立ち上がり、看板の`ここは HALKA WORLD。`、House歩行入室、クッションへの移動、机の`つくえ。`、歩行退出を確認した。ベンチ右座席はローカルWebGLで確認済み。公開画面の証拠はrepo外Backupの`public-bench-sit.png`、`public-sign-read.png`、`public-room-cushion.png`、`public-desk-message.png`、`public-hp-v25.png`。
+- 最終Git状態では本更新はCommit済み。開始前からある`GrassDecoration.prefab`の改行差と未追跡`backup-v05-20261006-174557/`は手を付けず残した。レポートの公開結果追記は別Commitでmainへ反映する。
 
 ## 9. 次版候補
 
