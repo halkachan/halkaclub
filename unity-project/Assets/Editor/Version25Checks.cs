@@ -18,7 +18,7 @@ namespace Halka.Game.Editor
         public static void Run()
         {
             Version24Checks.Run();
-            Check(GameVersion.Value == "2.5", "game version");
+            Check(GameVersion.Value == "2.5" || GameVersion.Value == "2.5.1", "game version");
             var field = AssetDatabase.LoadAssetAtPath<MapDefinition>("Assets/Content/Maps/first_field.asset");
             var room = AssetDatabase.LoadAssetAtPath<MapDefinition>("Assets/Content/Maps/halka_house.asset");
             Check(field != null && room != null && field.DataVersion == 4 && room.DataVersion == 4,

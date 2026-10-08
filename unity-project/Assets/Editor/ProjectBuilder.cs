@@ -42,7 +42,7 @@ namespace Halka.Game.Editor
         private const float SpritePixelsPerUnit = 64f;
         internal const float ArtworkFootOffset = GridWorld2D.TileWorldSize / 2f;
 
-        [MenuItem("HALKA/Prepare ver2.5 scene")]
+        [MenuItem("HALKA/Prepare ver2.5.1 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();

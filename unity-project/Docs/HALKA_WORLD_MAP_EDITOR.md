@@ -1,6 +1,6 @@
 # HALKA WORLD MAP EDITOR v0.6
 
-ゲーム本編は **ver2.5** です。開発専用の .NET 8 / WPF / SkiaSharp Windows アプリで、ゲーム画面には出ません。
+ゲーム本編は **ver2.5.1** です。開発専用の .NET 8 / WPF / SkiaSharp Windows アプリで、ゲーム画面には出ません。
 
 ## 起動と保存
 

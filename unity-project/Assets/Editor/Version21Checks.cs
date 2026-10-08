@@ -28,7 +28,8 @@ namespace Halka.Game.Editor
             var action = UnityEngine.Object.FindFirstObjectByType<TouchActionButton>();
             var area = UnityEngine.Object.FindFirstObjectByType<HouseArea2D>();
             Check((GameVersion.Value == "2.1" || GameVersion.Value == "2.2" || GameVersion.Value == "2.3" ||
-                   GameVersion.Value == "2.4" || GameVersion.Value == "2.5") &&
+                   GameVersion.Value == "2.4" || GameVersion.Value == "2.5" ||
+                   GameVersion.Value == "2.5.1") &&
                 GameVersion.Label == "ver" + GameVersion.Value, "supported game version");
             Check(menu != null && autoMode != null && input != null && hud != null &&
                 dpad != null && action != null && area != null, "persistent menu and controls");
