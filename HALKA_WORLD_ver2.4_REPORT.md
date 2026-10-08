@@ -48,4 +48,7 @@
 ## HPと公開
 
 - HP現在表示ver2.4。上Archiveの先頭へ実公開予定日2026-10-08の`ベンチに座れるようになりました。`を追加。下Archiveは維持。
-- 実装・本番Build commit: `448896f`。push / GitHub Pages / 公開URL / 最終git statusは公開確認後に追記。
+- 実装・本番Build commit: `448896f`、初回レポートcommit: `ba66fcf`。2026-10-08に`origin/main`へ通常push。GitHub Pages run `37758310893`はbuild/deployとも成功。
+- 公開URL: `https://halkaclub.com/halkaworld/`。公開HPはHTTP 200でver2.4・新Build ID・履歴文を確認。公開WebGLはHTTP 200で`productVersion: "2.4"`と新data参照を確認。wasm/data/loaderは各HTTP 200。ブラウザでも公開版のWorldとver2.4表示を目視。
+- repo外の目視証跡: `C:\Users\owner\Documents\ChatGPT\HALKA-v24-backup-20261008\bench-seated-v24.jpg`、`public-v24.jpg`。前者は検証用Mapの承認Sprite着座、後者は公開ページ。
+- 最終git statusには作業開始前からの`first_field.hwmap.json`の改行差、`backup-v05-20261006-174557/`の未追跡フォルダーが残る。Unity生成の`GrassDecoration.prefab`にもGit上の改行差が残るが内容Diffはない。これら3件はCommitしていない。
