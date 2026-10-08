@@ -57,7 +57,8 @@ Desktopの比較資料は保全先の `trial-original-direct.png`、`trial-virtu
 - GitHub Pagesの実装コミットに対する [deployment run](https://github.com/halkachan/halkaclub/actions/runs/37855184668) は **success**。公開URL: https://halkaclub.com/halkaworld/ 。HP、WebGL、更新後 `.data`、`.wasm` はそれぞれ HTTP 200。
 - 公開HPを実ブラウザで読み込み、`ver2.5.1`、上Archiveの ver2.5.1→2.1 の順序、両Archiveの初期Closedを確認した。公開WebGLの起動・屋外描画・GameVersionを確認。直接1280×720表示では backing 1024×576、CSS `pixelated`。Playerをベンチ右Action Pointへ歩かせ、実際に着席・立ち上がりを操作した。着席時の目元のピンクを公開表示で確認した。証拠は保全先の `public-hp.png`、`public-bench-right.png`、`public-bench-right-face16x.png`。
 - 公開WebGLのスマートフォン実機、および公開環境での屋内・全Gameplayの手動再操作は未確認。ローカルと自動Regressionの結果を前述の範囲で確認した。
-- 最終Git statusはレポート追記コミットとpush後に再確認。開始時からの `GrassDecoration.prefab` 改行差分と `backup-v05-20261006-174557/` を残し、正式Mapと生成Sceneの差分はない。
+- レポートコミット: `93b51e09bd04ebed2cc8bf602b2c3d170aab0d01`。通常push済みで、対応する [Pages deployment run](https://github.com/halkachan/halkaclub/actions/runs/37855464088) も **success**。
+- レポートコミット・push後の `git status --short`: ` M unity-project/Assets/Content/World/GrassDecoration.prefab` と `?? backup-v05-20261006-174557/` のみ。どちらも開始時からのユーザー側の差分として保持し、コミットしていない。正式Mapと生成Sceneの差分はない。
 
 ## 6. 未確認事項
 
