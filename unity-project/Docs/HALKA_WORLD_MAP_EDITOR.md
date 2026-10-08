@@ -1,6 +1,6 @@
 # HALKA WORLD MAP EDITOR v0.6
 
-ゲーム本編は **ver2.4** です。開発専用の .NET 8 / WPF / SkiaSharp Windows アプリで、ゲーム画面には出ません。
+ゲーム本編は **ver2.5** です。開発専用の .NET 8 / WPF / SkiaSharp Windows アプリで、ゲーム画面には出ません。
 
 ## 起動と保存
 
@@ -43,13 +43,13 @@ Unity Importerが両MapのJSONとCatalogを読み、MapDefinition/Definition ass
 
 `dotnet run --project tools/HalkaWorldMapEditor/HalkaWorldMapEditor.Tests -c Release`
 
-Unity側は `Halka.Game.Editor.MapAuthoringChecks.Run` と `Halka.Game.Editor.Version24Checks.Run`（ver2.0回帰も実行）。GameVersionは2.4です。GUIの破壊操作は正式Mapを直接使わず、コピーで確認してください。
+Unity側は `Halka.Game.Editor.MapAuthoringChecks.Run` と `Halka.Game.Editor.Version25Checks.Run`（ver2.0回帰も実行）。GameVersionは2.5です。GUIの破壊操作は正式Mapを直接使わず、コピーで確認してください。
 
 ## Action Pointと通行判定
 
 Catalog v3の各Objectには `actionPoints` 配列があります。各点は `id`、Root相対の整数セル `playerCellOffset`、`playerFacing`（up/down/left/right）、`actionType`（none/examine/sit/sleep）、任意の `poseKey` と `interactionText` を持ちます。World座標は `rootCell + playerCellOffset` で算出し、Map JSONには重複保存しません。InspectorのLocal/World座標とCanvas上の E/S/Z + 矢印で確認できます。Object移動、Undo/Redo、Copy/Pasteにもこの計算が追従します。
 
-`blockedCellOffsets` は通行不可の範囲です。Action PointはPlayerの行動位置であり、両者は独立です。ベッドのsleep点は下側の通行可能セルです。クッションはblocked offsetsが空で通行可能な定義です。examineの立ち位置が塞がれた場合は警告として表示します。本編ver2.4では`bench_sit`からベンチに座れます。`cushion_sit`と実際の睡眠は未実装です。石・花・木の既存メッセージはAction Pointの `interactionText` をUnity Definitionへ同期し、現行RuntimeのExamine表示を維持します。家の入退室は既存の移動遷移のままです。
+`blockedCellOffsets` は通行不可の範囲です。Action PointはPlayerの行動位置であり、両者は独立です。ベッドのsleep点は下側の通行可能セルです。クッションはblocked offsetsが空で通行可能な定義です。examineの立ち位置が塞がれた場合は警告として表示します。本編ver2.5では正式Map上のベンチで`bench_sit`から座れます。`cushion_sit`と実際の睡眠は未実装です。石・花・木の既存メッセージはAction Pointの `interactionText` をUnity Definitionへ同期し、現行RuntimeのExamine表示を維持します。家の入退室は既存の移動遷移のままです。
 
 ## v0.4の正式World Object素材
 
@@ -61,9 +61,9 @@ Catalog v3の各Objectには `actionPoints` 配列があります。各点は `i
 | `sign_basic` | `sign.png` | 32×32 / Rootの1セル | (0,-1)、上向き `examine`、文面は配置ごとの `signText` |
 | `well_basic` | `well.png` | 32×32 / Rootの1セル | (0,-1)、上向き `examine` / 「いど。」 |
 
-机とベンチは左下セルをRootとし、見た目の右セルにも通行不可判定を置きます。看板は見た目も通行不可判定もRootの1セルです。クッションは床置きで上を歩けます。看板画像には文字も矢印も描いていません。ベンチの左右Action Pointでは`bench_sit`が動作します。クッションで座る処理とベッドで寝る処理はありません。正式Mapにはこれらを自動配置しません。
+机とベンチは左下セルをRootとし、見た目の右セルにも通行不可判定を置きます。看板は見た目も通行不可判定もRootの1セルです。クッションは床置きで上を歩けます。看板画像には文字も矢印も描いていません。ベンチの左右Action Pointでは`bench_sit`が動作します。クッションで座る処理とベッドで寝る処理はありません。本編ver2.5の正式Mapにはベンチと看板を屋外へ、クッションと机を室内へ初期配置しています。
 
-画像の原本は `SourceGeneratedArt/map_editor_v04_objects` に保存し、ゲーム用PNGは `Assets/Content/World` に置きます。追加素材は透明RGBA、32pxセルの整数倍、PPU64、Point、Single Sprite、mipmap無効、無圧縮を守ります。絵は画像生成機能で制作し、技術的後処理では透明化、切り抜き、Nearest縮小、色数整理だけを行います。Catalogのstable IDとSprite path、Visual寸法、Root Anchor、blocked offsets、Action Pointを設定してからUnity同期とCore/Unity検証を実行してください。Map内の配置場所はStandalone Editorで決めます。
+画像の原本は `SourceGeneratedArt/map_editor_v04_objects` に保存し、ゲーム用PNGは `Assets/Content/World` に置きます。追加素材は透明RGBA、32pxセルの整数倍、PPU64、Point、Single Sprite、mipmap無効、無圧縮を守ります。絵は画像生成機能で制作し、技術的後処理では透明化、切り抜き、Nearest縮小、色数整理だけを行います。Catalogのstable IDとSprite path、Visual寸法、Root Anchor、blocked offsets、Action Pointを設定してからUnity同期とCore/Unity検証を実行してください。初期配置後もStandalone Editorで位置と看板の文章を調整できます。
 
 ## 新しいObjectを追加する手順
 
@@ -74,7 +74,10 @@ Catalog v3の各Objectには `actionPoints` 配列があります。各点は `i
 5. 必要なAction PointをRoot相対位置、Facing、Type、Pose Key、Textで定義する。
 6. Paletteは両Mapで共通です。Map Typeによる配置制限は設けません。
 7. UnityでAuthoring Importと契約検証を実行する。
-8. HALKAがStandalone Editorで正式Map上の配置場所を決めて保存する。
+8. Codexが現行Mapの障害物、出入口、Spawn、Action Pointを調査し、正式Map JSONへ自然な初期配置を追加する。ゲーム内で操作できることまで確認する。
+9. HALKAがStandalone Editorで正式Map上の配置を自由に微調整する。
+
+今後のロードマップで追加するObjectや家具も、原則としてCodexが正式Mapへの初期配置まで担当します。ユーザーが「まだ配置しない」と明示した場合は配置しません。既存配置を保護し、通路や出入口を塞がず、Instance IDとMap JSON v4の保存形式を維持します。
 
 配置済みMapは定義IDとRootだけを参照するため、後でSprite pathを差し替えても配置JSONを作り直す必要はありません。Catalog v2はStandalone側でメモリ上だけv3へ読み替え可能ですが、Unity Importerへ渡す正式Catalogはv3に更新してください。
 

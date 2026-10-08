@@ -158,7 +158,8 @@ namespace Halka.Game.World
             root.transform.position = world.CellToWorld(cell);
             var authoredAction = definition.ActionPoints.Count > 0 &&
                 (definition.Footprint.x > 1 || definition.Footprint.y > 1 ||
-                 definition.Behavior == WorldObjectBehavior.None);
+                 definition.Behavior == WorldObjectBehavior.None ||
+                 definition.StableId == "sign_basic");
             if (authoredAction)
             {
                 var action = root.AddComponent<WorldObjectActionInteractable>();

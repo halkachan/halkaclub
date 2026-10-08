@@ -26,7 +26,8 @@ namespace Halka.Game.Editor
             var world = UnityEngine.Object.FindFirstObjectByType<GridWorld2D>();
             var maps = UnityEngine.Object.FindFirstObjectByType<MapWorldController2D>();
             var autoMode = UnityEngine.Object.FindFirstObjectByType<AutoModeController>();
-            Check((GameVersion.Value == "2.2" || GameVersion.Value == "2.3" || GameVersion.Value == "2.4") &&
+            Check((GameVersion.Value == "2.2" || GameVersion.Value == "2.3" ||
+                   GameVersion.Value == "2.4" || GameVersion.Value == "2.5") &&
                 GameVersion.Label == "ver" + GameVersion.Value, "supported version");
             Check(menu != null && lifeLog != null && player != null && autoMode != null &&
                 ReferenceEquals(Field(menu, "lifeLog"), lifeLog) &&

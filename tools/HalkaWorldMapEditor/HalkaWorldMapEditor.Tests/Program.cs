@@ -142,7 +142,7 @@ var bed = houseMap.Objects.Single(o => o.DefinitionId == "bed_basic");
 Check("bed two by three", MapRules.FootprintCells(bed, catalog.ObjectById["bed_basic"]).Count() == 6 &&
     MapRules.BlocksMovement(houseMap, catalog, bed.RootCell));
 var actionOutside = MapFormat.Clone(houseMap);
-actionOutside.Objects.Single().RootCell = new GridCell(-6, -4);
+actionOutside.Objects.Single(o => o.DefinitionId == "bed_basic").RootCell = new GridCell(-6, -4);
 Check("action point outside map validation", MapRules.Validate(actionOutside, catalog).Any(i => i.Code == "actionBounds"));
 var oldJson = """
     {"format":"halka-world-map","formatVersion":1,"mapId":"legacy_field","displayName":"Legacy","bounds":{"minX":-10,"maxX":10,"minY":-6,"maxY":6},"surfaces":[],"objects":[],"markers":{"playerSpawn":{"x":0,"y":0},"crowSpawn":{"x":7,"y":2},"houseDoor":{"x":-7,"y":-4},"outsideEntry":{"x":-7,"y":-5},"houseFootprint":{"width":5,"height":2},"roadEnds":{"north":{"x":0,"y":6},"east":{"x":10,"y":-1},"south":{"x":2,"y":-6},"west":{"x":-10,"y":0}}}}
@@ -291,7 +291,7 @@ try
             Path.Combine(tempDir, id + ".hwmap.json"));
         var root = FindPlacement(session.Map, catalog, id);
         Check(id + " test map placement", session.PlaceObject(id, root, out var placementReason));
-        var placement = session.Map.Objects.Single(o => o.DefinitionId == id);
+        var placement = session.Map.Objects.Single(o => o.DefinitionId == id && o.RootCell == root);
         var definition = catalog.ObjectById[id];
         var footprint = MapRules.FootprintCells(placement, definition).ToArray();
         Check(id + " collision", (id == "cushion_basic" && footprint.Length == 0 &&
@@ -340,7 +340,9 @@ try
     signSession.Save();
     Check("sign instance text reload", MapFormat.LoadMap(signSession.FilePath).Objects
         .Count(o => o.DefinitionId == "sign_basic" && o.SignText == "ここからさき") == 2);
-Check("non-sign JSON stays sparse", !MapFormat.SerializeMap(map).Contains("\"signText\"", StringComparison.Ordinal));
+var withoutSigns = MapFormat.Clone(map);
+withoutSigns.Objects.RemoveAll(o => o.DefinitionId == "sign_basic");
+Check("non-sign JSON stays sparse", !MapFormat.SerializeMap(withoutSigns).Contains("\"signText\"", StringComparison.Ordinal));
 
 // v0.5: Entity / Spawn authoring, including the v2 marker migration.
 var entityCatalog = MapFormat.LoadEntityCatalog(ProjectPaths.EntityCatalogPath(project));

@@ -569,6 +569,23 @@
         "x": -7,
         "y": 2
       }
+    },
+    {
+      "instanceId": "obj_bench_basic_v25_first_field",
+      "definitionId": "bench_basic",
+      "rootCell": {
+        "x": -2,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_sign_basic_v25_first_field",
+      "definitionId": "sign_basic",
+      "rootCell": {
+        "x": 3,
+        "y": 1
+      },
+      "signText": "ここは HALKA WORLD。"
     }
   ],
   "markers": [

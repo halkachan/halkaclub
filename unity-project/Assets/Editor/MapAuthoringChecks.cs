@@ -181,7 +181,10 @@ namespace Halka.Game.Editor
                 Check(MapPlacementRules.Validate(imported).Count == 0, "fixture validates");
                 Check(interior.MinCell == new Vector2Int(-6, -4) &&
                     interior.MaxCell == new Vector2Int(6, 4) &&
-                    interior.Surfaces.Count == 50 && interior.Objects.Count == 1 &&
+                    interior.Surfaces.Count == 50 && interior.Objects.Count >= 3 &&
+                    interior.Objects.Any(item => item.Definition.StableId == "bed_basic") &&
+                    interior.Objects.Any(item => item.Definition.StableId == "cushion_basic") &&
+                    interior.Objects.Any(item => item.Definition.StableId == "desk_basic") &&
                     interior.TryGetMarker("interior_entry", out var entry) && entry == new Vector2Int(0, -3) &&
                     interior.TryGetMarker("interior_exit", out var exit) && exit == new Vector2Int(0, -4) &&
                     MapPlacementRules.Validate(interior).Count == 0,
@@ -380,9 +383,12 @@ namespace Halka.Game.Editor
                         (definitions[index].ActionPoints.Count > 0),
                         ids[index] + " runtime examine component");
                     if (ids[index] == "sign_basic")
-                        Check(new SerializedObject(root.GetComponent<ExamineInteractable>())
-                            .FindProperty("message").stringValue == "きた",
-                            "runtime sign uses placement text");
+                    {
+                        var signAction = root.GetComponent<WorldObjectActionInteractable>();
+                        Check(signAction != null &&
+                            new SerializedObject(signAction).FindProperty("instanceText").stringValue == "きた",
+                            "runtime sign uses placement text and authored action point");
+                    }
                 }
             }
             finally
@@ -473,8 +479,9 @@ namespace Halka.Game.Editor
                     treeRoot.GetComponentsInChildren<GridObstacle>().Length == 1,
                     "indoor tree keeps depth and collision");
                 var signRoot = objectRoot.GetChild(1);
-                Check(new SerializedObject(signRoot.GetComponent<ExamineInteractable>())
-                    .FindProperty("message").stringValue == "もり" &&
+                Check(signRoot.GetComponent<WorldObjectActionInteractable>() != null &&
+                    new SerializedObject(signRoot.GetComponent<WorldObjectActionInteractable>())
+                    .FindProperty("instanceText").stringValue == "もり" &&
                     signRoot.GetComponentsInChildren<GridObstacle>().Length == 1,
                     "indoor sign uses its own text and one blocked cell");
 

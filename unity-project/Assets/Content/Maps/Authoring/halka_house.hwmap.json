@@ -373,6 +373,22 @@
         "x": -5,
         "y": 0
       }
+    },
+    {
+      "instanceId": "obj_cushion_basic_v25_halka_house",
+      "definitionId": "cushion_basic",
+      "rootCell": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "instanceId": "obj_desk_basic_v25_halka_house",
+      "definitionId": "desk_basic",
+      "rootCell": {
+        "x": 2,
+        "y": 1
+      }
     }
   ],
   "markers": [

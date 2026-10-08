@@ -1,6 +1,6 @@
 # HALKA WORLD MAP EDITOR v0.6
 
-.NET 8 / WPF / SkiaSharpのWindows専用マップ編集アプリです。ゲーム本編のバージョンはver2.4です。
+.NET 8 / WPF / SkiaSharpのWindows専用マップ編集アプリです。ゲーム本編のバージョンはver2.5です。
 
 ## Build
 
@@ -42,7 +42,7 @@ v0.6では新Map作成、Objectの回転・自由Scale、NPC配置、大規模Ma
 
 Map v3は`entitySpawns`へ`instanceId`、`definitionId`、`cell`、`facing`を保存します。旧v2の`player_start`/`crow_spawn` Markerは読み込み時に移行し、正式ファイルはバックアップ後に`scripts/migrate-v04-to-v05.py`で移行しました。道路終端と室内入退室Markerは従来どおりです。開始PlayerはPersistentでMap切替時に生成し直しません。Crowの行動範囲はSpawnからの相対値(-3..+1,-2..+2)で、Map Boundsと通行判定で制限します。
 
-将来Entityを追加する場合は、Sprite、Entity Catalog定義、Unityの明示的Runtime Behavior、Previewを用意するとEditor Paletteに現れます。配置はHALKAがEditorで行います。任意のC#型名をJSONから反射生成する方式は採りません。
+将来Entityを追加する場合は、Sprite、Entity Catalog定義、Unityの明示的Runtime Behavior、Previewを用意するとEditor Paletteに現れます。ロードマップ上の新規Objectや家具は、Codexが正式Mapへ初期配置してゲーム内で検証し、HALKAがEditorで微調整します。ユーザーが未配置を指定した場合はその指示を優先します。任意のC#型名をJSONから反射生成する方式は採りません。
 # v0.6 Area Transition Editor
 
 **Area Transition [4]** で Map 端の通行可能セルをクリックすると出口を追加します。Inspector で出口 ID、方向、行き先 Map、到着 Cell と向きを変更します。行き先は現在読める Authoring Map から選択でき、**行き先をMap上で選ぶ** で到着セルをクリックして指定できます。選択中は編集を行わず、右クリックまたはキャンセルで元の Map に戻ります。`Area Transitions` Overlay に出口の矢印を表示します。選択後の座標変更、Delete、Undo/Redo、保存/再読込に対応します。

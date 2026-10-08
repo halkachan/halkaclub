@@ -127,6 +127,14 @@ MonoBehaviour:
     RootCell: {x: -5, y: 0}
     Definition: {fileID: 11400000, guid: 88990215c948f3441931795d2fde4a44, type: 2}
     SignText: 
+  - InstanceId: obj_cushion_basic_v25_halka_house
+    RootCell: {x: 0, y: 0}
+    Definition: {fileID: 11400000, guid: b77eb54162020484fbc6eb74e277f58b, type: 2}
+    SignText:
+  - InstanceId: obj_desk_basic_v25_halka_house
+    RootCell: {x: 2, y: 1}
+    Definition: {fileID: 11400000, guid: 52facaa19ca183b43a4bc405a5722502, type: 2}
+    SignText:
   markers:
   - StableId: interior_entry
     Cell: {x: 0, y: -3}
