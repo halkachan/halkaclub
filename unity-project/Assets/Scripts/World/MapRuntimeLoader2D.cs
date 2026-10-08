@@ -121,6 +121,7 @@ namespace Halka.Game.World
         public void Unload()
         {
             if (!built) return;
+            if (player != null) player.GetComponent<PlayerSeatController>()?.Stand();
             ClearChildren(surfaceRoot);
             ClearChildren(objectRoot);
             if (grassField != null)

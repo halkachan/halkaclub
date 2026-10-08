@@ -9,12 +9,16 @@ namespace Halka.Game.Interaction
         [SerializeField] private Camera worldCamera;
         [SerializeField] private PlayerMover player;
         [SerializeField] private GridWorld2D world;
+        [SerializeField] private PlayerSeatController seat;
 
         public bool IsInteractableAt(Vector2 screenPosition) => FindAt(screenPosition) != null;
 
         public void TryInteract(Vector2 screenPosition)
         {
-            FindAt(screenPosition)?.Interact();
+            var target = FindAt(screenPosition);
+            if (seat != null && seat.IsSeated &&
+                (!(target is WorldObjectActionInteractable action) || action.transform != seat.ActiveSeat)) return;
+            target?.Interact();
         }
 
         public void TryInteractAhead()
@@ -28,7 +32,9 @@ namespace Halka.Game.Interaction
                 foreach (var component in hit.GetComponentsInParent<MonoBehaviour>())
                 {
                     if (component is IInteractable interactable && component.isActiveAndEnabled &&
-                        world.WorldToCell(component.transform.position) == targetCell)
+                        (component is WorldObjectActionInteractable action
+                            ? action.CanInteractAt(player.Cell, player.Facing)
+                            : world.WorldToCell(component.transform.position) == targetCell))
                     {
                         interactable.Interact();
                         return;

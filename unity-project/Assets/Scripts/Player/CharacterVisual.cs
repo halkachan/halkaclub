@@ -9,6 +9,8 @@ namespace Halka.Game.Player
         public const float OriginalWalkFrameSeconds = 0.15f;
         [SerializeField] private PlayerMover mover;
         [SerializeField] private SpriteRenderer spriteRenderer;
+        [SerializeField] private PlayerSeatController seat;
+        [SerializeField] private Sprite benchSit;
         [SerializeField] private Sprite[] frontIdle;
         [SerializeField] private Sprite[] backIdle;
         [SerializeField] private Sprite[] leftIdle;
@@ -24,6 +26,11 @@ namespace Halka.Game.Player
 
         private void Update()
         {
+            if (seat != null && seat.IsSeated)
+            {
+                spriteRenderer.sprite = benchSit;
+                return;
+            }
             var selected = SelectFrames(mover.Facing, mover.IsMoving);
             if (selected == null || selected.Length == 0) return;
 

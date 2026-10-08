@@ -1,5 +1,6 @@
 using System;
 using Halka.Game.Interaction;
+using Halka.Game.Player;
 using Halka.Game.UI;
 using UnityEngine;
 
@@ -9,6 +10,7 @@ namespace Halka.Game.Input
     public sealed class GameInput : MonoBehaviour
     {
         [SerializeField] private InteractionRouter interaction;
+        [SerializeField] private PlayerSeatController seat;
         [SerializeField] private TouchDpad dpad;
         [SerializeField] private TouchActionButton actionButton;
         [SerializeField] private GameMenuController menu;
@@ -42,8 +44,11 @@ namespace Halka.Game.Input
             if (Direction != Vector2Int.zero || actionButton.JustPressed || pendingClick ||
                 UnityEngine.Input.GetMouseButtonDown(0) || UnityEngine.Input.touchCount > 0)
                 UserActed?.Invoke();
-            if (actionButton.JustPressed && Direction == Vector2Int.zero)
-                interaction.TryInteractAhead();
+            if (actionButton.JustPressed)
+            {
+                if (seat != null && seat.IsSeated) seat.Stand();
+                else if (Direction == Vector2Int.zero) interaction.TryInteractAhead();
+            }
             if (pendingClick)
             {
                 interaction.TryInteract(pendingClickPosition);

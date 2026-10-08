@@ -10,6 +10,7 @@ namespace Halka.Game.Player
         public const int GrassPlayerOcclusionPixels = 10;
 
         [SerializeField] private PlayerMover mover;
+        [SerializeField] private PlayerSeatController seat;
         [SerializeField] private GrassField2D grassField;
         [SerializeField] private SpriteRenderer playerRenderer;
         [SerializeField] private SpriteMask spriteMask;
@@ -50,6 +51,11 @@ namespace Halka.Game.Player
 
         private void RefreshMask()
         {
+            if (seat != null && seat.IsSeated)
+            {
+                SetMasked(false);
+                return;
+            }
             var visualCell = mover.IsMoving && mover.StepProgressNormalized >= 0.5f
                 ? mover.StepToCell : mover.Cell;
             SetMasked(grassField.HasGrass(visualCell));

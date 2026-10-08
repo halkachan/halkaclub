@@ -50,7 +50,7 @@ namespace Halka.Game.Player
 
         public void Tick(float now)
         {
-            if (!AutoEnabled || menuSuspended || house.IsInside)
+            if (!AutoEnabled || menuSuspended || house.IsInside || player.MovementLocked)
             {
                 if (Active) StopAuto();
                 return;

@@ -22,6 +22,7 @@ namespace Halka.Game.Player
         public Vector2Int Cell => motion != null ? motion.Cell : Vector2Int.zero;
         public FacingDirection Facing { get; private set; } = FacingDirection.Down;
         public bool IsMoving => motion != null && motion.IsMoving;
+        public bool MovementLocked { get; private set; }
         public Vector2Int StepFromCell => motion != null ? motion.StepFromCell : Cell;
         public Vector2Int StepToCell => motion != null ? motion.StepToCell : Cell;
         public float StepProgressNormalized => motion != null ? motion.StepProgressNormalized : 1f;
@@ -63,7 +64,7 @@ namespace Halka.Game.Player
 
         private bool TryStepInternal(Vector2Int direction, bool manualInput)
         {
-            if (motion.IsMoving || Mathf.Abs(direction.x) + Mathf.Abs(direction.y) != 1) return false;
+            if (MovementLocked || motion.IsMoving || Mathf.Abs(direction.x) + Mathf.Abs(direction.y) != 1) return false;
             Facing = FacingDirectionExtensions.FromVector(direction);
             var target = motion.Cell + direction;
             if (manualInput && !areaExitNeedsRelease && mapController != null &&
@@ -95,6 +96,11 @@ namespace Halka.Game.Player
         }
 
         public void SetFacing(FacingDirection facing) => Facing = facing;
+        public void SetMovementLocked(bool locked)
+        {
+            if (locked && IsMoving) throw new InvalidOperationException("Cannot sit during a grid step");
+            MovementLocked = locked;
+        }
         public void SetInitialFacing(FacingDirection facing)
         {
             initialFacing = facing.ToString().ToLowerInvariant();

@@ -36,12 +36,13 @@ namespace Halka.Game.Editor
         private const string MessageFontPath = "Assets/Content/Fonts/k8x12L.ttf";
         private const string GameFontAtlasPath = "Assets/Resources/asobi_ui_atlas.png";
         private const string PlayerGrassMaskPath = "Assets/Content/World/player_grass_mask.png";
+        private const string BenchSitPath = "Assets/Content/Character/bench_sit.png";
         private const string GrassPrefabPath = "Assets/Content/World/GrassDecoration.prefab";
         private const string GridPath = "Assets/Content/World/grid.png";
         private const float SpritePixelsPerUnit = 64f;
         internal const float ArtworkFootOffset = GridWorld2D.TileWorldSize / 2f;
 
-        [MenuItem("HALKA/Prepare ver2.3 scene")]
+        [MenuItem("HALKA/Prepare ver2.4 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -69,6 +70,7 @@ namespace Halka.Game.Editor
             var crowWanderMaximum = crowSpawn.Definition.WanderMaximum;
             var frames = LoadFrames("front_idle");
             if (frames.Length == 0) throw new InvalidOperationException("front_idle needs at least one PNG frame");
+            var benchSit = LoadWorldSprite(BenchSitPath, new Vector2(64f, 64f));
             ConfigureSpriteImport(PixelPath, 1f);
             var pixel = AssetDatabase.LoadAssetAtPath<Sprite>(PixelPath);
             if (pixel == null) throw new InvalidOperationException("World pixel import failed");
@@ -121,6 +123,12 @@ namespace Halka.Game.Editor
             var mover = player.AddComponent<PlayerMover>();
             SetString(mover, "initialFacing", playerStart.Facing);
             var visual = player.AddComponent<CharacterVisual>();
+            var seat = player.AddComponent<PlayerSeatController>();
+            SetReference(seat, "mover", mover);
+            SetReference(seat, "world", world);
+            SetReference(seat, "artwork", artwork.transform);
+            SetReference(visual, "seat", seat);
+            SetReference(visual, "benchSit", benchSit);
             var audioSource = player.AddComponent<AudioSource>();
             audioSource.playOnAwake = false;
             audioSource.spatialBlend = 0f;
@@ -211,6 +219,7 @@ namespace Halka.Game.Editor
             SetReference(crowWander, "grassField", grassField);
             var grassOcclusion = player.AddComponent<PlayerGrassOcclusion>();
             SetReference(grassOcclusion, "mover", mover);
+            SetReference(grassOcclusion, "seat", seat);
             SetReference(grassOcclusion, "grassField", grassField);
             SetReference(grassOcclusion, "playerRenderer", playerRenderer);
             SetReference(grassOcclusion, "spriteMask", spriteMask);
@@ -248,9 +257,11 @@ namespace Halka.Game.Editor
             SetReference(interaction, "worldCamera", camera);
             SetReference(interaction, "player", mover);
             SetReference(interaction, "world", world);
+            SetReference(interaction, "seat", seat);
             var inputObject = new GameObject("Input - keyboard pointer");
             var input = inputObject.AddComponent<GameInput>();
             SetReference(input, "interaction", interaction);
+            SetReference(input, "seat", seat);
             SetReference(input, "dpad", dpad);
             SetReference(input, "actionButton", actionButton);
             SetReference(mover, "input", input);
@@ -490,6 +501,7 @@ namespace Halka.Game.Editor
             SetSprites(visual, "backWalk", LoadFrames("walk_back"));
             SetSprites(visual, "leftWalk", LoadFrames("walk_left"));
             SetSprites(visual, "rightWalk", LoadFrames("walk_right"));
+            SetReference(visual, "benchSit", LoadWorldSprite(BenchSitPath, new Vector2(64f, 64f)));
             EditorSceneManager.SaveScene(scene);
         }
 

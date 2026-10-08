@@ -39,7 +39,7 @@ namespace Halka.Game.Editor
             var playerMask = UnityEngine.Object.FindFirstObjectByType<PlayerGrassOcclusion>();
             var footsteps = UnityEngine.Object.FindFirstObjectByType<PlayerFootstepAudio>();
             Check((GameVersion.Value == "2.0" || GameVersion.Value == "2.1" || GameVersion.Value == "2.2" ||
-                   GameVersion.Value == "2.3") &&
+                   GameVersion.Value == "2.3" || GameVersion.Value == "2.4") &&
                 GameVersion.Label == "ver" + GameVersion.Value, "supported game version");
             Check(field != null && room != null && maps != null && area != null && world != null,
                 "both maps and runtime controller exist");
