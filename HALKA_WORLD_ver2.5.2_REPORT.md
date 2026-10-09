@@ -39,7 +39,7 @@
 
 ## 6. 実画面と回帰
 
-- Desktop 1280×720、狭いDesktop 720×600、HP iframe埋め込み、Mobile縦390×844・横844×390をローカルProduction WebGLで目視。初回起動とリサイズ後を確認した。Menu、AUTO、生活記録、看板Message、D-pad、Aは表示範囲内。物理スマホは未確認。
+- Desktop 1280×720、狭いDesktop 720×600、HP iframe埋め込み、Mobile縦390×844・横844×390をローカルProduction WebGLで目視。初回起動とリサイズ後を確認した。Menu、AUTO、生活記録、看板Message、D-pad、Aは表示範囲内。旧版と修正版を同じ390×844でCanvas PNG比較した `mobile-portrait-before-after.png` を保全した。物理スマホは未確認。
 - 正式Mapで上下左右の移動、ベンチ左/右着席・立ち上がり、着席中Menu、看板「ここは HALKA WORLD。」、Crow表示・移動を実操作した。座りSprite、家/草/道の見た目、手書きFontの可読性を確認。家の入退室とAUTOの長時間実操作は今回のブラウザセッションでは未確認で、継承回帰チェックの対象。
 - `Version252Checks.Run` **成功**。内部で `Version251Checks.Run` 以下を実行し、Sprite Import、正面/座り目元、Camera、ベンチ・看板・家具・Menu・Life Log等を継承検証。追加でPlayer描画子階層、草マスク、AtlasのPoint/非圧縮/mipmapなし、PNG alpha、主要文字とfallback経路、GameVersionを検証。ログは保全先 `version252-check.log`。
 - `MapAuthoringChecks.Run` **成功** (`map-authoring-check.log`)。Standalone Core Tests **181/181成功**。MAP EDITOR v0.6とMap JSON v4は変更なし。
@@ -47,6 +47,8 @@
 
 ## 7. 公開・残る問題
 
-- 公開Commit、push、GitHub Pages展開、公開WebGLの確認結果は公開作業後に追記する。
+- 実装Commit `474567411f94a3bbac45d4b727a5f5b84daf9846` をmainへfast-forwardし、通常push済み。force pushなし。GitHub Pagesのrun [37951774318](https://github.com/halkachan/halkaclub/actions/runs/37951774318) はbuild/deployとも成功。
+- 公開URL [https://halkaclub.com/halkaworld/](https://halkaclub.com/halkaworld/) でver2.5.2の起動、歩行、看板文章、ベンチ着席、Menuの文字を実操作で確認。HP Archiveは旧項目を残してver2.5.2を最上段に追加。公開HP、WebGL、`.data`、`.wasm`はHTTP 200。クリック操作の画面で、灰色のにじみ軽減とPlayerの色の保持を確認した。
+- 最終git statusは作業前から存在した `GrassDecoration.prefab` の変更と未追跡 `backup-v05-20261006-174557/` のみ。今回の実装・公開記録はすべてCommit対象で、診断用HTMLは削除した。
 - 576px backingを非整数倍率で表示する画面では、最終device pixelへの厳密な1:1整列は保証できない。今回の比較では顔のコマ揺れと文字の灰色縁は改善した。物理スマホ、異なるDPR機器、長時間AUTOは未検証。
 - 比較資料の保存先: `C:\Users\owner\Documents\ChatGPT\HALKA-v252-backup-20261009`。ユーザーの既存未コミットPrefabとBackupは今回の変更から除外した。
