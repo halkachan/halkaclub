@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &21206269
+--- !u!1 &1774920
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,399 +127,30 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 21206271}
-  - component: {fileID: 21206270}
-  - component: {fileID: 21206276}
-  - component: {fileID: 21206273}
-  - component: {fileID: 21206275}
-  - component: {fileID: 21206274}
-  - component: {fileID: 21206272}
+  - component: {fileID: 1774921}
   m_Layer: 0
-  m_Name: Player - HarukaChan
+  m_Name: Interior objects
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &21206270
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 21206269}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 42c6d7ecfcd49b440896e37c9657238d, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Player.PlayerMover
-  input: {fileID: 766555632}
-  world: {fileID: 2096267139}
-  occupancy: {fileID: 579240159}
-  mapController: {fileID: 116383412}
-  stepSeconds: 0.18
-  initialFacing: down
---- !u!4 &21206271
+--- !u!4 &1774921
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 21206269}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 838398031}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &21206272
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 21206269}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cbed7e0313eb8f44088d355cef1e334a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Player.PlayerGrassOcclusion
-  mover: {fileID: 21206270}
-  seat: {fileID: 21206273}
-  grassField: {fileID: 805781256}
-  playerRenderer: {fileID: 838398032}
-  spriteMask: {fileID: 738559081}
---- !u!114 &21206273
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 21206269}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dff07e040d4ba5b4ca536d34115c6669, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Player.PlayerSeatController
-  mover: {fileID: 21206270}
-  world: {fileID: 2096267139}
-  artwork: {fileID: 838398031}
---- !u!114 &21206274
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 21206269}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a99d9e4e71d1577429a0c707fe7297e1, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Player.PlayerFootstepAudio
-  mover: {fileID: 21206270}
-  source: {fileID: 21206275}
-  footstep: {fileID: 8300000, guid: 9efb68163d15b6f478f31695e101b443, type: 3}
---- !u!82 &21206275
-AudioSource:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 21206269}
-  m_Enabled: 1
-  serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 0}
-  m_PlayOnAwake: 0
-  m_Volume: 0.45
-  m_Pitch: 1
-  Loop: 0
-  Mute: 0
-  Spatialize: 0
-  SpatializePostEffects: 0
-  Priority: 128
-  DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 500
-  Pan2D: 0
-  rolloffMode: 0
-  BypassEffects: 0
-  BypassListenerEffects: 0
-  BypassReverbZones: 0
-  rolloffCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  panLevelCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  spreadCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  reverbZoneMixCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
---- !u!114 &21206276
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 21206269}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 484562ad2c7231a4fb60bb86e213acb6, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Player.CharacterVisual
-  mover: {fileID: 21206270}
-  spriteRenderer: {fileID: 838398032}
-  seat: {fileID: 21206273}
-  benchSit: {fileID: 21300000, guid: 606d90ddaa22ab041a9ee7dc47f7a76e, type: 3}
-  frontIdle:
-  - {fileID: 21300000, guid: 34a28a2f8d3190f4d9f97be041f41f9d, type: 3}
-  - {fileID: 21300000, guid: 11a391c736e7cff4184d4d714e9f28e7, type: 3}
-  backIdle:
-  - {fileID: 21300000, guid: 5e072a5ceadc15c4ba0b66c2eb5a1706, type: 3}
-  - {fileID: 21300000, guid: 104e1a7d06ad5dc48914c7fff9410b7e, type: 3}
-  leftIdle:
-  - {fileID: 21300000, guid: 0202719ea042b4646b18d61865ddba59, type: 3}
-  - {fileID: 21300000, guid: 0ea148dd98f08af49958418d47e5fd97, type: 3}
-  rightIdle:
-  - {fileID: 21300000, guid: 9dc23abc3323cd74d8ebd1c4996992cc, type: 3}
-  - {fileID: 21300000, guid: b4b86d95dd796ab46b7b4cbefcca737f, type: 3}
-  frontWalk:
-  - {fileID: 21300000, guid: be54a809e6fd1a04ab6ded0976885c92, type: 3}
-  - {fileID: 21300000, guid: 42f867209372e074fb6ddbe798e38845, type: 3}
-  - {fileID: 21300000, guid: 4c33327e56574b141ab0da0616901584, type: 3}
-  - {fileID: 21300000, guid: 3ea77c7d854273b41b8b4909ac75fbd3, type: 3}
-  backWalk:
-  - {fileID: 21300000, guid: 72abc1ad5b42b3841b3545a4ca8a8c71, type: 3}
-  - {fileID: 21300000, guid: 17e28c2aaf2d658438b8d9c06efff11e, type: 3}
-  - {fileID: 21300000, guid: 66436904408ff9a4795bd01a89d45fd8, type: 3}
-  - {fileID: 21300000, guid: 9362e9dd502c3a94386577898a19fd99, type: 3}
-  leftWalk:
-  - {fileID: 21300000, guid: 403079da43df29447836b1066ff98a57, type: 3}
-  - {fileID: 21300000, guid: 263a633f59e1d644cb8ec4f4c1a7ba71, type: 3}
-  - {fileID: 21300000, guid: e6fb355e0445b5745a9afe3e7749790e, type: 3}
-  - {fileID: 21300000, guid: 0258432c8d710464ab4a955d2dd6cdd8, type: 3}
-  rightWalk:
-  - {fileID: 21300000, guid: 2ab85f6682d029843981a1087bca8e62, type: 3}
-  - {fileID: 21300000, guid: eda94f0fb00a03448aa4937166f4dc8f, type: 3}
-  - {fileID: 21300000, guid: 11afb286725589e42b91c29daad0344b, type: 3}
-  - {fileID: 21300000, guid: e7298b4d37f83284e926343a7d8ff7c1, type: 3}
---- !u!1 &22675528
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 22675529}
-  - component: {fileID: 22675530}
-  m_Layer: 0
-  m_Name: FirstDay - 32px cell boundaries
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &22675529
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 22675528}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 528460979}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &22675530
-SpriteRenderer:
-  serializedVersion: 2
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 22675528}
-  m_Enabled: 1
-  m_CastShadows: 0
-  m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 0
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 0
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: -8
-  m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: afec0c241f3911940964f7fe5c06403b, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 0
-  m_FlipY: 0
-  m_DrawMode: 0
-  m_Size: {x: 10.5, y: 6.5}
-  m_AdaptiveModeThreshold: 0.5
-  m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
-  m_SpriteSortPoint: 0
---- !u!1 &116383411
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 116383413}
-  - component: {fileID: 116383412}
-  m_Layer: 0
-  m_Name: Map runtime controller
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &116383412
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 116383411}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 96672b29280c2874d889dc156977fe3d, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.MapWorldController2D
-  maps:
-  - {fileID: 11400000, guid: 0c08fdb3db9f7264084d83227ce95319, type: 2}
-  - {fileID: 11400000, guid: ef90447cc6baf694bb665328e689fe2f, type: 2}
-  loaders:
-  - {fileID: 547220959}
-  - {fileID: 1197243446}
-  roots:
-  - {fileID: 528460978}
-  - {fileID: 1494532269}
-  player: {fileID: 21206270}
-  grassOcclusion: {fileID: 21206272}
-  grassFields:
-  - {fileID: 805781256}
-  - {fileID: 378960749}
-  cameraFollow: {fileID: 1779046236}
-  worldCamera: {fileID: 1779046235}
-  houseArea: {fileID: 143085398}
---- !u!4 &116383413
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 116383411}
+  m_GameObject: {fileID: 1774920}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1847748110}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &143085397
+--- !u!1 &175768952
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -527,51 +158,100 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 143085399}
-  - component: {fileID: 143085398}
+  - component: {fileID: 175768955}
+  - component: {fileID: 175768953}
+  - component: {fileID: 175768954}
   m_Layer: 0
-  m_Name: House area switch
-  m_TagString: Untagged
+  m_Name: Main Camera
+  m_TagString: MainCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &143085398
+--- !u!20 &175768953
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 175768952}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0.9, g: 0.93, b: 0.82, a: 1}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.3
+  far clip plane: 1000
+  field of view: 60
+  orthographic: 1
+  orthographic size: 4.5
+  m_Depth: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 1
+  m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 1
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
+--- !u!114 &175768954
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 143085397}
+  m_GameObject: {fileID: 175768952}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b743980f709c1044993c1847161378b4, type: 3}
+  m_Script: {fileID: 11500000, guid: 6824cb669b2278a4189e1e2143332543, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.HouseArea2D
-  world: {fileID: 2096267139}
-  player: {fileID: 21206270}
-  grassOcclusion: {fileID: 21206272}
-  exteriorGrass: {fileID: 805781256}
-  interiorGrass: {fileID: 378960749}
-  maps: {fileID: 116383412}
-  worldCamera: {fileID: 1779046235}
-  cameraFollow: {fileID: 1779046236}
---- !u!4 &143085399
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.CameraControl.CameraFollow2D
+  target: {fileID: 1482960081}
+  cameraComponent: {fileID: 175768953}
+  smoothTime: 0.2
+  worldMin: {x: -6, y: -4}
+  worldMax: {x: 6, y: 4}
+--- !u!4 &175768955
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 143085397}
+  m_GameObject: {fileID: 175768952}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &216772100
+--- !u!1 &247054227
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -579,56 +259,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 216772102}
-  - component: {fileID: 216772101}
-  m_Layer: 0
-  m_Name: UI - game menu
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &216772101
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 216772100}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e964a3fb89b82f64cbf7254e3c3c07dc, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.UI.GameMenuController
-  autoMode: {fileID: 297460456}
-  lifeLog: {fileID: 1085534970}
-  hud: {fileID: 1626585057}
-  font: {fileID: 12800000, guid: 0889c764faedb994682cf9be4eb6bf6f, type: 3}
---- !u!4 &216772102
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 216772100}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &297460455
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 297460457}
-  - component: {fileID: 297460456}
+  - component: {fileID: 247054229}
+  - component: {fileID: 247054228}
   m_Layer: 0
   m_Name: AUTO living controller
   m_TagString: Untagged
@@ -636,32 +268,32 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &297460456
+--- !u!114 &247054228
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 297460455}
+  m_GameObject: {fileID: 247054227}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fa2a42660a9346c4ebc01fbd06aa68f5, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Player.AutoModeController
-  input: {fileID: 766555632}
-  player: {fileID: 21206270}
-  world: {fileID: 2096267139}
-  house: {fileID: 143085398}
-  occupancy: {fileID: 579240159}
-  crow: {fileID: 1192234931}
+  input: {fileID: 763796543}
+  player: {fileID: 1482960080}
+  world: {fileID: 1671515222}
+  house: {fileID: 611621590}
+  occupancy: {fileID: 1173642679}
+  crow: {fileID: 950795927}
   enabledByDefault: 1
---- !u!4 &297460457
+--- !u!4 &247054229
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 297460455}
+  m_GameObject: {fileID: 247054227}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -670,7 +302,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &345922684
+--- !u!1 &261524739
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -678,8 +310,56 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 345922685}
-  - component: {fileID: 345922686}
+  - component: {fileID: 261524741}
+  - component: {fileID: 261524740}
+  m_Layer: 0
+  m_Name: UI - minimal HUD
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &261524740
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 261524739}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b5d3066a8250174aa01a6d01cf0b71f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.UI.GameHud
+  dpad: {fileID: 375948445}
+  actionButton: {fileID: 453675378}
+  messageFont: {fileID: 12800000, guid: 0889c764faedb994682cf9be4eb6bf6f, type: 3}
+  messageSeconds: 2
+--- !u!4 &261524741
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 261524739}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &307184496
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 307184497}
+  - component: {fileID: 307184498}
   m_Layer: 0
   m_Name: Interior dark backdrop
   m_TagString: Untagged
@@ -687,29 +367,29 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &345922685
+--- !u!4 &307184497
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 345922684}
+  m_GameObject: {fileID: 307184496}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 20, y: 14, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1494532270}
+  m_Father: {fileID: 1847748110}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &345922686
+--- !u!212 &307184498
 SpriteRenderer:
   serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 345922684}
+  m_GameObject: {fileID: 307184496}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -761,7 +441,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!1 &378960748
+--- !u!1 &375948444
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -769,280 +449,38 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 378960750}
-  - component: {fileID: 378960749}
+  - component: {fileID: 375948446}
+  - component: {fileID: 375948445}
   m_Layer: 0
-  m_Name: Interior grass decorations
+  m_Name: UI - touch D-pad
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &378960749
+--- !u!114 &375948445
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 378960748}
+  m_GameObject: {fileID: 375948444}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cbc2683d99865ba44b6f1d19d9e55819, type: 3}
+  m_Script: {fileID: 11500000, guid: 41725becf53aecb458fb9dd4a70dfaea, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.GrassField2D
-  world: {fileID: 2096267139}
-  player: {fileID: 21206270}
-  idleSprite: {fileID: 21300000, guid: be8bdba4e5f990c4fa9a89b1aee67274, type: 3}
-  rustleFrames:
-  - {fileID: 21300000, guid: f3b1ae7070a78454d817ea015658b7bc, type: 3}
-  - {fileID: 21300000, guid: 1c91733887f874447b1cfa9eca84c431, type: 3}
-  - {fileID: 21300000, guid: 17c689bdc7b6ee948b82e28af7c5c899, type: 3}
-  - {fileID: 21300000, guid: 5bdf06370c595df4d96611cc22b0b933, type: 3}
-  - {fileID: 21300000, guid: fcf56c4d7ec6f7844b12fa5227d86189, type: 3}
-  frameSeconds:
-  - 0.09
-  - 0.09
-  - 0.09
-  - 0.09
-  - 0.42
---- !u!4 &378960750
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Input.TouchDpad
+  showInEditor: 0
+  buttonFraction: 0.21
+  minButtonPixels: 64
+  maxButtonPixels: 152
+--- !u!4 &375948446
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 378960748}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1494532270}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &528460978
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 528460979}
-  m_Layer: 0
-  m_Name: Exterior - first field
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &528460979
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 528460978}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 970388993}
-  - {fileID: 2130508559}
-  - {fileID: 22675529}
-  - {fileID: 1323757389}
-  - {fileID: 1192234927}
-  - {fileID: 805781257}
-  - {fileID: 547220958}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &547220957
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 547220958}
-  - component: {fileID: 547220959}
-  m_Layer: 0
-  m_Name: Map runtime loader
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &547220958
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 547220957}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 528460979}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &547220959
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 547220957}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a2b71846f87f27a45bff41b3d1257b8d, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.MapRuntimeLoader2D
-  map: {fileID: 11400000, guid: 0c08fdb3db9f7264084d83227ce95319, type: 2}
-  world: {fileID: 2096267139}
-  surfaceField: {fileID: 2130508560}
-  grassField: {fileID: 805781256}
-  surfaceRoot: {fileID: 2130508559}
-  objectRoot: {fileID: 1323757389}
-  entityRoot: {fileID: 528460979}
-  grassPrefab: {fileID: 8666602616458362249, guid: a114d0310fc0a9b4e95b30799eeacdd2, type: 3}
-  player: {fileID: 21206270}
-  playerRenderer: {fileID: 838398032}
-  hud: {fileID: 1626585057}
-  crow: {fileID: 1192234931}
---- !u!1 &562809439
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 562809440}
-  - component: {fileID: 562809441}
-  m_Layer: 0
-  m_Name: Crow grass foot mask
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &562809440
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 562809439}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1192234927}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!331 &562809441
-SpriteMask:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 562809439}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 0
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 10758, guid: 0000000000000000f000000000000000, type: 0}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 56b4356d3cc44c44b9a41c4436a6e233, type: 3}
-  m_MaskAlphaCutoff: 0.2
-  m_FrontSortingLayerID: 0
-  m_BackSortingLayerID: 0
-  m_FrontSortingLayer: 0
-  m_BackSortingLayer: 0
-  m_FrontSortingOrder: 0
-  m_BackSortingOrder: 0
-  m_IsCustomRangeActive: 0
-  m_SpriteSortPoint: 0
-  m_MaskSource: 0
---- !u!1 &579240158
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 579240160}
-  - component: {fileID: 579240159}
-  m_Layer: 0
-  m_Name: Dynamic grid occupancy
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &579240159
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 579240158}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8df530ba78b4c2c41a98f7c31f0b573c, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.DynamicGridOccupancy2D
-  player: {fileID: 21206270}
-  crow: {fileID: 1192234931}
---- !u!4 &579240160
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 579240158}
+  m_GameObject: {fileID: 375948444}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1051,7 +489,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &716988179
+--- !u!1 &453675377
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1059,8 +497,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 716988181}
-  - component: {fileID: 716988180}
+  - component: {fileID: 453675379}
+  - component: {fileID: 453675378}
   m_Layer: 0
   m_Name: UI - touch action
   m_TagString: Untagged
@@ -1068,30 +506,30 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &716988180
+--- !u!114 &453675378
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 716988179}
+  m_GameObject: {fileID: 453675377}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f3e23a5a8392a7745812cc10b73f62bd, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Input.TouchActionButton
-  dpad: {fileID: 1212447947}
+  dpad: {fileID: 375948445}
   fallbackFont: {fileID: 12800000, guid: 0889c764faedb994682cf9be4eb6bf6f, type: 3}
   buttonFraction: 0.21
   minButtonPixels: 64
   maxButtonPixels: 152
---- !u!4 &716988181
+--- !u!4 &453675379
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 716988179}
+  m_GameObject: {fileID: 453675377}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1100,7 +538,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &738559079
+--- !u!1 &575141758
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1108,131 +546,38 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 738559080}
-  - component: {fileID: 738559081}
+  - component: {fileID: 575141760}
+  - component: {fileID: 575141759}
   m_Layer: 0
-  m_Name: Player grass foot mask
+  m_Name: UI - game menu
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &738559080
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 738559079}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 838398031}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!331 &738559081
-SpriteMask:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 738559079}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 0
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 10758, guid: 0000000000000000f000000000000000, type: 0}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: ed641428a2bca7843940d48c823af339, type: 3}
-  m_MaskAlphaCutoff: 0.2
-  m_FrontSortingLayerID: 0
-  m_BackSortingLayerID: 0
-  m_FrontSortingLayer: 0
-  m_BackSortingLayer: 0
-  m_FrontSortingOrder: 0
-  m_BackSortingOrder: 0
-  m_IsCustomRangeActive: 0
-  m_SpriteSortPoint: 0
-  m_MaskSource: 0
---- !u!1 &766555631
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 766555633}
-  - component: {fileID: 766555632}
-  m_Layer: 0
-  m_Name: Input - keyboard pointer
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &766555632
+--- !u!114 &575141759
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 766555631}
+  m_GameObject: {fileID: 575141758}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 864933752d72f2648a34660b540d7a1a, type: 3}
+  m_Script: {fileID: 11500000, guid: e964a3fb89b82f64cbf7254e3c3c07dc, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Input.GameInput
-  interaction: {fileID: 1439886509}
-  seat: {fileID: 21206273}
-  dpad: {fileID: 1212447947}
-  actionButton: {fileID: 716988180}
-  menu: {fileID: 216772101}
-  clickMovementLimit: 24
---- !u!4 &766555633
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.UI.GameMenuController
+  autoMode: {fileID: 247054228}
+  lifeLog: {fileID: 1624562588}
+  hud: {fileID: 261524740}
+  font: {fileID: 12800000, guid: 0889c764faedb994682cf9be4eb6bf6f, type: 3}
+--- !u!4 &575141760
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 766555631}
+  m_GameObject: {fileID: 575141758}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1241,7 +586,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &805781255
+--- !u!1 &579399123
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1249,67 +594,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 805781257}
-  - component: {fileID: 805781256}
-  m_Layer: 0
-  m_Name: Grass decorations
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &805781256
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 805781255}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cbc2683d99865ba44b6f1d19d9e55819, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.GrassField2D
-  world: {fileID: 2096267139}
-  player: {fileID: 21206270}
-  idleSprite: {fileID: 21300000, guid: be8bdba4e5f990c4fa9a89b1aee67274, type: 3}
-  rustleFrames:
-  - {fileID: 21300000, guid: f3b1ae7070a78454d817ea015658b7bc, type: 3}
-  - {fileID: 21300000, guid: 1c91733887f874447b1cfa9eca84c431, type: 3}
-  - {fileID: 21300000, guid: 17c689bdc7b6ee948b82e28af7c5c899, type: 3}
-  - {fileID: 21300000, guid: 5bdf06370c595df4d96611cc22b0b933, type: 3}
-  - {fileID: 21300000, guid: fcf56c4d7ec6f7844b12fa5227d86189, type: 3}
-  frameSeconds:
-  - 0.09
-  - 0.09
-  - 0.09
-  - 0.09
-  - 0.42
---- !u!4 &805781257
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 805781255}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 528460979}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &838208565
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 838208566}
-  - component: {fileID: 838208567}
+  - component: {fileID: 579399124}
+  - component: {fileID: 579399125}
   m_Layer: 0
   m_Name: Interior surfaces
   m_TagString: Untagged
@@ -1317,35 +603,35 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &838208566
+--- !u!4 &579399124
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 838208565}
+  m_GameObject: {fileID: 579399123}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1494532270}
+  m_Father: {fileID: 1847748110}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &838208567
+--- !u!114 &579399125
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 838208565}
+  m_GameObject: {fileID: 579399123}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b1b78e608da7e94ea78f61081e716f8, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.GroundSurfaceField2D
   cells: []
---- !u!1 &838398030
+--- !u!1 &591784481
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1353,100 +639,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 838398031}
-  - component: {fileID: 838398032}
-  m_Layer: 0
-  m_Name: Player artwork
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &838398031
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 838398030}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.25, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 738559080}
-  m_Father: {fileID: 21206271}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &838398032
-SpriteRenderer:
-  serializedVersion: 2
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 838398030}
-  m_Enabled: 1
-  m_CastShadows: 0
-  m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 0
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 0
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 10
-  m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 34a28a2f8d3190f4d9f97be041f41f9d, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 0
-  m_FlipY: 0
-  m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
-  m_AdaptiveModeThreshold: 0.5
-  m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
-  m_SpriteSortPoint: 0
---- !u!1 &970388992
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 970388993}
-  - component: {fileID: 970388994}
+  - component: {fileID: 591784482}
+  - component: {fileID: 591784483}
   m_Layer: 0
   m_Name: FirstDay - small ground
   m_TagString: Untagged
@@ -1454,29 +648,29 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &970388993
+--- !u!4 &591784482
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 970388992}
+  m_GameObject: {fileID: 591784481}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 12, y: 8, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 528460979}
+  m_Father: {fileID: 757340542}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &970388994
+--- !u!212 &591784483
 SpriteRenderer:
   serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 970388992}
+  m_GameObject: {fileID: 591784481}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -1528,7 +722,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!1 &1085534969
+--- !u!1 &611621589
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1536,35 +730,42 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1085534971}
-  - component: {fileID: 1085534970}
+  - component: {fileID: 611621591}
+  - component: {fileID: 611621590}
   m_Layer: 0
-  m_Name: Life log controller
+  m_Name: House area switch
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1085534970
+--- !u!114 &611621590
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1085534969}
+  m_GameObject: {fileID: 611621589}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 799ea12db75712a4890de39bab7e164f, type: 3}
+  m_Script: {fileID: 11500000, guid: b743980f709c1044993c1847161378b4, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Player.LifeLogController
-  player: {fileID: 21206270}
---- !u!4 &1085534971
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.HouseArea2D
+  world: {fileID: 1671515222}
+  player: {fileID: 1482960080}
+  grassOcclusion: {fileID: 1482960084}
+  exteriorGrass: {fileID: 1845301142}
+  interiorGrass: {fileID: 1641686448}
+  maps: {fileID: 678197401}
+  worldCamera: {fileID: 175768953}
+  cameraFollow: {fileID: 175768954}
+--- !u!4 &611621591
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1085534969}
+  m_GameObject: {fileID: 611621589}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1573,7 +774,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1192234926
+--- !u!1 &678197400
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1581,14 +782,310 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1192234927}
-  - component: {fileID: 1192234934}
-  - component: {fileID: 1192234933}
-  - component: {fileID: 1192234932}
-  - component: {fileID: 1192234931}
-  - component: {fileID: 1192234930}
-  - component: {fileID: 1192234929}
-  - component: {fileID: 1192234928}
+  - component: {fileID: 678197402}
+  - component: {fileID: 678197401}
+  m_Layer: 0
+  m_Name: Map runtime controller
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &678197401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 678197400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96672b29280c2874d889dc156977fe3d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.MapWorldController2D
+  maps:
+  - {fileID: 11400000, guid: 0c08fdb3db9f7264084d83227ce95319, type: 2}
+  - {fileID: 11400000, guid: ef90447cc6baf694bb665328e689fe2f, type: 2}
+  loaders:
+  - {fileID: 890566201}
+  - {fileID: 2089843633}
+  roots:
+  - {fileID: 757340541}
+  - {fileID: 1847748109}
+  player: {fileID: 1482960080}
+  grassOcclusion: {fileID: 1482960084}
+  grassFields:
+  - {fileID: 1845301142}
+  - {fileID: 1641686448}
+  cameraFollow: {fileID: 175768954}
+  worldCamera: {fileID: 175768953}
+  houseArea: {fileID: 611621590}
+--- !u!4 &678197402
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 678197400}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &757340541
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 757340542}
+  m_Layer: 0
+  m_Name: Exterior - first field
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &757340542
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 757340541}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 591784482}
+  - {fileID: 1157481283}
+  - {fileID: 798503786}
+  - {fileID: 1026543542}
+  - {fileID: 950795923}
+  - {fileID: 1845301143}
+  - {fileID: 890566200}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &763796542
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 763796544}
+  - component: {fileID: 763796543}
+  m_Layer: 0
+  m_Name: Input - keyboard pointer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &763796543
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 763796542}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 864933752d72f2648a34660b540d7a1a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Input.GameInput
+  interaction: {fileID: 1726323119}
+  seat: {fileID: 1482960083}
+  dpad: {fileID: 375948445}
+  actionButton: {fileID: 453675378}
+  menu: {fileID: 575141759}
+  clickMovementLimit: 24
+--- !u!4 &763796544
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 763796542}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &798503785
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 798503786}
+  - component: {fileID: 798503787}
+  m_Layer: 0
+  m_Name: FirstDay - 32px cell boundaries
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &798503786
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 798503785}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 757340542}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &798503787
+SpriteRenderer:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 798503785}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -8
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: 21300000, guid: afec0c241f3911940964f7fe5c06403b, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 10.5, y: 6.5}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_SpriteSortPoint: 0
+--- !u!1 &890566199
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 890566200}
+  - component: {fileID: 890566201}
+  m_Layer: 0
+  m_Name: Map runtime loader
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &890566200
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 890566199}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 757340542}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &890566201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 890566199}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2b71846f87f27a45bff41b3d1257b8d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.MapRuntimeLoader2D
+  map: {fileID: 11400000, guid: 0c08fdb3db9f7264084d83227ce95319, type: 2}
+  world: {fileID: 1671515222}
+  surfaceField: {fileID: 1157481284}
+  grassField: {fileID: 1845301142}
+  surfaceRoot: {fileID: 1157481283}
+  objectRoot: {fileID: 1026543542}
+  entityRoot: {fileID: 757340542}
+  grassPrefab: {fileID: 8666602616458362249, guid: a114d0310fc0a9b4e95b30799eeacdd2, type: 3}
+  player: {fileID: 1482960080}
+  playerRenderer: {fileID: 1543769702}
+  hud: {fileID: 261524740}
+  crow: {fileID: 950795927}
+--- !u!1 &950795922
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 950795923}
+  - component: {fileID: 950795930}
+  - component: {fileID: 950795929}
+  - component: {fileID: 950795928}
+  - component: {fileID: 950795927}
+  - component: {fileID: 950795926}
+  - component: {fileID: 950795925}
+  - component: {fileID: 950795924}
   m_Layer: 0
   m_Name: Crow - first neighbor
   m_TagString: Untagged
@@ -1596,59 +1093,59 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1192234927
+--- !u!4 &950795923
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1192234926}
+  m_GameObject: {fileID: 950795922}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 3.5, y: 1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 562809440}
-  m_Father: {fileID: 528460979}
+  - {fileID: 1352102708}
+  m_Father: {fileID: 757340542}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1192234928
+--- !u!114 &950795924
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1192234926}
+  m_GameObject: {fileID: 950795922}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9ea1086b51a3c1f44b75fae82e868523, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.CrowGrassOcclusion
-  crow: {fileID: 1192234931}
-  grassField: {fileID: 805781256}
-  artwork: {fileID: 1192234934}
-  spriteMask: {fileID: 562809441}
---- !u!114 &1192234929
+  crow: {fileID: 950795927}
+  grassField: {fileID: 1845301142}
+  artwork: {fileID: 950795930}
+  spriteMask: {fileID: 1352102709}
+--- !u!114 &950795925
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1192234926}
+  m_GameObject: {fileID: 950795922}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fb4d0f0a54b9a6e4db379aad8da6fd83, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Interaction.InteractionAudio
-  audioSource: {fileID: 1192234930}
+  audioSource: {fileID: 950795926}
   clip: {fileID: 8300000, guid: 54cac2543705808498b126de200b5e44, type: 3}
---- !u!82 &1192234930
+--- !u!82 &950795926
 AudioSource:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1192234926}
+  m_GameObject: {fileID: 950795922}
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
@@ -1739,23 +1236,23 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &1192234931
+--- !u!114 &950795927
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1192234926}
+  m_GameObject: {fileID: 950795922}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e5189d82199fc4f4c9a8f883215d427d, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.CrowWander2D
-  world: {fileID: 2096267139}
-  occupancy: {fileID: 579240159}
-  grassField: {fileID: 805781256}
-  artwork: {fileID: 1192234934}
-  clickCollider: {fileID: 1192234933}
+  world: {fileID: 1671515222}
+  occupancy: {fileID: 1173642679}
+  grassField: {fileID: 1845301142}
+  artwork: {fileID: 950795930}
+  clickCollider: {fileID: 950795929}
   idleDown: {fileID: 21300000, guid: e7ad8b0d6c47fee43aa461c9e1ab064e, type: 3}
   idleUp: {fileID: 21300000, guid: c67d5ec0a2afc4e4d9f30c1c8faf9eb4, type: 3}
   idleLeft: {fileID: 21300000, guid: 294352ce90e7e55428bb4bd5d87c9941, type: 3}
@@ -1776,31 +1273,31 @@ MonoBehaviour:
   wanderMaximumOffset: {x: 1, y: 2}
   spawnCell: {x: 7, y: 2}
   initialFacing: right
---- !u!114 &1192234932
+--- !u!114 &950795928
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1192234926}
+  m_GameObject: {fileID: 950795922}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d2a1334a05424d8458a61dc5863981cf, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Interaction.ExamineInteractable
   message: "\u30AB\u30A1\u3002"
-  player: {fileID: 21206270}
-  world: {fileID: 2096267139}
-  hud: {fileID: 1626585057}
-  availability: {fileID: 1192234931}
-  interactionAudio: {fileID: 1192234929}
---- !u!61 &1192234933
+  player: {fileID: 1482960080}
+  world: {fileID: 1671515222}
+  hud: {fileID: 261524740}
+  availability: {fileID: 950795927}
+  interactionAudio: {fileID: 950795925}
+--- !u!61 &950795929
 BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1192234926}
+  m_GameObject: {fileID: 950795922}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -1840,14 +1337,14 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 0.5, y: 0.5}
   m_EdgeRadius: 0
---- !u!212 &1192234934
+--- !u!212 &950795930
 SpriteRenderer:
   serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1192234926}
+  m_GameObject: {fileID: 950795922}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -1899,7 +1396,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!1 &1197243444
+--- !u!1 &1026543541
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1907,142 +1404,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1197243445}
-  - component: {fileID: 1197243446}
-  m_Layer: 0
-  m_Name: Interior map loader
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1197243445
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1197243444}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1494532270}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1197243446
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1197243444}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a2b71846f87f27a45bff41b3d1257b8d, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.MapRuntimeLoader2D
-  map: {fileID: 11400000, guid: ef90447cc6baf694bb665328e689fe2f, type: 2}
-  world: {fileID: 2096267139}
-  surfaceField: {fileID: 838208567}
-  grassField: {fileID: 378960749}
-  surfaceRoot: {fileID: 838208566}
-  objectRoot: {fileID: 1207631365}
-  entityRoot: {fileID: 1494532270}
-  grassPrefab: {fileID: 8666602616458362249, guid: a114d0310fc0a9b4e95b30799eeacdd2, type: 3}
-  player: {fileID: 21206270}
-  playerRenderer: {fileID: 838398032}
-  hud: {fileID: 1626585057}
-  crow: {fileID: 1192234931}
---- !u!1 &1207631364
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1207631365}
-  m_Layer: 0
-  m_Name: Interior objects
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1207631365
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1207631364}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1494532270}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1212447946
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1212447948}
-  - component: {fileID: 1212447947}
-  m_Layer: 0
-  m_Name: UI - touch D-pad
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1212447947
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1212447946}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 41725becf53aecb458fb9dd4a70dfaea, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Input.TouchDpad
-  showInEditor: 0
-  buttonFraction: 0.21
-  minButtonPixels: 64
-  maxButtonPixels: 152
---- !u!4 &1212447948
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1212447946}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1323757388
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1323757389}
+  - component: {fileID: 1026543542}
   m_Layer: 0
   m_Name: Map world objects
   m_TagString: Untagged
@@ -2050,22 +1412,22 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1323757389
+--- !u!4 &1026543542
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1323757388}
+  m_GameObject: {fileID: 1026543541}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 528460979}
+  m_Father: {fileID: 757340542}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1439886508
+--- !u!1 &1157481282
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2073,38 +1435,81 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1439886510}
-  - component: {fileID: 1439886509}
+  - component: {fileID: 1157481283}
+  - component: {fileID: 1157481284}
   m_Layer: 0
-  m_Name: Interaction Router
+  m_Name: Ground surface overrides
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1439886509
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1439886508}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66a1a71f3acfa5c4b827e1399bc803ae, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Interaction.InteractionRouter
-  worldCamera: {fileID: 1779046235}
-  player: {fileID: 21206270}
-  world: {fileID: 2096267139}
-  seat: {fileID: 21206273}
---- !u!4 &1439886510
+--- !u!4 &1157481283
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1439886508}
+  m_GameObject: {fileID: 1157481282}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 757340542}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1157481284
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1157481282}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b1b78e608da7e94ea78f61081e716f8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.GroundSurfaceField2D
+  cells: []
+--- !u!1 &1173642678
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1173642680}
+  - component: {fileID: 1173642679}
+  m_Layer: 0
+  m_Name: Dynamic grid occupancy
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1173642679
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1173642678}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8df530ba78b4c2c41a98f7c31f0b573c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.DynamicGridOccupancy2D
+  player: {fileID: 1482960080}
+  crow: {fileID: 950795927}
+--- !u!4 &1173642680
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1173642678}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -2113,7 +1518,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1494532269
+--- !u!1 &1257956782
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2121,35 +1526,429 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1494532270}
+  - component: {fileID: 1257956783}
+  - component: {fileID: 1257956784}
   m_Layer: 0
-  m_Name: Interior - halka_house
+  m_Name: Player grass foot mask
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &1494532270
+  m_IsActive: 1
+--- !u!4 &1257956783
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1494532269}
+  m_GameObject: {fileID: 1257956782}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1543769700}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!331 &1257956784
+SpriteMask:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1257956782}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 10758, guid: 0000000000000000f000000000000000, type: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: 21300000, guid: ed641428a2bca7843940d48c823af339, type: 3}
+  m_MaskAlphaCutoff: 0.2
+  m_FrontSortingLayerID: 0
+  m_BackSortingLayerID: 0
+  m_FrontSortingLayer: 0
+  m_BackSortingLayer: 0
+  m_FrontSortingOrder: 0
+  m_BackSortingOrder: 0
+  m_IsCustomRangeActive: 0
+  m_SpriteSortPoint: 0
+  m_MaskSource: 0
+--- !u!1 &1352102707
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1352102708}
+  - component: {fileID: 1352102709}
+  m_Layer: 0
+  m_Name: Crow grass foot mask
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1352102708
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1352102707}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 950795923}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!331 &1352102709
+SpriteMask:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1352102707}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 10758, guid: 0000000000000000f000000000000000, type: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: 21300000, guid: 56b4356d3cc44c44b9a41c4436a6e233, type: 3}
+  m_MaskAlphaCutoff: 0.2
+  m_FrontSortingLayerID: 0
+  m_BackSortingLayerID: 0
+  m_FrontSortingLayer: 0
+  m_BackSortingLayer: 0
+  m_FrontSortingOrder: 0
+  m_BackSortingOrder: 0
+  m_IsCustomRangeActive: 0
+  m_SpriteSortPoint: 0
+  m_MaskSource: 0
+--- !u!1 &1482960079
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1482960081}
+  - component: {fileID: 1482960080}
+  - component: {fileID: 1482960082}
+  - component: {fileID: 1482960083}
+  - component: {fileID: 1482960086}
+  - component: {fileID: 1482960085}
+  - component: {fileID: 1482960084}
+  m_Layer: 0
+  m_Name: Player - HarukaChan
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1482960080
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482960079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42c6d7ecfcd49b440896e37c9657238d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Player.PlayerMover
+  input: {fileID: 763796543}
+  world: {fileID: 1671515222}
+  occupancy: {fileID: 1173642679}
+  mapController: {fileID: 678197401}
+  stepSeconds: 0.18
+  initialFacing: down
+--- !u!4 &1482960081
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482960079}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 345922685}
-  - {fileID: 838208566}
-  - {fileID: 378960750}
-  - {fileID: 1207631365}
-  - {fileID: 1197243445}
+  - {fileID: 2092683586}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1626585056
+--- !u!114 &1482960082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482960079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 484562ad2c7231a4fb60bb86e213acb6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Player.CharacterVisual
+  mover: {fileID: 1482960080}
+  spriteRenderer: {fileID: 1543769702}
+  seat: {fileID: 1482960083}
+  benchSit: {fileID: 21300000, guid: 606d90ddaa22ab041a9ee7dc47f7a76e, type: 3}
+  frontIdle:
+  - {fileID: 21300000, guid: 34a28a2f8d3190f4d9f97be041f41f9d, type: 3}
+  - {fileID: 21300000, guid: 11a391c736e7cff4184d4d714e9f28e7, type: 3}
+  backIdle:
+  - {fileID: 21300000, guid: 5e072a5ceadc15c4ba0b66c2eb5a1706, type: 3}
+  - {fileID: 21300000, guid: 104e1a7d06ad5dc48914c7fff9410b7e, type: 3}
+  leftIdle:
+  - {fileID: 21300000, guid: 0202719ea042b4646b18d61865ddba59, type: 3}
+  - {fileID: 21300000, guid: 0ea148dd98f08af49958418d47e5fd97, type: 3}
+  rightIdle:
+  - {fileID: 21300000, guid: 9dc23abc3323cd74d8ebd1c4996992cc, type: 3}
+  - {fileID: 21300000, guid: b4b86d95dd796ab46b7b4cbefcca737f, type: 3}
+  frontWalk:
+  - {fileID: 21300000, guid: be54a809e6fd1a04ab6ded0976885c92, type: 3}
+  - {fileID: 21300000, guid: 42f867209372e074fb6ddbe798e38845, type: 3}
+  - {fileID: 21300000, guid: 4c33327e56574b141ab0da0616901584, type: 3}
+  - {fileID: 21300000, guid: 3ea77c7d854273b41b8b4909ac75fbd3, type: 3}
+  backWalk:
+  - {fileID: 21300000, guid: 72abc1ad5b42b3841b3545a4ca8a8c71, type: 3}
+  - {fileID: 21300000, guid: 17e28c2aaf2d658438b8d9c06efff11e, type: 3}
+  - {fileID: 21300000, guid: 66436904408ff9a4795bd01a89d45fd8, type: 3}
+  - {fileID: 21300000, guid: 9362e9dd502c3a94386577898a19fd99, type: 3}
+  leftWalk:
+  - {fileID: 21300000, guid: 403079da43df29447836b1066ff98a57, type: 3}
+  - {fileID: 21300000, guid: 263a633f59e1d644cb8ec4f4c1a7ba71, type: 3}
+  - {fileID: 21300000, guid: e6fb355e0445b5745a9afe3e7749790e, type: 3}
+  - {fileID: 21300000, guid: 0258432c8d710464ab4a955d2dd6cdd8, type: 3}
+  rightWalk:
+  - {fileID: 21300000, guid: 2ab85f6682d029843981a1087bca8e62, type: 3}
+  - {fileID: 21300000, guid: eda94f0fb00a03448aa4937166f4dc8f, type: 3}
+  - {fileID: 21300000, guid: 11afb286725589e42b91c29daad0344b, type: 3}
+  - {fileID: 21300000, guid: e7298b4d37f83284e926343a7d8ff7c1, type: 3}
+--- !u!114 &1482960083
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482960079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dff07e040d4ba5b4ca536d34115c6669, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Player.PlayerSeatController
+  mover: {fileID: 1482960080}
+  world: {fileID: 1671515222}
+  artwork: {fileID: 2092683586}
+--- !u!114 &1482960084
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482960079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbed7e0313eb8f44088d355cef1e334a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Player.PlayerGrassOcclusion
+  mover: {fileID: 1482960080}
+  seat: {fileID: 1482960083}
+  grassField: {fileID: 1845301142}
+  playerRenderer: {fileID: 1543769702}
+  spriteMask: {fileID: 1257956784}
+--- !u!114 &1482960085
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482960079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a99d9e4e71d1577429a0c707fe7297e1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Player.PlayerFootstepAudio
+  mover: {fileID: 1482960080}
+  source: {fileID: 1482960086}
+  footstep: {fileID: 8300000, guid: 9efb68163d15b6f478f31695e101b443, type: 3}
+--- !u!82 &1482960086
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482960079}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 0.45
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!1 &1543769699
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2157,38 +1956,142 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1626585058}
-  - component: {fileID: 1626585057}
+  - component: {fileID: 1543769700}
+  - component: {fileID: 1543769702}
+  - component: {fileID: 1543769701}
   m_Layer: 0
-  m_Name: UI - minimal HUD
+  m_Name: Player render pixels
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1626585057
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1626585056}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1b5d3066a8250174aa01a6d01cf0b71f, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.UI.GameHud
-  dpad: {fileID: 1212447947}
-  actionButton: {fileID: 716988180}
-  messageFont: {fileID: 12800000, guid: 0889c764faedb994682cf9be4eb6bf6f, type: 3}
-  messageSeconds: 2
---- !u!4 &1626585058
+--- !u!4 &1543769700
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1626585056}
+  m_GameObject: {fileID: 1543769699}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1257956783}
+  m_Father: {fileID: 2092683586}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1543769701
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1543769699}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b883baf27d8ec2428c1fc6d4e885c9b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Player.PlayerRenderSnap2D
+  worldCamera: {fileID: 175768953}
+  characterVisual: {fileID: 1482960082}
+--- !u!212 &1543769702
+SpriteRenderer:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1543769699}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 10
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: 21300000, guid: 34a28a2f8d3190f4d9f97be041f41f9d, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_SpriteSortPoint: 0
+--- !u!1 &1624562587
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1624562589}
+  - component: {fileID: 1624562588}
+  m_Layer: 0
+  m_Name: Life log controller
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1624562588
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1624562587}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 799ea12db75712a4890de39bab7e164f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Player.LifeLogController
+  player: {fileID: 1482960080}
+--- !u!4 &1624562589
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1624562587}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -2197,7 +2100,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1779046234
+--- !u!1 &1641686447
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2205,100 +2108,58 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1779046237}
-  - component: {fileID: 1779046235}
-  - component: {fileID: 1779046236}
+  - component: {fileID: 1641686449}
+  - component: {fileID: 1641686448}
   m_Layer: 0
-  m_Name: Main Camera
-  m_TagString: MainCamera
+  m_Name: Interior grass decorations
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!20 &1779046235
-Camera:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1779046234}
-  m_Enabled: 1
-  serializedVersion: 2
-  m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.9, g: 0.93, b: 0.82, a: 1}
-  m_projectionMatrixMode: 1
-  m_GateFitMode: 2
-  m_FOVAxisMode: 0
-  m_Iso: 200
-  m_ShutterSpeed: 0.005
-  m_Aperture: 16
-  m_FocusDistance: 10
-  m_FocalLength: 50
-  m_BladeCount: 5
-  m_Curvature: {x: 2, y: 11}
-  m_BarrelClipping: 0.25
-  m_Anamorphism: 0
-  m_SensorSize: {x: 36, y: 24}
-  m_LensShift: {x: 0, y: 0}
-  m_NormalizedViewPortRect:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 1
-    height: 1
-  near clip plane: 0.3
-  far clip plane: 1000
-  field of view: 60
-  orthographic: 1
-  orthographic size: 4.5
-  m_Depth: 0
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingPath: -1
-  m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 0
-  m_TargetEye: 3
-  m_HDR: 1
-  m_AllowMSAA: 1
-  m_AllowDynamicResolution: 0
-  m_ForceIntoRT: 0
-  m_OcclusionCulling: 1
-  m_StereoConvergence: 10
-  m_StereoSeparation: 0.022
---- !u!114 &1779046236
+--- !u!114 &1641686448
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1779046234}
+  m_GameObject: {fileID: 1641686447}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6824cb669b2278a4189e1e2143332543, type: 3}
+  m_Script: {fileID: 11500000, guid: cbc2683d99865ba44b6f1d19d9e55819, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.CameraControl.CameraFollow2D
-  target: {fileID: 21206271}
-  cameraComponent: {fileID: 1779046235}
-  smoothTime: 0.2
-  worldMin: {x: -6, y: -4}
-  worldMax: {x: 6, y: 4}
---- !u!4 &1779046237
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.GrassField2D
+  world: {fileID: 1671515222}
+  player: {fileID: 1482960080}
+  idleSprite: {fileID: 21300000, guid: be8bdba4e5f990c4fa9a89b1aee67274, type: 3}
+  rustleFrames:
+  - {fileID: 21300000, guid: f3b1ae7070a78454d817ea015658b7bc, type: 3}
+  - {fileID: 21300000, guid: 1c91733887f874447b1cfa9eca84c431, type: 3}
+  - {fileID: 21300000, guid: 17c689bdc7b6ee948b82e28af7c5c899, type: 3}
+  - {fileID: 21300000, guid: 5bdf06370c595df4d96611cc22b0b933, type: 3}
+  - {fileID: 21300000, guid: fcf56c4d7ec6f7844b12fa5227d86189, type: 3}
+  frameSeconds:
+  - 0.09
+  - 0.09
+  - 0.09
+  - 0.09
+  - 0.42
+--- !u!4 &1641686449
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1779046234}
+  m_GameObject: {fileID: 1641686447}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1847748110}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2096267138
+--- !u!1 &1671515221
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2306,8 +2167,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2096267140}
-  - component: {fileID: 2096267139}
+  - component: {fileID: 1671515223}
+  - component: {fileID: 1671515222}
   m_Layer: 0
   m_Name: World - first day grid
   m_TagString: Untagged
@@ -2315,13 +2176,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2096267139
+--- !u!114 &1671515222
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2096267138}
+  m_GameObject: {fileID: 1671515221}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4dfd60b38eba35f42a1b553733afe41a, type: 3}
@@ -2330,13 +2191,13 @@ MonoBehaviour:
   cellSize: 0.5
   minCell: {x: -10, y: -6}
   maxCell: {x: 10, y: 6}
---- !u!4 &2096267140
+--- !u!4 &1671515223
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2096267138}
+  m_GameObject: {fileID: 1671515221}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -2345,7 +2206,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2130508558
+--- !u!1 &1726323118
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2353,60 +2214,246 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2130508559}
-  - component: {fileID: 2130508560}
+  - component: {fileID: 1726323120}
+  - component: {fileID: 1726323119}
   m_Layer: 0
-  m_Name: Ground surface overrides
+  m_Name: Interaction Router
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2130508559
+--- !u!114 &1726323119
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1726323118}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66a1a71f3acfa5c4b827e1399bc803ae, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.Interaction.InteractionRouter
+  worldCamera: {fileID: 175768953}
+  player: {fileID: 1482960080}
+  world: {fileID: 1671515222}
+  seat: {fileID: 1482960083}
+--- !u!4 &1726323120
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2130508558}
+  m_GameObject: {fileID: 1726323118}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1845301141
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1845301143}
+  - component: {fileID: 1845301142}
+  m_Layer: 0
+  m_Name: Grass decorations
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1845301142
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1845301141}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbc2683d99865ba44b6f1d19d9e55819, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.GrassField2D
+  world: {fileID: 1671515222}
+  player: {fileID: 1482960080}
+  idleSprite: {fileID: 21300000, guid: be8bdba4e5f990c4fa9a89b1aee67274, type: 3}
+  rustleFrames:
+  - {fileID: 21300000, guid: f3b1ae7070a78454d817ea015658b7bc, type: 3}
+  - {fileID: 21300000, guid: 1c91733887f874447b1cfa9eca84c431, type: 3}
+  - {fileID: 21300000, guid: 17c689bdc7b6ee948b82e28af7c5c899, type: 3}
+  - {fileID: 21300000, guid: 5bdf06370c595df4d96611cc22b0b933, type: 3}
+  - {fileID: 21300000, guid: fcf56c4d7ec6f7844b12fa5227d86189, type: 3}
+  frameSeconds:
+  - 0.09
+  - 0.09
+  - 0.09
+  - 0.09
+  - 0.42
+--- !u!4 &1845301143
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1845301141}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 528460979}
+  m_Father: {fileID: 757340542}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2130508560
+--- !u!1 &1847748109
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1847748110}
+  m_Layer: 0
+  m_Name: Interior - halka_house
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &1847748110
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1847748109}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 307184497}
+  - {fileID: 579399124}
+  - {fileID: 1641686449}
+  - {fileID: 1774921}
+  - {fileID: 2089843632}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2089843631
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2089843632}
+  - component: {fileID: 2089843633}
+  m_Layer: 0
+  m_Name: Interior map loader
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2089843632
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2089843631}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1847748110}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2089843633
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2130508558}
+  m_GameObject: {fileID: 2089843631}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b1b78e608da7e94ea78f61081e716f8, type: 3}
+  m_Script: {fileID: 11500000, guid: a2b71846f87f27a45bff41b3d1257b8d, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.GroundSurfaceField2D
-  cells: []
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.MapRuntimeLoader2D
+  map: {fileID: 11400000, guid: ef90447cc6baf694bb665328e689fe2f, type: 2}
+  world: {fileID: 1671515222}
+  surfaceField: {fileID: 579399125}
+  grassField: {fileID: 1641686448}
+  surfaceRoot: {fileID: 579399124}
+  objectRoot: {fileID: 1774921}
+  entityRoot: {fileID: 1847748110}
+  grassPrefab: {fileID: 8666602616458362249, guid: a114d0310fc0a9b4e95b30799eeacdd2, type: 3}
+  player: {fileID: 1482960080}
+  playerRenderer: {fileID: 1543769702}
+  hud: {fileID: 261524740}
+  crow: {fileID: 950795927}
+--- !u!1 &2092683585
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2092683586}
+  m_Layer: 0
+  m_Name: Player artwork
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2092683586
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2092683585}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.25, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1543769700}
+  m_Father: {fileID: 1482960081}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 2096267140}
-  - {fileID: 21206271}
-  - {fileID: 1779046237}
-  - {fileID: 579240160}
-  - {fileID: 1626585058}
-  - {fileID: 1212447948}
-  - {fileID: 716988181}
-  - {fileID: 1439886510}
-  - {fileID: 766555633}
-  - {fileID: 528460979}
-  - {fileID: 1494532270}
-  - {fileID: 116383413}
-  - {fileID: 143085399}
-  - {fileID: 297460457}
-  - {fileID: 1085534971}
-  - {fileID: 216772102}
+  - {fileID: 1671515223}
+  - {fileID: 1482960081}
+  - {fileID: 175768955}
+  - {fileID: 1173642680}
+  - {fileID: 261524741}
+  - {fileID: 375948446}
+  - {fileID: 453675379}
+  - {fileID: 1726323120}
+  - {fileID: 763796544}
+  - {fileID: 757340542}
+  - {fileID: 1847748110}
+  - {fileID: 678197402}
+  - {fileID: 611621591}
+  - {fileID: 247054229}
+  - {fileID: 1624562589}
+  - {fileID: 575141760}

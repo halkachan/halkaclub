@@ -28,7 +28,7 @@ namespace Halka.Game.Editor
             var autoMode = UnityEngine.Object.FindFirstObjectByType<AutoModeController>();
             Check((GameVersion.Value == "2.2" || GameVersion.Value == "2.3" ||
                    GameVersion.Value == "2.4" || GameVersion.Value == "2.5" ||
-                   GameVersion.Value == "2.5.1") &&
+                   GameVersion.Value == "2.5.1" || GameVersion.Value == "2.5.2") &&
                 GameVersion.Label == "ver" + GameVersion.Value, "supported version");
             Check(menu != null && lifeLog != null && player != null && autoMode != null &&
                 ReferenceEquals(Field(menu, "lifeLog"), lifeLog) &&

@@ -22,7 +22,8 @@ namespace Halka.Game.Editor
             Version22Checks.Run();
             EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
             Check(GameVersion.Value == "2.3" || GameVersion.Value == "2.4" ||
-                GameVersion.Value == "2.5" || GameVersion.Value == "2.5.1",
+                GameVersion.Value == "2.5" || GameVersion.Value == "2.5.1" ||
+                GameVersion.Value == "2.5.2",
                 "supported game version");
             Check(GameBitmapFont.IsAvailable &&
                 GameBitmapFont.HasAllGlyphs("メニュー AUTO ON OFF せいかつきろく あるいたかず プレイじかん もどる") &&

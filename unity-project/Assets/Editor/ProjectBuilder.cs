@@ -42,7 +42,7 @@ namespace Halka.Game.Editor
         private const float SpritePixelsPerUnit = 64f;
         internal const float ArtworkFootOffset = GridWorld2D.TileWorldSize / 2f;
 
-        [MenuItem("HALKA/Prepare ver2.5.1 scene")]
+        [MenuItem("HALKA/Prepare ver2.5.2 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -113,11 +113,13 @@ namespace Halka.Game.Editor
             var artwork = new GameObject("Player artwork");
             artwork.transform.SetParent(player.transform, false);
             artwork.transform.localPosition = Vector3.up * ArtworkFootOffset;
-            var playerRenderer = artwork.AddComponent<SpriteRenderer>();
+            var renderPixels = new GameObject("Player render pixels");
+            renderPixels.transform.SetParent(artwork.transform, false);
+            var playerRenderer = renderPixels.AddComponent<SpriteRenderer>();
             playerRenderer.sprite = frames[0];
             playerRenderer.sortingOrder = 10;
             var maskObject = new GameObject("Player grass foot mask");
-            maskObject.transform.SetParent(artwork.transform, false);
+            maskObject.transform.SetParent(renderPixels.transform, false);
             var spriteMask = maskObject.AddComponent<SpriteMask>();
             spriteMask.sprite = maskSprite;
             var mover = player.AddComponent<PlayerMover>();
@@ -149,6 +151,9 @@ namespace Halka.Game.Editor
             var follow = cameraObject.AddComponent<CameraFollow2D>();
             SetReference(follow, "target", player.transform);
             SetReference(follow, "cameraComponent", camera);
+            var renderSnap = renderPixels.AddComponent<PlayerRenderSnap2D>();
+            SetReference(renderSnap, "worldCamera", camera);
+            SetReference(renderSnap, "characterVisual", visual);
 
             var ground = new GameObject("FirstDay - small ground");
             var groundRenderer = ground.AddComponent<SpriteRenderer>();
@@ -744,11 +749,11 @@ namespace Halka.Game.Editor
             var importer = AssetImporter.GetAtPath(GameFontAtlasPath) as TextureImporter;
             if (importer == null) throw new InvalidOperationException("Rasterized game UI glyph atlas is missing");
             if (importer.textureType == TextureImporterType.Default &&
-                importer.filterMode == FilterMode.Bilinear && !importer.mipmapEnabled &&
+                importer.filterMode == FilterMode.Point && !importer.mipmapEnabled &&
                 importer.textureCompression == TextureImporterCompression.Uncompressed &&
                 importer.npotScale == TextureImporterNPOTScale.None) return;
             importer.textureType = TextureImporterType.Default;
-            importer.filterMode = FilterMode.Bilinear;
+            importer.filterMode = FilterMode.Point;
             importer.mipmapEnabled = false;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.npotScale = TextureImporterNPOTScale.None;

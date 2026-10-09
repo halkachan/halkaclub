@@ -19,7 +19,7 @@ namespace Halka.Game.Editor
             Version23Checks.Run();
             EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
             Check(GameVersion.Value == "2.4" || GameVersion.Value == "2.5" ||
-                GameVersion.Value == "2.5.1", "supported game version");
+                GameVersion.Value == "2.5.1" || GameVersion.Value == "2.5.2", "supported game version");
             var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(
                 "Assets/Content/Character/bench_sit.png");
             Check(sprite != null && sprite.rect.width == 64 && sprite.rect.height == 64 &&

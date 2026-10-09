@@ -77,7 +77,10 @@ namespace Halka.Game.UI
                     var uv = new Rect(index % map.columns / (float)map.columns,
                         1f - (index / map.columns + 1f) / map.rows,
                         1f / map.columns, 1f / map.rows);
-                    GUI.DrawTextureWithTexCoords(new Rect(x, y, lineHeight, lineHeight), atlas, uv);
+                    // Keep glyph edges aligned with the final UI pixel grid.
+                    var drawnSize = Mathf.Max(1f, Mathf.Round(lineHeight));
+                    GUI.DrawTextureWithTexCoords(new Rect(Mathf.Round(x), Mathf.Round(y),
+                        drawnSize, drawnSize), atlas, uv);
                     x += map.advances[index] * scale;
                 }
                 y += lineHeight;

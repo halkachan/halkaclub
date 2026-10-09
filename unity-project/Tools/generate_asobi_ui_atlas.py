@@ -40,18 +40,24 @@ def main() -> None:
     characters = "".join(character for character in OPTIONAL_CHARACTERS if ord(character) in cmap)
     font = ImageFont.truetype(io.BytesIO(source), SIZE)
     rows = math.ceil(len(characters) / COLUMNS)
-    atlas = Image.new("RGBA", (COLUMNS * CELL, rows * CELL), (0, 0, 0, 0))
+    # White RGB even under transparent texels avoids dark fringes if a
+    # different renderer samples outside opaque texels.
+    atlas = Image.new("RGBA", (COLUMNS * CELL, rows * CELL), (255, 255, 255, 0))
     drawing = ImageDraw.Draw(atlas)
     advances = []
     for index, character in enumerate(characters):
         x = index % COLUMNS * CELL
         y = index // COLUMNS * CELL
-        # A modest same-colour stroke keeps the handwritten strokes legible
-        # after the atlas is scaled down for the in-game HUD.
+        # The two-pixel same-colour stroke retains the approved readable width.
+        # Binary alpha and Point sampling below remove the muddy gray fringe.
         drawing.text((x + 4, y + 53), character, font=font,
                      fill=(255, 255, 255, 255), stroke_width=2,
                      stroke_fill=(255, 255, 255, 255), anchor="ls")
         advances.append(round(min(60.0, max(10.0, font.getlength(character))), 3))
+    # The UI is drawn on the same nearest-scaled WebGL canvas as the world.
+    # Intermediate atlas alpha produces the gray specks visible around strokes.
+    atlas.putalpha(atlas.getchannel("A").point(
+        [255 if value >= 128 else 0 for value in range(256)]))
     args.resources.mkdir(parents=True, exist_ok=True)
     atlas.save(args.resources / "asobi_ui_atlas.png")
     (args.resources / "asobi_ui_map.txt").write_text(
