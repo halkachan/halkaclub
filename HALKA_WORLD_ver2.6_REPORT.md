@@ -1,6 +1,6 @@
 # HALKA WORLD ver2.6 実装レポート
 
-作業日: 2026-10-10（JST）  
+作業日: 2026-10-10（JST）
 本編: ver2.6 / MAP EDITOR: v0.6 / Map JSON: v4
 
 ## 1. 開始状態と保全
