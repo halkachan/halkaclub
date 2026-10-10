@@ -1364,13 +1364,21 @@ Check("番号つきの箇条書きも戻せる",
     legal.Pages.Single(page => page.Url == "/utamaze/eula/").Blocks
         .Any(block => block.Label.EndsWith("箇条書き")));
 
+// 版は出すたびに変わるので、直書きせず、いまの中身から取ります。
+var worldLatest = world.Archives[0].Entries[0];
+// 「うしろの数字を1つ進める」が決まりです（ver2.5.4 なら ver2.5.5）。
+var worldNext = System.Text.RegularExpressions.Regex.Replace(
+    worldLatest.Version.Trim(), @"\d+$", hit => (int.Parse(hit.Value) + 1).ToString());
+
 Check("HALKA WORLD の更新履歴を読める",
-    world.Archives.Count == 2 &&
-    world.Archives[0].Entries[0].Version == "ver2.3" &&
-    world.Archives[0].Entries[0].Date == "2026-10-07" &&
-    world.Archives[1].Summary == "ver0.1 ～ ver2.0" &&
-    world.Archives[1].Entries.Any(worldEntry => worldEntry.ItemLines().Count == 3));
-Check("いまの版も読める", world.CurrentVersion!.Value == "ver2.3");
+    world.Archives.Count >= 2 &&
+    world.Archives.All(archive => archive.Summary.StartsWith("ver")) &&
+    world.Archives.All(archive => archive.Entries.Count > 0) &&
+    System.Text.RegularExpressions.Regex.IsMatch(worldLatest.Version, @"^ver[0-9.]+$") &&
+    System.Text.RegularExpressions.Regex.IsMatch(worldLatest.Date, @"^\d{4}-\d{2}-\d{2}$") &&
+    world.Archives.Last().Summary == "ver0.1 ～ ver2.0" &&
+    world.Archives.Last().Entries.Any(worldEntry => worldEntry.ItemLines().Count == 3));
+Check("いまの版も読める", world.CurrentVersion!.Value == worldLatest.Version);
 Check("HALKA WORLD は組み立て直しても1文字も変わらない",
     world.Rebuild() == File.ReadAllText(worldHtml));
 Check("読んだ直後は変更なし", !world.HasChanges && !legal.HasChanges && !v17.HasChanges);
@@ -1378,13 +1386,14 @@ Check("版はそろっている", !world.CanAlignVersion && world.VersionSummary
 
 // 新しい版を足す。
 var worldEntry = world.AddNewEntry()!;
-Check("前の版から1つ進める", worldEntry.Version == "ver2.4" && world.Archives[0].Entries[0] == worldEntry);
+Check("前の版から1つ進める",
+    worldEntry.Version == worldNext && world.Archives[0].Entries[0] == worldEntry);
 Check("中身が空なら誤りとして出る", worldEntry.HasError && world.HasError && v17.HasError);
 worldEntry.Items = "からすが2羽になりました。\nよるが来るようになりました。";
 Check("入れれば誤りが消える", !worldEntry.HasError && !world.HasError && world.HasChanges);
-Check("版が食い違ったことに気づく", world.CanAlignVersion && world.VersionSummary.Contains("ver2.4"));
+Check("版が食い違ったことに気づく", world.CanAlignVersion && world.VersionSummary.Contains(worldNext));
 world.AlignVersion();
-Check("ページの表記をそろえる", world.CurrentVersion.Value == "ver2.4" && !world.CanAlignVersion);
+Check("ページの表記をそろえる", world.CurrentVersion.Value == worldNext && !world.CanAlignVersion);
 
 // 規約の文章も直す。
 var price = legalPage.Blocks.First(block => block.Label.StartsWith("販売価格") && block.Label.EndsWith("説明"));
@@ -1395,9 +1404,9 @@ v17.Save();
 var afterV17 = SiteSession.Load(sandbox, v17.Backups);
 var worldAfter = afterV17.World!;
 Check("足した版が読み直せる",
-    worldAfter.Archives[0].Entries[0].Version == "ver2.4" &&
+    worldAfter.Archives[0].Entries[0].Version == worldNext &&
     worldAfter.Archives[0].Entries[0].ItemLines().Count == 2 &&
-    worldAfter.CurrentVersion!.Value == "ver2.4");
+    worldAfter.CurrentVersion!.Value == worldNext);
 Check("項目が2つ以上なら箇条書きで書く",
     File.ReadAllText(worldHtml).Contains("<li>からすが2羽になりました。</li>"));
 Check("もとが段落の件は段落のまま",
@@ -1413,16 +1422,17 @@ Check("保存後も組み立て直しで1文字も変わらない",
 var shrinkV17 = SiteSession.Load(sandbox, v17.Backups);
 var newArchive = shrinkV17.World!.AddNewArchive();
 newArchive.Summary = "ver3.1 ～ ver4.0";
+var archivesBefore = SiteSession.Load(sandbox, v17.Backups).World!.Archives.Count;
 Check("新しい箱を作れる",
-    shrinkV17.World.Archives.Count == 3 && shrinkV17.World.Archives[0] == newArchive &&
-    shrinkV17.HasChanges);
+    shrinkV17.World.Archives.Count == archivesBefore + 1 &&
+    shrinkV17.World.Archives[0] == newArchive && shrinkV17.HasChanges);
 shrinkV17.World.Archives[1].Entries.RemoveAt(0);
 Check("消すのも変更一覧に出る",
     shrinkV17.Changes().Any(row => row.Label.Contains("HALKA WORLD")));
 shrinkV17.Revert();
 Check("HALKA WORLD も元に戻せる",
-    !shrinkV17.HasChanges && shrinkV17.World!.Archives.Count == 2 &&
-    shrinkV17.World.Archives[0].Entries[0].Version == "ver2.4");
+    !shrinkV17.HasChanges && shrinkV17.World!.Archives.Count == archivesBefore &&
+    shrinkV17.World.Archives[0].Entries[0].Version == worldNext);
 
 // --- v1.8：小さな抜けと、横断検索 -------------------------------------------
 
