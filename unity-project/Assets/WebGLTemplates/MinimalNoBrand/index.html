@@ -6,7 +6,7 @@
     <title>HALKA WORLD</title>
     <style>
       html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #e7eecf; }
-      #unity-canvas { display: block; width: 100%; height: 100%; touch-action: none; outline: none; image-rendering: pixelated; }
+      #unity-canvas { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; touch-action: none; outline: none; image-rendering: pixelated; }
       #loading { position: absolute; inset: 0; display: grid; place-items: center; color: #485038; font: 14px sans-serif; pointer-events: none; }
       #error { position: absolute; inset: 12px; color: #9c2828; font: 14px sans-serif; display: none; }
     </style>
@@ -20,6 +20,22 @@
       const canvas = document.getElementById("unity-canvas");
       const loading = document.getElementById("loading");
       const error = document.getElementById("error");
+      // On a large landscape screen, keep the 576-pixel world projection at
+      // exactly one CSS pixel per authored sprite pixel. Center with integer
+      // offsets, leaving the existing mobile layout untouched.
+      function layoutCanvas() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        const desktop = width >= 800 && height >= 576 && width >= height;
+        const scale = desktop ? Math.min(1, 576 / height) : 1;
+        const canvasWidth = Math.floor(width * scale);
+        const canvasHeight = Math.floor(height * scale);
+        canvas.style.width = `${canvasWidth}px`;
+        canvas.style.height = `${canvasHeight}px`;
+        canvas.style.left = `${Math.floor((width - canvasWidth) / 2)}px`;
+        canvas.style.top = `${Math.floor((height - canvasHeight) / 2)}px`;
+      }
+      layoutCanvas();
       // Keep the world near whole multiples of its 576-pixel outdoor art height.
       function pixelRatio() {
         const bounds = canvas.getBoundingClientRect();
@@ -45,8 +61,9 @@
         loading.textContent = `Loading... ${Math.round(progress * 100)}%`;
       }).then((unityInstance) => {
         // Unity reads the ratio at startup and again when its canvas is resized.
-        const resize = () => { unityInstance.Module.devicePixelRatio = pixelRatio(); };
+        const resize = () => { layoutCanvas(); unityInstance.Module.devicePixelRatio = pixelRatio(); };
         new ResizeObserver(resize).observe(canvas);
+        window.addEventListener("resize", resize);
         resize();
         loading.remove();
         canvas.focus();

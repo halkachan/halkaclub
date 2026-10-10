@@ -18,7 +18,8 @@ namespace Halka.Game.Editor
         {
             Version251Checks.Run();
             EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
-            Check(GameVersion.Value == "2.5.2" || GameVersion.Value == "2.5.3", "game version");
+            Check(GameVersion.Value == "2.5.2" || GameVersion.Value == "2.5.3" ||
+                GameVersion.Value == "2.5.4", "game version");
 
             var importer = AssetImporter.GetAtPath(AtlasPath) as TextureImporter;
             var atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(AtlasPath);

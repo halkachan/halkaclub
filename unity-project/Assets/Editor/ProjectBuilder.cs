@@ -42,7 +42,7 @@ namespace Halka.Game.Editor
         private const float SpritePixelsPerUnit = 64f;
         internal const float ArtworkFootOffset = GridWorld2D.TileWorldSize / 2f;
 
-        [MenuItem("HALKA/Prepare ver2.5.3 scene")]
+        [MenuItem("HALKA/Prepare ver2.5.4 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -621,13 +621,16 @@ namespace Halka.Game.Editor
             if (importer == null) throw new InvalidOperationException($"Missing texture: {path}");
             var settings = new TextureImporterSettings();
             importer.ReadTextureSettings(settings);
+            var playerSprite = path.StartsWith("Assets/Content/Character/", StringComparison.OrdinalIgnoreCase);
             if (importer.textureType == TextureImporterType.Sprite &&
                 Mathf.Approximately(importer.spritePixelsPerUnit, pixelsPerUnit) &&
                 importer.filterMode == FilterMode.Point && !importer.mipmapEnabled &&
                 importer.textureCompression == TextureImporterCompression.Uncompressed &&
                 importer.npotScale == TextureImporterNPOTScale.None &&
+                (!playerSprite || settings.spriteMeshType == SpriteMeshType.FullRect) &&
                 settings.spriteAlignment == (int)SpriteAlignment.Center &&
                 settings.spritePivot == new Vector2(0.5f, 0.5f)) return;
+            if (playerSprite) settings.spriteMeshType = SpriteMeshType.FullRect;
             settings.spriteAlignment = (int)SpriteAlignment.Center;
             settings.spritePivot = new Vector2(0.5f, 0.5f);
             importer.SetTextureSettings(settings);
