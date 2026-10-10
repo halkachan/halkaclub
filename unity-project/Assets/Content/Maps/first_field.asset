@@ -215,6 +215,10 @@ MonoBehaviour:
     RootCell: {x: 3, y: 1}
     Definition: {fileID: 11400000, guid: 173e5fb38ab29df42aa7172a4137499d, type: 2}
     SignText: "\u3053\u3053\u306F HALKA WORLD\u3002"
+  - InstanceId: obj_well_basic_v26_first_field
+    RootCell: {x: -2, y: -2}
+    Definition: {fileID: 11400000, guid: 03751a72806797041a13fcc29007487a, type: 2}
+    SignText:
   markers:
   - StableId: road_east
     Cell: {x: 10, y: -1}

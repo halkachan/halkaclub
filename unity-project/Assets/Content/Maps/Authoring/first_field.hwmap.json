@@ -586,6 +586,14 @@
         "y": 1
       },
       "signText": "ここは HALKA WORLD。"
+    },
+    {
+      "instanceId": "obj_well_basic_v26_first_field",
+      "definitionId": "well_basic",
+      "rootCell": {
+        "x": -2,
+        "y": -2
+      }
     }
   ],
   "markers": [

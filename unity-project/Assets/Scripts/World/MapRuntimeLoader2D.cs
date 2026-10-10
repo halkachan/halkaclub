@@ -159,7 +159,8 @@ namespace Halka.Game.World
             var authoredAction = definition.ActionPoints.Count > 0 &&
                 (definition.Footprint.x > 1 || definition.Footprint.y > 1 ||
                  definition.Behavior == WorldObjectBehavior.None ||
-                 definition.StableId == "sign_basic");
+                 definition.StableId == "sign_basic" ||
+                 definition.StableId == "well_basic");
             if (authoredAction)
             {
                 var action = root.AddComponent<WorldObjectActionInteractable>();
