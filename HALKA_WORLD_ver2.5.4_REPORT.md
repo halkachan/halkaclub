@@ -56,6 +56,8 @@
 - GitHub Pages workflow `https://github.com/halkachan/halkaclub/actions/runs/38022863032` はhead `0075406` でsuccess、Pages statusはbuilt。公開 `.data` はHTTP 200。
 - 公開 `https://halkaclub.com/halkaworld/` でver2.5.4、上Archive先頭の更新文、WebGL起動、807×576 CSS/Backing一致を確認。公開WebGLを直接操作して右座席へ着席し、元 `bench_sit.png` の見た目、立ち上がりと元Sprite復元、遊びメモ書きMenu表示を確認。画像はrepo外の `public-v254-seated.jpg` と `public-v254-menu.jpg`。公開HP内の座り表示もローカル完成Buildで操作確認済み。
 - REPORTコミット後も、開始時からの `GrassDecoration.prefab` 改行差と `backup-v05-20261006-174557/` を変更・コミットしない。
+- REPORT作成中にorigin/mainへ別件のアクセス解析追加とSite Editorテスト更新が入った。両コミットを通常mergeで保護し、Site Editor Tests 304/304 passed、`git diff --check` 0を確認した。ver2.5.4の実装・Map・Fontへの競合変更はない。
+- 最終作業ツリーに残るのは開始時からの `M unity-project/Assets/Content/World/GrassDecoration.prefab` と `?? backup-v05-20261006-174557/` のみ。prefabのSHA-256は開始前後とも `AF2C0D69096B25658261B299BB7A8173DEBEC1B94BD599339615359E92857D09`。これらはステージ・コミットしていない。
 
 ## 9. 残課題
 
