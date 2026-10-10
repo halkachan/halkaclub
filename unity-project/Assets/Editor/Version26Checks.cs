@@ -142,6 +142,28 @@ namespace Halka.Game.Editor
                 Check(message.TextAt(Time.unscaledTime) == "いど。" && steps == 0 &&
                     player.Cell == actionCell,
                     "well examine uses the existing message without a step");
+
+                // Exercise the same A-button routing used by the published indoor desk.
+                var house = AssetDatabase.LoadAssetAtPath<MapDefinition>(
+                    "Assets/Content/Maps/halka_house.asset");
+                var deskPlacement = house.Objects.Single(item =>
+                    item.Definition.StableId == "desk_basic");
+                typeof(MapRuntimeLoader2D).GetMethod("CreateObject", Hidden)
+                    .Invoke(loader, new object[] { deskPlacement, 2 });
+                var deskAction = objectRoot.GetChild(1).GetComponent<WorldObjectActionInteractable>();
+                var router = fixture.AddComponent<InteractionRouter>();
+                var routerData = new SerializedObject(router);
+                routerData.FindProperty("player").objectReferenceValue = player;
+                routerData.FindProperty("world").objectReferenceValue = world;
+                routerData.ApplyModifiedPropertiesWithoutUndo();
+                player.TeleportTo(deskPlacement.RootCell +
+                    deskPlacement.Definition.ActionPoints[0].PlayerCellOffset);
+                player.SetFacing(FacingDirection.Up);
+                Check(deskAction != null && deskAction.CanInteractAt(player.Cell, player.Facing),
+                    "formal desk action point accepts its front cell");
+                router.TryInteractAhead();
+                Check(message.TextAt(Time.unscaledTime) == "つくえ。",
+                    "A-button router reaches the formal desk action point");
             }
             finally { UnityEngine.Object.DestroyImmediate(fixture); }
         }

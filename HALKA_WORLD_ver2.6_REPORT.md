@@ -31,6 +31,7 @@
 - `Version26Checks.Run` は `Version254Checks.Run` とその下位のGameplay回帰を実行したうえで、GameVersion、井戸Sprite/Import、Definition、Blocked Footprint、Action Point、正式配置の一意性、重なりなし、Player Spawnからの到達可能性、House入口と4方向の道、Crow巡回範囲との分離を確認する。
 - Runtime Fixtureで同一Spriteの生成、正面からのAction、井戸セルへの侵入失敗、StepCompletedなし、既存Message UIの「いど。」を確認。AUTOが使う `GridPathfinder2D` も井戸セルを経路に採用しないことを検査する。
 - `Version26Checks.Run`: AUTO経路探索の追加検査を含む最終実行成功。`Version26Checks-final.log` に `HALKA ver2.6 well placement, interaction, collision and inherited checks passed.` と終了コード0を記録。ver2.5.4以下の回帰も実行された。
+- 公開版の家具操作を追跡するため、室内Mapの正式な机配置を読み込み、`InteractionRouter.TryInteractAhead` を通して「つくえ。」がHUDへ届く検査を追加した。現行Root `(2,1)`、手前セル `(2,0)` で追加後の `Version26Checks.Run` も終了コード0で成功（`Version26Checks-final-desk.log`）。
 - `MapAuthoringChecks.Run`: `HALKA WORLD Standalone Map Contract v0.6: passed.`
 - MAP EDITOR Standalone Core Tests: 181/181 passed。
 
@@ -50,7 +51,9 @@
 - HP上Archive最上段へ `ver2.6`、2026-10-10、「井戸を追加しました。」を追加した。旧履歴の文面と順序は維持。ローカル公式ページで `ver2.6`、2つのArchive初期Closed、上Archiveの順序を確認した。
 - 実装Commit: `979e3dfe987a324c3852b68052bfef175cc8c1a0`（`Add well to HALKA WORLD ver2.6`）。`origin/main` へ通常pushし、GitHub Pagesの当該CommitのBuildは `built` となった。force pushは使用していない。
 - 公開HP `https://halkaclub.com/halkaworld/` で現在Version `ver2.6`、新しいWASM/Dataの参照、2つのArchive初期Closedを確認。上Archiveを開くと最上段が `ver2.6 / 2026-10-10 / 井戸を追加しました。` で、旧履歴が新しい順に続く。
-- 公開Production WebGLをブラウザで実操作した。Playerが井戸正面 `(-2,-3)` に到達し、井戸セルへ上入力しても位置は変わらず、Aボタンで「いど。」を表示した。井戸、家、ベンチ、看板、Crow、Playerの既存描画と遊びメモ書きの表示も目視確認。公開版の操作画像はrepo外バックアップの `public-well-interaction.png`、HP履歴画像は `public-hp-v26.png`。公開版でのベンチ着席・House入退室・家具操作は再実施していない。
+- 公開Production WebGLをブラウザで実操作した。Playerが井戸正面 `(-2,-3)` に到達し、井戸セルへ上入力しても位置は変わらず、Aボタンで「いど。」を表示した。公開版の操作画像はrepo外バックアップの `public-well-interaction.png`、HP履歴画像は `public-hp-v26.png`。
+- 追加の公開ブラウザ操作では、ベンチの左・右座席でそれぞれ着席と立ち上がり、看板の「ここは HALKA WORLD。」、House入退室、クッションへの移動、室内MenuのAUTO OFF表示、Crowの移動を確認した。机のSpriteと通行不可も画面で確認した。
+- 机のA/クリック後、公開ブラウザの短時間Messageをスクリーンショットへ記録できなかった。原因の切り分けとして、同じProduction設定のローカル診断Buildで机の正面 `(2,0)` からAを押し、入力方向 `(0,0)`、Facing up、机Collider、Action Point判定、`ShowMessage("つくえ。")` 到達をブラウザログで確認した（repo外 `desk-browser-diagnostic.log`）。一時的な開始位置変更と診断ログは削除し、通常Buildへ戻した。**公開画面での机Message目視は未確認**として残す。
 - 報告書以外の実装・Build・HPは上記Commitに含めた。正式Map差分は井戸Instance 1件のみで、Editor v0.6 / Map v4を維持。
 - 最終Git状態: 作業開始前からの `M unity-project/Assets/Content/World/GrassDecoration.prefab` と `?? backup-v05-20261006-174557/` のみを残した。両方ともCommitしていない。
-- 物理スマホとMAP EDITORでの井戸Move/Undo/Redo/Save/ReloadのGUI操作は未確認。ver2.7の「4方向の道に個性を付ける」は今回実装していない。
+- 物理スマホ、MAP EDITORでの井戸Move/Undo/Redo/Save/ReloadのGUI操作、公開画面での机Message目視は未確認。ver2.7の「4方向の道に個性を付ける」は今回実装していない。
