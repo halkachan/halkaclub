@@ -55,6 +55,7 @@ public static class SiteCheck
         }
 
         CheckVersions(root, issues);
+        CheckAnalytics(root, issues);
         CheckWorks(session, issues);
         CheckSitemap(root, issues);
 
@@ -210,6 +211,38 @@ public static class SiteCheck
                     string.Join("、", numbers.Select(item => item.Page).Distinct(StringComparer.Ordinal))));
             }
         }
+    }
+
+    // --- アクセス解析 --------------------------------------------------------
+
+    /// <summary>訪問を数えるための印（Cloudflare Web Analytics）。</summary>
+    private const string Beacon = "static.cloudflareinsights.com";
+
+    /// <summary>
+    /// 入れているページと入れていないページが混じっていないかを見ます。
+    /// **1枚も入れていないサイトでは何も言いません**（使っていない人に勧めないため）。
+    /// </summary>
+    private static void CheckAnalytics(string root, List<CheckIssue> issues)
+    {
+        var pages = SitePages.ForSite(root)
+            .Select(page => PreviewServer.ResolveFile(root, page.Url))
+            .OfType<string>()
+            .Select(path => (Path: path, Text: Text(path)))
+            .ToArray();
+
+        if (!pages.Any(page => page.Text.Contains(Beacon))) return;
+
+        foreach (var page in pages.Where(page => !page.Text.Contains(Beacon)))
+        {
+            issues.Add(new CheckIssue(CheckLevel.Notice, "アクセス解析のタグが入っていません",
+                "このページへの訪問だけ、数に入りません", SitePaths.Relative(root, page.Path)));
+        }
+    }
+
+    private static string Text(string path)
+    {
+        try { return File.ReadAllText(path); }
+        catch (Exception) { return ""; }
     }
 
     private static IEnumerable<string> Scripts(string root) =>

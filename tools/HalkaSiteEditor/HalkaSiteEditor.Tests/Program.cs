@@ -1240,6 +1240,33 @@ Check("作り直せば、そのお知らせは消える",
 Check("改行コードは変えない",
     Sitemap.Write(sandbox).Count == 0);
 
+// アクセス解析のタグ。入れているページと入れていないページが混じっていたら知らせます。
+var beaconPage = Path.Combine(sandbox, "works", "index.html");
+var beaconBefore = File.ReadAllText(beaconPage);
+Check("そろっていれば何も言わない",
+    SiteCheck.Run(SiteSession.Load(sandbox, checkBackups))
+        .All(issue => !issue.What.Contains("アクセス解析")));
+
+File.WriteAllText(beaconPage, beaconBefore.Replace("static.cloudflareinsights.com", "example.invalid"));
+Check("1ページだけ抜けていたら知らせる",
+    SiteCheck.Run(SiteSession.Load(sandbox, checkBackups)).Any(issue =>
+        issue.What.Contains("アクセス解析") && issue.File == "works/index.html" &&
+        issue.Level == CheckLevel.Notice));
+File.WriteAllText(beaconPage, beaconBefore);
+
+// どのページにも無いサイトでは、わざわざ勧めません。
+var noBeacon = Path.Combine(Path.GetTempPath(), "halka-nobeacon-" + Guid.NewGuid().ToString("N"));
+CopySite(real, noBeacon);
+foreach (var page in SitePaths.AllPages(noBeacon))
+{
+    File.WriteAllText(page, File.ReadAllText(page)
+        .Replace("static.cloudflareinsights.com", "example.invalid"));
+}
+Check("そもそも使っていなければ何も言わない",
+    SiteCheck.Run(SiteSession.Load(noBeacon, checkBackups))
+        .All(issue => !issue.What.Contains("アクセス解析")));
+try { Directory.Delete(noBeacon, recursive: true); } catch (Exception) { }
+
 try { Directory.Delete(checkBackups.Folder, recursive: true); } catch (Exception) { }
 
 // --- v1.5：くらぶの文章・飾りの文字・ゲームのカード画像 ----------------------
