@@ -31,12 +31,13 @@
 
 ## 5. 自動検証・Build
 
-- `Version253Checks.Run` 成功 (`version253-check.log`)。内部で `Version252Checks.Run`からver2.0までの既存Regressionを実行。ver2.5.1のRenderer/Mask階層と参照、Snapなし、元コマ参照、0.18秒補間の中間位置0.5セル、Animation周期、Font AtlasとFallbackを検証。
+- `Version253Checks.Run` 成功 (`version253-check-final.log`、`Exiting batchmode successfully` まで確認)。内部で `Version252Checks.Run`からver2.0までの既存Regressionを実行。ver2.5.1のRenderer/Mask階層と参照、Snapなし、元コマ参照、0.18秒補間の中間位置0.5セル、Animation周期、Font AtlasとFallbackを検証。
 - `MapAuthoringChecks.Run` 成功 (`map-authoring-check.log`)。Standalone MAP EDITOR Core Tests **181/181成功**。Editor v0.6、Map v4は変更なし。
 - `ProjectBuilder.BuildWeb` 成功 (`webgl-build.log`)。`productVersion=2.5.3`、Development Build OFF、Unity Splash/Logo OFF、`stripEngineCode=false`。Build生成後、正式MapのSHAは作業前と同じ。旧WebGLの576px基準とCSS設定も維持。
 - HP現在VersionとArchive最上段へ `ver2.5.3 / 2026-10-10 / キャラクターの動きを調整しました。` を追加。既存履歴を維持。
 
 ## 6. 公開・最終状態
 
-- 検証済みの修正を `main` へ統合し、通常pushでGitHub Pagesへ公開する。force pushしない。
-- 公開後のrun、commit、公開WebGLの実操作、最終 `git status` は公開完了時に追記する。
+- 実装commit `708551381a2f6bd1d236cdaefaa07784e749a920` を最新 `main` へfast-forwardし、通常pushした。force pushなし。[GitHub Pages run 38017178231](https://github.com/halkachan/halkaclub/actions/runs/38017178231) はbuild/deployとも成功。
+- [公開HALKA WORLD](https://halkaclub.com/halkaworld/) をブラウザで起動し、ページとゲーム内の `ver2.5.3`、新しいWebGL Build URL、Playerの右への1セル移動、メニュー内のAUTO・せいかつきろくと文字表示、Archive最上段の `ver2.5.3` を確認した。公開 `.wasm` と `.data` もHTTP 200。公開画面はrepo外の `v253-public-menu.jpg` に保存。公開版でベンチ着席とHouse入退室の再操作は未実施（正式MapのローカルProduction Buildではベンチ左右着席を確認）。
+- 最終 `git status` は `main...origin/main` で、本作業からの未コミット変更はなし。作業開始前からの `unity-project/Assets/Content/World/GrassDecoration.prefab` と未追跡 `backup-v05-20261006-174557/` だけが残る。両者は未変更・未コミット。
