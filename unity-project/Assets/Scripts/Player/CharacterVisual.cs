@@ -24,20 +24,6 @@ namespace Halka.Game.Player
         private float frameTimer;
         private int frameIndex;
 
-        // The authored idle/walk sheets bob the complete head by one or two
-        // source pixels. This visual-only offset keeps the face and hair on a
-        // consistent source-pixel row while the limbs keep their frame changes.
-        public float HeadAlignmentWorldY
-        {
-            get
-            {
-                if (seat != null && seat.IsSeated) return 0f;
-                return mover.IsMoving
-                    ? (frameIndex & 1) == 0 ? 0f : -1f / 64f
-                    : (frameIndex & 1) == 0 ? -1f / 64f : 1f / 64f;
-            }
-        }
-
         private void Update()
         {
             if (seat != null && seat.IsSeated)

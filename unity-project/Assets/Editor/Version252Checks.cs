@@ -18,17 +18,7 @@ namespace Halka.Game.Editor
         {
             Version251Checks.Run();
             EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
-            Check(GameVersion.Value == "2.5.2", "game version");
-
-            var render = UnityEngine.Object.FindFirstObjectByType<PlayerRenderSnap2D>();
-            Check(render != null && render.name == "Player render pixels" &&
-                render.transform.parent != null && render.transform.parent.name == "Player artwork",
-                "player art is snapped separately from logical movement");
-            Check(render.GetComponent<SpriteRenderer>() != null &&
-                render.GetComponentInChildren<SpriteMask>() != null &&
-                render.GetComponentInParent<PlayerMover>() != null &&
-                render.GetComponentInParent<PlayerSeatController>() != null,
-                "sprite, grass mask, mover and seat share the visual hierarchy");
+            Check(GameVersion.Value == "2.5.2" || GameVersion.Value == "2.5.3", "game version");
 
             var importer = AssetImporter.GetAtPath(AtlasPath) as TextureImporter;
             var atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(AtlasPath);
@@ -62,7 +52,7 @@ namespace Halka.Game.Editor
                     "ここは HALKA WORLD。 ベッド。 つくえ。 0123456789") &&
                 !GameBitmapFont.HasAllGlyphs("𠮷"),
                 "game UI glyphs and missing-glyph fallback route");
-            Debug.Log("HALKA ver2.5.2 player pixels, bitmap font and inherited regression checks passed.");
+            Debug.Log("HALKA ver2.5.2 bitmap font and inherited regression checks passed.");
         }
 
         private static void Check(bool condition, string description)
