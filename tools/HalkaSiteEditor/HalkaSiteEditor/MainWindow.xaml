@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:HalkaSiteEditor"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="HALKA SITE EDITOR v1.9" Icon="Assets/site-editor.ico"
+        Title="HALKA SITE EDITOR v1.10" Icon="Assets/site-editor.ico"
         Width="1660" Height="900" MinWidth="1000" MinHeight="640"
         Background="#16191E" Foreground="#E4E8EC" FontFamily="Yu Gothic UI" FontSize="13"
         Loaded="WindowLoaded" Closing="WindowClosing">
