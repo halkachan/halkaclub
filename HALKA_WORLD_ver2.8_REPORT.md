@@ -42,7 +42,7 @@ WASD/矢印、D-pad、A、既存クリックによる`GameInput.UserActed`でAUT
 
 ## 10. Mobile Preview
 
-390×844、`touchControls=1`のローカルWebGLでD-padから手動入室し、60秒後に屋内AUTOで移動することを確認。Aタップ後4秒間は同じ位置で停止した。Menu、AUTO表示、せいかつきろく、D-pad、Aボタンは画面に収まり読める。物理スマホは未確認。
+390×844、`touchControls=1`のローカルWebGLでD-padから手動入室し、60秒後に屋内AUTOで移動することを確認。Aタップ後4秒間は同じ位置で停止した。Menu、AUTO表示、せいかつきろく、D-pad、Aボタンは画面に収まり読める。証拠画像: Backup内`mobile-v28-indoor-auto.png`。物理スマホは未確認。
 
 ## 11. Production BuildとHP
 
@@ -50,8 +50,10 @@ Unity 6000.3.10f1の`ProjectBuilder.BuildWeb`でProduction WebGL Build成功。`
 
 ## 12. Git、Deployment、公開WebGL
 
-公開作業の結果をここへ追記する。
+`b1732068d0835300a38f9d0c130f98becd46b867`を実装・Build・Reportのコミットとして`origin/main`へ通常Pushした。force pushなし。GitHub Pages run [38163562240](https://github.com/halkachan/halkaclub/actions/runs/38163562240)はbuild/deployとも成功。公開HPの実画面で`ver2.8`、新しいiframe Build参照、上Archive先頭のver2.8履歴、下Archiveの初期Closedを確認。公開WebGLを実際にロードし、手動でHouse入室、実時間60秒後の屋内AUTO開始とその後の継続移動、ベッド・机への非侵入、屋内維持を確認した。公開HP、WebGL、`.wasm`、`.data`のHTTP HEADはすべて200。証拠画像: Backup内`public-v28-page.png`、`public-v28-indoor-auto.png`。
+
+今回の変更はコミット済み。最終作業ツリーに残るのは開始時から存在した`unity-project/Assets/Content/World/GrassDecoration.prefab`の改行差と未追跡`backup-v05-20261006-174557/`のみで、削除・コミットしていない。
 
 ## 13. 未確認事項
 
-物理スマホでの操作は未確認。ローカルWebGLで全Objectを個別操作する網羅試験は行っていないが、Version27以下の回帰検証に継承されている。公開WebGLの実時間60秒検証は公開後に可能なら実施する。
+物理スマホでの操作は未確認。ローカルWebGLで全Objectを個別操作する網羅試験は行っていないが、Version27以下の回帰検証に継承されている。公開WebGLでのAUTO OFFと手動入力中断の再試験は未実施で、ローカルProduction WebGLで確認した。
