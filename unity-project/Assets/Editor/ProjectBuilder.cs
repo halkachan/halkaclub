@@ -42,7 +42,7 @@ namespace Halka.Game.Editor
         private const float SpritePixelsPerUnit = 64f;
         internal const float ArtworkFootOffset = GridWorld2D.TileWorldSize / 2f;
 
-        [MenuItem("HALKA/Prepare ver2.7 scene")]
+        [MenuItem("HALKA/Prepare ver2.8 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -424,8 +424,10 @@ namespace Halka.Game.Editor
             SetReference(autoMode, "player", mover);
             SetReference(autoMode, "world", world);
             SetReference(autoMode, "house", houseArea);
+            SetReference(autoMode, "maps", mapController);
             SetReference(autoMode, "occupancy", occupancy);
             SetReference(autoMode, "crow", crowWander);
+            SetReference(autoMode, "hud", hud);
             var lifeLogObject = new GameObject("Life log controller");
             var lifeLog = lifeLogObject.AddComponent<LifeLogController>();
             SetReference(lifeLog, "player", mover);

@@ -21,7 +21,7 @@ namespace Halka.Game.Editor
             EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
             Check(GameVersion.Value == "2.5.1" || GameVersion.Value == "2.5.2" ||
                 GameVersion.Value == "2.5.3" || GameVersion.Value == "2.5.4" ||
-                GameVersion.Value == "2.6" || GameVersion.Value == "2.7", "game version");
+                GameVersion.Value == "2.6" || (GameVersion.Value == "2.7" || GameVersion.Value == "2.8"), "game version");
 
             string[] characterSprites = {
                 "front_idle/00.png", "front_idle/01.png",
