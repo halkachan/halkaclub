@@ -61,6 +61,6 @@ GameVersion、Unity productVersion、WebGL表示、HPの現在Versionを2.7へ�
 
 ## 9. GitHub公開と残る確認
 
-Git Commit、origin/mainへの通常Push、GitHub Pagesのデプロイ、公開WebGL操作、最終git statusは公開作業後に記入する。公開前の差分確認でユーザー既存の `GrassDecoration.prefab` 改行差と `backup-v05-20261006-174557/` をコミットから除外する。force pushは行わない。
+実装・正式Map・Build・Reportを `5212bfbba28cc0bfca0f70ebcef9d0c7ec55fd00` としてコミット。公開前の差分確認でユーザー既存の `GrassDecoration.prefab` 改行差と `backup-v05-20261006-174557/` をコミットから除外した。origin/mainへの通常Push、GitHub Pagesのデプロイ、公開WebGL操作、最終git statusは公開作業後に追記する。force pushは行わない。
 
 残る手動確認は右ベンチ着席、井戸、House入退室、スマホAボタン操作、物理スマホ。次の候補はロードマップ上のver2.8だが、今回実装していない。
