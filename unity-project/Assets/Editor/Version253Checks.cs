@@ -15,7 +15,7 @@ namespace Halka.Game.Editor
             Version252Checks.Run();
             EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
             Check(GameVersion.Value == "2.5.3" || GameVersion.Value == "2.5.4" ||
-                  GameVersion.Value == "2.6", "game version");
+                  GameVersion.Value == "2.6" || GameVersion.Value == "2.7", "game version");
 
             var player = GameObject.Find("Player - HarukaChan");
             Check(player != null, "player exists");

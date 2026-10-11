@@ -210,7 +210,7 @@ MonoBehaviour:
   - InstanceId: obj_bench_basic_v25_first_field
     RootCell: {x: -2, y: 2}
     Definition: {fileID: 11400000, guid: 9cd4ab71dc404c846bbe7d60329232d9, type: 2}
-    SignText:
+    SignText: 
   - InstanceId: obj_sign_basic_v25_first_field
     RootCell: {x: 3, y: 1}
     Definition: {fileID: 11400000, guid: 173e5fb38ab29df42aa7172a4137499d, type: 2}
@@ -218,7 +218,35 @@ MonoBehaviour:
   - InstanceId: obj_well_basic_v26_first_field
     RootCell: {x: -2, y: -2}
     Definition: {fileID: 11400000, guid: 03751a72806797041a13fcc29007487a, type: 2}
-    SignText:
+    SignText: 
+  - InstanceId: obj_tree_north_v27_01
+    RootCell: {x: -4, y: 3}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_east_v27_01
+    RootCell: {x: 4, y: -2}
+    Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_east_v27_02
+    RootCell: {x: 6, y: -3}
+    Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_east_v27_03
+    RootCell: {x: 9, y: 1}
+    Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
+  - InstanceId: obj_stone_south_v27_01
+    RootCell: {x: -1, y: -5}
+    Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
+  - InstanceId: obj_stone_south_v27_02
+    RootCell: {x: 4, y: -5}
+    Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_west_v27_01
+    RootCell: {x: -9, y: 1}
+    Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
   markers:
   - StableId: road_east
     Cell: {x: 10, y: -1}

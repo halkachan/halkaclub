@@ -594,6 +594,62 @@
         "x": -2,
         "y": -2
       }
+    },
+    {
+      "instanceId": "obj_tree_north_v27_01",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": -4,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_flower_east_v27_01",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 4,
+        "y": -2
+      }
+    },
+    {
+      "instanceId": "obj_flower_east_v27_02",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 6,
+        "y": -3
+      }
+    },
+    {
+      "instanceId": "obj_flower_east_v27_03",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 9,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_stone_south_v27_01",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": -1,
+        "y": -5
+      }
+    },
+    {
+      "instanceId": "obj_stone_south_v27_02",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 4,
+        "y": -5
+      }
+    },
+    {
+      "instanceId": "obj_flower_west_v27_01",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": -9,
+        "y": 1
+      }
     }
   ],
   "markers": [
