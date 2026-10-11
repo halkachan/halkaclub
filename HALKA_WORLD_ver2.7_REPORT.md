@@ -61,6 +61,10 @@ GameVersion、Unity productVersion、WebGL表示、HPの現在Versionを2.7へ�
 
 ## 9. GitHub公開と残る確認
 
-実装・正式Map・Build・Reportを `5212bfbba28cc0bfca0f70ebcef9d0c7ec55fd00` としてコミット。公開前の差分確認でユーザー既存の `GrassDecoration.prefab` 改行差と `backup-v05-20261006-174557/` をコミットから除外した。origin/mainへの通常Push、GitHub Pagesのデプロイ、公開WebGL操作、最終git statusは公開作業後に追記する。force pushは行わない。
+実装・正式Map・Build・Reportを `5212bfbba28cc0bfca0f70ebcef9d0c7ec55fd00` としてコミットし、検証範囲の記録を `514a67ae41fdc986f81c4bc32d32495045914762` で追記した。公開前の差分確認でユーザー既存の `GrassDecoration.prefab` 改行差と `backup-v05-20261006-174557/` をコミットから除外した。`origin/main` へ通常Push済み。GitHub Pagesの最新ビルドは同コミットで `built`、2026-10-11 14:06:10 UTCに完了した。force pushは行っていない。
+
+公開HPのChrome実表示で `ver2.7`、上Archiveの `ver2.7 / 2026-10-11 / 4方向の道の景観を整えました。`、下Archiveの初期Closedを確認。公開WebGLはロード完了し、北の木、東の花、南の石、西の余白を実画面で確認した。公開WebGLで右方向へPlayerを1歩操作し、移動を確認した。公開HP、WebGL、`.wasm`、`.data` のHTTP HEADはすべて200。証拠画像はrepo外 `public-v27-page.png`。公開環境で4方向のRoad Endまでの歩行は行っておらず、その項目はローカルProduction WebGLの実操作で確認した。
+
+最終作業ツリーでは今回の変更はコミット済みで、残るのは作業開始前から存在した `unity-project/Assets/Content/World/GrassDecoration.prefab` の改行差と `backup-v05-20261006-174557/` のみ。これらを削除・コミットしていない。
 
 残る手動確認は右ベンチ着席、井戸、House入退室、スマホAボタン操作、物理スマホ。次の候補はロードマップ上のver2.8だが、今回実装していない。
