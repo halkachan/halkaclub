@@ -20,7 +20,7 @@ namespace Halka.Game.Editor
         public static void Run()
         {
             Version27Checks.Run();
-            Check(GameVersion.Value == "2.8" || GameVersion.Value == "2.9", "game version");
+            Check(GameVersion.Value == "2.8" || (GameVersion.Value == "2.9" || GameVersion.Value == "3.0"), "game version");
             ProjectBuilder.PrepareScene();
             EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
             var field = AssetDatabase.LoadAssetAtPath<MapDefinition>(

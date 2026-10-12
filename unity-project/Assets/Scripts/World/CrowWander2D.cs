@@ -7,11 +7,14 @@ namespace Halka.Game.World
     public enum CrowActivity { GroundIdle, GroundWalk, Takeoff, Flying, Perched, LeavingPerch, LandingGround }
 
     // A small walker: one interpolated grid step, then a few seconds of rest.
-    public sealed class CrowWander2D : MonoBehaviour, Halka.Game.Interaction.IInteractionAvailability
+    public sealed class CrowWander2D : MonoBehaviour,
+        Halka.Game.Interaction.IInteractionAvailability, Halka.Game.Interaction.IExamineReaction
     {
         public const float StepSeconds = 0.27f;
         public const float WalkFrameSeconds = 0.12f;
         public const float FlightFrameSeconds = 0.16f;
+        public const float InteractionTakeoffDelaySeconds = 0.45f;
+        public const float InteractionCooldownSeconds = 0.9f;
 
         [SerializeField] private GridWorld2D world;
         [SerializeField] private DynamicGridOccupancy2D occupancy;
@@ -56,6 +59,8 @@ namespace Halka.Game.World
         private int groundSortingOrder;
         private float nextActionAt;
         private float lastTickAt;
+        private float interactionTakeoffAt = -1f;
+        private float interactionCooldownUntil;
 
         public Vector2Int Cell => motion != null ? motion.Cell : world.WorldToCell(transform.position);
         public Vector2Int StepFromCell => motion != null ? motion.StepFromCell : Cell;
@@ -63,7 +68,8 @@ namespace Halka.Game.World
         public bool IsMoving => motion != null && motion.IsMoving;
         public bool GroundOccupancyActive => activity == CrowActivity.GroundIdle ||
             activity == CrowActivity.GroundWalk || activity == CrowActivity.Takeoff;
-        public bool CanInteract => activity == CrowActivity.GroundIdle && !IsMoving;
+        public bool CanInteract => activity == CrowActivity.GroundIdle && !IsMoving &&
+            interactionTakeoffAt < 0f && Time.time >= interactionCooldownUntil;
         public float StepProgressNormalized => motion != null ? motion.StepProgressNormalized : 1f;
         public FacingDirection Facing { get; private set; } = FacingDirection.Right;
         public Vector2Int RangeMin => spawnCell + wanderMinimumOffset;
@@ -97,6 +103,8 @@ namespace Halka.Game.World
             flyingTowardGround = false;
             nextActionAt = Time.time + 2f;
             nextFlightAt = Time.time + Random.Range(minimumGroundSeconds, maximumGroundSeconds);
+            interactionTakeoffAt = -1f;
+            interactionCooldownUntil = 0f;
             lastTickAt = Time.time;
             if (clickCollider != null) clickCollider.enabled = true;
             if (artwork != null)
@@ -121,14 +129,34 @@ namespace Halka.Game.World
             return found.ToArray();
         }
 
-        private bool TryStartTakeoff(float now)
+        public void OnExamined()
+        {
+            if (!CanInteract) return;
+            interactionCooldownUntil = Time.time + InteractionCooldownSeconds;
+            if (FindPerchCandidates().Length > 0)
+                interactionTakeoffAt = Time.time + InteractionTakeoffDelaySeconds;
+        }
+
+        private bool TryStartTakeoff(float now, bool preferNearby = false)
         {
             var trees = FindPerchCandidates();
             if (trees.Length == 0 || flightRight == null || flightRight.Length < 2 ||
                 flightDown == null || flightDown.Length < 2) return false;
             var first = Random.Range(0, trees.Length);
             targetTree = trees[first];
-            if (trees.Length > 1 && targetTree == previousTree)
+            if (preferNearby)
+            {
+                var nearestDistance = float.MaxValue;
+                foreach (var tree in trees)
+                    nearestDistance = Mathf.Min(nearestDistance,
+                        Vector3.Distance(transform.position, tree.PerchPosition));
+                var near = new List<TreePerchAnchor2D>();
+                foreach (var tree in trees)
+                    if (Vector3.Distance(transform.position, tree.PerchPosition) <=
+                        nearestDistance + GridWorld2D.TileWorldSize * 2f) near.Add(tree);
+                targetTree = near[Random.Range(0, near.Count)];
+            }
+            else if (trees.Length > 1 && targetTree == previousTree)
                 targetTree = trees[(first + 1) % trees.Length];
             previousTree = targetTree;
             if (clickCollider != null) clickCollider.enabled = false;
@@ -295,6 +323,7 @@ namespace Halka.Game.World
         {
             targetTree = null;
             flyingTowardGround = false;
+            interactionTakeoffAt = -1f;
             if (clickCollider != null) clickCollider.enabled = false;
         }
 
@@ -319,6 +348,16 @@ namespace Halka.Game.World
             {
                 if (clickCollider != null) clickCollider.enabled = true;
                 nextActionAt = now + Random.Range(2f, 4f);
+            }
+            if (!motion.IsMoving && interactionTakeoffAt >= 0f)
+            {
+                if (now < interactionTakeoffAt) { RefreshVisual(); return; }
+                interactionTakeoffAt = -1f;
+                if (TryStartTakeoff(now, true))
+                {
+                    RefreshAirVisual(now);
+                    return;
+                }
             }
             if (!motion.IsMoving && now >= nextFlightAt)
             {

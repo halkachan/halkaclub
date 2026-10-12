@@ -42,8 +42,8 @@ namespace Halka.Game.Editor
                    GameVersion.Value == "2.3" || GameVersion.Value == "2.4" ||
                    GameVersion.Value == "2.5" || GameVersion.Value == "2.5.1" ||
                    GameVersion.Value == "2.5.2" || GameVersion.Value == "2.5.3" ||
-                   GameVersion.Value == "2.5.4" || GameVersion.Value == "2.6" || (GameVersion.Value == "2.7" || GameVersion.Value == "2.8" || GameVersion.Value == "2.9")) &&
-                GameVersion.Label == "ver" + GameVersion.Value, "supported game version");
+                   GameVersion.Value == "2.5.4" || GameVersion.Value == "2.6" || (GameVersion.Value == "2.7" || GameVersion.Value == "2.8" || (GameVersion.Value == "2.9" || GameVersion.Value == "3.0"))) &&
+                GameVersion.Label == (GameVersion.IsPreview ? "ver" + GameVersion.Value + " Preview" : "ver" + GameVersion.Value), "supported game version");
             Check(field != null && room != null && maps != null && area != null && world != null,
                 "both maps and runtime controller exist");
             Check(field.MapId == "first_field" && room.MapId == "halka_house" &&

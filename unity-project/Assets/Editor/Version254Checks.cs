@@ -19,7 +19,7 @@ namespace Halka.Game.Editor
         {
             Version253Checks.Run();
             EditorSceneManager.OpenScene("Assets/Scenes/FirstDay.unity");
-            Check(GameVersion.Value == "2.5.4" || GameVersion.Value == "2.6" || (GameVersion.Value == "2.7" || GameVersion.Value == "2.8" || GameVersion.Value == "2.9"), "game version");
+            Check(GameVersion.Value == "2.5.4" || GameVersion.Value == "2.6" || (GameVersion.Value == "2.7" || GameVersion.Value == "2.8" || (GameVersion.Value == "2.9" || GameVersion.Value == "3.0")), "game version");
 
             var folders = new[] { "front_idle", "back_idle", "left_idle", "right_idle",
                 "walk_front", "walk_back", "walk_left", "walk_right" };

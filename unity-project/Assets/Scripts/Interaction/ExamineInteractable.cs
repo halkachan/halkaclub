@@ -39,6 +39,7 @@ namespace Halka.Game.Interaction
             if (availability is IInteractionAvailability state && !state.CanInteract) return;
             hud.ShowMessage(message);
             if (interactionAudio != null) interactionAudio.Play();
+            if (availability is IExamineReaction reaction) reaction.OnExamined();
         }
     }
 }

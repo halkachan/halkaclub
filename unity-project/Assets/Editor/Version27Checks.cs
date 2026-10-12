@@ -15,7 +15,7 @@ namespace Halka.Game.Editor
         {
             MapAuthoringImporter.SyncAll();
             Version26Checks.Run();
-            Check((GameVersion.Value == "2.7" || GameVersion.Value == "2.8" || GameVersion.Value == "2.9"), "game version");
+            Check((GameVersion.Value == "2.7" || GameVersion.Value == "2.8" || (GameVersion.Value == "2.9" || GameVersion.Value == "3.0")), "game version");
 
             var field = AssetDatabase.LoadAssetAtPath<MapDefinition>(
                 "Assets/Content/Maps/first_field.asset");
