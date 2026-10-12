@@ -141,24 +141,24 @@ repo外に `crow-fixed-45s.mp4`、`crow-fixed-45-contact.jpg`、`crow-browser-se
 
 ## 35. HP更新履歴
 
-現在Versionをver2.9へ変更し、上Archiveの最上段に2026-10-12「カラスが飛んで木に止まるようになりました。」を追加した。既存履歴、下Archive、初期Closedは維持した。
+現在Versionをver2.9へ変更し、上Archiveの最上段に2026-10-12「カラスが飛んで木に止まるようになりました。」を追加した。既存履歴、下Archive、初期Closedは維持した。公開HPのArchiveを実際に開閉し、最上段と既存の順序を確認した。
 
 ## 36. Git Commit
 
-公開時にCommit IDを追記する。
+実装、4枚のFlight Sprite、Scene、Production Build、HP、Reportを `b56777c7f4559a5ee3db7a1e64ded944d8773f63` としてCommitした。既存の `GrassDecoration.prefab` と未追跡バックアップはCommit対象から除外した。
 
 ## 37. GitHub Deployment
 
-公開時にPushとPages Deploymentの結果を追記する。
+`origin/main` が開始時HEADと同一であることを再確認した後、forceを使わず `git push origin HEAD:main` で通常Pushした。GitHub Pagesの [run 38202027397](https://github.com/halkachan/halkaclub/actions/runs/38202027397) はbuild/deployとも成功した。
 
 ## 38. 公開WebGL確認
 
-公開後にHP、Build、飛行表示を確認して結果を追記する。
+公開HP、WebGL、loader、data、wasmはすべてHTTP 200。Chromeで公開HPと埋め込みWebGLを起動し、ver2.9、地上Crow、飛行、木への着地・待機を実画面で確認した。記録はrepo外の `browser-frames/public_*.jpg`、`crow-public-contact.jpg`、`crow-public-return-contact.jpg`、`browser-frames/public-page-ver29.jpg`。公開環境での地上への再着陸は連続フレームから確定できなかったため、ローカルでの実操作と自動検証を根拠とする。
 
 ## 39. 最終git status
 
-CommitとPush後に、既存のユーザー変更を含めた最終状態を追記する。
+公開Commit後のstatusには、開始前から存在した `unity-project/Assets/Content/World/GrassDecoration.prefab` の変更と `backup-v05-20261006-174557/` の未追跡ディレクトリのみが残る。ver2.9の対象ファイルはCommit済み。
 
 ## 40. 残る問題
 
-物理スマホの実機確認は未実施。モバイルブラウザでAボタンによるCrow InteractionとLife Log画面の操作は未確認。飛行動画は1秒間隔のフレーム記録のため、羽ばたきの全フレームを動画単体から評価するには不足するが、Flight Spriteの2コマとWebGL上の切替は自動検証・連続画像で確認した。
+物理スマホの実機確認は未実施。モバイルブラウザでAボタンによるCrow InteractionとLife Log画面の操作は未確認。公開WebGLでの地上再着陸は未確認。飛行動画は1秒間隔のフレーム記録のため、羽ばたきの全フレームを動画単体から評価するには不足するが、Flight Spriteの2コマとWebGL上の切替は自動検証・連続画像で確認した。
