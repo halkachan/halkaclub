@@ -31,7 +31,7 @@ namespace Halka.Game.Editor
                    GameVersion.Value == "2.4" || GameVersion.Value == "2.5" ||
                    GameVersion.Value == "2.5.1" || GameVersion.Value == "2.5.2" ||
                    GameVersion.Value == "2.5.3" || GameVersion.Value == "2.5.4" ||
-                   GameVersion.Value == "2.6" || (GameVersion.Value == "2.7" || GameVersion.Value == "2.8")) &&
+                   GameVersion.Value == "2.6" || (GameVersion.Value == "2.7" || GameVersion.Value == "2.8" || GameVersion.Value == "2.9")) &&
                 GameVersion.Label == "ver" + GameVersion.Value, "supported game version");
             Check(menu != null && autoMode != null && input != null && hud != null &&
                 dpad != null && action != null && area != null, "persistent menu and controls");

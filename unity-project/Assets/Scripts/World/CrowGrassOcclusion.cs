@@ -44,6 +44,12 @@ namespace Halka.Game.World
 
         public void RefreshMask()
         {
+            if (!crow.GroundOccupancyActive)
+            {
+                spriteMask.enabled = false;
+                artwork.maskInteraction = SpriteMaskInteraction.None;
+                return;
+            }
             var visualCell = VisualCell(crow.StepFromCell, crow.StepToCell,
                 crow.IsMoving, crow.StepProgressNormalized);
             var masked = grassField.HasGrass(visualCell);

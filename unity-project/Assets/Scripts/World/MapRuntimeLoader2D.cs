@@ -90,6 +90,7 @@ namespace Halka.Game.World
                 }
                 grassField.Rebuild();
             }
+            if (crow != null) crow.ConfigureFlightEnvironment(map, objectRoot);
             EntityRuntimeFactory2D.TryActivateCrow(map, world, grassField, entityRoot, crow);
             built = true;
         }
@@ -184,6 +185,8 @@ namespace Halka.Game.World
             var artRenderer = artwork.AddComponent<SpriteRenderer>();
             artRenderer.sprite = definition.PreviewSprite;
             artRenderer.sortingOrder = definition.RootedArtwork ? playerRenderer.sortingOrder - 1 : definition.SortingOrder;
+            if (definition.StableId == "tree_basic")
+                root.AddComponent<TreePerchAnchor2D>().Configure(artRenderer);
             if (authoredAction || definition.Behavior == WorldObjectBehavior.Examine)
                 artwork.AddComponent<BoxCollider2D>().size = definition.PreviewSprite.bounds.size;
             if (definition.RootedArtwork)

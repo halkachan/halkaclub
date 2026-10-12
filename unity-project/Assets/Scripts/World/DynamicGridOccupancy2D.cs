@@ -17,7 +17,7 @@ namespace Halka.Game.World
             player == null || !player.isActiveAndEnabled || !IsReservedByPlayer(cell);
 
         public bool IsReservedByCrow(Vector2Int cell) =>
-            crow != null && crow.isActiveAndEnabled &&
+            crow != null && crow.isActiveAndEnabled && crow.GroundOccupancyActive &&
             (crow.Cell == cell || crow.IsMoving &&
                 (crow.StepFromCell == cell || crow.StepToCell == cell));
 

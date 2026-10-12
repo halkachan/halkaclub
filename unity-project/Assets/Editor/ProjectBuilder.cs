@@ -42,7 +42,7 @@ namespace Halka.Game.Editor
         private const float SpritePixelsPerUnit = 64f;
         internal const float ArtworkFootOffset = GridWorld2D.TileWorldSize / 2f;
 
-        [MenuItem("HALKA/Prepare ver2.8 scene")]
+        [MenuItem("HALKA/Prepare ver2.9 scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -86,6 +86,16 @@ namespace Halka.Game.Editor
             var crowWalkUp = LoadCrowWalk("up");
             var crowWalkLeft = LoadCrowWalk("left");
             var crowWalkRight = LoadCrowWalk("right");
+            var crowFlightRight = new[]
+            {
+                LoadWorldSprite(CrowSpritePath("flight_right_up"), new Vector2(32f, 32f)),
+                LoadWorldSprite(CrowSpritePath("flight_right_down"), new Vector2(32f, 32f))
+            };
+            var crowFlightDown = new[]
+            {
+                LoadWorldSprite(CrowSpritePath("flight_down_up"), new Vector2(32f, 32f)),
+                LoadWorldSprite(CrowSpritePath("flight_down_down"), new Vector2(32f, 32f))
+            };
             ConfigureSpriteImport(GrassPath, SpritePixelsPerUnit);
             var grassSprite = AssetDatabase.LoadAssetAtPath<Sprite>(GrassPath);
             if (grassSprite == null) throw new InvalidOperationException("Grass sprite import failed");
@@ -204,6 +214,8 @@ namespace Halka.Game.Editor
             SetSprites(crowWander, "walkUp", crowWalkUp);
             SetSprites(crowWander, "walkLeft", crowWalkLeft);
             SetSprites(crowWander, "walkRight", crowWalkRight);
+            SetSprites(crowWander, "flightRight", crowFlightRight);
+            SetSprites(crowWander, "flightDown", crowFlightDown);
             SetReference(occupancy, "crow", crowWander);
             var crowMaskObject = new GameObject("Crow grass foot mask");
             crowMaskObject.transform.SetParent(crow.transform, false);
