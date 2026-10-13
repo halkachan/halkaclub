@@ -301,9 +301,9 @@ Chrome DevToolsのエミュレーション（390×844、DPR 2、タッチ有効�
   - `tools/Poc2D3DFixture/**`
   - `tools/poc2d3d/**`
   - `unity-project/POC2D3DFixtures/**`
-- この文書2本は、続くCommitに含めます。
+- `9ec7e03` 文書2本／その後に記述の修正Commitを1つ。
 
-既存ファイルの変更は1つもありません（2つのCommitともファイルの追加だけ）。
+既存ファイルの変更は1つもありません（どのCommitもファイルの追加と、この文書の修正だけ）。
 
 ## 27. Previewの起動方法
 
@@ -348,7 +348,7 @@ Unity Editorは不要です。
 
 - Phase 1 worktree: 文書Commitの後、`git status` は空です（PrepareSceneによる再生成分は元に戻し済み）。
 - 元の作業ツリー（`HALKA HP`）: `codex/ver3.0-preview` @ `d3f81ac`。` M GrassDecoration.prefab` と `?? backup-v05-20261006-174557/` だけで、開始時と同じです。
-- `main` と `origin/main` は `13462fe` のまま変更していません。
+- ローカル `main`（`d039acf`）と `origin/main`（`13462fe`）は変更していません。
 
 ## 29. 公開版の保護状況
 
