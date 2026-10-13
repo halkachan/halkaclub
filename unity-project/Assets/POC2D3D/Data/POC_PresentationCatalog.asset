@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d971d36a6b223cc44a7ab673f6239aad, type: 3}
+  m_Name: POC_PresentationCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Poc2D3D.PocPresentationCatalog
+  playerModel: {fileID: 919132149155446097, guid: 41815d696ba538146b054f1964c91d1f, type: 3}
+  vertexColorMaterial: {fileID: 2100000, guid: 43dd4b12f1608244089beb1b1322bdbb, type: 2}
+  overlayMaterial: {fileID: 2100000, guid: 99428458a4faf404a980948c4e68da5b, type: 2}
+  bindings:
+  - definitionId: tree_basic
+    model: {fileID: 919132149155446097, guid: f88149e0e7fad4d44ae19cacdcac44e9, type: 3}
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 1
+  - definitionId: house_main
+    model: {fileID: 919132149155446097, guid: f324ab4544efe924a86b56261b79154b, type: 3}
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 1

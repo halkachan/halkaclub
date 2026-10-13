@@ -1,0 +1,65 @@
+{
+  "generator": "blender/scripts/build_poc_assets.py",
+  "blenderVersion": "5.2.0 LTS",
+  "export": {
+    "format": "FBX 7.4 binary",
+    "axisForward": "-Z",
+    "axisUp": "Y",
+    "bakeSpaceTransform": true,
+    "applyScaleOptions": "FBX_SCALE_ALL",
+    "colors": "SRGB face-corner attribute 'Col'"
+  },
+  "assets": [
+    {
+      "name": "POC_Player",
+      "blend": "blender/sources/poc_player.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/poc_player.fbx",
+      "triangles": 312,
+      "vertices": 194,
+      "boundsMin": [
+        -0.1902,
+        -0.215,
+        0.0
+      ],
+      "boundsMax": [
+        0.1902,
+        0.2,
+        0.934
+      ]
+    },
+    {
+      "name": "POC_Tree",
+      "blend": "blender/sources/poc_tree.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/poc_tree.fbx",
+      "triangles": 528,
+      "vertices": 280,
+      "boundsMin": [
+        -0.6053,
+        -0.55,
+        0.0
+      ],
+      "boundsMax": [
+        0.6248,
+        0.58,
+        1.555
+      ]
+    },
+    {
+      "name": "POC_House",
+      "blend": "blender/sources/poc_house.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/poc_house.fbx",
+      "triangles": 300,
+      "vertices": 200,
+      "boundsMin": [
+        -1.36,
+        -0.34,
+        0.0
+      ],
+      "boundsMax": [
+        1.36,
+        0.84,
+        1.71
+      ]
+    }
+  ]
+}

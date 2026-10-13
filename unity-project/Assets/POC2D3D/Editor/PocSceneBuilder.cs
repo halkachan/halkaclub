@@ -1,0 +1,201 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using Halka.Game.Input;
+using Halka.Game.World;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+namespace Halka.Poc2D3D.EditorTools
+{
+    // Generates the Phase 1 POC scene and its assets. It only writes under Assets/POC2D3D and
+    // only reads the official Map caches, Font and Catalog definitions.
+    public static class PocSceneBuilder
+    {
+        public const string Root = "Assets/POC2D3D";
+        public const string ScenePath = Root + "/Scenes/HALKA_WORLD_2D3D_POC.unity";
+        public const string CatalogPath = Root + "/Data/POC_PresentationCatalog.asset";
+        public const string ToonMaterialPath = Root + "/Materials/POC_ToonVertexColor.mat";
+        public const string GridMaterialPath = Root + "/Materials/POC_GridOverlay.mat";
+        public const string ScreenMaterialPath = Root + "/Materials/POC_ScreenOverlay.mat";
+        public const string PlayerModelPath = Root + "/Models/poc_player.fbx";
+        public const string TreeModelPath = Root + "/Models/poc_tree.fbx";
+        public const string HouseModelPath = Root + "/Models/poc_house.fbx";
+        public const string OutdoorMapPath = "Assets/Content/Maps/first_field.asset";
+        public const string InteriorMapPath = "Assets/Content/Maps/halka_house.asset";
+        public const string MessageFontPath = "Assets/Content/Fonts/HalkaMessageSubset.ttf";
+        public const string BlenderMaterialName = "HALKA_VertexColor";
+
+        [MenuItem("HALKA/POC 2D3D/Build POC Scene")]
+        public static void BuildFromMenu() => Build();
+
+        public static void BuildBatch()
+        {
+            try
+            {
+                Build();
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        public static void Build()
+        {
+            foreach (var folder in new[] { "Scenes", "Data", "Materials" })
+                if (!AssetDatabase.IsValidFolder(Root + "/" + folder)) AssetDatabase.CreateFolder(Root, folder);
+            var toon = EnsureMaterial(ToonMaterialPath, "HALKA/POC/ToonVertexColor", null);
+            var grid = EnsureMaterial(GridMaterialPath, "HALKA/POC/UnlitVertexColor", (float)CompareFunction.LessEqual);
+            var screen = EnsureMaterial(ScreenMaterialPath, "HALKA/POC/UnlitVertexColor", (float)CompareFunction.Always);
+            foreach (var path in new[] { PlayerModelPath, TreeModelPath, HouseModelPath }) RemapModelMaterial(path, toon);
+
+            var catalog = AssetDatabase.LoadAssetAtPath<PocPresentationCatalog>(CatalogPath);
+            if (catalog == null)
+            {
+                catalog = ScriptableObject.CreateInstance<PocPresentationCatalog>();
+                AssetDatabase.CreateAsset(catalog, CatalogPath);
+            }
+            catalog.Configure(LoadModel(PlayerModelPath), toon, grid, new List<PocPresentationBinding>
+            {
+                new PocPresentationBinding { definitionId = "tree_basic", model = LoadModel(TreeModelPath) },
+                new PocPresentationBinding { definitionId = "house_main", model = LoadModel(HouseModelPath) }
+            });
+            EditorUtility.SetDirty(catalog);
+            AssetDatabase.SaveAssets();
+
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            BuildSceneContent(catalog, screen);
+            RenderSettings.ambientMode = AmbientMode.Flat;
+            RenderSettings.ambientLight = PocTimeOfDay.DayAmbient;
+            RenderSettings.skybox = null;
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            AssetDatabase.SaveAssets();
+            Debug.Log("HALKA POC scene built: " + ScenePath);
+        }
+
+        public static GameObject BuildSceneContent(PocPresentationCatalog catalog, Material screenOverlay)
+        {
+            var outdoor = AssetDatabase.LoadAssetAtPath<MapDefinition>(OutdoorMapPath);
+            var interior = AssetDatabase.LoadAssetAtPath<MapDefinition>(InteriorMapPath);
+            var font = AssetDatabase.LoadAssetAtPath<Font>(MessageFontPath);
+            if (outdoor == null || interior == null) throw new InvalidOperationException("Official map caches are missing");
+            if (font == null) throw new InvalidOperationException("Message font is missing");
+
+            var root = new GameObject("HALKA WORLD 2D3D POC");
+            root.AddComponent<AudioListener>();
+            var worldTime = root.AddComponent<WorldTimeController>();
+            var session = root.AddComponent<SharedWorldSession>();
+            var input = root.AddComponent<PocInput>();
+            var presenter = root.AddComponent<PocWorldPresenter>();
+            var switcher = root.AddComponent<PocViewSwitcher>();
+            var time = root.AddComponent<PocTimeOfDay>();
+            var panel = root.AddComponent<PocDebugPanel>();
+
+            var controls = new GameObject("Existing touch controls (D-pad, A)");
+            controls.transform.SetParent(root.transform, false);
+            var dpad = controls.AddComponent<TouchDpad>();
+            var action = controls.AddComponent<TouchActionButton>();
+            var actionObject = new SerializedObject(action);
+            actionObject.FindProperty("dpad").objectReferenceValue = dpad;
+            actionObject.FindProperty("fallbackFont").objectReferenceValue = font;
+            actionObject.ApplyModifiedPropertiesWithoutUndo();
+
+            var player = new GameObject("POC Player (shared state view)");
+            var actor = player.AddComponent<PocActorView>();
+            var yawRoot = new GameObject("Model yaw (+180: Blender front faces South)");
+            yawRoot.transform.SetParent(player.transform, false);
+            yawRoot.transform.localRotation = Quaternion.Euler(0f, GridSpace3D.ModelFrontYawOffset, 0f);
+            var model = (GameObject)PrefabUtility.InstantiatePrefab(catalog.PlayerModel, yawRoot.transform);
+            model.name = "poc_player";
+
+            var sun = new GameObject("Sun").AddComponent<Light>();
+            sun.type = LightType.Directional;
+            sun.transform.rotation = Quaternion.Euler(52f, 32f, 0f);
+            sun.shadows = LightShadows.Hard;
+            sun.shadowStrength = 1f;
+            sun.shadowBias = 0.02f;
+            sun.shadowNormalBias = 0.25f;
+            sun.intensity = PocTimeOfDay.DaySunIntensity;
+
+            var backdrop = new Color(0.06f, 0.06f, 0.08f);
+            var pixelCamera = CreateCamera("2D Pixel Camera (renders into low-res texture)", 0, backdrop);
+            pixelCamera.orthographic = true;
+            var pixelView = pixelCamera.gameObject.AddComponent<PocPixelView2D>();
+            var presenterCamera = CreateCamera("2D Presenter Camera (integer upscale)", 1, Color.black);
+            presenterCamera.cullingMask = 0;
+            var pixelPresenter = presenterCamera.gameObject.AddComponent<PocPixelPresenter>();
+            var thirdCamera = CreateCamera("3D Third-Person Camera", 0, PocTimeOfDay.DaySky);
+            thirdCamera.nearClipPlane = 0.05f;
+            thirdCamera.farClipPlane = 60f;
+            var thirdPerson = thirdCamera.gameObject.AddComponent<PocThirdPersonCamera>();
+            thirdCamera.enabled = false;
+            thirdPerson.enabled = false;
+
+            session.Configure(outdoor, interior, input);
+            input.Configure(dpad, action, switcher, panel, session);
+            presenter.Configure(session, catalog);
+            actor.Configure(session, yawRoot.transform);
+            pixelView.Configure(pixelCamera, session, actor);
+            pixelPresenter.Configure(pixelView, time, screenOverlay);
+            thirdPerson.Configure(thirdCamera, session, presenter);
+            switcher.Configure(pixelView, presenterCamera, thirdPerson, actor, presenter, session);
+            time.Configure(worldTime, session, switcher, sun, thirdCamera);
+            panel.Configure(session, switcher, input, time, presenter, dpad, action, font);
+            return root;
+        }
+
+        private static Camera CreateCamera(string name, int depth, Color background)
+        {
+            var camera = new GameObject(name).AddComponent<Camera>();
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = background;
+            camera.depth = depth;
+            camera.allowHDR = false;
+            camera.allowMSAA = false;
+            return camera;
+        }
+
+        private static Material EnsureMaterial(string path, string shaderName, float? zTest)
+        {
+            var shader = Shader.Find(shaderName);
+            if (shader == null) throw new InvalidOperationException("Shader missing: " + shaderName);
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+            material.shader = shader;
+            if (zTest.HasValue) material.SetFloat("_ZTest", zTest.Value);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        // The Blender material slot is a name only; Unity maps it to the shared POC material.
+        private static void RemapModelMaterial(string path, Material material)
+        {
+            var importer = AssetImporter.GetAtPath(path) as ModelImporter;
+            if (importer == null) throw new InvalidOperationException("Model not imported: " + path);
+            var id = new AssetImporter.SourceAssetIdentifier(typeof(Material), BlenderMaterialName);
+            var map = importer.GetExternalObjectMap();
+            if (map.TryGetValue(id, out var current) && current == material) return;
+            importer.AddRemap(id, material);
+            importer.SaveAndReimport();
+        }
+
+        private static GameObject LoadModel(string path)
+        {
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (model == null) throw new InvalidOperationException("Model missing: " + path);
+            return model;
+        }
+
+        public static string RepositoryRoot =>
+            Path.GetFullPath(Path.Combine(Application.dataPath, "..", ".."));
+    }
+}
