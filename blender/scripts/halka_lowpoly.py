@@ -91,8 +91,77 @@ class MeshBuilder:
             self.bm.faces.new((front[i], front[j], back[j], back[i]))
         self._paint_new(before, color)
 
-    def to_object(self, name, collection=None):
-        bmesh.ops.recalc_face_normals(self.bm, faces=self.bm.faces)
+    def flat_polygon(self, outline, z, color):
+        """Upward-facing polygon (counter-clockwise outline in XY), triangulated so concave
+        outlines such as wavy road edges stay correct after export."""
+        before = self._snapshot()
+        verts = [self.bm.verts.new((x, y, z)) for x, y in outline]
+        face = self.bm.faces.new(verts)
+        bmesh.ops.triangulate(self.bm, faces=[face])
+        self._paint_new(before, color)
+
+    def slab(self, outline, z0, z1, top_color, side_color):
+        """Convex or concave XY outline extruded upward: a petal, leaf or flat stone."""
+        before = self._snapshot()
+        bottom = [self.bm.verts.new((x, y, z0)) for x, y in outline]
+        top = [self.bm.verts.new((x, y, z1)) for x, y in outline]
+        top_face = self.bm.faces.new(top)
+        bottom_face = self.bm.faces.new(list(reversed(bottom)))
+        count = len(outline)
+        sides = [self.bm.faces.new((bottom[i], bottom[(i + 1) % count], top[(i + 1) % count], top[i]))
+                 for i in range(count)]
+        new_faces = bmesh.ops.triangulate(self.bm, faces=[top_face, bottom_face])["faces"]
+        self._paint_new(before, side_color)
+        rgba = hex_color(top_color)
+        for face in new_faces:
+            if face.calc_center_median().z > (z0 + z1) * 0.5:
+                for loop in face.loops:
+                    loop[self.layer] = rgba
+        return sides
+
+    def blade(self, base, width, height, lean, yaw, dark, light):
+        """One grass blade: a thin three-sided spike, darker at the root side faces."""
+        before = self._snapshot()
+        bx, by = base
+        c, s = math.cos(yaw), math.sin(yaw)
+        half = width * 0.5
+        thick = width * 0.35
+        corners = [(-half, 0.0), (half, 0.0), (0.0, thick)]
+        verts = [self.bm.verts.new((bx + x * c - y * s, by + x * s + y * c, 0.0)) for x, y in corners]
+        tip = self.bm.verts.new((bx - lean * s, by + lean * c, height))
+        faces = [self.bm.faces.new((verts[0], verts[1], tip)), self.bm.faces.new((verts[1], verts[2], tip)),
+                 self.bm.faces.new((verts[2], verts[0], tip))]
+        centroid = (verts[0].co + verts[1].co + verts[2].co + tip.co) * 0.25
+        for face in faces:
+            face.normal_update()
+            if face.normal.dot(face.calc_center_median() - centroid) < 0.0:
+                face.normal_flip()
+        self._paint_new(before, dark)
+        rgba = hex_color(light)
+        for loop in faces[0].loops:
+            loop[self.layer] = rgba
+
+    def jitter_blob(self, center, radii, subdivisions, seed, amount, color_for_normal):
+        """Icosphere scaled to radii and nudged per vertex with a fixed seed (repeatable)."""
+        import random
+        before = self._snapshot()
+        rng = random.Random(seed)
+        matrix = Matrix.Translation(center) @ Matrix.Diagonal((radii[0], radii[1], radii[2], 1.0))
+        result = bmesh.ops.create_icosphere(self.bm, subdivisions=subdivisions, radius=1.0, matrix=matrix)
+        for vert in result["verts"]:
+            vert.co += Vector((rng.uniform(-amount, amount), rng.uniform(-amount, amount),
+                               rng.uniform(-amount, amount) * 0.6))
+        self.bm.normal_update()
+        for face in self.bm.faces:
+            if face in before:
+                continue
+            rgba = hex_color(color_for_normal(face.normal, face.calc_center_median()))
+            for loop in face.loops:
+                loop[self.layer] = rgba
+
+    def to_object(self, name, collection=None, recalc_normals=True):
+        if recalc_normals:
+            bmesh.ops.recalc_face_normals(self.bm, faces=self.bm.faces)
         mesh = bpy.data.meshes.new(name + "_Mesh")
         self.bm.to_mesh(mesh)
         self.bm.free()
@@ -130,9 +199,11 @@ def add_cell_guides(name, cells):
     return guides
 
 
-def export_fbx(obj, path):
+def export_fbx(obj, path, extra=()):
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
+    for item in extra:
+        item.select_set(True)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.export_scene.fbx(
         filepath=path,
@@ -154,6 +225,21 @@ def export_fbx(obj, path):
         path_mode="STRIP",
         use_metadata=True,
     )
+
+
+def add_anchor(name, parent, location):
+    """An exported Empty under a model, e.g. a future Crow perch point on a tree."""
+    empty = bpy.data.objects.new(name, None)
+    empty.empty_display_type = "SPHERE"
+    empty.empty_display_size = 0.05
+    bpy.context.scene.collection.objects.link(empty)
+    empty.parent = parent
+    empty.location = location
+    return empty
+
+
+def material_count(obj):
+    return len(obj.data.materials)
 
 
 def triangle_count(obj):

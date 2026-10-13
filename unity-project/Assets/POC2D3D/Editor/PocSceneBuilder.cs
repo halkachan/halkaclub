@@ -23,6 +23,13 @@ namespace Halka.Poc2D3D.EditorTools
         public const string PlayerModelPath = Root + "/Models/poc_player.fbx";
         public const string TreeModelPath = Root + "/Models/poc_tree.fbx";
         public const string HouseModelPath = Root + "/Models/poc_house.fbx";
+        public const string Phase2Models = Root + "/Models/Phase2/";
+        public static readonly string[] Phase2ModelNames =
+        {
+            "ground_grass_a", "ground_grass_b", "ground_grass_c", "ground_dirt_full", "ground_dirt_edge",
+            "ground_dirt_corner", "grass_tuft_a", "grass_tuft_b", "grass_tuft_c", "tree_basic", "flower_basic",
+            "stone_basic_a", "stone_basic_b", "stone_basic_c"
+        };
         public const string OutdoorMapPath = "Assets/Content/Maps/first_field.asset";
         public const string InteriorMapPath = "Assets/Content/Maps/halka_house.asset";
         public const string MessageFontPath = "Assets/Content/Fonts/HalkaMessageSubset.ttf";
@@ -53,6 +60,7 @@ namespace Halka.Poc2D3D.EditorTools
             var grid = EnsureMaterial(GridMaterialPath, "HALKA/POC/UnlitVertexColor", (float)CompareFunction.LessEqual);
             var screen = EnsureMaterial(ScreenMaterialPath, "HALKA/POC/UnlitVertexColor", (float)CompareFunction.Always);
             foreach (var path in new[] { PlayerModelPath, TreeModelPath, HouseModelPath }) RemapModelMaterial(path, toon);
+            foreach (var name in Phase2ModelNames) RemapModelMaterial(Phase2Models + name + ".fbx", toon);
 
             var catalog = AssetDatabase.LoadAssetAtPath<PocPresentationCatalog>(CatalogPath);
             if (catalog == null)
@@ -60,10 +68,26 @@ namespace Halka.Poc2D3D.EditorTools
                 catalog = ScriptableObject.CreateInstance<PocPresentationCatalog>();
                 AssetDatabase.CreateAsset(catalog, CatalogPath);
             }
+            // Phase 2: nature objects and ground are the Blender models made for はるかわーるど;
+            // the player and the house remain Phase 1 placeholders.
             catalog.Configure(LoadModel(PlayerModelPath), toon, grid, new List<PocPresentationBinding>
             {
-                new PocPresentationBinding { definitionId = "tree_basic", model = LoadModel(TreeModelPath) },
-                new PocPresentationBinding { definitionId = "house_main", model = LoadModel(HouseModelPath) }
+                new PocPresentationBinding { definitionId = "tree_basic", model = Phase2("tree_basic"),
+                    perchAnchorName = "PerchAnchor" },
+                new PocPresentationBinding { definitionId = "flower_basic", model = Phase2("flower_basic"),
+                    cameraOccluder = false },
+                new PocPresentationBinding { definitionId = "stone_basic", model = Phase2("stone_basic_a"),
+                    cameraOccluder = false, variants = new List<GameObject>
+                    { Phase2("stone_basic_a"), Phase2("stone_basic_b"), Phase2("stone_basic_c") } },
+                new PocPresentationBinding { definitionId = "house_main", model = LoadModel(HouseModelPath),
+                    placeholder = true }
+            }, new PocEnvironmentPresentation
+            {
+                grassTiles = new List<GameObject> { Phase2("ground_grass_a"), Phase2("ground_grass_b"), Phase2("ground_grass_c") },
+                dirtFull = Phase2("ground_dirt_full"),
+                dirtEdge = Phase2("ground_dirt_edge"),
+                dirtCorner = Phase2("ground_dirt_corner"),
+                grassTufts = new List<GameObject> { Phase2("grass_tuft_a"), Phase2("grass_tuft_b"), Phase2("grass_tuft_c") }
             });
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
@@ -187,6 +211,8 @@ namespace Halka.Poc2D3D.EditorTools
             importer.AddRemap(id, material);
             importer.SaveAndReimport();
         }
+
+        public static GameObject Phase2(string name) => LoadModel(Phase2Models + name + ".fbx");
 
         private static GameObject LoadModel(string path)
         {

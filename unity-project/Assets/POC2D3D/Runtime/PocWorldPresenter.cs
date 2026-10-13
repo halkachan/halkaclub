@@ -12,6 +12,10 @@ namespace Halka.Poc2D3D
         public Vector2Int RootCell;
         public bool IsFallback;
         public bool CameraOccluder;
+        public bool CastShadows = true;
+        public string ModelName;
+        public bool Placeholder;
+        public Transform PerchAnchor;
         public Renderer[] Renderers;
 
         public bool TryRaycast(Ray ray, out float distance)
@@ -33,7 +37,8 @@ namespace Halka.Poc2D3D
                 if (item != null)
                     item.shadowCastingMode = hidden
                         ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly
-                        : UnityEngine.Rendering.ShadowCastingMode.On;
+                        : CastShadows ? UnityEngine.Rendering.ShadowCastingMode.On
+                        : UnityEngine.Rendering.ShadowCastingMode.Off;
         }
     }
 
@@ -55,6 +60,9 @@ namespace Halka.Poc2D3D
         public IReadOnlyList<PocObjectView> Views => views;
         public int BuiltTriangles { get; private set; }
         public string BuiltMapId { get; private set; }
+        public PocEnvironmentStats Environment { get; private set; }
+        public GameObject GroundObject { get; private set; }
+        public GameObject TuftObject { get; private set; }
 
         public bool GridVisible
         {
@@ -100,6 +108,9 @@ namespace Halka.Poc2D3D
             gridOverlay = BuildGridOverlay(world);
             gridOverlay.SetActive(gridVisible);
             BuiltMapId = world.MapId;
+            // Runtime static batching of the freshly built objects (one shared material), redone on
+            // every rebuild so Map edits still move things. Edit Mode checks keep the meshes as is.
+            if (Application.isPlaying) StaticBatchingUtility.Combine(mapRoot.gameObject);
         }
 
         public PocObjectView FindView(string instanceId)
@@ -111,6 +122,20 @@ namespace Halka.Poc2D3D
 
         private void BuildGround(SharedWorldModel world)
         {
+            Environment = null;
+            GroundObject = TuftObject = null;
+            var dressing = catalog.Environment;
+            if (!world.IsInterior && dressing != null && dressing.IsComplete)
+            {
+                Environment = PocEnvironmentBuilder.Build(world, dressing, catalog.VertexColorMaterial, mapRoot,
+                    out var dressedGround, out var tufts);
+                GroundObject = dressedGround;
+                TuftObject = tufts;
+                BuiltTriangles += Environment.GroundTriangles + Environment.TuftTriangles;
+                BuildWalls(world);
+                return;
+            }
+            // Interiors keep the Phase 1 generated floor until the house is modeled.
             var mesh = new PocMeshBuilder();
             var map = world.Map;
             var margin = world.IsInterior ? 0 : OutdoorMargin;
@@ -172,8 +197,9 @@ namespace Halka.Poc2D3D
             {
                 root = new GameObject(instance.DefinitionId + " " + instance.InstanceId);
                 root.transform.SetParent(mapRoot, false);
-                var model = Instantiate(binding.model, root.transform, false);
-                model.name = binding.model.name;
+                var source = binding.Pick(instance.InstanceId);
+                var model = Instantiate(source, root.transform, false);
+                model.name = source.name;
                 model.transform.localPosition = binding.meshOffset;
                 model.transform.localRotation = Quaternion.Euler(0f, binding.yawDegrees, 0f);
                 model.transform.localScale = Vector3.one * binding.uniformScale;
@@ -206,8 +232,21 @@ namespace Halka.Poc2D3D
             view.RootCell = instance.RootCell;
             view.IsFallback = binding == null;
             view.CameraOccluder = binding == null || binding.cameraOccluder;
+            view.CastShadows = binding == null || binding.castShadows;
+            view.Placeholder = binding == null || binding.placeholder;
+            view.ModelName = binding != null ? binding.Pick(instance.InstanceId).name : null;
             view.Renderers = root.GetComponentsInChildren<Renderer>();
+            view.SetHidden(false);
+            if (binding != null && !string.IsNullOrEmpty(binding.perchAnchorName))
+                view.PerchAnchor = FindChild(root.transform, binding.perchAnchorName);
             return view;
+        }
+
+        private static Transform FindChild(Transform parent, string name)
+        {
+            foreach (var child in parent.GetComponentsInChildren<Transform>(true))
+                if (child.name == name) return child;
+            return null;
         }
 
         private GameObject BuildGridOverlay(SharedWorldModel world)

@@ -12,6 +12,7 @@ namespace Halka.Poc2D3D
     [DefaultExecutionOrder(200)]
     public sealed class PocDebugPanel : MonoBehaviour
     {
+        public const string PreviewTitle = "はるかわーるど ver3.0 Phase 2 Preview";
         private static readonly int[] PixelOptions = { 16, 24, 32 };
         private static readonly float[] PitchOptions = { 50f, 60f, 90f, 40f };
 
@@ -156,7 +157,21 @@ namespace Halka.Poc2D3D
                     showStats = !showStats;
             }
             GUI.Label(new Rect(x, y, width, statsLines * row * 0.78f + 8f), BuildText(), textStyle);
+            DrawTitle(s);
             DrawMessage();
+        }
+
+        // The user-facing name is はるかわーるど; internal IDs and save keys keep their old names.
+        private void DrawTitle(float scale)
+        {
+            var width = Mathf.Min(Screen.width - panelRect.xMax - 16f, 380f * scale);
+            if (width < 120f) return;
+            var rect = new Rect(Screen.width - width - 10f, 8f, width, 26f * scale);
+            GUI.color = new Color(1f, 1f, 1f, 0.82f);
+            GUI.DrawTexture(rect, Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GameBitmapFont.Draw(rect, PreviewTitle, Mathf.RoundToInt(18 * scale), new Color(0.13f, 0.15f, 0.11f),
+                TextAnchor.MiddleCenter, fallbackFont);
         }
 
         private bool Button(ref float y, float x, float width, float height, string label)
@@ -187,7 +202,9 @@ namespace Halka.Poc2D3D
                     .Append(views.PixelView.Target.height).Append(" x").Append(views.PixelView.Scale);
             if (!(showStats && expanded)) return text.ToString();
             text.Append('\n');
-            text.Append("Mesh tris (map) ").Append(presenter.BuiltTriangles).Append('\n');
+            text.Append("Mesh tris (map) ").Append(presenter.BuiltTriangles);
+            if (presenter.Environment != null) text.Append("  tufts ").Append(presenter.Environment.Tufts);
+            text.Append('\n');
             text.Append("DrawCalls ").Append(Value(drawCalls)).Append("  Batches ").Append(Value(batches)).Append('\n');
             text.Append("SetPass ").Append(Value(setPass)).Append("  Tris/frame ").Append(Value(renderedTriangles)).Append('\n');
             text.Append("Used memory ").Append(usedMemory.Valid && usedMemory.LastValue > 0

@@ -10,11 +10,11 @@ namespace Halka.Poc2D3D.EditorTools
     // ProjectBuilder, never touches halkaworld/webgl and does not change Build Settings.
     public static class PocBuilder
     {
-        public const string OutputFolderName = "HALKA_WORLD_ver3.0_2D3D_PHASE1_POC";
+        public const string OutputFolderName = "HARUKA_WORLD_ver3.0_PHASE2_PREVIEW";
 
         public static string OutputPath => Path.GetFullPath(Path.Combine(PocSceneBuilder.RepositoryRoot, "..", OutputFolderName));
 
-        [MenuItem("HALKA/POC 2D3D/Build POC WebGL outside repository")]
+        [MenuItem("HALKA/POC 2D3D/Build Phase 2 Preview WebGL outside repository")]
         public static void BuildFromMenu() => Build();
 
         public static void BuildBatch()
@@ -53,6 +53,11 @@ namespace Halka.Poc2D3D.EditorTools
             var tools = Path.Combine(PocSceneBuilder.RepositoryRoot, "tools", "poc2d3d");
             File.Copy(Path.Combine(tools, "serve_poc.py"), Path.Combine(output, "serve_poc.py"), true);
             File.Copy(Path.Combine(tools, "README_POC.txt"), Path.Combine(output, "README_POC.txt"), true);
+            // The shared WebGL template is not edited; only this outside-repository page gets the
+            // user-facing name of the preview.
+            var page = Path.Combine(output, "index.html");
+            File.WriteAllText(page, File.ReadAllText(page).Replace("<title>HALKA WORLD</title>",
+                "<title>" + PocDebugPanel.PreviewTitle + "</title>"));
             Debug.Log($"HALKA POC WebGL: {output} ({report.summary.totalSize} bytes, {report.summary.totalTime})");
         }
     }

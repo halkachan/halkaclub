@@ -17,14 +17,61 @@ MonoBehaviour:
   overlayMaterial: {fileID: 2100000, guid: 99428458a4faf404a980948c4e68da5b, type: 2}
   bindings:
   - definitionId: tree_basic
-    model: {fileID: 919132149155446097, guid: f88149e0e7fad4d44ae19cacdcac44e9, type: 3}
+    model: {fileID: 919132149155446097, guid: b4849c8e8f938cb43b22ad2186a4e3c7, type: 3}
+    variants: []
     yawDegrees: 0
     meshOffset: {x: 0, y: 0, z: 0}
     uniformScale: 1
     cameraOccluder: 1
+    castShadows: 1
+    perchAnchorName: PerchAnchor
+    placeholder: 0
+  - definitionId: flower_basic
+    model: {fileID: 919132149155446097, guid: b07fa73f3afe0c144a758836c02cbb37, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+  - definitionId: stone_basic
+    model: {fileID: 919132149155446097, guid: bf617b6918105564c99b19ee64fa1bbf, type: 3}
+    variants:
+    - {fileID: 919132149155446097, guid: bf617b6918105564c99b19ee64fa1bbf, type: 3}
+    - {fileID: 919132149155446097, guid: 9c086b7698e72f8488694d20cdb5d25a, type: 3}
+    - {fileID: 919132149155446097, guid: 75dd43d7c99c626439418833db997bf1, type: 3}
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
   - definitionId: house_main
     model: {fileID: 919132149155446097, guid: f324ab4544efe924a86b56261b79154b, type: 3}
+    variants: []
     yawDegrees: 0
     meshOffset: {x: 0, y: 0, z: 0}
     uniformScale: 1
     cameraOccluder: 1
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 1
+  environment:
+    grassTiles:
+    - {fileID: 919132149155446097, guid: 63963ae3c0300124ca9d7edb73f246bc, type: 3}
+    - {fileID: 919132149155446097, guid: 6269f4350be721943a4685ac00f3f028, type: 3}
+    - {fileID: 919132149155446097, guid: 24900c731cd98f244b984c20e40c5322, type: 3}
+    dirtFull: {fileID: 919132149155446097, guid: 4f37f8a6cd6432546a308d4ee2a67b84, type: 3}
+    dirtEdge: {fileID: 919132149155446097, guid: 6152e41c2f87ef64e9014dfaded006c8, type: 3}
+    dirtCorner: {fileID: 919132149155446097, guid: 6eab840a10a99b049b2a59e19841bcc5, type: 3}
+    grassTufts:
+    - {fileID: 919132149155446097, guid: 2c97a88d3fc4d1c49af6900a8ae2385a, type: 3}
+    - {fileID: 919132149155446097, guid: 55f916df7778d81419e5380fe5792b80, type: 3}
+    - {fileID: 919132149155446097, guid: f6670462453580e4e8cde174e5fffb93, type: 3}
+    tuftChance: 0.8
+    roadsideTuftChance: 0.55
+    outsideMargin: 8
+    outsideTint: {r: 0.9, g: 0.93, b: 0.88, a: 1}
