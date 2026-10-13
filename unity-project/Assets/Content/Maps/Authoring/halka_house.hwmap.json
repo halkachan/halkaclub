@@ -389,6 +389,30 @@
         "x": 2,
         "y": 1
       }
+    },
+    {
+      "instanceId": "obj_recording_mic_v30_preview",
+      "definitionId": "recording_mic_basic",
+      "rootCell": {
+        "x": 4,
+        "y": -1
+      }
+    },
+    {
+      "instanceId": "obj_art_easel_v30_preview",
+      "definitionId": "art_easel_basic",
+      "rootCell": {
+        "x": -3,
+        "y": -2
+      }
+    },
+    {
+      "instanceId": "obj_studio_shelf_v30_preview",
+      "definitionId": "studio_shelf_basic",
+      "rootCell": {
+        "x": -1,
+        "y": 2
+      }
     }
   ],
   "markers": [

@@ -134,6 +134,47 @@ namespace Halka.Game.Editor
                 indoor.DataVersion == 4 && outdoor.Objects.Any(item =>
                     item.Definition.StableId == "tree_basic"),
                 "formal v4 maps and tree instances remain intact");
+
+            var directionTexts = new[] { "こっちは北。", "こっちは東。", "こっちは南。", "こっちは西。" };
+            var directionalSigns = outdoor.Objects.Where(item =>
+                item.InstanceId.StartsWith("obj_sign_", StringComparison.Ordinal) &&
+                item.InstanceId.EndsWith("_v30_preview", StringComparison.Ordinal)).ToArray();
+            Check(directionalSigns.Length == 4 &&
+                directionalSigns.All(item => item.Definition.StableId == "sign_basic" &&
+                    directionTexts.Contains(item.SignText)) &&
+                directionalSigns.Select(item => item.SignText).Distinct().Count() == 4,
+                "four independent directional sign messages are authored in the formal map");
+            var roomObjects = new[] { "recording_mic_basic", "art_easel_basic", "studio_shelf_basic" };
+            Check(roomObjects.All(id => indoor.Objects.Count(item =>
+                    item.Definition != null && item.Definition.StableId == id) == 1) &&
+                MapPlacementRules.Validate(indoor).Count == 0,
+                "music, singing and painting furniture remain editable and keep the room valid");
+            foreach (var art in new[] { ("desk", 64, 32), ("house_floor", 32, 32),
+                ("recording_mic", 32, 64), ("art_easel", 64, 64), ("studio_shelf", 64, 32) })
+            {
+                var path = "Assets/Content/World/" + art.Item1 + ".png";
+                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+                Check(sprite != null && importer != null &&
+                    sprite.rect.width == art.Item2 && sprite.rect.height == art.Item3 &&
+                    importer.filterMode == FilterMode.Point && !importer.mipmapEnabled &&
+                    importer.textureCompression == TextureImporterCompression.Uncompressed &&
+                    Mathf.Approximately(importer.spritePixelsPerUnit, 64f),
+                    art.Item1 + " keeps the approved pixel-art import contract");
+            }
+            var houseArea = UnityEngine.Object.FindFirstObjectByType<HouseArea2D>();
+            var camera = houseArea != null ? (Camera)Get(houseArea, "worldCamera") : null;
+            Check(houseArea != null && camera != null, "house camera is available");
+            var outdoorCameraSize = camera.orthographicSize;
+            typeof(HouseArea2D).GetMethod("Awake", Hidden).Invoke(houseArea, null);
+            houseArea.Enter();
+            Check(mapController.ActiveMapId == "halka_house" &&
+                Mathf.Approximately(camera.orthographicSize, outdoorCameraSize),
+                "interior keeps the outdoor camera scale");
+            houseArea.Exit();
+            Check(mapController.ActiveMapId == "first_field" &&
+                Mathf.Approximately(camera.orthographicSize, outdoorCameraSize),
+                "outdoor camera scale is restored after leaving");
             Debug.Log("HALKA ver3.0 Preview time, lighting, crow trigger and inherited checks passed.");
         }
 

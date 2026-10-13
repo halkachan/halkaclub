@@ -27,7 +27,7 @@
     },
     {
       "definitionId": "house_floor",
-      "displayName": "木床",
+      "displayName": "マット",
       "category": "base",
       "previewSpritePath": "Assets/Content/World/house_floor.png",
       "visualWidthPixels": 32,
@@ -462,6 +462,98 @@
           "interactionText": "いど。"
         }
       ]
+    },
+    {
+      "definitionId": "recording_mic_basic",
+      "displayName": "マイクスタンド",
+      "category": "furniture",
+      "previewSpritePath": "Assets/Content/World/recording_mic.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 64,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 2
+      },
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "allowedMapTypes": [],
+      "actionPoints": []
+    },
+    {
+      "definitionId": "art_easel_basic",
+      "displayName": "イーゼル",
+      "category": "furniture",
+      "previewSpritePath": "Assets/Content/World/art_easel.png",
+      "visualWidthPixels": 64,
+      "visualHeightPixels": 64,
+      "rootAnchor": "bottom-left",
+      "footprint": {
+        "width": 2,
+        "height": 2
+      },
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        }
+      ],
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "allowedMapTypes": [],
+      "actionPoints": []
+    },
+    {
+      "definitionId": "studio_shelf_basic",
+      "displayName": "制作棚",
+      "category": "furniture",
+      "previewSpritePath": "Assets/Content/World/studio_shelf.png",
+      "visualWidthPixels": 64,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-left",
+      "footprint": {
+        "width": 2,
+        "height": 1
+      },
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ],
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "allowedMapTypes": [],
+      "actionPoints": []
     }
   ],
   "visuals": {

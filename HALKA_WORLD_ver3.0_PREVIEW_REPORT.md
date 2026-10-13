@@ -1,5 +1,7 @@
 # HALKA WORLD ver3.0 Preview 開発レポート
 
+> 2026-10-14の公開前改修で室内外のカメラ倍率、床・机、正式MapのObject配置を更新した。以下の当初レポートで「Camera変更なし」「正式Map差分なし」と記した箇所は、[追加改修レポート](HALKA_WORLD_ver3.0_PREVIEW_REVISION_REPORT.md)の内容を最新状態として読む。
+
 作業日: 2026-10-12～13（日本時間）
 対象: 本編 ver3.0 Preview / 公開版 ver2.9維持 / MAP EDITOR v0.6 / Map JSON v4
 

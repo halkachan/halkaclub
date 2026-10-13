@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: house_floor
   m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.SurfaceDefinition
   stableId: house_floor
-  displayName: "\u6728\u5E8A"
+  displayName: "\u30DE\u30C3\u30C8"
   sprite: {fileID: 21300000, guid: 2dd17381791b9694c8b0395e4fbf7616, type: 3}
   blocksMovement: 0

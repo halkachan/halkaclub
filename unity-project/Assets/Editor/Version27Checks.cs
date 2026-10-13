@@ -80,10 +80,12 @@ namespace Halka.Game.Editor
                 "house entry remains reachable");
             foreach (var id in new[] { "bench_basic", "sign_basic", "well_basic" })
             {
-                var placement = field.Objects.Single(item => item.Definition.StableId == id);
-                foreach (var point in placement.Definition.ActionPoints)
-                    Check(accessible.Contains(placement.RootCell + point.PlayerCellOffset),
-                        id + " action point remains reachable");
+                var placements = field.Objects.Where(item => item.Definition.StableId == id).ToArray();
+                Check(placements.Length >= 1, id + " remains present");
+                foreach (var placement in placements)
+                    foreach (var point in placement.Definition.ActionPoints)
+                        Check(accessible.Contains(placement.RootCell + point.PlayerCellOffset),
+                            id + " action point remains reachable");
             }
             foreach (var asset in new[] { "tree", "flower", "stone" })
             {

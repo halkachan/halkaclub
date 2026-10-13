@@ -247,6 +247,22 @@ MonoBehaviour:
     RootCell: {x: -9, y: 1}
     Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
     SignText: 
+  - InstanceId: obj_sign_north_v30_preview
+    RootCell: {x: 2, y: 5}
+    Definition: {fileID: 11400000, guid: 173e5fb38ab29df42aa7172a4137499d, type: 2}
+    SignText: "\u3053\u3063\u3061\u306F\u5317\u3002"
+  - InstanceId: obj_sign_east_v30_preview
+    RootCell: {x: 10, y: 0}
+    Definition: {fileID: 11400000, guid: 173e5fb38ab29df42aa7172a4137499d, type: 2}
+    SignText: "\u3053\u3063\u3061\u306F\u6771\u3002"
+  - InstanceId: obj_sign_south_v30_preview
+    RootCell: {x: 5, y: -3}
+    Definition: {fileID: 11400000, guid: 173e5fb38ab29df42aa7172a4137499d, type: 2}
+    SignText: "\u3053\u3063\u3061\u306F\u5357\u3002"
+  - InstanceId: obj_sign_west_v30_preview
+    RootCell: {x: -8, y: 1}
+    Definition: {fileID: 11400000, guid: 173e5fb38ab29df42aa7172a4137499d, type: 2}
+    SignText: "\u3053\u3063\u3061\u306F\u897F\u3002"
   markers:
   - StableId: road_east
     Cell: {x: 10, y: -1}

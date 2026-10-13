@@ -32,7 +32,11 @@ namespace Halka.Game.Editor
                 placements.Select(item => item.InstanceId).Distinct().Count() == placements.Length,
                 "unique object instance IDs");
             var bench = ExactlyOne(field, "bench_basic");
-            var sign = ExactlyOne(field, "sign_basic");
+            // The original welcome sign remains the ver2.5 regression fixture.
+            // Later versions may add other independently authored signs.
+            var sign = field.Objects.Single(item =>
+                item.InstanceId == "obj_sign_basic_v25_first_field" &&
+                item.Definition != null && item.Definition.StableId == "sign_basic");
             var cushion = ExactlyOne(room, "cushion_basic");
             var desk = ExactlyOne(room, "desk_basic");
             Check(!string.IsNullOrWhiteSpace(sign.SignText) &&
