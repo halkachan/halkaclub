@@ -122,9 +122,17 @@ namespace Halka.Poc2D3D.EditorTools
                 foreach (var px in new[] { 1, 0 })
                 {
                     pixel.OutlinePixels = px;
+                    pixel.FadeEnabled = false;
                     Place(southTree.RootCell + Vector2Int.up, FacingDirection.Down);
                     Shot2D($"sprite_order_behind_tree_outline{px}", 1024, 576,
                         new[] { (GridSpace3D.ToWorld(southTree.RootCell), "player", 120) }, true);
+                    // See-through tree (default): let the fade settle (0.25 s), then shoot.
+                    pixel.FadeEnabled = true;
+                    switcher.SetMode(PocViewMode.PixelView2D);
+                    for (var i = 0; i < 8; i++) Advance(0.05f, 1024, 576);
+                    Shot2D($"sprite_order_behind_tree_seethrough_outline{px}", 1024, 576,
+                        new[] { (GridSpace3D.ToWorld(southTree.RootCell), "player", 120) }, true);
+                    Shot2D($"sprite_order_behind_tree_seethrough_full_outline{px}", 1024, 576, null, px == 0);
                     Place(northTree.RootCell + Vector2Int.down, FacingDirection.Up);
                     Shot2D($"sprite_order_in_front_of_tree_outline{px}", 1024, 576,
                         new[] { (GridSpace3D.ToWorld(northTree.RootCell), "player", 120) }, true);

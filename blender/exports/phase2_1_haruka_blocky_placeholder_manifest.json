@@ -1,0 +1,74 @@
+{
+  "generator": "blender/scripts/build_haruka_blocky.py",
+  "status": "TEMPORARY placeholder (Minecraft-like blocks), not the official character model",
+  "style": "boxes painted per pixel from the 2D sprites; head 8x8x8 + hair layer, body 8x6x4, arms 2x6x3, legs 3x5x3 (pixels)",
+  "pixelMetres": 0.043,
+  "blenderVersion": "5.2.0 LTS",
+  "blend": "blender/sources/phase2_1/haruka_blocky_placeholder.blend",
+  "fbx": "unity-project/Assets/POC2D3D/Models/Phase2_1/haruka_blocky_placeholder.fbx",
+  "front": "South (-Y in Blender, -Z in Unity)",
+  "parts": {
+    "haruka_blocky_placeholder": {
+      "triangles": 756,
+      "vertices": 1512,
+      "materials": 1,
+      "pivot": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "ArmL": {
+      "triangles": 60,
+      "vertices": 120,
+      "materials": 1,
+      "pivot": [
+        0.215,
+        0.0,
+        0.4515
+      ]
+    },
+    "ArmR": {
+      "triangles": 60,
+      "vertices": 120,
+      "materials": 1,
+      "pivot": [
+        -0.215,
+        0.0,
+        0.4515
+      ]
+    },
+    "LegL": {
+      "triangles": 52,
+      "vertices": 104,
+      "materials": 1,
+      "pivot": [
+        0.0645,
+        0.0,
+        0.215
+      ]
+    },
+    "LegR": {
+      "triangles": 52,
+      "vertices": 104,
+      "materials": 1,
+      "pivot": [
+        -0.0645,
+        0.0,
+        0.215
+      ]
+    }
+  },
+  "triangles": 980,
+  "boundsMin": [
+    -0.258,
+    -0.2107,
+    0.0
+  ],
+  "boundsMax": [
+    0.2795,
+    0.1935,
+    0.9675
+  ],
+  "spriteReference": "Assets/Content/Character/{front,back,left,right}_idle/00.png (read only)"
+}

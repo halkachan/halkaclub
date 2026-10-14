@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Halka.Poc2D3D
 {
@@ -22,11 +24,18 @@ namespace Halka.Poc2D3D
         [SerializeField] private Material outlineComposite;
         [Header("2D player sprite (Phase 2.1)")]
         [SerializeField] private Material spriteMaterial;
+        [Header("2D see-through trees (Phase 2.1)")]
+        [SerializeField] private PocWorldPresenter worldPresenter;
+        [SerializeField] private Material fadeMaterial;
 
         private RenderTexture target;
         private RenderTexture outlineMask;
         private RenderTexture outlined;
         private RenderTexture screenImage;
+        private RenderTexture fadeLayer;
+        private readonly Dictionary<PocObjectView, float> fades = new Dictionary<PocObjectView, float>();
+        private readonly List<PocObjectView> fadeOrder = new List<PocObjectView>();
+        private MaterialPropertyBlock fadeBlock;
         private Vector3 focus;
         private Vector3 velocity;
         private bool snapNext = true;
@@ -57,6 +66,18 @@ namespace Halka.Poc2D3D
         // World units toward the camera (South) for the sprite's draw-order card.
         public float SpriteDepthBias { get; set; } = 0.1f;
 
+        // Objects marked fadeInFront2D (trees) that stand in front of the player sprite fade to
+        // FadedAlpha over FadeSeconds, and back when the player leaves. Unused layer 30 isolates
+        // them for their own render; they keep casting their shadow on the ground.
+        public const int FadeLayerIndex = 30;
+        public bool FadeEnabled { get; set; } = true;
+        public float FadedAlpha { get; set; } = 0.4f;
+        public float FadeSeconds { get; set; } = 0.25f;
+        public bool FadeReady => fadeMaterial != null && worldPresenter != null;
+        public int FadingCount => fades.Count;
+        public RenderTexture FadeLayer => fadeLayer;
+        public float FadeOf(PocObjectView view) => view != null && fades.TryGetValue(view, out var a) ? a : 1f;
+
         public float PixelWorldSize => GridSpace3D.CellSize / PixelsPerCell;
         public float PixelWorldNorth => SquareGround ? PixelWorldSize
             : PixelWorldSize / Mathf.Sin(PitchDegrees * Mathf.Deg2Rad);
@@ -68,6 +89,12 @@ namespace Halka.Poc2D3D
         }
 
         public void ConfigureSprite(Material material) => spriteMaterial = material;
+
+        public void ConfigureFade(PocWorldPresenter presenter, Material material)
+        {
+            worldPresenter = presenter;
+            fadeMaterial = material;
+        }
 
         public void Configure(Camera cameraComponent, SharedWorldSession worldSession, PocActorView actorView)
         {
@@ -88,9 +115,15 @@ namespace Halka.Poc2D3D
             if (worldCamera != null) worldCamera.enabled = false;
             if (session != null) session.MapChanged -= OnMapChanged;
             if (actor != null) actor.PixelSnap = Vector2.zero;
+            RestoreAllFades();
         }
 
-        private void OnMapChanged(SharedWorldModel world) => snapNext = true;
+        private void OnMapChanged(SharedWorldModel world)
+        {
+            snapNext = true;
+            fades.Clear(); // the old map's views are gone
+            fadeOrder.Clear();
+        }
 
         public void SnapToTarget() => snapNext = true;
 
@@ -128,9 +161,188 @@ namespace Halka.Poc2D3D
             worldCamera.farClipPlane = FarPlane;
             worldCamera.projectionMatrix = Matrix4x4.Ortho(-width * 0.5f, width * 0.5f,
                 -height * 0.5f, height * 0.5f, NearPlane, FarPlane);
-            // The mask also orders the player sprite against the world, so it is needed even
-            // with the outline off.
-            if ((OutlinePixels > 0 || SpriteReady) && outlineMaskShader != null) RenderOutlineMask();
+            UpdateFades(deltaTime);
+            // The mask also orders the player sprite against the world (and the faded trees are
+            // depth-tested against it), so it is needed even with the outline off.
+            if ((OutlinePixels > 0 || SpriteReady || fades.Count > 0) && outlineMaskShader != null) RenderOutlineMask();
+            RenderFadeLayer();
+        }
+
+        // ------------------------------------------------------------ see-through trees
+
+        private void UpdateFades(float deltaTime)
+        {
+            if (!FadeEnabled || !FadeReady)
+            {
+                RestoreAllFades();
+                return;
+            }
+            var targets = new HashSet<PocObjectView>();
+            if (PlaceSprite(out _, out var spriteRect, out _, out _, out _))
+            {
+                foreach (var view in worldPresenter.Views)
+                {
+                    // In front means on the player's row or further South; trees to the North
+                    // are already behind the sprite.
+                    if (view == null || !view.FadeInFront2D || view.RootCell.y > session.Position.y + 0.5f) continue;
+                    if (ScreenRect(view).Overlaps(spriteRect)) targets.Add(view);
+                }
+            }
+            var step = FadeSeconds > 0f ? deltaTime / FadeSeconds * (1f - FadedAlpha) : 1f;
+            foreach (var view in targets)
+                if (!fades.ContainsKey(view))
+                {
+                    fades[view] = 1f;
+                    fadeOrder.Add(view);
+                }
+            for (var i = fadeOrder.Count - 1; i >= 0; i--)
+            {
+                var view = fadeOrder[i];
+                var inFront = targets.Contains(view);
+                var alpha = Mathf.MoveTowards(fades[view], inFront ? FadedAlpha : 1f, step);
+                if (view == null || (!inFront && alpha >= 1f))
+                {
+                    Restore(view);
+                    fades.Remove(view);
+                    fadeOrder.RemoveAt(i);
+                    continue;
+                }
+                fades[view] = alpha;
+                HideFromWorld(view);
+            }
+        }
+
+        // Screen-pixel rectangle covered by the view's renderers (same mapping as the sprite).
+        private RectInt ScreenRect(PocObjectView view)
+        {
+            var bounds = new Bounds();
+            var first = true;
+            foreach (var item in view.Renderers)
+            {
+                if (item == null) continue;
+                if (first) bounds = item.bounds;
+                else bounds.Encapsulate(item.bounds);
+                first = false;
+            }
+            if (first) return default;
+            float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+            for (var i = 0; i < 8; i++)
+            {
+                var corner = new Vector3((i & 1) == 0 ? bounds.min.x : bounds.max.x,
+                    (i & 2) == 0 ? bounds.min.y : bounds.max.y, (i & 4) == 0 ? bounds.min.z : bounds.max.z);
+                var v = worldCamera.WorldToViewportPoint(corner);
+                var x = v.x * target.width * Scale - Offset.x;
+                var y = v.y * target.height * Scale - Offset.y;
+                minX = Mathf.Min(minX, x);
+                minY = Mathf.Min(minY, y);
+                maxX = Mathf.Max(maxX, x);
+                maxY = Mathf.Max(maxY, y);
+            }
+            return new RectInt(Mathf.FloorToInt(minX), Mathf.FloorToInt(minY),
+                Mathf.CeilToInt(maxX - minX), Mathf.CeilToInt(maxY - minY));
+        }
+
+        // Not drawn by the world camera or the mask (the sprite is no longer hidden by it), but
+        // its shadow stays on the ground.
+        private void HideFromWorld(PocObjectView view)
+        {
+            foreach (var item in view.Renderers)
+            {
+                if (item == null) continue;
+                item.gameObject.layer = FadeLayerIndex;
+                if (view.CastShadows) item.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+                else item.forceRenderingOff = true;
+            }
+        }
+
+        private static void Restore(PocObjectView view)
+        {
+            if (view == null) return;
+            foreach (var item in view.Renderers)
+            {
+                if (item == null) continue;
+                item.gameObject.layer = 0;
+                item.forceRenderingOff = false;
+                item.SetPropertyBlock(null);
+            }
+            view.SetHidden(false);
+        }
+
+        public void RestoreAllFades()
+        {
+            foreach (var view in fadeOrder) Restore(view);
+            fades.Clear();
+            fadeOrder.Clear();
+        }
+
+        // The faded objects alone, depth-tested against the rest of the world (the mask's depth
+        // buffer), alpha = each one's current opacity.
+        private void RenderFadeLayer()
+        {
+            if (fades.Count == 0 || outlineMask == null) return;
+            if (fadeLayer == null || fadeLayer.width != target.width || fadeLayer.height != target.height)
+            {
+                Release(fadeLayer);
+                fadeLayer = Create("POC 2D see-through layer", target.width, target.height, 0);
+            }
+            var previous = RenderTexture.active;
+            RenderTexture.active = fadeLayer;
+            GL.Clear(false, true, Color.clear);
+            RenderTexture.active = previous;
+            if (fadeBlock == null) fadeBlock = new MaterialPropertyBlock();
+            foreach (var view in fadeOrder)
+                foreach (var item in view.Renderers)
+                {
+                    if (item == null) continue;
+                    item.shadowCastingMode = ShadowCastingMode.Off;
+                    item.forceRenderingOff = false;
+                    fadeBlock.SetFloat("_Alpha", fades[view]);
+                    item.SetPropertyBlock(fadeBlock);
+                }
+            var mask = worldCamera.cullingMask;
+            var flags = worldCamera.clearFlags;
+            worldCamera.cullingMask = 1 << FadeLayerIndex;
+            worldCamera.clearFlags = CameraClearFlags.Nothing;
+            worldCamera.SetTargetBuffers(fadeLayer.colorBuffer, outlineMask.depthBuffer);
+            worldCamera.Render();
+            worldCamera.targetTexture = target;
+            worldCamera.cullingMask = mask;
+            worldCamera.clearFlags = flags;
+            foreach (var view in fadeOrder) HideFromWorld(view);
+        }
+
+        // Over the upscaled view and the sprite: the see-through layer at its own opacity.
+        public void DrawFadeLayer(int screenWidth, int screenHeight)
+        {
+            if (fades.Count == 0 || fadeLayer == null || fadeMaterial == null) return;
+            var w = (float)fadeLayer.width * Scale;
+            var h = (float)fadeLayer.height * Scale;
+            fadeMaterial.mainTexture = fadeLayer;
+            fadeMaterial.SetColor("_OutlineColor", OutlineColor);
+            fadeMaterial.SetFloat("_Thickness", OutlineReady ? OutlinePixels : 0);
+            GL.PushMatrix();
+            GL.LoadPixelMatrix(0f, screenWidth, 0f, screenHeight);
+            fadeMaterial.SetPass(0);
+            GL.Begin(GL.QUADS);
+            Corner(Offset.x / w, Offset.y / h, 0f, 0f);
+            Corner(Offset.x / w, (screenHeight + Offset.y) / h, 0f, screenHeight);
+            Corner((screenWidth + Offset.x) / w, (screenHeight + Offset.y) / h, screenWidth, screenHeight);
+            Corner((screenWidth + Offset.x) / w, Offset.y / h, screenWidth, 0f);
+            GL.End();
+            GL.PopMatrix();
+        }
+
+        private static void Corner(float u, float v, float x, float y)
+        {
+            GL.TexCoord2(u, v);
+            GL.Vertex3(x, y, 0f);
+        }
+
+        // Everything drawn after the upscaled view and before the night overlay and the UI.
+        public void DrawOverlays(int screenWidth, int screenHeight)
+        {
+            DrawActorSprite(screenWidth, screenHeight);
+            DrawFadeLayer(screenWidth, screenHeight);
         }
 
         // Same camera, same pixel-snapped matrices, so the mask lines up texel for texel.
@@ -172,7 +384,7 @@ namespace Halka.Poc2D3D
             Graphics.Blit(texture, screenImage, uvScale, uvOffset);
             var previous = RenderTexture.active;
             RenderTexture.active = screenImage;
-            DrawActorSprite(screenWidth, screenHeight);
+            DrawOverlays(screenWidth, screenHeight);
             RenderTexture.active = previous;
             return screenImage;
         }
@@ -184,44 +396,13 @@ namespace Halka.Poc2D3D
         public void DrawActorSprite(int screenWidth, int screenHeight)
         {
             LastSpriteRect = default;
-            if (!SpriteReady || target == null) return;
-            var sprite = actor.CurrentSprite;
-            if (sprite == null) return;
-            var sprites = actor.Sprites;
-            var unitsPerSpritePixel = 1f / sprite.pixelsPerUnit;
-            var pixelSize = Scale * PixelsPerCell / (GridSpace3D.CellSize * sprite.pixelsPerUnit);
-            var rect = sprite.rect;
-
-            // The sprite's bottom-left corner in the 2D game (x = East, y = North), placed on the
-            // ground of this view; the card stands up from there toward the camera.
-            var root = actor.transform.position;
-            var corner = new Vector3(root.x - sprite.pivot.x * unitsPerSpritePixel, 0f,
-                root.z + sprites.offsetY - sprite.pivot.y * unitsPerSpritePixel);
-            // Draw order uses a card slightly in front of that edge, so a wide crown whose front
-            // reaches the edge from the cell North of the player stays behind it.
-            var card = corner + Vector3.back * SpriteDepthBias;
-            var viewport = worldCamera.WorldToViewportPoint(corner);
-            // Whole low-resolution pixels (+0.25 keeps the choice stable when a grid point falls on
-            // a texel centre), then whole screen pixels.
-            var lowX = Mathf.Round(viewport.x * target.width + 0.25f);
-            var lowY = Mathf.Round(viewport.y * target.height + 0.25f);
-            var x0 = Mathf.RoundToInt(lowX * Scale - Offset.x);
-            var y0 = Mathf.RoundToInt(lowY * Scale - Offset.y);
-            var width = Mathf.Max(1, Mathf.RoundToInt(rect.width * pixelSize));
-            var height = Mathf.Max(1, Mathf.RoundToInt(rect.height * pixelSize));
-            LastSpriteRect = new RectInt(x0, y0, width, height);
+            if (!PlaceSprite(out var sprite, out var placed, out var pixelSize, out var depthBottom, out var depthTop))
+                return;
+            LastSpriteRect = placed;
             LastSpritePixelSize = pixelSize;
-
-            // Depth of an upright card whose projection is exactly this rectangle.
-            var pitch = Mathf.Clamp(PitchDegrees, 20f, 89f) * Mathf.Deg2Rad;
-            var planePerLowPixel = PixelWorldSize * (SquareGround ? Mathf.Sin(pitch) : 1f);
-            var cardHeight = height / (float)Scale * planePerLowPixel / Mathf.Cos(pitch);
-            var view = worldCamera.worldToCameraMatrix;
-            const float far = FarPlane; // same packing as the mask shader (view depth / far)
-            var depthBottom = -view.MultiplyPoint(card).z / far;
-            var depthTop = -view.MultiplyPoint(card + Vector3.up * cardHeight).z / far;
             LastSpriteDepthBottom = depthBottom;
             LastSpriteDepthTop = depthTop;
+            int x0 = placed.x, y0 = placed.y, width = placed.width, height = placed.height;
 
             var texture = sprite.texture;
             var tr = sprite.textureRect;
@@ -255,6 +436,52 @@ namespace Halka.Poc2D3D
             Vertex(u1, v0, mx1, my0, depthBottom, x0 + width, y0);
             GL.End();
             GL.PopMatrix();
+        }
+
+        // Where (destination pixels) and at what depth the current sprite frame goes.
+        private bool PlaceSprite(out Sprite sprite, out RectInt rect, out float pixelSize,
+            out float depthBottom, out float depthTop)
+        {
+            sprite = null;
+            rect = default;
+            pixelSize = 0f;
+            depthBottom = depthTop = 0f;
+            if (!SpriteReady || target == null) return false;
+            sprite = actor.CurrentSprite;
+            if (sprite == null) return false;
+            var sprites = actor.Sprites;
+            var unitsPerSpritePixel = 1f / sprite.pixelsPerUnit;
+            pixelSize = Scale * PixelsPerCell / (GridSpace3D.CellSize * sprite.pixelsPerUnit);
+            var spriteRect = sprite.rect;
+
+            // The sprite's bottom-left corner in the 2D game (x = East, y = North), placed on the
+            // ground of this view; the card stands up from there toward the camera.
+            var root = actor.transform.position;
+            var corner = new Vector3(root.x - sprite.pivot.x * unitsPerSpritePixel, 0f,
+                root.z + sprites.offsetY - sprite.pivot.y * unitsPerSpritePixel);
+            // Draw order uses a card slightly in front of that edge, so a wide crown whose front
+            // reaches the edge from the cell North of the player stays behind it.
+            var card = corner + Vector3.back * SpriteDepthBias;
+            var viewport = worldCamera.WorldToViewportPoint(corner);
+            // Whole low-resolution pixels (+0.25 keeps the choice stable when a grid point falls on
+            // a texel centre), then whole screen pixels.
+            var lowX = Mathf.Round(viewport.x * target.width + 0.25f);
+            var lowY = Mathf.Round(viewport.y * target.height + 0.25f);
+            var x0 = Mathf.RoundToInt(lowX * Scale - Offset.x);
+            var y0 = Mathf.RoundToInt(lowY * Scale - Offset.y);
+            var width = Mathf.Max(1, Mathf.RoundToInt(spriteRect.width * pixelSize));
+            var height = Mathf.Max(1, Mathf.RoundToInt(spriteRect.height * pixelSize));
+
+            // Depth of an upright card whose projection is exactly this rectangle.
+            var pitch = Mathf.Clamp(PitchDegrees, 20f, 89f) * Mathf.Deg2Rad;
+            var planePerLowPixel = PixelWorldSize * (SquareGround ? Mathf.Sin(pitch) : 1f);
+            var cardHeight = height / (float)Scale * planePerLowPixel / Mathf.Cos(pitch);
+            var view = worldCamera.worldToCameraMatrix;
+            const float far = FarPlane; // same packing as the mask shader (view depth / far)
+            depthBottom = -view.MultiplyPoint(card).z / far;
+            depthTop = -view.MultiplyPoint(card + Vector3.up * cardHeight).z / far;
+            rect = new RectInt(x0, y0, width, height);
+            return true;
         }
 
         private static void Vertex(float u, float v, float maskU, float maskV, float depth, float x, float y)
@@ -329,6 +556,7 @@ namespace Halka.Poc2D3D
             Release(outlineMask);
             Release(outlined);
             Release(screenImage);
+            Release(fadeLayer);
         }
 
         private static RenderTexture Create(string name, int width, int height, int depth)

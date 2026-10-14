@@ -1,18 +1,21 @@
-"""Workbench turnaround of the TEMPORARY ﾊﾙｶﾁｬﾝ placeholder (the whole hierarchy).
+"""Workbench turnaround of a TEMPORARY ﾊﾙｶﾁｬﾝ placeholder (the whole hierarchy).
 
-  blender.exe --background --factory-startup --python blender/scripts/render_haruka_placeholder_previews.py
+  blender.exe --background --factory-startup --python blender/scripts/render_haruka_placeholder_previews.py [-- NAME]
 
-Writes blender/exports/previews/phase2_1/haruka_placeholder_<view>.png.
+NAME defaults to haruka_placeholder (haruka_blocky_placeholder for the blocky one).
+Writes blender/exports/previews/phase2_1/<NAME>_<view>.png.
 """
 
 import math
 import os
+import sys
 
 import bpy
 from mathutils import Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-SOURCE = os.path.join(ROOT, "blender", "sources", "phase2_1", "haruka_placeholder.blend")
+NAME = sys.argv[sys.argv.index("--") + 1] if "--" in sys.argv else "haruka_placeholder"
+SOURCE = os.path.join(ROOT, "blender", "sources", "phase2_1", NAME + ".blend")
 OUT = os.path.join(ROOT, "blender", "exports", "previews", "phase2_1")
 VIEWS = {"south_front": (0, 8), "east": (90, 8), "north_back": (180, 8), "west": (270, 8),
          "top": (0, 89.5), "game_2d_angle": (0, 50), "three_quarter": (35, 20)}
@@ -41,7 +44,7 @@ def main():
         y, e = math.radians(yaw), math.radians(elevation)
         camera.location = target + Vector((math.sin(y) * math.cos(e), -math.cos(y) * math.cos(e), math.sin(e))) * 5.0
         camera.rotation_euler = (target - camera.location).to_track_quat("-Z", "Y").to_euler()
-        scene.render.filepath = os.path.join(OUT, f"haruka_placeholder_{view}.png")
+        scene.render.filepath = os.path.join(OUT, f"{NAME}_{view}.png")
         bpy.ops.render.render(write_still=True)
 
 

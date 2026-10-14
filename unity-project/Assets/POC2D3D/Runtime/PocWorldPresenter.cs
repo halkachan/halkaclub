@@ -13,6 +13,7 @@ namespace Halka.Poc2D3D
         public bool IsFallback;
         public bool CameraOccluder;
         public bool CastShadows = true;
+        public bool FadeInFront2D;
         public string ModelName;
         public bool Placeholder;
         public Transform PerchAnchor;
@@ -238,6 +239,7 @@ namespace Halka.Poc2D3D
             view.IsFallback = binding == null;
             view.CameraOccluder = binding == null || binding.cameraOccluder;
             view.CastShadows = binding == null || binding.castShadows;
+            view.FadeInFront2D = binding != null && binding.fadeInFront2D;
             view.Placeholder = binding == null || binding.placeholder;
             view.ModelName = binding != null ? binding.Pick(instance.InstanceId).name : null;
             view.Renderers = root.GetComponentsInChildren<Renderer>();

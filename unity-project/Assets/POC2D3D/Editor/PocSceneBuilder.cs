@@ -26,11 +26,14 @@ namespace Halka.Poc2D3D.EditorTools
         public const string Phase2Models = Root + "/Models/Phase2/";
         public const string OutlineMaterialPath = Root + "/Materials/POC_OutlineComposite.mat";
         public const string OutlineMaskShader = "HALKA/POC/OutlineMask";
-        // Phase 2.1: TEMPORARY ﾊﾙｶﾁｬﾝ stand-in until the user's official model arrives.
-        public const string PlaceholderPlayerPath = Root + "/Models/Phase2_1/haruka_placeholder.fbx";
+        // Phase 2.1: TEMPORARY ﾊﾙｶﾁｬﾝ stand-in for the 3D view until the user's official model
+        // arrives: Minecraft-like blocks painted after the 2D sprites (the first, rounded
+        // low-poly stand-in haruka_placeholder.fbx is kept for comparison only).
+        public const string PlaceholderPlayerPath = Root + "/Models/Phase2_1/haruka_blocky_placeholder.fbx";
         // 2D Pixel View: the existing ﾊﾙｶﾁｬﾝ sprites, referenced read-only (same files as the
         // FirstDay CharacterVisual).
         public const string SpriteMaterialPath = Root + "/Materials/POC_PixelSprite.mat";
+        public const string FadeMaterialPath = Root + "/Materials/POC_FadeLayer.mat";
         public const string CharacterSprites = "Assets/Content/Character/";
         public static readonly string[] Phase2ModelNames =
         {
@@ -72,6 +75,7 @@ namespace Halka.Poc2D3D.EditorTools
             RemapModelMaterial(PlaceholderPlayerPath, toon);
             EnsureMaterial(OutlineMaterialPath, "HALKA/POC/OutlineComposite", null);
             EnsureMaterial(SpriteMaterialPath, "HALKA/POC/PixelSprite", null);
+            EnsureMaterial(FadeMaterialPath, "HALKA/POC/FadeLayer", null);
 
             var catalog = AssetDatabase.LoadAssetAtPath<PocPresentationCatalog>(CatalogPath);
             if (catalog == null)
@@ -84,7 +88,7 @@ namespace Halka.Poc2D3D.EditorTools
             catalog.Configure(LoadModel(PlayerModelPath), toon, grid, new List<PocPresentationBinding>
             {
                 new PocPresentationBinding { definitionId = "tree_basic", model = Phase2("tree_basic"),
-                    perchAnchorName = "PerchAnchor" },
+                    perchAnchorName = "PerchAnchor", fadeInFront2D = true },
                 new PocPresentationBinding { definitionId = "flower_basic", model = Phase2("flower_basic"),
                     cameraOccluder = false },
                 new PocPresentationBinding { definitionId = "stone_basic", model = Phase2("stone_basic_a"),
@@ -184,6 +188,7 @@ namespace Halka.Poc2D3D.EditorTools
             pixelView.ConfigureOutline(Shader.Find(OutlineMaskShader),
                 AssetDatabase.LoadAssetAtPath<Material>(OutlineMaterialPath));
             pixelView.ConfigureSprite(AssetDatabase.LoadAssetAtPath<Material>(SpriteMaterialPath));
+            pixelView.ConfigureFade(presenter, AssetDatabase.LoadAssetAtPath<Material>(FadeMaterialPath));
             pixelPresenter.Configure(pixelView, time, screenOverlay);
             thirdPerson.Configure(thirdCamera, session, presenter, input);
             switcher.Configure(pixelView, presenterCamera, thirdPerson, actor, presenter, session, input);

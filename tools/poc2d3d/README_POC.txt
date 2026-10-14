@@ -15,8 +15,11 @@ What is new in Phase 2.1:
     and boxes, drawn in the low-resolution image before the integer upscale.
   - 2D view: ﾊﾙｶﾁｬﾝ is the original hand-drawn sprite (same frames and timing as the game),
     at the game's own pixel density, in front of or behind objects like in the 2D game.
-  - 3D view: a TEMPORARY low-poly ﾊﾙｶﾁｬﾝ (placeholder) replaces the grey mannequin. It is not
-    the official model; the official one will replace it later.
+  - 2D view: a tree standing in front of ﾊﾙｶﾁｬﾝ turns see-through (40 %) while she is behind
+    it, and back when she leaves ("2D see-through trees" in the POC options).
+  - 3D view: a TEMPORARY blocky ﾊﾙｶﾁｬﾝ, Minecraft-like boxes painted after the 2D sprites,
+    replaces the grey mannequin. It is not the official model; the official one will
+    replace it later.
   Phase 2 scenery (ground, roads, grass, trees, flowers, stones) is unchanged.
 
 Controls (same as the game):
@@ -39,6 +42,7 @@ POC-only panel (top left, will NOT go into the real game):
   Outline color     : #252B39 blue-grey / #3A2A22 brown / #000000 black
   Grass outline     : OFF (default) / soft
   Inner lines       : soft (default) / OFF
+  2D see-through trees : ON (default) / OFF
 
 The published game (ver2.9, still titled HALKA WORLD) and the ver3.0 Preview are not
 changed by this build.

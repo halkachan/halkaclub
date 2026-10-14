@@ -63,6 +63,8 @@ namespace Halka.Poc2D3D
             thirdPerson.ViewCamera.enabled = !pixel;
             actor.TurnSeconds = pixel ? 0f : 0.09f;
             if (!pixel) actor.PixelSnap = Vector2.zero;
+            // Trees made see-through for the 2D sprite are opaque again in 3D.
+            if (!pixel) pixelView.RestoreAllFades();
             // Occluders hidden for the 3D camera must never stay hidden in the 2D view.
             if (pixel) thirdPerson.ShowAll();
             if (pixel) pixelView.SnapToTarget();

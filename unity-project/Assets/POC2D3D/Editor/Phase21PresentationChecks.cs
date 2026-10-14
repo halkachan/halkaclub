@@ -47,6 +47,7 @@ namespace Halka.Poc2D3D.EditorTools
                 OutlineChecks(c);
                 PlaceholderSceneChecks(c);
                 SpriteChecks(c);
+                FadeChecks(c);
                 SwapChecks(c);
             }
             finally
@@ -92,14 +93,20 @@ namespace Halka.Poc2D3D.EditorTools
         private static void PlaceholderAssetChecks()
         {
             var root = PocSceneBuilder.RepositoryRoot;
-            Check("placeholder: Blender source, script, manifest and previews exist",
-                File.Exists(Path.Combine(root, "blender/sources/phase2_1/haruka_placeholder.blend")) &&
-                File.Exists(Path.Combine(root, "blender/scripts/build_haruka_placeholder.py")) &&
-                File.Exists(Path.Combine(root, "blender/exports/phase2_1_haruka_placeholder_manifest.json")) &&
+            Check("placeholder (blocky): Blender source, script, manifest and previews exist",
+                File.Exists(Path.Combine(root, "blender/sources/phase2_1/haruka_blocky_placeholder.blend")) &&
+                File.Exists(Path.Combine(root, "blender/scripts/build_haruka_blocky.py")) &&
+                File.Exists(Path.Combine(root, "blender/exports/phase2_1_haruka_blocky_placeholder_manifest.json")) &&
                 new[] { "south_front", "east", "north_back", "west" }.All(v =>
-                    File.Exists(Path.Combine(root, $"blender/exports/previews/phase2_1/haruka_placeholder_{v}.png"))));
+                    File.Exists(Path.Combine(root, $"blender/exports/previews/phase2_1/haruka_blocky_placeholder_{v}.png"))));
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(PocSceneBuilder.PlaceholderPlayerPath);
-            Check("placeholder: FBX imported and named as temporary", model != null && model.name.Contains("placeholder"));
+            Check("placeholder: FBX imported and named as temporary (blocky)", model != null &&
+                model.name.Contains("placeholder") && model.name.Contains("blocky"));
+            if (model == null) return;
+            // Minecraft-like: every face of every part is axis-aligned (boxes only).
+            var axisAligned = model.GetComponentsInChildren<MeshFilter>(true).All(f => f.sharedMesh.normals.All(n =>
+                Mathf.Abs(n.x) > 0.999f || Mathf.Abs(n.y) > 0.999f || Mathf.Abs(n.z) > 0.999f));
+            Check("placeholder: blocky like a Minecraft character (only axis-aligned box faces)", axisAligned);
             if (model == null) return;
             var parts = model.GetComponentsInChildren<Transform>(true).Select(t => t.name).ToList();
             Check("placeholder: limb nodes for the simple walk swing (ArmL/ArmR/LegL/LegR)",
@@ -757,6 +764,7 @@ namespace Halka.Poc2D3D.EditorTools
             // Draw order against a tree: covered from the South, in front of it from the North.
             var southTree = s.World.Objects.First(o => o.DefinitionId == "tree_basic" && s.World.CanEnter(o.RootCell + Vector2Int.up));
             var northTree = s.World.Objects.First(o => o.DefinitionId == "tree_basic" && s.World.CanEnter(o.RootCell + Vector2Int.down));
+            c.Pixel.FadeEnabled = false; // the plain draw order; see-through trees are checked below
             foreach (var px in new[] { 1, 0 })
             {
                 c.Pixel.OutlinePixels = px;
@@ -764,11 +772,12 @@ namespace Halka.Poc2D3D.EditorTools
                 var behind = CompareSprite(c);
                 Place2D(c, northTree.RootCell + Vector2Int.down, FacingDirection.Up);
                 var front = CompareSprite(c);
-                Check($"2D sprite (outline {px}): a tree South of the player covers it; a tree North of it stays behind",
+                Check($"2D sprite (outline {px}, see-through off): a tree South of the player covers it; a tree North of it stays behind",
                     behind.covered > 100 && behind.wrong == 0 && front.wrong == 0 && front.covered * 20 <= front.matched,
                     $"South tree {behind.matched}/{behind.covered}/{behind.wrong}, North tree {front.matched}/{front.covered}/{front.wrong}");
             }
             c.Pixel.OutlinePixels = 1;
+            c.Pixel.FadeEnabled = true;
 
             // Pixel grid: while walking with the camera following, the sprite stays on whole
             // low-resolution pixels (no shimmer against the world).
@@ -786,6 +795,122 @@ namespace Halka.Poc2D3D.EditorTools
                 last = rect;
             }
             Check("2D sprite: on whole low-resolution pixels every frame while walking", grid && moved > 0, $"moved {moved}");
+        }
+
+        // ---------------------------------------------------------------- 2D see-through trees
+
+        // Every opaque sprite pixel is the original color, or the original blended with the
+        // see-through layer at that layer's opacity, or a faded tree's outline, or covered by a
+        // nearer (not faded) object in the mask.
+        private static (int plain, int blended, int wrong) CompareFaded(Ctx c)
+        {
+            c.Pixel.WorldCamera.Render();
+            var screen = ReadPixels(c.Pixel.ComposeScreen(ScreenW, ScreenH));
+            var layer = c.Pixel.FadeLayer != null && c.Pixel.FadingCount > 0 ? ReadPixels(c.Pixel.FadeLayer) : null;
+            var mask = ReadPixels(c.Pixel.OutlineMask);
+            var sprite = c.Actor.CurrentSprite;
+            var source = SpritePixels(sprite);
+            var rect = c.Pixel.LastSpriteRect;
+            int w = c.Pixel.Target.width, h = c.Pixel.Target.height, scale = c.Pixel.Scale, tw = sprite.texture.width;
+            var tr = sprite.textureRect;
+            int plain = 0, blended = 0, wrong = 0;
+            float LayerAlpha(int x, int y) => layer == null || x < 0 || y < 0 || x >= w || y >= h ? 0f : layer[y * w + x].a / 255f;
+            for (var y = 0; y < rect.height; y++)
+            for (var x = 0; x < rect.width; x++)
+            {
+                var original = source[((int)tr.y + y) * tw + (int)tr.x + x];
+                if (original.a < 128) continue;
+                int px = rect.x + x, py = rect.y + y;
+                if (px < 0 || py < 0 || px >= ScreenW || py >= ScreenH) continue;
+                var shown = (Color)screen[py * ScreenW + px];
+                int lx = (px + c.Pixel.Offset.x) / scale, ly = (py + c.Pixel.Offset.y) / scale;
+                var a = LayerAlpha(lx, ly);
+                var expected = a > 0f ? Color.Lerp(original, (Color)layer[ly * w + lx], a) : (Color)original;
+                if (Mathf.Abs(shown.r - expected.r) < 0.016f && Mathf.Abs(shown.g - expected.g) < 0.016f &&
+                    Mathf.Abs(shown.b - expected.b) < 0.016f)
+                {
+                    if (a > 0f) blended++;
+                    else plain++;
+                    continue;
+                }
+                var edge = false;
+                for (var d = -2; d <= 2 && !edge; d++) edge = LayerAlpha(lx + d, ly) > 0f || LayerAlpha(lx, ly + d) > 0f;
+                var m = mask[ly * w + lx];
+                var nearer = m.r != 0 && m.r != PocOutlineTag.DecorationId && (m.b + m.a / 255f) / 255f <
+                    Mathf.Lerp(c.Pixel.LastSpriteDepthBottom, c.Pixel.LastSpriteDepthTop, (y + 0.5f) / rect.height);
+                if (!edge && !nearer) wrong++;
+            }
+            return (plain, blended, wrong);
+        }
+
+        private static void FadeChecks(Ctx c)
+        {
+            var s = c.Session;
+            c.Switcher.SetMode(PocViewMode.PixelView2D);
+            c.Pixel.PixelsPerCell = 16;
+            c.Pixel.OutlinePixels = 1;
+            Check("see-through: on by default, fades trees to 0.4 over 0.25 s; only trees are marked in the catalog",
+                c.Pixel.FadeEnabled && c.Pixel.FadeReady && Mathf.Approximately(c.Pixel.FadedAlpha, 0.4f) &&
+                Mathf.Approximately(c.Pixel.FadeSeconds, 0.25f) && c.Catalog.Find("tree_basic").fadeInFront2D &&
+                !c.Catalog.Find("flower_basic").fadeInFront2D && !c.Catalog.Find("stone_basic").fadeInFront2D);
+
+            var tree = s.World.Objects.First(o => o.DefinitionId == "tree_basic" && s.World.CanEnter(o.RootCell + Vector2Int.up));
+            var view = c.Presenter.Views.First(v => v.InstanceId == tree.InstanceId);
+            Place2D(c, tree.RootCell + Vector2Int.up, FacingDirection.Down);
+            var start = c.Pixel.FadeOf(view);
+            Frame(c, 0.1f, Vector2Int.zero);
+            var mid = c.Pixel.FadeOf(view);
+            for (var i = 0; i < 6; i++) Frame(c, 0.05f, Vector2Int.zero);
+            var faded = c.Pixel.FadeOf(view);
+            Check("see-through: the tree in front of the player fades smoothly (1 -> 0.76 after 0.1 s -> 0.4)",
+                Mathf.Approximately(start, 1f) && Mathf.Abs(mid - 0.76f) < 0.01f && Mathf.Abs(faded - 0.4f) < 1e-4f,
+                $"{start:F2} -> {mid:F2} -> {faded:F2}");
+            Check("see-through: the faded tree keeps its ground shadow, leaves the world image and the mask",
+                view.Renderers.All(r => r.gameObject.layer == PocPixelView2D.FadeLayerIndex &&
+                    r.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly));
+            var result = CompareFaded(c);
+            Check("see-through: the sprite shows through (screen = sprite blended with the tree at 0.4), nothing else changed",
+                result.blended > 300 && result.wrong == 0, $"plain {result.plain}, blended {result.blended}, wrong {result.wrong}");
+            c.Pixel.FadeEnabled = false;
+            Frame(c, 0f, Vector2Int.zero);
+            var covered = CompareSprite(c);
+            c.Pixel.FadeEnabled = true;
+            Frame(c, 0f, Vector2Int.zero);
+            Check("see-through: the sprite is visible where see-through off hides it",
+                result.plain + result.blended > 3 * covered.matched, $"{result.plain + result.blended} vs {covered.matched}");
+
+            // Walk away: the tree comes back and is restored exactly.
+            var open = OpenArea(s.World, 2);
+            Place2D(c, open, FacingDirection.Down);
+            for (var i = 0; i < 8; i++) Frame(c, 0.05f, Vector2Int.zero);
+            Check("see-through: when the player leaves, the tree returns to opaque, its normal layer and shadow",
+                Mathf.Approximately(c.Pixel.FadeOf(view), 1f) &&
+                view.Renderers.All(r => r.gameObject.layer == 0 && !r.forceRenderingOff &&
+                    r.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.On),
+                $"fading {c.Pixel.FadingCount}, alpha {c.Pixel.FadeOf(view):F2}, " +
+                string.Join(",", view.Renderers.Select(r => $"{r.name}:{r.gameObject.layer}/{r.shadowCastingMode}/{r.forceRenderingOff}")));
+
+            // A tree North of the player is behind the sprite: never faded.
+            var north = s.World.Objects.First(o => o.DefinitionId == "tree_basic" && s.World.CanEnter(o.RootCell + Vector2Int.down));
+            var northView = c.Presenter.Views.First(v => v.InstanceId == north.InstanceId);
+            Place2D(c, north.RootCell + Vector2Int.down, FacingDirection.Up);
+            for (var i = 0; i < 8; i++) Frame(c, 0.05f, Vector2Int.zero);
+            Check("see-through: a tree North of the player (already behind the sprite) does not fade",
+                Mathf.Approximately(c.Pixel.FadeOf(northView), 1f));
+
+            // Switching to 3D restores every tree.
+            Place2D(c, tree.RootCell + Vector2Int.up, FacingDirection.Down);
+            for (var i = 0; i < 8; i++) Frame(c, 0.05f, Vector2Int.zero);
+            var wasFading = c.Pixel.FadingCount > 0;
+            c.Switcher.SetMode(PocViewMode.ThirdPerson3D);
+            Frame(c, 1f / 60f, Vector2Int.zero);
+            Check("see-through: 2D only; switching to 3D restores every tree",
+                wasFading && c.Pixel.FadingCount == 0 &&
+                c.Presenter.Views.All(v => v.Renderers.All(r => r == null || r.gameObject.layer == 0)),
+                $"was {wasFading}, fading {c.Pixel.FadingCount}, enabled {c.Pixel.enabled}, off-layer " +
+                string.Join(",", c.Presenter.Views.SelectMany(v => v.Renderers).Where(r => r != null && r.gameObject.layer != 0).Select(r => r.name + ":" + r.gameObject.layer)));
+            c.Switcher.SetMode(PocViewMode.PixelView2D);
+            Release(c, 0.1f);
         }
 
         // ---------------------------------------------------------------- model swap

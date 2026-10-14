@@ -124,7 +124,7 @@ namespace Halka.Poc2D3D
             var row = 24f * s;
             var x = 8f;
             var y = 8f;
-            var rows = expanded ? 15 : 2;
+            var rows = expanded ? 16 : 2;
             var statsLines = showStats && expanded ? 12 : 6;
             panelRect = new Rect(x - 4f, y - 4f, width + 8f, rows * (row + 3f) + statsLines * row * 0.78f + 12f);
             GUI.DrawTexture(panelRect, panelBackground);
@@ -171,6 +171,8 @@ namespace Halka.Poc2D3D
                     pixel.GrassOutline = pixel.GrassOutline > 0f ? 0f : 0.35f;
                 if (Button(ref y, x, width, row, "Inner lines: " + (pixel.InnerLines > 0f ? "soft" : "OFF")))
                     pixel.InnerLines = pixel.InnerLines > 0f ? 0f : 0.5f;
+                if (Button(ref y, x, width, row, "2D see-through trees: " + (pixel.FadeEnabled ? "ON" : "OFF")))
+                    pixel.FadeEnabled = !pixel.FadeEnabled;
             }
             GUI.Label(new Rect(x, y, width, statsLines * row * 0.78f + 8f), BuildText(), textStyle);
             DrawTitle(s);

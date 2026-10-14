@@ -27,6 +27,8 @@ namespace Halka.Poc2D3D
         public bool placeholder;
         [Tooltip("2D Pixel View outline strength (0 = none).")]
         [Range(0f, 1f)] public float outlineStrength = 1f;
+        [Tooltip("2D Pixel View: drawn see-through while it stands in front of the player sprite.")]
+        public bool fadeInFront2D;
 
         public GameObject Pick(string instanceId)
         {

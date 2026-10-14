@@ -6,6 +6,9 @@ Shader "HALKA/POC/ToonVertexColor"
     {
         _Bands ("Light bands", Range(1, 6)) = 3
         _ShadowFloor ("Lowest direct light", Range(0, 1)) = 0.35
+        // Written to the alpha channel only (opaque rendering is unchanged). The 2D Pixel
+        // View's see-through tree layer reads it (set per renderer with a property block).
+        _Alpha ("Alpha written to the target", Range(0, 1)) = 1
     }
     SubShader
     {
@@ -13,11 +16,12 @@ Shader "HALKA/POC/ToonVertexColor"
         LOD 200
 
         CGPROGRAM
-        #pragma surface surf Toon fullforwardshadows addshadow noforwardadd
+        #pragma surface surf Toon fullforwardshadows addshadow noforwardadd keepalpha
         #pragma target 3.0
 
         half _Bands;
         half _ShadowFloor;
+        half _Alpha;
 
         struct Input
         {
@@ -38,7 +42,7 @@ Shader "HALKA/POC/ToonVertexColor"
         void surf(Input IN, inout SurfaceOutput o)
         {
             o.Albedo = IN.color.rgb;
-            o.Alpha = 1;
+            o.Alpha = _Alpha;
         }
         ENDCG
     }
