@@ -30,6 +30,24 @@ namespace Halka.Poc2D3D
             _ => 180f
         };
 
+        // Nearest cardinal heading for a camera yaw (0 = North, 90 = East).
+        public static FacingDirection HeadingFromYaw(float yawDegrees) =>
+            (Mathf.RoundToInt(Mathf.Repeat(yawDegrees, 360f) / 90f) % 4) switch
+            {
+                0 => FacingDirection.Up,
+                1 => FacingDirection.Right,
+                2 => FacingDirection.Down,
+                _ => FacingDirection.Left
+            };
+
+        public static FacingDirection Opposite(FacingDirection facing) => facing switch
+        {
+            FacingDirection.Up => FacingDirection.Down,
+            FacingDirection.Down => FacingDirection.Up,
+            FacingDirection.Left => FacingDirection.Right,
+            _ => FacingDirection.Left
+        };
+
         // Blender assets face South (-Z after import); actors add this under their facing root.
         public const float ModelFrontYawOffset = 180f;
 

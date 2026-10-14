@@ -23,6 +23,7 @@ namespace Halka.Poc2D3D
         public Vector2Int Cell => motion.Cell;
         public Vector2 Position => motion.Position;
         public bool IsMoving => motion.IsMoving;
+        public Vector2Int StepToCell => motion.StepToCell;
         public FacingDirection Facing { get; private set; } = FacingDirection.Down;
         public long CompletedSteps { get; private set; }
         public int MapLoads { get; private set; }

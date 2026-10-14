@@ -131,6 +131,9 @@ namespace Halka.Poc2D3D
                     out var dressedGround, out var tufts);
                 GroundObject = dressedGround;
                 TuftObject = tufts;
+                // Grass gets the global grass outline setting (marker strength), never a fixed one.
+                PocOutlineTag.ApplyInPlace(tufts.GetComponent<MeshFilter>().sharedMesh,
+                    PocOutlineTag.DecorationId, PocOutlineTag.MarkerStrength);
                 BuiltTriangles += Environment.GroundTriangles + Environment.TuftTriangles;
                 BuildWalls(world);
                 return;
@@ -226,6 +229,8 @@ namespace Halka.Poc2D3D
                     mapRoot, catalog.VertexColorMaterial);
             }
             root.transform.position = GridSpace3D.ToWorld(instance.RootCell);
+            // Object IDs 1..249 for the 2D outline; the order follows the Map's object list.
+            PocOutlineTag.Apply(root, views.Count % 249 + 1, binding != null ? binding.outlineStrength : 1f);
             var view = root.AddComponent<PocObjectView>();
             view.InstanceId = instance.InstanceId;
             view.DefinitionId = instance.DefinitionId;

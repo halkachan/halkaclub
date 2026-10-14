@@ -14,6 +14,7 @@ namespace Halka.Poc2D3D
         [SerializeField] private PocActorView actor;
         [SerializeField] private PocWorldPresenter presenter;
         [SerializeField] private SharedWorldSession session;
+        [SerializeField] private PocInput input;
         [SerializeField] private PocViewMode initialMode = PocViewMode.PixelView2D;
 
         private bool applied;
@@ -23,13 +24,17 @@ namespace Halka.Poc2D3D
         public float LastSwitchMilliseconds { get; private set; }
         public float CameraTargetYaw => Mode == PocViewMode.ThirdPerson3D && thirdPerson != null
             ? thirdPerson.TargetYaw : 0f;
+        public Halka.Game.Player.FacingDirection CameraHeading => thirdPerson != null
+            ? thirdPerson.Heading : Halka.Game.Player.FacingDirection.Up;
         public PocPixelView2D PixelView => pixelView;
         public PocThirdPersonCamera ThirdPerson => thirdPerson;
 
         public void Configure(PocPixelView2D pixel, Camera presenterCam, PocThirdPersonCamera third,
-            PocActorView actorView, PocWorldPresenter worldPresenter, SharedWorldSession worldSession)
+            PocActorView actorView, PocWorldPresenter worldPresenter, SharedWorldSession worldSession,
+            PocInput pocInput = null)
         {
             session = worldSession;
+            input = pocInput;
             pixelView = pixel;
             presenterCamera = presenterCam;
             thirdPerson = third;
@@ -62,6 +67,7 @@ namespace Halka.Poc2D3D
             if (pixel) thirdPerson.ShowAll();
             if (pixel) pixelView.SnapToTarget();
             else thirdPerson.SnapToTarget();
+            if (input != null) input.RequireRelease();
             LastSwitchMilliseconds = (float)((Time.realtimeSinceStartupAsDouble - started) * 1000.0);
         }
 

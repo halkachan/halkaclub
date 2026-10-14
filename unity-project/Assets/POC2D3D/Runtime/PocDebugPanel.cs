@@ -12,9 +12,12 @@ namespace Halka.Poc2D3D
     [DefaultExecutionOrder(200)]
     public sealed class PocDebugPanel : MonoBehaviour
     {
-        public const string PreviewTitle = "はるかわーるど ver3.0 Phase 2 Preview";
+        public const string PreviewTitle = "はるかわーるど ver3.0 Phase 2.1 Preview";
         private static readonly int[] PixelOptions = { 16, 24, 32 };
         private static readonly float[] PitchOptions = { 50f, 60f, 90f, 40f };
+        private static readonly Color[] OutlineColors =
+            { new Color32(0x25, 0x2b, 0x39, 0xff), new Color32(0x3a, 0x2a, 0x22, 0xff), new Color32(0x00, 0x00, 0x00, 0xff) };
+        private static readonly string[] OutlineColorNames = { "#252B39 blue-grey", "#3A2A22 brown", "#000000 black" };
 
         [SerializeField] private SharedWorldSession session;
         [SerializeField] private PocViewSwitcher views;
@@ -121,8 +124,8 @@ namespace Halka.Poc2D3D
             var row = 24f * s;
             var x = 8f;
             var y = 8f;
-            var rows = expanded ? 9 : 2;
-            var statsLines = showStats && expanded ? 11 : 5;
+            var rows = expanded ? 15 : 2;
+            var statsLines = showStats && expanded ? 12 : 6;
             panelRect = new Rect(x - 4f, y - 4f, width + 8f, rows * (row + 3f) + statsLines * row * 0.78f + 12f);
             GUI.DrawTexture(panelRect, panelBackground);
 
@@ -155,6 +158,19 @@ namespace Halka.Poc2D3D
                     presenter.GridVisible = !presenter.GridVisible;
                 if (Button(ref y, x, width, row, "Stats: " + (showStats ? "ON" : "OFF")))
                     showStats = !showStats;
+                var third = views.ThirdPerson;
+                if (Button(ref y, x, width, row, "3D cam follow: " + (third.Follow == PocCameraFollow.TurnBehindWhenIdle
+                        ? "turn when idle" : third.Follow == PocCameraFollow.Fixed ? "fixed" : "facing (Phase 1)")))
+                    third.Follow = (PocCameraFollow)(((int)third.Follow + 1) % 3);
+                if (Button(ref y, x, width, row, "2D outline: " + (pixel.OutlinePixels == 0 ? "OFF" : pixel.OutlinePixels + " px")))
+                    pixel.OutlinePixels = (pixel.OutlinePixels + 1) % 3;
+                var colorIndex = Mathf.Max(0, System.Array.IndexOf(OutlineColors, pixel.OutlineColor));
+                if (Button(ref y, x, width, row, "Outline color: " + OutlineColorNames[colorIndex]))
+                    pixel.OutlineColor = OutlineColors[(colorIndex + 1) % OutlineColors.Length];
+                if (Button(ref y, x, width, row, "Grass outline: " + (pixel.GrassOutline > 0f ? "soft" : "OFF")))
+                    pixel.GrassOutline = pixel.GrassOutline > 0f ? 0f : 0.35f;
+                if (Button(ref y, x, width, row, "Inner lines: " + (pixel.InnerLines > 0f ? "soft" : "OFF")))
+                    pixel.InnerLines = pixel.InnerLines > 0f ? 0f : 0.5f;
             }
             GUI.Label(new Rect(x, y, width, statsLines * row * 0.78f + 8f), BuildText(), textStyle);
             DrawTitle(s);
@@ -192,6 +208,9 @@ namespace Halka.Poc2D3D
             text.Clear();
             text.Append("Map ").Append(session.World.MapId).Append("  Cell ").Append(session.Cell.x).Append(',')
                 .Append(session.Cell.y).Append("  Facing ").Append(session.Facing).Append('\n');
+            if (views.Mode == PocViewMode.ThirdPerson3D)
+                text.Append("Cam heading ").Append(views.ThirdPerson.Heading).Append("  keys ")
+                    .Append(input.Scheme == Poc3DControlScheme.CameraRelative ? "camera" : "world").Append('\n');
             text.Append("Steps ").Append(session.CompletedSteps).Append("  Switches ").Append(views.SwitchCount)
                 .Append(" (").Append(views.LastSwitchMilliseconds.ToString("0.00")).Append("ms)\n");
             text.Append("FPS ").Append(shownFps.ToString("0.0")).Append("  ").Append(shownFrameMs.ToString("0.0"))
@@ -209,8 +228,9 @@ namespace Halka.Poc2D3D
             text.Append("SetPass ").Append(Value(setPass)).Append("  Tris/frame ").Append(Value(renderedTriangles)).Append('\n');
             text.Append("Used memory ").Append(usedMemory.Valid && usedMemory.LastValue > 0
                 ? (usedMemory.LastValue / (1024f * 1024f)).ToString("0.0") + " MB" : "n/a").Append('\n');
-            text.Append("3D hidden occluders ").Append(views.ThirdPerson.HiddenOccluders).Append("  Yaw ")
-                .Append(views.ThirdPerson.CurrentYaw.ToString("0")).Append('\n');
+            text.Append("3D heading ").Append(views.ThirdPerson.Heading).Append("  Yaw ")
+                .Append(views.ThirdPerson.CurrentYaw.ToString("0")).Append("  hidden ")
+                .Append(views.ThirdPerson.HiddenOccluders).Append('\n');
             text.Append("Phase ").Append(timeOfDay.Phase).Append("  blend ").Append(timeOfDay.NightBlend.ToString("0.00"));
             return text.ToString();
         }

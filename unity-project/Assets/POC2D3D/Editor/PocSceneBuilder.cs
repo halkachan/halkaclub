@@ -24,6 +24,10 @@ namespace Halka.Poc2D3D.EditorTools
         public const string TreeModelPath = Root + "/Models/poc_tree.fbx";
         public const string HouseModelPath = Root + "/Models/poc_house.fbx";
         public const string Phase2Models = Root + "/Models/Phase2/";
+        public const string OutlineMaterialPath = Root + "/Materials/POC_OutlineComposite.mat";
+        public const string OutlineMaskShader = "HALKA/POC/OutlineMask";
+        // Phase 2.1: TEMPORARY ﾊﾙｶﾁｬﾝ stand-in until the user's official model arrives.
+        public const string PlaceholderPlayerPath = Root + "/Models/Phase2_1/haruka_placeholder.fbx";
         public static readonly string[] Phase2ModelNames =
         {
             "ground_grass_a", "ground_grass_b", "ground_grass_c", "ground_dirt_full", "ground_dirt_edge",
@@ -61,6 +65,8 @@ namespace Halka.Poc2D3D.EditorTools
             var screen = EnsureMaterial(ScreenMaterialPath, "HALKA/POC/UnlitVertexColor", (float)CompareFunction.Always);
             foreach (var path in new[] { PlayerModelPath, TreeModelPath, HouseModelPath }) RemapModelMaterial(path, toon);
             foreach (var name in Phase2ModelNames) RemapModelMaterial(Phase2Models + name + ".fbx", toon);
+            RemapModelMaterial(PlaceholderPlayerPath, toon);
+            EnsureMaterial(OutlineMaterialPath, "HALKA/POC/OutlineComposite", null);
 
             var catalog = AssetDatabase.LoadAssetAtPath<PocPresentationCatalog>(CatalogPath);
             if (catalog == null)
@@ -89,6 +95,7 @@ namespace Halka.Poc2D3D.EditorTools
                 dirtCorner = Phase2("ground_dirt_corner"),
                 grassTufts = new List<GameObject> { Phase2("grass_tuft_a"), Phase2("grass_tuft_b"), Phase2("grass_tuft_c") }
             });
+            catalog.ConfigurePlayer(new PocActorPresentation { model = LoadModel(PlaceholderPlayerPath), placeholder = true });
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
 
@@ -134,8 +141,6 @@ namespace Halka.Poc2D3D.EditorTools
             var yawRoot = new GameObject("Model yaw (+180: Blender front faces South)");
             yawRoot.transform.SetParent(player.transform, false);
             yawRoot.transform.localRotation = Quaternion.Euler(0f, GridSpace3D.ModelFrontYawOffset, 0f);
-            var model = (GameObject)PrefabUtility.InstantiatePrefab(catalog.PlayerModel, yawRoot.transform);
-            model.name = "poc_player";
 
             var sun = new GameObject("Sun").AddComponent<Light>();
             sun.type = LightType.Directional;
@@ -163,11 +168,14 @@ namespace Halka.Poc2D3D.EditorTools
             session.Configure(outdoor, interior, input);
             input.Configure(dpad, action, switcher, panel, session);
             presenter.Configure(session, catalog);
-            actor.Configure(session, yawRoot.transform);
+            actor.Configure(session, yawRoot.transform, catalog);
+            actor.BuildModel();
             pixelView.Configure(pixelCamera, session, actor);
+            pixelView.ConfigureOutline(Shader.Find(OutlineMaskShader),
+                AssetDatabase.LoadAssetAtPath<Material>(OutlineMaterialPath));
             pixelPresenter.Configure(pixelView, time, screenOverlay);
-            thirdPerson.Configure(thirdCamera, session, presenter);
-            switcher.Configure(pixelView, presenterCamera, thirdPerson, actor, presenter, session);
+            thirdPerson.Configure(thirdCamera, session, presenter, input);
+            switcher.Configure(pixelView, presenterCamera, thirdPerson, actor, presenter, session, input);
             time.Configure(worldTime, session, switcher, sun, thirdCamera);
             panel.Configure(session, switcher, input, time, presenter, dpad, action, font);
             return root;

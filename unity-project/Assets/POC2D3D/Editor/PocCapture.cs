@@ -214,7 +214,7 @@ namespace Halka.Poc2D3D.EditorTools
             pixel.SnapToTarget();
             Advance(0f, width, height);
             pixel.WorldCamera.Render();
-            var rt = pixel.Target;
+            var rt = pixel.ComposeOutline();
             var small = Read(rt);
             var scale = pixel.Scale;
             var image = new Texture2D(width, height, TextureFormat.RGB24, false);

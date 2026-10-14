@@ -1,0 +1,72 @@
+{
+  "generator": "blender/scripts/build_haruka_placeholder.py",
+  "status": "TEMPORARY placeholder, not the official character model",
+  "blenderVersion": "5.2.0 LTS",
+  "blend": "blender/sources/phase2_1/haruka_placeholder.blend",
+  "fbx": "unity-project/Assets/POC2D3D/Models/Phase2_1/haruka_placeholder.fbx",
+  "front": "South (-Y in Blender, -Z in Unity)",
+  "parts": {
+    "haruka_placeholder": {
+      "triangles": 768,
+      "vertices": 474,
+      "materials": 1,
+      "pivot": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "ArmL": {
+      "triangles": 60,
+      "vertices": 36,
+      "materials": 1,
+      "pivot": [
+        0.125,
+        0.0,
+        0.43
+      ]
+    },
+    "ArmR": {
+      "triangles": 60,
+      "vertices": 36,
+      "materials": 1,
+      "pivot": [
+        -0.125,
+        0.0,
+        0.43
+      ]
+    },
+    "LegL": {
+      "triangles": 44,
+      "vertices": 28,
+      "materials": 1,
+      "pivot": [
+        0.05,
+        0.0,
+        0.235
+      ]
+    },
+    "LegR": {
+      "triangles": 44,
+      "vertices": 28,
+      "materials": 1,
+      "pivot": [
+        -0.05,
+        0.0,
+        0.235
+      ]
+    }
+  },
+  "triangles": 976,
+  "boundsMin": [
+    -0.2557,
+    -0.21,
+    0.0
+  ],
+  "boundsMax": [
+    0.3034,
+    0.2245,
+    0.9557
+  ],
+  "spriteReference": "Assets/Content/Character/{front,back,left,right}_idle/00.png (read only)"
+}

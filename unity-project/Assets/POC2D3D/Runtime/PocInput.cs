@@ -17,16 +17,21 @@ namespace Halka.Poc2D3D
         [SerializeField] private SharedWorldSession session;
         [SerializeField, Min(1f)] private float clickMovementLimit = 24f;
 
-        private bool hasLatchedYaw;
-        private float latchedYaw;
+        private Vector2Int latchedRaw;
+        private Vector2Int latchedDirection;
+        private bool requireRelease;
         private bool mouseDown;
         private bool mouseStartedOnControls;
         private Vector2 mouseStart;
         private float lastTouchAt = -10f;
 
-        public Poc3DControlScheme Scheme { get; set; } = Poc3DControlScheme.WorldFixed;
+        // Phase 2.1: 3D uses camera-relative keys by default; 2D always stays world-fixed.
+        public Poc3DControlScheme Scheme { get; set; } = Poc3DControlScheme.CameraRelative;
         public Vector2Int RawDirection { get; private set; }
         public bool ActionPressed { get; private set; }
+        public bool AnyDirectionHeld => RawDirection != Vector2Int.zero;
+        public float LastReleaseAt { get; private set; } = float.NegativeInfinity;
+        public bool WaitingForRelease => requireRelease;
 
         public void Configure(TouchDpad touchDpad, TouchActionButton button, PocViewSwitcher viewSwitcher,
             PocDebugPanel panel, SharedWorldSession worldSession)
@@ -41,36 +46,61 @@ namespace Halka.Poc2D3D
         private void Update()
         {
             if (UnityEngine.Input.touchCount > 0) lastTouchAt = Time.unscaledTime;
-            RawDirection = CardinalInput.Choose(
+            SetRaw(CardinalInput.Choose(
                 UnityEngine.Input.GetKey(KeyCode.W) || UnityEngine.Input.GetKey(KeyCode.UpArrow),
                 UnityEngine.Input.GetKey(KeyCode.S) || UnityEngine.Input.GetKey(KeyCode.DownArrow),
                 UnityEngine.Input.GetKey(KeyCode.A) || UnityEngine.Input.GetKey(KeyCode.LeftArrow),
                 UnityEngine.Input.GetKey(KeyCode.D) || UnityEngine.Input.GetKey(KeyCode.RightArrow),
-                dpad != null ? dpad.Direction : Vector2Int.zero);
+                dpad != null ? dpad.Direction : Vector2Int.zero), Time.unscaledTime);
             ActionPressed = actionButton != null && actionButton.JustPressed && RawDirection == Vector2Int.zero;
         }
 
-        // Camera-relative keys use the camera's target yaw latched at the first press, so a
-        // camera that turns while a key is held cannot reverse the walking direction.
+        // Also used by checks to simulate the keyboard or the D-pad.
+        public void SetRaw(Vector2Int raw, float now)
+        {
+            if (raw == Vector2Int.zero && RawDirection != Vector2Int.zero) LastReleaseAt = now;
+            RawDirection = raw;
+        }
+
+        // After a view switch a key that is still held is ignored until it is released, so the
+        // switch can never turn an old key press into a step in a new direction.
+        public void RequireRelease()
+        {
+            requireRelease = RawDirection != Vector2Int.zero;
+            latchedRaw = latchedDirection = Vector2Int.zero;
+        }
+
         public Vector2Int ResolveDirection(SharedWorldSession worldSession) =>
             Resolve(RawDirection, views != null && views.Mode == PocViewMode.ThirdPerson3D,
-                views != null ? views.CameraTargetYaw : 0f);
+                views != null ? views.CameraHeading : Halka.Game.Player.FacingDirection.Up);
 
-        public Vector2Int Resolve(Vector2Int raw, bool thirdPerson, float cameraYaw)
+        // 3D camera-relative keys: the Grid direction is chosen once when a key goes down, from the
+        // camera's cardinal heading, and kept until the key is released (or another key replaces
+        // it). A camera that turns while a key is held, or a step in progress, never changes it.
+        public Vector2Int Resolve(Vector2Int raw, bool thirdPerson, Halka.Game.Player.FacingDirection heading)
         {
+            if (requireRelease)
+            {
+                if (raw == Vector2Int.zero) requireRelease = false;
+                return Vector2Int.zero;
+            }
             if (raw == Vector2Int.zero)
             {
-                hasLatchedYaw = false;
+                latchedRaw = latchedDirection = Vector2Int.zero;
                 return raw;
             }
             if (!thirdPerson || Scheme == Poc3DControlScheme.WorldFixed) return raw;
-            if (!hasLatchedYaw)
+            if (raw != latchedRaw)
             {
-                latchedYaw = cameraYaw;
-                hasLatchedYaw = true;
+                latchedRaw = raw;
+                latchedDirection = GridSpace3D.CameraRelative(raw, GridSpace3D.FacingYaw(heading));
             }
-            return GridSpace3D.CameraRelative(raw, latchedYaw);
+            return latchedDirection;
         }
+
+        // Phase 1 signature (yaw in degrees), kept for the Phase 1 regression checks.
+        public Vector2Int Resolve(Vector2Int raw, bool thirdPerson, float cameraYaw) =>
+            Resolve(raw, thirdPerson, GridSpace3D.HeadingFromYaw(cameraYaw));
 
         private bool IsOverControls(Vector2 screenPosition) =>
             dpad != null && dpad.IsOverControls(screenPosition) ||

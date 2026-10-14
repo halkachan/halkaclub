@@ -153,7 +153,7 @@ namespace Halka.Poc2D3D.EditorTools
             pixel.SnapToTarget();
             Advance(0f, width, height);
             pixel.WorldCamera.Render();
-            var rt = pixel.Target;
+            var rt = pixel.ComposeOutline();
             var small = Read(rt);
             var src = small.GetPixels32();
             var dst = new Color32[width * height];

@@ -32,8 +32,8 @@ namespace Halka.Poc2D3D
 
         private void OnPostRender()
         {
-            var texture = pixelView != null ? pixelView.Target : null;
-            if (texture == null) return;
+            if (pixelView == null || pixelView.Target == null) return;
+            var texture = pixelView.ComposeOutline();
             UvTransform(Screen.width, Screen.height, texture.width, texture.height, pixelView.Scale,
                 pixelView.Offset, out var uvScale, out var uvOffset);
             Graphics.Blit(texture, (RenderTexture)null, uvScale, uvOffset);

@@ -4,6 +4,15 @@ namespace Halka.Poc2D3D
 {
     public enum PocIndoorCamera { CloserOffset, CloserOffsetAndClamp }
 
+    // When the camera swings behind the player (Phase 2.1). The heading is the cardinal
+    // direction camera-relative keys are measured from; the player's facing is separate.
+    public enum PocCameraFollow
+    {
+        TurnBehindWhenIdle, // After a sideways turn, once the keys are released and the player stops.
+        Fixed,              // Never turns on its own (only when entering 3D or another map).
+        FollowFacing        // Phase 1 behaviour: always behind the facing (S reverses the view).
+    }
+
     // Third-person view from behind the player. It follows the interpolated step position
     // (not the cell), so a one-cell step never makes the camera jump.
     [DefaultExecutionOrder(60)]
@@ -12,6 +21,8 @@ namespace Halka.Poc2D3D
         [SerializeField] private Camera viewCamera;
         [SerializeField] private SharedWorldSession session;
         [SerializeField] private PocWorldPresenter presenter;
+        [SerializeField] private PocInput input;
+        [SerializeField, Min(0f)] private float idleTurnDelay = 0.35f;
 
         [Header("Outdoor")]
         [SerializeField] private float distance = 2.5f;
@@ -35,6 +46,9 @@ namespace Halka.Poc2D3D
         private float boomVelocity;
         private bool snapNext = true;
 
+        public Halka.Game.Player.FacingDirection Heading { get; private set; } = Halka.Game.Player.FacingDirection.Up;
+        public PocCameraFollow Follow { get; set; } = PocCameraFollow.TurnBehindWhenIdle;
+        public float IdleTurnDelay { get => idleTurnDelay; set => idleTurnDelay = value; }
         public float TargetYaw => targetYaw;
         public float CurrentYaw => yaw;
         public bool HideOccluders { get; set; } = true;
@@ -42,8 +56,10 @@ namespace Halka.Poc2D3D
         public int HiddenOccluders { get; private set; }
         public Camera ViewCamera => viewCamera;
 
-        public void Configure(Camera cameraComponent, SharedWorldSession worldSession, PocWorldPresenter worldPresenter)
+        public void Configure(Camera cameraComponent, SharedWorldSession worldSession, PocWorldPresenter worldPresenter,
+            PocInput pocInput = null)
         {
+            input = pocInput;
             viewCamera = cameraComponent;
             session = worldSession;
             presenter = worldPresenter;
@@ -66,11 +82,14 @@ namespace Halka.Poc2D3D
         private void OnMapChanged(SharedWorldModel world) => snapNext = true;
         public void SnapToTarget() => snapNext = true;
 
-        private void LateUpdate() => UpdateView(Time.unscaledDeltaTime);
+        private void LateUpdate() => UpdateView(Time.unscaledDeltaTime, Time.unscaledTime);
 
-        public void UpdateView(float deltaTime)
+        public void UpdateView(float deltaTime) => UpdateView(deltaTime, Time.unscaledTime);
+
+        public void UpdateView(float deltaTime, float now)
         {
-            targetYaw = GridSpace3D.FacingYaw(session.Facing);
+            UpdateHeading(now);
+            targetYaw = GridSpace3D.FacingYaw(Heading);
             var desired = GridSpace3D.ToWorld(session.Position, lookHeight);
             var justSnapped = snapNext;
             if (snapNext)
@@ -106,6 +125,17 @@ namespace Halka.Poc2D3D
             viewCamera.transform.SetPositionAndRotation(focus - rotation * Vector3.forward * boomNow, rotation);
             viewCamera.fieldOfView = viewCamera.aspect < 1f ? 58f : 42f;
             UpdateOccluders();
+        }
+
+        // The heading changes only while nothing is pressed and the player stands still, so a held
+        // key always keeps its direction. Facing the camera (after S) never spins the view 180°.
+        private void UpdateHeading(float now)
+        {
+            var facing = session.Facing;
+            if (snapNext || Follow == PocCameraFollow.FollowFacing) { Heading = facing; return; }
+            if (Follow == PocCameraFollow.Fixed || session.IsMoving) return;
+            if (input != null && (input.AnyDirectionHeld || now - input.LastReleaseAt < idleTurnDelay)) return;
+            if (facing != Heading && facing != GridSpace3D.Opposite(Heading)) Heading = facing;
         }
 
         // Keeps the camera above the room floor instead of behind a wall: first look down more

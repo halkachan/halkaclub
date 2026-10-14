@@ -26,6 +26,7 @@ MonoBehaviour:
     castShadows: 1
     perchAnchorName: PerchAnchor
     placeholder: 0
+    outlineStrength: 1
   - definitionId: flower_basic
     model: {fileID: 919132149155446097, guid: b07fa73f3afe0c144a758836c02cbb37, type: 3}
     variants: []
@@ -36,6 +37,7 @@ MonoBehaviour:
     castShadows: 1
     perchAnchorName: 
     placeholder: 0
+    outlineStrength: 1
   - definitionId: stone_basic
     model: {fileID: 919132149155446097, guid: bf617b6918105564c99b19ee64fa1bbf, type: 3}
     variants:
@@ -49,6 +51,7 @@ MonoBehaviour:
     castShadows: 1
     perchAnchorName: 
     placeholder: 0
+    outlineStrength: 1
   - definitionId: house_main
     model: {fileID: 919132149155446097, guid: f324ab4544efe924a86b56261b79154b, type: 3}
     variants: []
@@ -59,6 +62,7 @@ MonoBehaviour:
     castShadows: 1
     perchAnchorName: 
     placeholder: 1
+    outlineStrength: 1
   environment:
     grassTiles:
     - {fileID: 919132149155446097, guid: 63963ae3c0300124ca9d7edb73f246bc, type: 3}
@@ -75,3 +79,18 @@ MonoBehaviour:
     roadsideTuftChance: 0.55
     outsideMargin: 8
     outsideTint: {r: 0.9, g: 0.93, b: 0.88, a: 1}
+  player:
+    model: {fileID: 919132149155446097, guid: 8e0dfa854cf645a4e9b5dd00b92c2db5, type: 3}
+    yawOffsetDegrees: 180
+    pivotOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    pixelViewScale: 0.82
+    pixelViewFaceCamera: 1
+    pixelViewDepthBias: 0.35
+    armLeft: ArmL
+    armRight: ArmR
+    legLeft: LegL
+    legRight: LegR
+    swingDegrees: 26
+    outlineStrength: 1
+    placeholder: 1

@@ -15,8 +15,13 @@ namespace Halka.Poc2D3D
         [SerializeField] private SharedWorldSession session;
         [SerializeField] private PocActorView actor;
         [SerializeField, Min(0.01f)] private float smoothTime = 0.2f;
+        [Header("2D outline (Phase 2.1)")]
+        [SerializeField] private Shader outlineMaskShader;
+        [SerializeField] private Material outlineComposite;
 
         private RenderTexture target;
+        private RenderTexture outlineMask;
+        private RenderTexture outlined;
         private Vector3 focus;
         private Vector3 velocity;
         private bool snapNext = true;
@@ -30,9 +35,23 @@ namespace Halka.Poc2D3D
         public Vector2Int Offset { get; private set; }
         public Camera WorldCamera => worldCamera;
 
+        // Lines are drawn in the low-resolution texture (1 or 2 of its pixels), then upscaled.
+        public int OutlinePixels { get; set; } = 1;
+        public Color OutlineColor { get; set; } = new Color32(0x25, 0x2b, 0x39, 0xff);
+        public float GrassOutline { get; set; }
+        public float InnerLines { get; set; } = 0.5f;
+        public bool OutlineReady => outlineMaskShader != null && outlineComposite != null;
+        public RenderTexture OutlineMask => outlineMask;
+
         public float PixelWorldSize => GridSpace3D.CellSize / PixelsPerCell;
         public float PixelWorldNorth => SquareGround ? PixelWorldSize
             : PixelWorldSize / Mathf.Sin(PitchDegrees * Mathf.Deg2Rad);
+
+        public void ConfigureOutline(Shader maskShader, Material composite)
+        {
+            outlineMaskShader = maskShader;
+            outlineComposite = composite;
+        }
 
         public void Configure(Camera cameraComponent, SharedWorldSession worldSession, PocActorView actorView)
         {
@@ -65,6 +84,10 @@ namespace Halka.Poc2D3D
         {
             EnsureTarget(screenWidth, screenHeight);
             actor.PixelSnap = new Vector2(PixelWorldSize, PixelWorldNorth);
+            actor.PixelViewPitch = Mathf.Clamp(PitchDegrees, 20f, 90f);
+            // Settle the actor's 2D pose (snap, lean, scale) now, so the outline mask rendered
+            // below and the color image rendered later this frame see exactly the same model.
+            actor.Apply(0f);
 
             var desired = ClampToMap(GridSpace3D.ToWorld(session.Position));
             if (snapNext)
@@ -87,6 +110,31 @@ namespace Halka.Poc2D3D
             worldCamera.orthographic = true;
             worldCamera.projectionMatrix = Matrix4x4.Ortho(-width * 0.5f, width * 0.5f,
                 -height * 0.5f, height * 0.5f, 0.3f, CameraDistance * 2f);
+            if (OutlinePixels > 0 && OutlineReady) RenderOutlineMask();
+        }
+
+        // Same camera, same pixel-snapped matrices, so the mask lines up texel for texel.
+        private void RenderOutlineMask()
+        {
+            var background = worldCamera.backgroundColor;
+            worldCamera.backgroundColor = new Color(0f, 0f, 1f, 1f); // ID 0, far depth
+            worldCamera.targetTexture = outlineMask;
+            worldCamera.RenderWithShader(outlineMaskShader, "RenderType");
+            worldCamera.targetTexture = target;
+            worldCamera.backgroundColor = background;
+        }
+
+        // Called after the world camera has drawn this frame (and by the capture tools).
+        public RenderTexture ComposeOutline()
+        {
+            if (target == null || OutlinePixels <= 0 || !OutlineReady) return target;
+            outlineComposite.SetTexture("_MaskTex", outlineMask);
+            outlineComposite.SetColor("_OutlineColor", OutlineColor);
+            outlineComposite.SetFloat("_Thickness", OutlinePixels);
+            outlineComposite.SetFloat("_InnerStrength", InnerLines);
+            outlineComposite.SetFloat("_MarkerStrength", GrassOutline);
+            Graphics.Blit(target, outlined, outlineComposite);
+            return outlined;
         }
 
         private Vector3 ClampToMap(Vector3 position)
@@ -122,7 +170,11 @@ namespace Halka.Poc2D3D
             {
                 worldCamera.targetTexture = null;
                 Release(target);
+                Release(outlineMask);
+                Release(outlined);
             }
+            outlineMask = Create("POC 2D outline mask", width, height, 24);
+            outlined = Create("POC 2D outlined view", width, height, 0);
             target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32)
             {
                 name = "POC 2D Pixel View",
@@ -147,10 +199,27 @@ namespace Halka.Poc2D3D
             if (target == null) return;
             if (worldCamera != null) worldCamera.targetTexture = null;
             Release(target);
+            Release(outlineMask);
+            Release(outlined);
+        }
+
+        private static RenderTexture Create(string name, int width, int height, int depth)
+        {
+            var texture = new RenderTexture(width, height, depth, RenderTextureFormat.ARGB32)
+            {
+                name = name,
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+                antiAliasing = 1,
+                useMipMap = false
+            };
+            texture.Create();
+            return texture;
         }
 
         private static void Release(RenderTexture texture)
         {
+            if (texture == null) return;
             texture.Release();
             if (Application.isPlaying) Destroy(texture);
             else DestroyImmediate(texture);

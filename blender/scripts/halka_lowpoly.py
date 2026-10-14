@@ -159,6 +159,17 @@ class MeshBuilder:
             for loop in face.loops:
                 loop[self.layer] = rgba
 
+    def cylinder_between(self, p0, p1, r0, r1, segments, color):
+        """A tapered cylinder from p0 to p1 (limbs, horns, branches)."""
+        before = self._snapshot()
+        p0, p1 = Vector(p0), Vector(p1)
+        axis = p1 - p0
+        rotation = Vector((0, 0, 1)).rotation_difference(axis.normalized()).to_matrix().to_4x4()
+        matrix = Matrix.Translation((p0 + p1) * 0.5) @ rotation
+        bmesh.ops.create_cone(self.bm, cap_ends=True, cap_tris=False, segments=segments,
+                              radius1=r0, radius2=r1, depth=axis.length, matrix=matrix)
+        self._paint_new(before, color)
+
     def to_object(self, name, collection=None, recalc_normals=True):
         if recalc_normals:
             bmesh.ops.recalc_face_normals(self.bm, faces=self.bm.faces)
