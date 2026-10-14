@@ -50,7 +50,7 @@ PALETTE = {
     "J": "#3a3a40",  # jacket
     "j": "#5f5a5c",  # jacket light
     "S": "#f9f6f4",  # skin / white legs
-    "P": "#fe1b6d",  # blush under the eyes (also used by the checks to find the face)
+    "P": "#fe1b6d",  # line under each eye (also used by the checks to find the face)
     "W": "#ffffff",  # hair clip (also used by the checks to find the clip)
 }
 
@@ -129,7 +129,7 @@ HEAD_FRONT = [  # 8 x 8, column 0 = the character's right (-X)
     "SKKSSKKS",
     "SBWSSBWS",
     "SBBSSBBS",
-    "SPSSSSPS",
+    "SPPSSPPS",  # a pink line right under each eye, as wide as the eye (not a cheek blush)
 ]
 HEAD_SIDE_RIGHT = [  # seen from -X: column 0 = back, column 7 = front
     "YYYYYYYY", "YYYYYYYY", "YYYYYYYY", "YYYYYYYY",
