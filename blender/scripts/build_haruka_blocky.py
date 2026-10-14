@@ -17,7 +17,8 @@ Hierarchy (pivots at the joints so Unity can swing them; no Rig, no Gameplay dep
   haruka_blocky_placeholder  (head, hair layer, body, skirt, ornaments; origin = ground centre)
     ArmL / ArmR              (shoulder pivots; L = the character's left = +X while facing South)
     LegL / LegR              (hip pivots)
-Front faces South (Blender -Y). Units below are "pixels" of PIXEL metres.
+Front faces South (Blender -Y). Units below are "pixels" of PIXEL metres. The black ornaments sit
+on the ponytail's hair tie at the back of the head (user feedback, 2026-10-15).
 """
 
 import json
@@ -36,7 +37,7 @@ SOURCE = os.path.join(ROOT, "blender", "sources", "phase2_1", NAME + ".blend")
 FBX = os.path.join(ROOT, "unity-project", "Assets", "POC2D3D", "Models", "Phase2_1", NAME + ".fbx")
 MANIFEST = os.path.join(ROOT, "blender", "exports", f"phase2_1_{NAME}_manifest.json")
 
-PIXEL = 0.043  # metres per pixel: 22.5 px tall with the ornaments = 0.97 (about two cells)
+PIXEL = 0.044  # metres per pixel: 22 px tall with the ornaments = 0.97 (about two cells)
 
 # Sprite palette (sampled from the idle sprites).
 PALETTE = {
@@ -44,7 +45,7 @@ PALETTE = {
     "y": "#c8baa0",  # hair shade
     "B": "#4b7ae8",  # blue (hair under-layer, eyes, trims)
     "b": "#3c5fbe",  # dark blue
-    "K": "#12121e",  # ink: lids, lightning parting, boots
+    "K": "#12121e",  # ink: lids, the clip's "H", boots
     "D": "#24242e",  # ornaments, skirt
     "J": "#3a3a40",  # jacket
     "j": "#5f5a5c",  # jacket light
@@ -161,29 +162,19 @@ HAIR_SIDE_RIGHT = [  # seen from -X: column 0 = back, column 8 = front
     "bbbb.....",
 ]
 HAIR_SIDE_LEFT = [row[::-1] for row in HAIR_SIDE_RIGHT]
-HAIR_BACK = [  # seen from +Y: column 0 = the character's left; black lightning parting
+HAIR_BACK = [  # seen from +Y: blond above, the blue under-layer below
     "YYYYYYYYY",
-    "YYYYKYYYY",
-    "YYYYYKYYY",
-    "YYYYKYYYY",
-    "YYYKYYYYY",
-    "YYYYKYYYY",
-    "BBBBBKBBB",
-    "BBBBKBBBB",
+    "YYYYYYYYY",
+    "YYYYYYYYY",
+    "YYYYYYYYY",
+    "YYYYYYYYY",
+    "YYYYYYYYY",
+    "BBBBBBBBB",
+    "BBBBBBBBB",
     "bBBBBBBBb",
     "bbbbbbbbb",
 ]
-HAIR_TOP = [
-    "YYYYYYYYY",
-    "YYYYKYYYY",
-    "YYYYYKYYY",
-    "YyYYYYYyY",
-    "YYYYYYYYY",
-    "YYYyYYYYY",
-    "YYYYYYyYY",
-    "YYYYYYYYY",
-    "YYYYYYYYY",
-]
+HAIR_TOP = "Y"
 
 BODY_FRONT = [  # 8 x 6
     "JJbBBbJJ",
@@ -210,19 +201,20 @@ def build_body():
                                      "right": HEAD_SIDE_RIGHT, "top": "Y", "bottom": "S"})
     p.box((-4.5, -4.5, 9.5), (4.5, 4.5, 19.5), {"front": HAIR_FRONT, "back": HAIR_BACK, "left": HAIR_SIDE_LEFT,
                                                 "right": HAIR_SIDE_RIGHT, "top": HAIR_TOP})
-    # Black horn ornaments, stepping outward like the sprite's.
+    # Ponytail at the back of the head: the hair tie, a short tuft below it, and the black
+    # ornaments on the tie that rise up and outward behind the head (from the front they show
+    # above both sides of the head, as in the sprite).
+    solid = ("front", "back", "left", "right", "top", "bottom")
+    p.box((-1, 4.5, 14), (1, 5.5, 17.5), {k: "Y" for k in solid})
+    p.box((-1, 4.5, 17.5), (1, 5.8, 19), {k: "D" for k in solid})
     for side in (-1, 1):
-        x_in, x_out = sorted((side * 2.0, side * 4.0))
-        p.box((x_in, -1, 19.5), (x_out, 1, 21), {k: "D" for k in ("front", "back", "left", "right", "top", "bottom")})
-        x_in, x_out = sorted((side * 3.2, side * 4.6))
-        p.box((x_in, -0.6, 21), (x_out, 0.6, 22.5), {k: "D" for k in ("front", "back", "left", "right", "top")})
+        x_in, x_out = sorted((side * 1.0, side * 3.0))
+        p.box((x_in, 4.5, 18.5), (x_out, 6.0, 20.5), {k: "D" for k in solid})
+        x_in, x_out = sorted((side * 2.5, side * 4.5))
+        p.box((x_in, 5.0, 20.5), (x_out, 6.5, 22), {k: "D" for k in solid})
     # White clip with a black "H" on the character's right of the forehead.
     p.box((-4.4, -4.9, 15.5), (-1.6, -4.5, 18.5), {"front": ["WKKW", "WWWW", "WKKW"],
                                                    "left": "K", "right": "K", "top": "K", "bottom": "K"})
-    # Curl lock sticking out on the character's left.
-    curl = {k: "Y" for k in ("front", "back", "left", "right", "top", "bottom")}
-    p.box((4.5, -3.5, 13), (5.5, -2.0, 15), curl)
-    p.box((5.5, -3.5, 12), (6.5, -2.5, 13.5), curl)
     return p.to_object(NAME)
 
 
