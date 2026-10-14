@@ -153,18 +153,13 @@ namespace Halka.Poc2D3D.EditorTools
             pixel.SnapToTarget();
             Advance(0f, width, height);
             pixel.WorldCamera.Render();
-            var rt = pixel.ComposeOutline();
-            var small = Read(rt);
-            var src = small.GetPixels32();
-            var dst = new Color32[width * height];
+            // Screen-size image as the presenter draws it: upscaled view plus the player sprite.
+            var small = Read(pixel.ComposeScreen(width, height));
+            var dst = small.GetPixels32();
             var alpha = time.PixelOverlayAlpha;
             var night = (Color32)PocTimeOfDay.NightColor;
-            for (var y = 0; y < height; y++)
-            for (var x = 0; x < width; x++)
-            {
-                var c = src[(y + pixel.Offset.y) / pixel.Scale * rt.width + (x + pixel.Offset.x) / pixel.Scale];
-                dst[y * width + x] = alpha > 0f ? Color32.Lerp(c, night, alpha) : c;
-            }
+            if (alpha > 0f)
+                for (var i = 0; i < dst.Length; i++) dst[i] = Color32.Lerp(dst[i], night, alpha);
             var image = new Texture2D(width, height, TextureFormat.RGB24, false);
             image.SetPixels32(dst);
             Write(name, image);

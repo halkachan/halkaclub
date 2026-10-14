@@ -28,6 +28,10 @@ namespace Halka.Poc2D3D.EditorTools
         public const string OutlineMaskShader = "HALKA/POC/OutlineMask";
         // Phase 2.1: TEMPORARY ﾊﾙｶﾁｬﾝ stand-in until the user's official model arrives.
         public const string PlaceholderPlayerPath = Root + "/Models/Phase2_1/haruka_placeholder.fbx";
+        // 2D Pixel View: the existing ﾊﾙｶﾁｬﾝ sprites, referenced read-only (same files as the
+        // FirstDay CharacterVisual).
+        public const string SpriteMaterialPath = Root + "/Materials/POC_PixelSprite.mat";
+        public const string CharacterSprites = "Assets/Content/Character/";
         public static readonly string[] Phase2ModelNames =
         {
             "ground_grass_a", "ground_grass_b", "ground_grass_c", "ground_dirt_full", "ground_dirt_edge",
@@ -67,6 +71,7 @@ namespace Halka.Poc2D3D.EditorTools
             foreach (var name in Phase2ModelNames) RemapModelMaterial(Phase2Models + name + ".fbx", toon);
             RemapModelMaterial(PlaceholderPlayerPath, toon);
             EnsureMaterial(OutlineMaterialPath, "HALKA/POC/OutlineComposite", null);
+            EnsureMaterial(SpriteMaterialPath, "HALKA/POC/PixelSprite", null);
 
             var catalog = AssetDatabase.LoadAssetAtPath<PocPresentationCatalog>(CatalogPath);
             if (catalog == null)
@@ -95,7 +100,12 @@ namespace Halka.Poc2D3D.EditorTools
                 dirtCorner = Phase2("ground_dirt_corner"),
                 grassTufts = new List<GameObject> { Phase2("grass_tuft_a"), Phase2("grass_tuft_b"), Phase2("grass_tuft_c") }
             });
-            catalog.ConfigurePlayer(new PocActorPresentation { model = LoadModel(PlaceholderPlayerPath), placeholder = true });
+            catalog.ConfigurePlayer(new PocActorPresentation
+            {
+                model = LoadModel(PlaceholderPlayerPath),
+                placeholder = true,
+                sprites = LoadCharacterSprites()
+            });
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
 
@@ -173,6 +183,7 @@ namespace Halka.Poc2D3D.EditorTools
             pixelView.Configure(pixelCamera, session, actor);
             pixelView.ConfigureOutline(Shader.Find(OutlineMaskShader),
                 AssetDatabase.LoadAssetAtPath<Material>(OutlineMaterialPath));
+            pixelView.ConfigureSprite(AssetDatabase.LoadAssetAtPath<Material>(SpriteMaterialPath));
             pixelPresenter.Configure(pixelView, time, screenOverlay);
             thirdPerson.Configure(thirdCamera, session, presenter, input);
             switcher.Configure(pixelView, presenterCamera, thirdPerson, actor, presenter, session, input);
@@ -190,6 +201,30 @@ namespace Halka.Poc2D3D.EditorTools
             camera.allowHDR = false;
             camera.allowMSAA = false;
             return camera;
+        }
+
+        public static PocSpriteSet LoadCharacterSprites() => new PocSpriteSet
+        {
+            frontIdle = Frames("front_idle", 2),
+            backIdle = Frames("back_idle", 2),
+            leftIdle = Frames("left_idle", 2),
+            rightIdle = Frames("right_idle", 2),
+            frontWalk = Frames("walk_front", 4),
+            backWalk = Frames("walk_back", 4),
+            leftWalk = Frames("walk_left", 4),
+            rightWalk = Frames("walk_right", 4)
+        };
+
+        private static Sprite[] Frames(string folder, int count)
+        {
+            var frames = new Sprite[count];
+            for (var i = 0; i < count; i++)
+            {
+                var path = $"{CharacterSprites}{folder}/{i:00}.png";
+                frames[i] = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                if (frames[i] == null) throw new InvalidOperationException("Sprite missing: " + path);
+            }
+            return frames;
         }
 
         private static Material EnsureMaterial(string path, string shaderName, float? zTest)

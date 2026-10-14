@@ -8,7 +8,8 @@ worktree: `C:\Users\owner\Documents\ChatGPT\HALKA_HP_2D3D_PHASE2_1`
 
 1. **3Dの操作をカメラ基準にした。** 押している間は方向が変わらない。S長押しでも往復しない。A/Dで円を描かない。
 2. **2Dにドット単位の輪郭線を付けた。** 低解像度の画像の段階で描き、整数倍で拡大している。
-3. **既存Spriteを参考に、ﾊﾙｶﾁｬﾝの簡易ローポリ「仮」モデルを作った。** 後から差し替えられる構造にしてある。
+3. **既存Spriteを参考に、ﾊﾙｶﾁｬﾝの簡易ローポリ「仮」モデルを作った（3D表示用）。** 後から差し替えられる構造にしてある。
+4. **2Dのﾊﾙｶﾁｬﾝは、もともとのイラスト（既存Sprite）で表示する**（初回提出後のご指示による変更。37項）。本編と同じコマ・同じ時間で動き、絵は元の密度のまま、木などとの前後関係も2D本編と同じ考え方で決める。
 
 ゲームのGrid・当たり判定・Interaction・時間計算・正式Map・Player Spriteは変えていません。公開もしていません。
 
@@ -99,7 +100,7 @@ repo外の `C:\Users\owner\Documents\ChatGPT\HARUKA_WORLD_ver3.0_PHASE2_1_BACKUP
 2. Object IDと強さは、各メッシュのUV2に書き込みます（`PocOutlineTag`）。マテリアルのプロパティではなく頂点データなので、Phase 2の静的バッチ化を崩しません。
 3. 合成シェーダー（`HALKA/POC/OutlineComposite`）が、低解像度のまま1画素ずつ判定します。「隣が別のObjectで、自分より手前にある」画素を輪郭色にします（外周線）。その後で、既存と同じ整数倍・Pointの拡大をします。
 4. 内側の線（初期値は「弱」）: 同じObjectの中で、手前の面との色差が大きい境目だけに引きます（樹冠と幹、花弁と芯など）。似た色の面の境目には引かないので、ポリゴンの面ごとに線が入ることはありません。
-5. 輪郭を付ける対象: 木・花・石・仮House・仮Player・仮の箱（家具・看板など）。地面と道には付きません（検査で、輪郭が出るのは輪郭対象の物の近くだけであることを確認）。草は初期値で付けず、「弱」も比較用に用意しました。
+5. 輪郭を付ける対象: 木・花・石・仮House・仮の箱（家具・看板など）。2Dのﾊﾙｶﾁｬﾝは元のイラスト（輪郭が描き込み済み）なので、輪郭処理の対象外です（37項）。地面と道には付きません（検査で、輪郭が出るのは輪郭対象の物の近くだけであることを確認）。草は初期値で付けず、「弱」も比較用に用意しました。
 6. 3Dでは2Dカメラ自体が止まるので、輪郭処理は一切動きません（検査）。
 7. UI（IMGUIのMenu・Message・D-pad・A・Version・パネル）は、画像の合成後に描かれるので、輪郭の対象になりません。遊びメモ書きのビットマップFontも変えていません。
 
@@ -114,8 +115,10 @@ repo外の `C:\Users\owner\Documents\ChatGPT\HARUKA_WORLD_ver3.0_PHASE2_1_BACKUP
 
 | 密度 | 輪郭なし | 1px | 2px |
 |---|---|---|---|
-| 16px/マス（RT 512×288 ×2） | 0画素変化 | 2,995画素に線 | 5,139画素に線 |
-| 32px/マス（RT 1024×576 ×1） | 0画素変化 | 5,488画素に線 | 9,580画素に線 |
+| 16px/マス（RT 512×288 ×2） | 0画素変化 | 2,852画素に線 | 4,922画素に線 |
+| 32px/マス（RT 1024×576 ×1） | 0画素変化 | 5,146画素に線 | 9,064画素に線 |
+
+（初回提出時は2,995／5,139／5,488／9,580画素でした。2Dのﾊﾙｶﾁｬﾝを元のイラストにし、3Dモデルの輪郭がなくなった分だけ減っています。）
 
 16pxに1pxの輪郭を付けると、現行Spriteに最も近い「ドット絵らしさ」になりました。32pxでは線が細く、密で上品な絵になります。**最終決定はしていません**（36項）。
 
@@ -124,10 +127,12 @@ repo外の `C:\Users\owner\Documents\ChatGPT\HARUKA_WORLD_ver3.0_PHASE2_1_BACKUP
 - 輪郭は低解像度の段階で描くので、1px単位でカメラを動かす仕組み（Phase 1）がそのまま効きます。検査で、歩行中もカメラ位置が1px単位であることを確認しました。
 - WebGLのスマホ相当（RT 130×282 ×6）で、歩いている間の30フレームを撮って比べました。カメラが動いた18ペアすべてで、静止した背景と輪郭の不一致は0pxでした（`LOGS/19-shimmer-mobile-2d-outline.txt`）。
 - WebGLでも上下は反転していません（合成はBlit経由）。
+- 元のイラストに変えた後も、スマホ相当で東へ歩いた30フレームを撮って比べました。カメラが動いた12ペアすべてで、静止した背景の不一致は0pxでした（`LOGS/26-shimmer-mobile-2d-sprite.txt`）。比較範囲は、開いたDebug Panelより下、かつ横幅192pxのSpriteを除いた範囲です。
+- Sprite自体も、毎フレーム低解像度の画素の境目に揃って描かれます（検査）。
 
 ## 14. 仮Playerの設計
 
-`haruka_placeholder`（**仮モデル。正式なﾊﾙｶﾁｬﾝではありません**）。
+`haruka_placeholder`（**仮モデル。正式なﾊﾙｶﾁｬﾝではありません**）。**3D表示だけで使います。** 2Dでは元のイラストを表示します（37項）。
 
 - 大きさ: 約2頭身、高さ0.956。足元が原点で、正面は南です（他のアセットと同じ規約）。
 - 再現した特徴（既存Spriteから読み取った配色を使用）:
@@ -141,16 +146,12 @@ repo外の `C:\Users\owner\Documents\ChatGPT\HARUKA_WORLD_ver3.0_PHASE2_1_BACKUP
   - 服: 黒い上着、青い襟、白と青の胸章。黒いスカートに青い裾
   - 腕と脚: 黒い袖と白い手。白い脚に黒いブーツ（底は青）
 - 構成: 本体（頭・髪・胴・スカート）と、`ArmL`／`ArmR`／`LegL`／`LegR`（肩と股関節が回転の中心）。976 tris、マテリアル1つ。
-- **2D表示だけの補正**（Presentation Metadataで調整できる）:
-  - `pixelViewFaceCamera` = 1: 足元を軸に40°起こして、顔を2Dカメラへ向ける。50°の見下ろしのままだと頭頂しか見えないため、現行の手描きSpriteのように正面が見えるようにする。
-  - `pixelViewScale` = 0.82: 起こしたぶん縦に伸びて見えるので縮める。
-  - `pixelViewDepthBias` = 0.35: 視線方向にずらす。正射影なので画面上の位置は変わらず、北側の木の幹などより手前に描かれる。
-  - 2DではPlayerの影を消す（Spriteには影がない）。
-  - どれも描画だけの処理で、PlayerのセルとActorの根元の位置は変えません（検査）。
+- 初回提出時は、このモデルを2Dでも「足元を軸に起こして」表示していました（`pixelViewFaceCamera`・`pixelViewScale`・`pixelViewDepthBias`）。2Dを元のイラストに変えたため、これらの2D専用の補正は削除しました。
+- 2Dでは、モデルの描画（影と輪郭マスクを含む）を止めます。3Dに戻すと再び描画します（検査）。
 
 ## 15. 元Spriteとの比較
 
-`sheets/01_player_original_vs_placeholder.png` に並べました。元Sprite（4方向）、Blender、Unity 3D（4方向）、2D 16px・32px です。
+`sheets/01_player_original_vs_placeholder.png` に並べました。元Sprite（4方向）、Blender、Unity 3D（4方向）、2D 16px・32px です。2Dの2行は元のイラストそのものです（色の一致は検査で確認）。
 
 - 金髪と下側の青、角状の飾り、白い髪飾り、青い目とピンク、黒い服と青い縁は、一目でﾊﾙｶﾁｬﾝと分かる程度に再現できました。
 - 違い:
@@ -183,11 +184,9 @@ repo外の `C:\Users\owner\Documents\ChatGPT\HARUKA_WORLD_ver3.0_PHASE2_1_BACKUP
 - 歩行の0.18秒、論理セル、補間は変えていません（検査：一歩の途中でもセルは変わらず、0.18秒後に1マス進む）。
 - 本格的な待機と歩行のAnimationは、正式モデル（Rig付き）で行う想定です。
 
-## 19. 2Dでの仮Player表示
+## 19. 2DでのPlayer表示
 
-- 14項の補正により、2Dで正面の顔（青い目・ピンク）・背面の青い髪と分け目・左右の向きが読めます（`sheets/01`の2D 16px／32px）。
-- 輪郭線（1px）も付きます。歩いている間、手足が振れます（3Dの手足と同じ）。
-- 16px/マスでは顔が数画素なので細部は粗く、32px/マスでは目とピンクまで読めます。
+2Dでは仮モデルを使わず、元のイラストを表示します。詳細は37項にあります（`sheets/01`の2D 16px／32px、`sheets/09`、`sheets/10`）。
 
 ## 20. 3Dでの仮Player表示
 
@@ -207,11 +206,12 @@ repo外の `C:\Users\owner\Documents\ChatGPT\HARUKA_WORLD_ver3.0_PHASE2_1_BACKUP
 | pivotOffset／uniformScale | 原点と大きさの補正 |
 | pixelViewScale／pixelViewFaceCamera／pixelViewDepthBias | 2Dだけの見え方 |
 | armLeft/armRight/legLeft/legRight | 手足の節点名。空欄なら手足を振らない |
-| outlineStrength | 2D輪郭の強さ |
 | placeholder | 仮モデルかどうかの印 |
+| sprites | 2Dで使う既存Sprite（4方向×待機・歩行）と、セル基準の高さ0.25（FirstDayと同じ） |
 
 - `PocActorView.BuildModel()` が、実行時にこのエントリーからモデルを作ります。
-- Grid・向き・歩数・Interactionはモデルを一切読みません。検査では、Phase 1のマネキンへ差し替えてもGridの状態が変わらないことを確認しました。
+- Grid・向き・歩数・Interactionはモデルを一切読みません。検査では、Phase 1のマネキンへ差し替えても、Gridの状態と2DのSpriteが変わらないことを確認しました。
+- 正式モデルに差し替えても、2Dは元のイラストのままです。
 - 正式モデルにRigとAnimatorがある場合は、手足の節点名を空にして、Animatorを駆動する小さな部品を追加する想定です（Phase 3以降）。
 
 ## 22. Phase 2の自然物の保護
@@ -238,7 +238,7 @@ repo外の `C:\Users\owner\Documents\ChatGPT\HARUKA_WORLD_ver3.0_PHASE2_1_BACKUP
 
 ## 25. 新しい検査（Phase21PresentationChecks）
 
-**44件成功・失敗0**（`HARUKA_WORLD_ver3.0_PHASE2_1_LOGS/11-phase21-checks.log`）。
+**51件成功・失敗0**（`HARUKA_WORLD_ver3.0_PHASE2_1_LOGS/21-phase21-checks-sprite.log`。初回提出時は44件、`11-phase21-checks.log`）。
 
 - 3D操作（12件）:
   - 4方向×W/S/A/Dの対応表、方角への丸め、カメラ基準が初期値
@@ -251,20 +251,29 @@ repo外の `C:\Users\owner\Documents\ChatGPT\HARUKA_WORLD_ver3.0_PHASE2_1_BACKUP
   - 配線と初期値
   - 16px／32pxのそれぞれで、「なし・1px・2pxの差」「物の周りだけに線」「見える範囲」
   - RTの分離、1px単位のカメラ移動、3Dでは無効、夜
-- 仮Player（12件）:
+- 仮Player（11件）:
   - アセット（Source・FBX・手足・マテリアル・寸法・顔の向き）
-  - Catalogの仮素材の印、3Dの4方向、3Dの位置、2Dの位置と補正、歩行、元のSprite 50ファイルが無変更
+  - Catalogの仮素材の印、3Dの4方向、3Dの位置と表示、歩行、元のSprite 50ファイルが無変更
+  - 初回の「2Dで起こす補正」の検査は、補正を削除したので外した
+- 2Dの元イラスト（8件、37項）:
+  - FirstDayのCharacterVisualと同じファイル・同じ順番を参照している
+  - 2Dでは3Dモデルを描かない（輪郭マスクにも入らない）。3Dでは描く
+  - コマの選び方と時間がCharacterVisualと同じ（待機0.4秒、歩行0.15秒、4方向、切替でコマ0から）
+  - 元の密度（64px＝1ユニット）で描く。16px・32px/マス、PC・スマホの大きさで確認。下端はセルの南の縁、左右は中央
+  - 何もない地面では、不透明な画素がすべて元の色と一致する（1,609画素、隠れ0、不一致0）
+  - 木の北にいるとき隠れる・木の南にいるとき手前に出る（輪郭あり・なしの2件）
+  - 歩行中も毎フレーム低解像度の画素に揃う
 - モデル差し替え（1件）
 
 ## 26. 既存のRegression
 
 | 検査 | 結果 | ログ |
 |---|---|---|
-| Phase2EnvironmentChecks | **130件成功** | `14-phase2-checks.log` |
-| Phase 1 PocChecks | **102件成功** | `13-phase1-poc-checks.log` |
-| Version30Checks（継承チェックを含む） | 成功 | `16-version30checks.log` |
-| MapAuthoringChecks | 成功 | `17-mapauthoringchecks.log` |
-| MAP EDITOR Core Tests | **181/181成功** | `18-map-editor-core-tests.txt` |
+| Phase2EnvironmentChecks | **130件成功** | `23-phase2-checks-sprite.log`（初回 `14-`） |
+| Phase 1 PocChecks | **102件成功** | `22-phase1-poc-checks-sprite.log`（初回 `13-`） |
+| Version30Checks（継承チェックを含む） | 成功 | `27-version30checks-sprite.log`（初回 `16-`） |
+| MapAuthoringChecks | 成功 | `28-mapauthoringchecks-sprite.log`（初回 `17-`） |
+| MAP EDITOR Core Tests | **181/181成功** | `18-map-editor-core-tests.txt`（初回のみ。今回の変更はMAP EDITORのファイルに触れていないため再実行していない） |
 
 - 既存の検査は1件も削除・変更していません。Phase 1の検査が使う旧シグネチャ `PocInput.Resolve(raw, thirdPerson, yaw)` は、互換用に残しています。
 - Version30Checksの `PrepareScene` が作り直したファイルは、worktree内で元に戻しました。
@@ -286,6 +295,11 @@ repo外のBuildを、別に起動したheadless Chrome（1280×720、AMD Radeon�
 
 すべて60fpsでした。
 
+元のイラストに変えた後に、再ビルドしたBuildでも確認しました。
+- 2D（元のイラスト）で起動し、S長押しで南へ歩く。歩行コマが切り替わる（`sheets/10`）。
+- Dで東向き、Wで北向きのSpriteになる。60fps。
+- 3D操作の部分はコードを変えていないので、WebGLでは上の1〜9の操作をやり直していません。Unity内の検査（12件）は再実行して合格しています。
+
 ## 28. Mobile Preview
 
 DevToolsのエミュレーション（390×844、DPR 2、タッチ、`?touchControls=1`）で確認しました。
@@ -298,11 +312,28 @@ DevToolsのエミュレーション（390×844、DPR 2、タッチ、`?touchCont
 - Aボタン → 2D・3Dとも「はな。」
 - 2Dの輪郭と仮Playerが読める
 
+元のイラストに変えた後（再ビルド後）:
+- 2Dで元のイラストが3倍（192px＝2マス分）で表示される。D-padの下で南へ歩く。
+- VIEWで3Dにすると仮モデル、2Dに戻すと元のイラストになる（`sheets/07`）。59.8fps。
+
 **物理スマートフォンでは確認していません。**
 
 ## 29. Performance
 
 計測は、AMD Radeon内蔵GPUのPC上で動くheadless Chrome 154 で行いました。Draw Call等はPOC内の `ProfilerRecorder`（Release WebGL）の値です。
+
+元のイラストに変えた後（再ビルド後）:
+
+| 条件 | FPS | p95 / 最大 | Draw Calls | Batches | SetPass | Tris/frame | Used Memory |
+|---|---:|---|---:|---:|---:|---:|---:|
+| PC 2D 16px・輪郭1px・元イラスト | 60.0 | 16.8 / 16.8 ms | 82 | 81 | 74 | 40,156 | 15.7 MB |
+| スマホ相当 2D・輪郭1px・元イラスト | 59.8 | 16.8 / 16.8 ms | 92 | 91 | 84 | 31,352 | 15.6 MB |
+| スマホ相当 3D（仮モデル） | 59.9 | — | 88 | 87 | 79 | 18,152 | 15.7 MB |
+
+- 2Dでは仮モデル（5部品と影）を描かなくなった分、Draw Callと三角形が減りました。Spriteの描画は1回分です。
+- WebGL Build（非圧縮）は29,495,865 bytes（初回提出時より+15KB）。
+
+初回提出時（2Dも仮モデル）:
 
 | 条件 | FPS | p95 / 最大 | Draw Calls | Batches | SetPass | Tris/frame | Used Memory |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -326,14 +357,16 @@ DevToolsのエミュレーション（390×844、DPR 2、タッチ、`?touchCont
 
 | ファイル | 内容 |
 |---|---|
-| `sheets/01_player_original_vs_placeholder.png` | 従来のSprite・Blender・Unity 3D・2D 16px・2D 32px（4方向） |
+| `sheets/01_player_original_vs_placeholder.png` | 従来のSprite・Blender・Unity 3D（仮）・2D 16px・2D 32px（元のイラスト）の4方向 |
 | `sheets/02_placeholder_3d_game.png` | 3Dゲーム画面（背後・右向き）、3/4、歩行ポーズ |
 | `sheets/03_outline_matrix_full.png` | 16/32px × 輪郭なし/1px/2px（全景、同じカメラ） |
 | `sheets/04_outline_{tree,flower,stone,player,house}.png` | 物ごとの拡大比較（6通り） |
 | `sheets/05_outline_color_inner_grass.png` | 輪郭色3種、内側の線あり/なし、草の輪郭 |
 | `sheets/06_night.png` | 夜の2D（輪郭あり）・3D |
-| `sheets/07_mobile.png` | スマホ相当の2D・3D（WebGL・Unity） |
-| `sheets/08_3d_controls_webgl.png` | 3D操作の各段階（WebGL） |
+| `sheets/07_mobile.png` | スマホ相当の2D（元のイラスト）・3D（WebGL・Unity） |
+| `sheets/08_3d_controls_webgl.png` | 3D操作の各段階（WebGL。初回提出時のBuildで撮影） |
+| `sheets/09_2d_sprite_draw_order.png` | 2Dの前後関係: 木の北では隠れる、木の南では手前（輪郭あり・なし） |
+| `sheets/10_2d_sprite_walk_webgl.png` | WebGLでの2D歩行（南へ）のコマと東・北向き |
 | `haruka_phase2_1_3d_controls_pc.mp4` | 3D操作の動画（7.6秒、WebGL）。W長押し→**S長押し（カメラは回らない）**→A長押し→離してカメラが回り込む→W→Sの連打→A/D交互 |
 
 ## 31. Previewの起動方法
@@ -352,7 +385,9 @@ Phase 1（8890）とPhase 2（8891）のBuildは、別のフォルダにその�
 
 ## 32. Git Commit
 
-ブランチ `claude/ver3.0-2d3d-phase2-1` にCommitします（Pushはしません）。Commit IDは、Commit後の最終報告で示します。
+ブランチ `claude/ver3.0-2d3d-phase2-1` にCommitします（Pushはしません）。
+- 初回提出: `1afb9ca`
+- 2Dを元のイラストに変える追加対応（37項）: その次のCommit。Commit IDは最終報告で示します。
 
 ## 33. 最終Git状態
 
@@ -371,17 +406,60 @@ Phase 1（8890）とPhase 2（8891）のBuildは、別のフォルダにその�
 
 1. 物理スマホでの操作感と性能は未確認です。
 2. 3Dで、真正面の1マス先の小さな物（花・石）がPlayerの体に隠れ、クリックでは選べません。Aボタンでは調べられます。
-3. 2Dで起こす補正のため、真北の1マス先にある背の高い物とは、前後関係が現行Spriteの描き順と完全には一致しない場合があります。0.35の視線方向補正で主なケースは解消しています。
-4. 仮Playerの横顔が弱いです。髪の塊が目立ち、横向きのとき脚が1本に重なって見えます。
-5. 輪郭の初期値（16px/マス・1px・#252B39・内側線「弱」）は暫定です。
-6. カメラが回り込むまでの待ち時間（0.35秒）は暫定です。実機での好みに合わせて調整できます。
+3. 2Dで木のすぐ北に立つと、樹冠が大きいため、ﾊﾙｶﾁｬﾝがほぼ全身隠れます（`sheets/09`）。前後関係としては正しいですが、見えにくい場合は「木の近くでは半透明にする」などの対応が考えられます（未実装）。
+4. 2Dで1マス24pxのような半端な密度にすると、元のイラストの1画素が画面の整数画素にならず、画素の大きさが不揃いになります（本編も画面の大きさによっては同じです）。16pxと32px/マスでは、PC（1080p以下）とスマホ相当で整数倍になります。
+5. 3Dの仮Playerの横顔が弱いです。髪の塊が目立ち、横向きのとき脚が1本に重なって見えます。
+6. 輪郭の初期値（16px/マス・1px・#252B39・内側線「弱」）は暫定です。
+7. カメラが回り込むまでの待ち時間（0.35秒）は暫定です。実機での好みに合わせて調整できます。
 
 ## 36. ユーザーに確認してほしい点
 
 1. **3D操作:** カメラ基準の操作感。特に、S（カメラ側へ後退し、カメラは回らない）、A/Dの後でカメラが背後へ回り込むタイミング（離して止まってから0.35秒）、回り込みを無くした「fixed」の方がよいか。
 2. **2Dの輪郭:** 1pxと2px、色（`#252B39`／茶／黒）、16px／32px/マスのどれが「はるかわーるどのドット絵」に近いか。内側の線と草の輪郭は必要か。
-3. **仮ﾊﾙｶﾁｬﾝ:** 正式モデルが届くまでの仮として、この見た目でよいか。特に2Dで顔を起こす補正の見え方。
+3. **ﾊﾙｶﾁｬﾝ:** 2Dの元のイラスト表示（大きさ・前後関係、木の北で隠れること）でよいか。3Dの仮モデルは正式モデルが届くまでの仮としてこの見た目でよいか。
 4. **正式モデル:** 届く時の形式（.blend／.fbx、Rigの有無、正面の向き、大きさ）。21項の差し替え方式で受け入れられます。
 5. **次のPhase:** Phase 3（家・家具）へ進んでよいか。
 
 承認をいただくまで、Phase 3には進みません。
+
+## 37. 追加対応: 2Dのﾊﾙｶﾁｬﾝを元のイラストに変更
+
+初回提出後のご指示「2Dでのハルカチャンは3Dではなく、もともとのイラストでお願いします」への対応です。
+
+**表示するもの**
+- FirstDayのCharacterVisualが使うSpriteと同じファイル・同じ順番を、そのまま参照しています（`Assets/Content/Character/` の待機2コマ×4方向、歩行4コマ×4方向）。ファイルとmetaは変えていません（50ファイルのSHA-256一致）。
+- コマの選び方と時間は、CharacterVisualと同じです（待機0.4秒・歩行0.15秒、向きか歩行状態が変わるとコマ0から）。時間はCharacterVisualの定数をそのまま参照しています。
+- 3Dでは引き続き仮モデルを表示します。2D・3Dの切替では、Grid・向き・歩数は変わりません。
+
+**大きさと位置**
+- 元のイラストは、2D本編と同じ密度（64px＝1ユニット＝2マス）で描きます。2D Pixel Viewの低解像度画像（1マス16px）には入れず、拡大した画面に直接重ねるので、絵が縮んで潰れることはありません。
+- 例: PC 1164×576（拡大×2）で64px、スマホ相当 780×1688（拡大×6）で192px。どちらも元の1画素が画面の整数画素になります。
+- 下端はセルの南の縁、左右はセルの中央です。FirstDayのSpriteの位置（セル中心から上へ0.25）と同じ関係です。
+- 位置は低解像度の画素の境目に揃えるので、カメラが追従してもちらつきません（13項）。
+
+**前後関係**
+- Spriteを「セルの南の縁に立てた板」とみなします。輪郭用マスクの深度と1画素ずつ比べ、手前にある物（南側の木・花・石・家など）があればその画素を描きません。2D本編のY順と同じ結果になります。
+  - 木の北に立つと樹冠に隠れる。
+  - 木の南に立つと幹の前に出る。
+- 地面と草の飾りは、本編と同じくキャラクターの下として扱い、Spriteを隠しません。
+- 手前の物がSpriteに重なる境目には、その物の輪郭線（1px／2px）を描きます。
+- 2Dの輪郭を「なし」にしても、前後関係のためにマスクだけは描きます。
+- 板の位置は、南の縁から0.1手前にしています（北隣のマスの木の樹冠の前面が、ちょうど南の縁に来るため）。
+
+**描く順番**
+低解像度の画像を拡大 → 元のイラスト → 夜の色 → UI。夜は2D本編と同じく、イラストも夜の色で暗くなります。
+
+**変更したファイル**
+- `Runtime/PocPresentationCatalog.cs`: `PocSpriteSet` を追加し、`PocActorPresentation.sprites` で持つ。2D専用の補正3項目と `outlineStrength` を削除。
+- `Runtime/PocActorView.cs`: 2Dでモデルを描かない。CharacterVisualと同じコマ選び。起こす補正を削除。
+- `Runtime/PocPixelView2D.cs`: `DrawActorSprite`、`ComposeScreen`、マスクを常に描く処理。カメラのnear/farを投影行列と一致させる（深度の比較のため）。
+- `Runtime/PocPixelPresenter.cs`: 拡大の後、夜の色の前にSpriteを描く。
+- `Shaders/PocPixelSprite.shader`（新規）、`Materials/POC_PixelSprite.mat`（新規）。
+- `Editor/PocSceneBuilder.cs`: Spriteの読み込みと配線。
+- `Editor/PocCapture.cs`・`Phase2Capture.cs`・`Phase21Capture.cs`: 画面サイズの合成画像（Spriteを含む）を保存する。前後関係のキャプチャを追加。
+- `Editor/Phase21PresentationChecks.cs`: 37項の検査8件を追加。
+- `tools/poc2d3d/README_POC.txt`
+
+**作業中に直した不具合**
+- 最初は、2Dカメラの `farClipPlane`（1000）と投影行列のfar（60）が食い違っていました。そのためSpriteの深度が実際の約1/17になり、常に手前と判定されていました。検査で見つけ、2つの値を揃えて直しました。
+- 地面のタイルがわずかに高いため、足元の数行が地面に隠れていました。地面は隠さない扱いにして直しました。

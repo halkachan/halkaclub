@@ -1,10 +1,13 @@
+using Halka.Game.Player;
 using UnityEngine;
 
 namespace Halka.Poc2D3D
 {
     // Draws the shared Player state. It reads the session every frame and never writes to it.
-    // The model comes from the Presentation Catalog (PocActorPresentation), so the official
-    // ﾊﾙｶﾁｬﾝ model can replace the temporary one without touching Grid, facing or interaction.
+    // 3D: the model from the Presentation Catalog (PocActorPresentation), so the official ﾊﾙｶﾁｬﾝ
+    // model can replace the temporary one without touching Grid, facing or interaction.
+    // 2D Pixel View: the model is hidden and the existing hand-drawn sprites are chosen here
+    // (drawn by PocPixelView2D), with CharacterVisual's frames and timing.
     [DefaultExecutionOrder(50)]
     public sealed class PocActorView : MonoBehaviour
     {
@@ -21,19 +24,25 @@ namespace Halka.Poc2D3D
         private Quaternion armLeftBase, armRightBase, legLeftBase, legRightBase;
         private float swingWeight;
         private float swingVelocity;
+        private bool modelVisible = true;
+        private Sprite[] currentFrames;
+        private float frameTimer;
+        private int frameIndex;
 
         // 0 turns instantly like the 2D sprites; the 3D view uses a short turn.
         public float TurnSeconds { get; set; }
         // Set by the 2D Pixel View (x: East step, y: North step) so the actor lands on whole
         // low-resolution pixels together with the camera. Zero disables snapping.
         public Vector2 PixelSnap { get; set; }
-        // Set by the 2D Pixel View: its camera pitch, used for the 2D-only face-the-camera lean.
-        public float PixelViewPitch { get; set; } = 90f;
-        public float CurrentLeanDegrees { get; private set; }
         public float Yaw => yaw;
         public GameObject ModelInstance => instance;
         public bool HasLimbs => armLeft != null && armRight != null && legLeft != null && legRight != null;
         public float CurrentSwingDegrees { get; private set; }
+        public bool ModelVisible => modelVisible;
+        // The original sprite for this frame (null when the catalog has no sprites).
+        public Sprite CurrentSprite { get; private set; }
+        public PocSpriteSet Sprites => catalog != null && catalog.Player != null ? catalog.Player.sprites : null;
+        public bool HasSprites => Sprites != null && Sprites.IsComplete;
 
         public void Configure(SharedWorldSession worldSession, Transform modelTransform, PocPresentationCatalog presentation = null)
         {
@@ -57,8 +66,7 @@ namespace Halka.Poc2D3D
             instance.name = presentation.model.name;
             instance.transform.localPosition = presentation.pivotOffset;
             instance.transform.localScale = Vector3.one * presentation.uniformScale;
-            PocOutlineTag.Apply(instance, PocOutlineTag.PlayerId, presentation.outlineStrength);
-            shadowsOn = true;
+            modelVisible = true;
             armLeft = Find(presentation.armLeft);
             armRight = Find(presentation.armRight);
             legLeft = Find(presentation.legLeft);
@@ -69,16 +77,13 @@ namespace Halka.Poc2D3D
             if (legRight != null) legRightBase = legRight.localRotation;
         }
 
-        private bool shadowsOn = true;
-
-        // The hand-drawn 2D sprites have no shadow; in the Pixel View the model casts none either.
-        private void SetShadows(bool on)
+        // The 2D Pixel View draws the original sprite instead, so the model (and its shadow)
+        // is not drawn there at all, not even into the outline mask.
+        private void SetModelVisible(bool visible)
         {
-            if (instance == null || shadowsOn == on) return;
-            shadowsOn = on;
-            foreach (var item in instance.GetComponentsInChildren<Renderer>(true))
-                item.shadowCastingMode = on ? UnityEngine.Rendering.ShadowCastingMode.On
-                    : UnityEngine.Rendering.ShadowCastingMode.Off;
+            if (instance == null || modelVisible == visible) return;
+            modelVisible = visible;
+            foreach (var item in instance.GetComponentsInChildren<Renderer>(true)) item.enabled = visible;
         }
 
         private Transform Find(string childName)
@@ -101,7 +106,8 @@ namespace Halka.Poc2D3D
                 position.z = Mathf.Round(position.z / PixelSnap.y) * PixelSnap.y;
             }
             transform.position = position;
-            SetShadows(!pixelView);
+            SetModelVisible(!pixelView || !HasSprites);
+            AnimateSprite(deltaTime);
             var target = GridSpace3D.FacingYaw(session.Facing);
             if (!initialized || TurnSeconds <= 0f || deltaTime <= 0f)
             {
@@ -110,27 +116,43 @@ namespace Halka.Poc2D3D
                 initialized = true;
             }
             else yaw = Mathf.SmoothDampAngle(yaw, target, ref yawVelocity, TurnSeconds);
-            var presentationForLean = catalog != null ? catalog.Player : null;
-            CurrentLeanDegrees = pixelView && presentationForLean != null
-                ? (90f - PixelViewPitch) * presentationForLean.pixelViewFaceCamera : 0f;
-            // The lean turns the model's front toward the 2D camera (which always looks North);
-            // it rotates about the feet and changes only the drawing, never the cell or facing.
-            transform.rotation = Quaternion.Euler(CurrentLeanDegrees, 0f, 0f) * Quaternion.Euler(0f, yaw, 0f);
+            transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             if (model == null) return;
             var step = session.IsMoving ? Mathf.Repeat(session.Position.x + session.Position.y, 1f) : 0f;
             model.localPosition = Vector3.up * (Mathf.Abs(Mathf.Sin(step * Mathf.PI * 2f)) * bobHeight);
             var presentation = catalog != null ? catalog.Player : null;
-            if (pixelView && presentation != null && presentation.pixelViewDepthBias > 0f)
-            {
-                // Along the orthographic view direction: the drawn pixels stay where they are and
-                // the actor root (the shared cell position) is not moved.
-                var pitch = PixelViewPitch * Mathf.Deg2Rad;
-                model.position += new Vector3(0f, Mathf.Sin(pitch), -Mathf.Cos(pitch)) * presentation.pixelViewDepthBias;
-            }
-            if (instance != null && presentation != null)
-                instance.transform.localScale = Vector3.one * presentation.uniformScale *
-                    (pixelView ? presentation.pixelViewScale : 1f);
             Swing(deltaTime, presentation);
+        }
+
+        // CharacterVisual.Update, frame for frame: restart a set when it changes, then advance
+        // 0.15 s per walk frame or 0.4 s per idle frame. Runs in both views so switching back to
+        // 2D continues the same cycle; deltaTime 0 (the Pixel View's re-apply) never advances.
+        private void AnimateSprite(float deltaTime)
+        {
+            if (!HasSprites)
+            {
+                CurrentSprite = null;
+                return;
+            }
+            var selected = Sprites.Select(session.Facing, session.IsMoving);
+            if (currentFrames != selected)
+            {
+                currentFrames = selected;
+                frameIndex = 0;
+                frameTimer = 0f;
+            }
+            var frameSeconds = session.IsMoving ? CharacterVisual.OriginalWalkFrameSeconds
+                : CharacterVisual.OriginalIdleFrameSeconds;
+            if (currentFrames.Length > 1 && deltaTime > 0f)
+            {
+                frameTimer += deltaTime;
+                while (frameTimer >= frameSeconds)
+                {
+                    frameTimer -= frameSeconds;
+                    frameIndex = (frameIndex + 1) % currentFrames.Length;
+                }
+            }
+            CurrentSprite = currentFrames[frameIndex];
         }
 
         // Presentation only: limbs swing with the distance walked (one cycle every two cells,

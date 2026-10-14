@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.IO;
 using Halka.Game.Player;
 using Halka.Game.World;
@@ -56,7 +57,7 @@ namespace Halka.Poc2D3D.EditorTools
                         new[] { (GridSpace3D.ToWorld(new Vector2Int(8, -3), 0.8f), "tree", 120),
                                 (GridSpace3D.ToWorld(new Vector2Int(6, -3), 0.15f), "flower", 56),
                                 (GridSpace3D.ToWorld(new Vector2Int(3, -4), 0.1f), "stone", 56),
-                                (GridSpace3D.ToWorld(new Vector2Int(5, -1), 0.45f), "player", 64),
+                                (GridSpace3D.ToWorld(new Vector2Int(5, -1), 0.45f), "player", 80),
                                 (GridSpace3D.ToWorld(new Vector2Int(-7, -4), 0.8f), "house", 140) });
                 }
                 pixel.PixelsPerCell = 16;
@@ -80,7 +81,7 @@ namespace Halka.Poc2D3D.EditorTools
                 // Night with the outline.
                 time.Override = PocPhaseOverride.Night;
                 Shot2D("night_2d_outline_1px", 1024, 576, new[] { (GridSpace3D.ToWorld(new Vector2Int(8, -3), 0.8f), "tree", 120),
-                    (GridSpace3D.ToWorld(new Vector2Int(5, -1), 0.45f), "player", 64) });
+                    (GridSpace3D.ToWorld(new Vector2Int(5, -1), 0.45f), "player", 80) });
                 Shot3D("night_3d", 1024, 576, new Vector2Int(5, -1), FacingDirection.Up);
                 time.Override = PocPhaseOverride.Morning;
                 Shot3D("morning_3d", 1024, 576, new Vector2Int(5, -1), FacingDirection.Up);
@@ -95,7 +96,7 @@ namespace Halka.Poc2D3D.EditorTools
                     {
                         pixel.PixelsPerCell = ppc;
                         Shot2D($"placeholder_2d_{tag}_{ppc}px", 780, 1688,
-                            new[] { (GridSpace3D.ToWorld(new Vector2Int(1, -3), 0.75f), "closeup", 170) }, true);
+                            new[] { (GridSpace3D.ToWorld(new Vector2Int(1, -3), 0.75f), "closeup", 220) }, true);
                     }
                     pixel.PixelsPerCell = 16;
                 }
@@ -111,6 +112,24 @@ namespace Halka.Poc2D3D.EditorTools
                 actor.Apply(0f);
                 Fixed("placeholder_3d_walk_pose", 480, 560, GridSpace3D.ToWorld(new Vector2Int(1, -3), 0.47f), 0f, 10f, 2.2f, 30f, false);
                 for (var i = 0; i < 12; i++) session.Tick(0.02f, Vector2Int.zero);
+
+                // 2D original sprite: draw order next to a tree (from the South it is covered, from
+                // the North it stays in front), with and without the outline.
+                var southTree = session.World.Objects.First(o => o.DefinitionId == "tree_basic" &&
+                    session.World.CanEnter(o.RootCell + Vector2Int.up));
+                var northTree = session.World.Objects.First(o => o.DefinitionId == "tree_basic" &&
+                    session.World.CanEnter(o.RootCell + Vector2Int.down));
+                foreach (var px in new[] { 1, 0 })
+                {
+                    pixel.OutlinePixels = px;
+                    Place(southTree.RootCell + Vector2Int.up, FacingDirection.Down);
+                    Shot2D($"sprite_order_behind_tree_outline{px}", 1024, 576,
+                        new[] { (GridSpace3D.ToWorld(southTree.RootCell), "player", 120) }, true);
+                    Place(northTree.RootCell + Vector2Int.down, FacingDirection.Up);
+                    Shot2D($"sprite_order_in_front_of_tree_outline{px}", 1024, 576,
+                        new[] { (GridSpace3D.ToWorld(northTree.RootCell), "player", 120) }, true);
+                }
+                pixel.OutlinePixels = 1;
 
                 // Mobile.
                 Place(new Vector2Int(5, -1), FacingDirection.Up);
@@ -170,18 +189,13 @@ namespace Halka.Poc2D3D.EditorTools
             pixel.SnapToTarget();
             Advance(0f, width, height);
             pixel.WorldCamera.Render();
-            var rt = pixel.ComposeOutline();
-            var small = Read(rt);
-            var src = small.GetPixels32();
-            var dst = new Color32[width * height];
+            // Screen-size image as the presenter draws it: upscaled view plus the player sprite.
+            var small = Read(pixel.ComposeScreen(width, height));
+            var dst = small.GetPixels32();
             var alpha = time.PixelOverlayAlpha;
             var night = (Color32)PocTimeOfDay.NightColor;
-            for (var y = 0; y < height; y++)
-            for (var x = 0; x < width; x++)
-            {
-                var c = src[(y + pixel.Offset.y) / pixel.Scale * rt.width + (x + pixel.Offset.x) / pixel.Scale];
-                dst[y * width + x] = alpha > 0f ? Color32.Lerp(c, night, alpha) : c;
-            }
+            if (alpha > 0f)
+                for (var i = 0; i < dst.Length; i++) dst[i] = Color32.Lerp(dst[i], night, alpha);
             if (!cropsOnly) WritePixels(name, dst, width, height);
             if (crops != null)
                 foreach (var (point, label, size) in crops)
@@ -189,6 +203,12 @@ namespace Halka.Poc2D3D.EditorTools
                     var p = pixel.WorldCamera.WorldToScreenPoint(point);
                     var cx = Mathf.RoundToInt(p.x * pixel.Scale - pixel.Offset.x);
                     var cy = Mathf.RoundToInt(p.y * pixel.Scale - pixel.Offset.y);
+                    // The player is the original sprite in 2D: centre on where it was drawn.
+                    if ((label == "player" || label == "closeup") && pixel.LastSpriteRect.width > 0)
+                    {
+                        cx = Mathf.RoundToInt(pixel.LastSpriteRect.center.x);
+                        cy = Mathf.RoundToInt(pixel.LastSpriteRect.center.y);
+                    }
                     const int zoom = 4;
                     var crop = new Color32[size * zoom * size * zoom];
                     for (var y = 0; y < size * zoom; y++)

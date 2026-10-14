@@ -46,6 +46,7 @@ namespace Halka.Poc2D3D.EditorTools
                 SwitchChecks(c);
                 OutlineChecks(c);
                 PlaceholderSceneChecks(c);
+                SpriteChecks(c);
                 SwapChecks(c);
             }
             finally
@@ -531,17 +532,11 @@ namespace Halka.Poc2D3D.EditorTools
             Check("placeholder 3D: the face looks along the Grid facing in all four directions", facingOk);
             s.PlaceForCheck(new Vector2Int(1, -3), FacingDirection.Down);
             c.Actor.Apply(0f);
-            Check("placeholder 3D: drawn exactly at the shared cell, upright, normal scale",
+            Check("placeholder 3D: drawn exactly at the shared cell, upright, normal scale, visible",
                 (c.Actor.transform.position - GridSpace3D.ToWorld(s.Position)).sqrMagnitude < 1e-8f &&
-                c.Actor.CurrentLeanDegrees == 0f && Mathf.Abs(c.Actor.ModelInstance.transform.localScale.x - 1f) < 1e-4f);
-            c.Switcher.SetMode(PocViewMode.PixelView2D);
-            Frame(c, 0f, Vector2Int.zero);
-            Check("placeholder 2D: root on the shared cell (within one pixel), leaned toward the 2D camera, 2D scale applied",
-                Vector3.Distance(c.Actor.transform.position, GridSpace3D.ToWorld(s.Position)) <= c.Pixel.PixelWorldNorth &&
-                Mathf.Abs(c.Actor.CurrentLeanDegrees - (90f - c.Pixel.PitchDegrees)) < 0.01f &&
-                Mathf.Abs(c.Actor.ModelInstance.transform.localScale.x - c.Catalog.Player.pixelViewScale) < 1e-4f,
-                $"lean {c.Actor.CurrentLeanDegrees:0.0}");
-            c.Switcher.SetMode(PocViewMode.ThirdPerson3D);
+                Vector3.Angle(c.Actor.transform.up, Vector3.up) < 0.01f &&
+                Mathf.Abs(c.Actor.ModelInstance.transform.localScale.x - 1f) < 1e-4f && c.Actor.ModelVisible &&
+                c.Actor.ModelInstance.GetComponentsInChildren<Renderer>().All(r => r.enabled));
             s.PlaceForCheck(new Vector2Int(1, -3), FacingDirection.Right);
             var start = s.Cell;
             s.Tick(0f, Vector2Int.right);
@@ -567,6 +562,232 @@ namespace Halka.Poc2D3D.EditorTools
             c.Switcher.SetMode(PocViewMode.PixelView2D);
         }
 
+        // ---------------------------------------------------------------- 2D original sprite
+
+        private const int ScreenW = 1024, ScreenH = 576;
+
+        // GUIDs of each CharacterVisual sprite array in FirstDay.unity, read from the YAML so
+        // the scene is never opened or saved.
+        private static Dictionary<string, List<string>> FirstDaySpriteGuids()
+        {
+            var lines = File.ReadAllLines(Path.Combine(Application.dataPath, "Scenes/FirstDay.unity"));
+            var result = new Dictionary<string, List<string>>();
+            var start = Array.FindIndex(lines, l => l.Contains("Halka.Game.Player.CharacterVisual"));
+            string field = null;
+            for (var i = start + 1; i < lines.Length && !lines[i].StartsWith("---"); i++)
+            {
+                var line = lines[i];
+                if (line.StartsWith("  ") && !line.StartsWith("  -") && line.TrimEnd().EndsWith(":"))
+                {
+                    field = line.Trim().TrimEnd(':');
+                    result[field] = new List<string>();
+                }
+                else if (field != null && line.StartsWith("  - ") && line.Contains("guid: "))
+                    result[field].Add(line.Substring(line.IndexOf("guid: ", StringComparison.Ordinal) + 6, 32));
+            }
+            return result;
+        }
+
+        private static Color32[] SpritePixels(Sprite sprite)
+        {
+            var rt = RenderTexture.GetTemporary(sprite.texture.width, sprite.texture.height, 0, RenderTextureFormat.ARGB32);
+            Graphics.Blit(sprite.texture, rt);
+            var pixels = ReadPixels(rt);
+            RenderTexture.ReleaseTemporary(rt);
+            return pixels;
+        }
+
+        // Every opaque sprite pixel on screen is either the original color, or covered by
+        // something nearer than the sprite's card in the mask (or that thing's outline).
+        private static (int matched, int covered, int wrong) CompareSprite(Ctx c)
+        {
+            c.Pixel.WorldCamera.Render();
+            var screen = ReadPixels(c.Pixel.ComposeScreen(ScreenW, ScreenH));
+            var mask = ReadPixels(c.Pixel.OutlineMask);
+            var sprite = c.Actor.CurrentSprite;
+            var source = SpritePixels(sprite);
+            var rect = c.Pixel.LastSpriteRect;
+            var size = c.Pixel.LastSpritePixelSize;
+            int mw = c.Pixel.OutlineMask.width, mh = c.Pixel.OutlineMask.height, scale = c.Pixel.Scale;
+            var tw = sprite.texture.width;
+            var tr = sprite.textureRect;
+            int matched = 0, covered = 0, wrong = 0;
+            float Depth(int x, int y)
+            {
+                if (x < 0 || y < 0 || x >= mw || y >= mh) return 1f;
+                var m = mask[y * mw + x];
+                if (m.r == 0 || m.r == PocOutlineTag.DecorationId) return 2f; // ground layer
+                return (m.b + m.a / 255f) / 255f;
+            }
+            bool Strong(int x, int y) => x >= 0 && y >= 0 && x < mw && y < mh && mask[y * mw + x].g > 5;
+            for (var y = 0; y < rect.height; y++)
+            for (var x = 0; x < rect.width; x++)
+            {
+                int sx = (int)(x / size), sy = (int)(y / size);
+                var original = source[((int)tr.y + sy) * tw + (int)tr.x + sx];
+                if (original.a < 128) continue;
+                int px = rect.x + x, py = rect.y + y;
+                if (px < 0 || py < 0 || px >= ScreenW || py >= ScreenH) continue;
+                var shown = screen[py * ScreenW + px];
+                var card = Mathf.Lerp(c.Pixel.LastSpriteDepthBottom, c.Pixel.LastSpriteDepthTop, (y + 0.5f) / rect.height);
+                int lx = (px + c.Pixel.Offset.x) / scale, ly = (py + c.Pixel.Offset.y) / scale;
+                if (shown.r == original.r && shown.g == original.g && shown.b == original.b) { matched++; continue; }
+                var near = Depth(lx, ly) < card + 0.0005f;
+                for (var d = -2; d <= 2 && !near; d++)
+                    near = (Strong(lx + d, ly) && Depth(lx + d, ly) < card) || (Strong(lx, ly + d) && Depth(lx, ly + d) < card);
+                if (near) covered++;
+                else wrong++;
+            }
+            return (matched, covered, wrong);
+        }
+
+        private static void Place2D(Ctx c, Vector2Int cell, FacingDirection facing)
+        {
+            Release(c, 0.1f);
+            c.Session.PlaceForCheck(cell, facing);
+            c.Pixel.SnapToTarget();
+            Frame(c, 0f, Vector2Int.zero);
+        }
+
+        private static void SpriteChecks(Ctx c)
+        {
+            var s = c.Session;
+            var sprites = c.Catalog.Player.sprites;
+            var scene = FirstDaySpriteGuids();
+            string Guid(Sprite sprite) => AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(sprite));
+            bool Same(string field, Sprite[] frames) => scene.TryGetValue(field, out var guids) &&
+                frames.Select(Guid).SequenceEqual(guids);
+            Check("2D sprite: the catalog references the original sprites, same files and order as FirstDay's CharacterVisual",
+                sprites.IsComplete && Same("frontIdle", sprites.frontIdle) && Same("backIdle", sprites.backIdle) &&
+                Same("leftIdle", sprites.leftIdle) && Same("rightIdle", sprites.rightIdle) &&
+                Same("frontWalk", sprites.frontWalk) && Same("backWalk", sprites.backWalk) &&
+                Same("leftWalk", sprites.leftWalk) && Same("rightWalk", sprites.rightWalk) &&
+                Mathf.Approximately(sprites.offsetY, 0.25f),
+                string.Join(",", scene.Keys));
+
+            c.Switcher.SetMode(PocViewMode.PixelView2D);
+            c.Pixel.PixelsPerCell = 16;
+            c.Pixel.OutlinePixels = 1;
+            var open = OpenArea(s.World, 2);
+            Place2D(c, open, FacingDirection.Down);
+            var hidden = !c.Actor.ModelVisible && c.Actor.ModelInstance.GetComponentsInChildren<Renderer>().All(r => !r.enabled);
+            c.Pixel.WorldCamera.Render();
+            var mask = ReadPixels(c.Pixel.OutlineMask);
+            var playerInMask = mask.Any(m => m.r == PocOutlineTag.PlayerId);
+            c.Switcher.SetMode(PocViewMode.ThirdPerson3D);
+            Frame(c, 0f, Vector2Int.zero);
+            var shown = c.Actor.ModelVisible && c.Actor.ModelInstance.GetComponentsInChildren<Renderer>().All(r => r.enabled);
+            c.Switcher.SetMode(PocViewMode.PixelView2D);
+            Frame(c, 0f, Vector2Int.zero);
+            Check("2D sprite: the 3D model is not drawn in 2D (nor in the outline mask) and is drawn again in 3D",
+                hidden && !playerInMask && shown);
+
+            // Animation: CharacterVisual's sets, 0.4 s idle frames, 0.15 s walk frames, restart on change.
+            Place2D(c, open, FacingDirection.Up);
+            s.PlaceForCheck(open, FacingDirection.Down);
+            c.Actor.Apply(0f);
+            var anim = c.Actor.CurrentSprite == sprites.frontIdle[0];
+            c.Actor.Apply(0.39f);
+            anim &= c.Actor.CurrentSprite == sprites.frontIdle[0];
+            c.Actor.Apply(0.02f);
+            anim &= c.Actor.CurrentSprite == sprites.frontIdle[1];
+            s.Tick(0f, Vector2Int.right);
+            c.Actor.Apply(0f);
+            anim &= s.IsMoving && c.Actor.CurrentSprite == sprites.rightWalk[0];
+            c.Actor.Apply(0.15f);
+            anim &= c.Actor.CurrentSprite == sprites.rightWalk[1];
+            c.Actor.Apply(0.31f);
+            anim &= c.Actor.CurrentSprite == sprites.rightWalk[3];
+            for (var i = 0; i < 20; i++) s.Tick(0.02f, Vector2Int.zero);
+            c.Actor.Apply(0f);
+            anim &= !s.IsMoving && c.Actor.CurrentSprite == sprites.rightIdle[0];
+            foreach (var (facing, frames) in new[] { (FacingDirection.Up, sprites.backIdle),
+                (FacingDirection.Left, sprites.leftIdle), (FacingDirection.Down, sprites.frontIdle) })
+            {
+                s.PlaceForCheck(open, facing);
+                c.Actor.Apply(0f);
+                anim &= c.Actor.CurrentSprite == frames[0];
+            }
+            Check("2D sprite: frames and timing equal CharacterVisual (idle 0.4 s, walk 0.15 s, 4 directions, restart on change)", anim);
+
+            // Density and placement for PC 16 / 32 px per cell and a phone-sized screen.
+            var density = true;
+            var detail = "";
+            foreach (var (ppc, w, h) in new[] { (16, ScreenW, ScreenH), (32, ScreenW, ScreenH), (16, 780, 1688) })
+            {
+                c.Pixel.PixelsPerCell = ppc;
+                Place2D(c, open, FacingDirection.Down);
+                c.Pixel.UpdateView(0f, w, h);
+                c.Pixel.WorldCamera.Render();
+                if (w == ScreenW) CompareSprite(c);
+                else c.Pixel.ComposeScreen(w, h);
+                var rect = c.Pixel.LastSpriteRect;
+                var expected = c.Pixel.Scale * ppc / 32f;
+                var cell = GridSpace3D.ToWorld(s.Position);
+                var south = c.Pixel.WorldCamera.WorldToViewportPoint(cell + Vector3.back * GridSpace3D.CellSize * 0.5f);
+                var sx = south.x * c.Pixel.Target.width * c.Pixel.Scale - c.Pixel.Offset.x;
+                var sy = south.y * c.Pixel.Target.height * c.Pixel.Scale - c.Pixel.Offset.y;
+                density &= Mathf.Abs(c.Pixel.LastSpritePixelSize - expected) < 1e-4f &&
+                           rect.width == Mathf.RoundToInt(64 * expected) && rect.height == rect.width &&
+                           Mathf.Abs(rect.y - sy) <= c.Pixel.Scale && Mathf.Abs(rect.x + rect.width * 0.5f - sx) <= c.Pixel.Scale;
+                detail += $"{ppc}px {w}x{h}: x{c.Pixel.LastSpritePixelSize:0.##} {rect}; ";
+            }
+            c.Pixel.PixelsPerCell = 16;
+            Frame(c, 0f, Vector2Int.zero);
+            Check("2D sprite: the 2D game's density (64 px = 1 unit) at every Pixel View density; bottom on the cell's South edge, centred",
+                density, detail);
+
+            // No tree or house within 3 cells sideways and 6 cells South (tall crowns further South
+            // reach up to the player's feet on screen and correctly cover them), and nothing at
+            // all in the cells just South.
+            bool Near(Vector2Int cell, Vector2Int d, int sideways, int south) =>
+                Mathf.Abs(d.x - cell.x) <= sideways && d.y <= cell.y && d.y >= cell.y - south;
+            var clear = Enumerable.Range(s.World.MinCell.y, s.World.MaxCell.y - s.World.MinCell.y + 1)
+                .SelectMany(y => Enumerable.Range(s.World.MinCell.x, s.World.MaxCell.x - s.World.MinCell.x + 1)
+                    .Select(x => new Vector2Int(x, y)))
+                .First(cell => s.World.CanEnter(cell) && !s.World.Objects.Any(o =>
+                    (o.DefinitionId != "flower_basic" && o.DefinitionId != "stone_basic" && Near(cell, o.RootCell, 3, 6)) ||
+                    Near(cell, o.RootCell, 1, 2)));
+            Place2D(c, clear, FacingDirection.Down);
+            var plain = CompareSprite(c);
+            Check("2D sprite: on open ground every opaque pixel is the original sprite color (nothing resampled, recolored or covered)",
+                plain.wrong == 0 && plain.matched > 1000 && plain.covered == 0,
+                $"cell {clear}: matched {plain.matched}, covered {plain.covered}, wrong {plain.wrong}");
+
+            // Draw order against a tree: covered from the South, in front of it from the North.
+            var southTree = s.World.Objects.First(o => o.DefinitionId == "tree_basic" && s.World.CanEnter(o.RootCell + Vector2Int.up));
+            var northTree = s.World.Objects.First(o => o.DefinitionId == "tree_basic" && s.World.CanEnter(o.RootCell + Vector2Int.down));
+            foreach (var px in new[] { 1, 0 })
+            {
+                c.Pixel.OutlinePixels = px;
+                Place2D(c, southTree.RootCell + Vector2Int.up, FacingDirection.Down);
+                var behind = CompareSprite(c);
+                Place2D(c, northTree.RootCell + Vector2Int.down, FacingDirection.Up);
+                var front = CompareSprite(c);
+                Check($"2D sprite (outline {px}): a tree South of the player covers it; a tree North of it stays behind",
+                    behind.covered > 100 && behind.wrong == 0 && front.wrong == 0 && front.covered * 20 <= front.matched,
+                    $"South tree {behind.matched}/{behind.covered}/{behind.wrong}, North tree {front.matched}/{front.covered}/{front.wrong}");
+            }
+            c.Pixel.OutlinePixels = 1;
+
+            // Pixel grid: while walking with the camera following, the sprite stays on whole
+            // low-resolution pixels (no shimmer against the world).
+            Place2D(c, open + Vector2Int.left * 2, FacingDirection.Right);
+            var grid = true;
+            var moved = 0;
+            var last = new RectInt();
+            for (var i = 0; i < 40; i++)
+            {
+                Frame(c, 1f / 60f, i < 30 ? Vector2Int.right : Vector2Int.zero);
+                c.Pixel.ComposeScreen(ScreenW, ScreenH);
+                var rect = c.Pixel.LastSpriteRect;
+                grid &= (rect.x + c.Pixel.Offset.x) % c.Pixel.Scale == 0 && (rect.y + c.Pixel.Offset.y) % c.Pixel.Scale == 0;
+                if (i > 0 && rect.position != last.position) moved++;
+                last = rect;
+            }
+            Check("2D sprite: on whole low-resolution pixels every frame while walking", grid && moved > 0, $"moved {moved}");
+        }
+
         // ---------------------------------------------------------------- model swap
 
         private static void SwapChecks(Ctx c)
@@ -579,12 +800,13 @@ namespace Halka.Poc2D3D.EditorTools
                 c.Catalog.ConfigurePlayer(new PocActorPresentation
                 {
                     model = AssetDatabase.LoadAssetAtPath<GameObject>(PocSceneBuilder.PlayerModelPath),
-                    placeholder = true, armLeft = "", armRight = "", legLeft = "", legRight = ""
+                    placeholder = true, armLeft = "", armRight = "", legLeft = "", legRight = "",
+                    sprites = original.sprites
                 });
                 c.Actor.BuildModel();
                 Frame(c, 1f / 60f, Vector2Int.zero);
-                Check("model swap: another model is bound from the catalog alone; Grid state untouched",
-                    c.Actor.ModelInstance.name == "poc_player" && !c.Actor.HasLimbs &&
+                Check("model swap: another 3D model is bound from the catalog alone; 2D sprites and Grid state untouched",
+                    c.Actor.ModelInstance.name == "poc_player" && !c.Actor.HasLimbs && c.Actor.HasSprites &&
                     state == (s.Cell, s.Facing, s.CompletedSteps, s.World.MapId));
             }
             finally

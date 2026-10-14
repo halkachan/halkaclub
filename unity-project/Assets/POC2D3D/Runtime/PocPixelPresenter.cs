@@ -2,8 +2,8 @@ using UnityEngine;
 
 namespace Halka.Poc2D3D
 {
-    // Draws the 2D Pixel View texture at an exact integer scale (nearest neighbour), then the
-    // night color the existing WorldNightOverlay2D uses. Attached to a camera that renders
+    // Draws the 2D Pixel View texture at an exact integer scale (nearest neighbour), the
+    // player's original sprite, then the night color the existing WorldNightOverlay2D uses. Attached to a camera that renders
     // nothing itself, so the 3D world is drawn once per frame.
     // Graphics.Blit is used because it handles the render-texture orientation of each
     // graphics API (Graphics.DrawTexture drew the view upside down on WebGL).
@@ -37,6 +37,7 @@ namespace Halka.Poc2D3D
             UvTransform(Screen.width, Screen.height, texture.width, texture.height, pixelView.Scale,
                 pixelView.Offset, out var uvScale, out var uvOffset);
             Graphics.Blit(texture, (RenderTexture)null, uvScale, uvOffset);
+            pixelView.DrawActorSprite(Screen.width, Screen.height);
             var alpha = timeOfDay != null ? timeOfDay.PixelOverlayAlpha : 0f;
             if (alpha <= 0.001f || overlayMaterial == null) return;
             GL.PushMatrix();

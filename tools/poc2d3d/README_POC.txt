@@ -11,10 +11,12 @@ What is new in Phase 2.1:
   - 3D view: W/S/A/D (and the D-pad) move forward/back/left/right as seen from the camera.
     A held key keeps its direction; S walks back toward the camera without spinning it.
     After a sideways move the camera swings behind the player once you stop.
-  - 2D view: dark pixel outlines (1 px by default) around trees, flowers, stones, the house,
-    boxes and the player, drawn in the low-resolution image before the integer upscale.
-  - A TEMPORARY low-poly ﾊﾙｶﾁｬﾝ (placeholder) replaces the grey mannequin. It is not the
-    official model; the official one will replace it later.
+  - 2D view: dark pixel outlines (1 px by default) around trees, flowers, stones, the house
+    and boxes, drawn in the low-resolution image before the integer upscale.
+  - 2D view: ﾊﾙｶﾁｬﾝ is the original hand-drawn sprite (same frames and timing as the game),
+    at the game's own pixel density, in front of or behind objects like in the 2D game.
+  - 3D view: a TEMPORARY low-poly ﾊﾙｶﾁｬﾝ (placeholder) replaces the grey mannequin. It is not
+    the official model; the official one will replace it later.
   Phase 2 scenery (ground, roads, grass, trees, flowers, stones) is unchanged.
 
 Controls (same as the game):

@@ -214,23 +214,15 @@ namespace Halka.Poc2D3D.EditorTools
             pixel.SnapToTarget();
             Advance(0f, width, height);
             pixel.WorldCamera.Render();
-            var rt = pixel.ComposeOutline();
-            var small = Read(rt);
+            // Screen-size image as the presenter draws it: upscaled view plus the player sprite.
+            var small = Read(pixel.ComposeScreen(width, height));
             var scale = pixel.Scale;
             var image = new Texture2D(width, height, TextureFormat.RGB24, false);
-            var src = small.GetPixels32();
-            var dst = new Color32[width * height];
+            var dst = small.GetPixels32();
             var alpha = time.PixelOverlayAlpha;
             var night = (Color32)PocTimeOfDay.NightColor;
-            for (var y = 0; y < height; y++)
-            for (var x = 0; x < width; x++)
-            {
-                var sx = (x + pixel.Offset.x) / scale;
-                var sy = (y + pixel.Offset.y) / scale;
-                var c = src[sy * rt.width + sx];
-                if (alpha > 0f) c = Color32.Lerp(c, night, alpha);
-                dst[y * width + x] = c;
-            }
+            if (alpha > 0f)
+                for (var i = 0; i < dst.Length; i++) dst[i] = Color32.Lerp(dst[i], night, alpha);
             image.SetPixels32(dst);
             Write(name, image);
             if (playerCrop) WritePlayerCrop(name + "_closeup", dst, width, height, scale);
