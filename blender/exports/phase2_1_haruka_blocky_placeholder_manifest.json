@@ -9,8 +9,8 @@
   "front": "South (-Y in Blender, -Z in Unity)",
   "parts": {
     "haruka_blocky_placeholder": {
-      "triangles": 728,
-      "vertices": 1456,
+      "triangles": 806,
+      "vertices": 1612,
       "materials": 1,
       "pivot": [
         0.0,
@@ -59,7 +59,7 @@
       ]
     }
   },
-  "triangles": 952,
+  "triangles": 1030,
   "boundsMin": [
     -0.264,
     -0.2156,

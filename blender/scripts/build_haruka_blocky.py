@@ -121,15 +121,20 @@ class Painter:
 
 # ---------------------------------------------------------------- head and hair
 
-HEAD_FRONT = [  # 8 x 8, column 0 = the character's right (-X)
+# 8 x 8 face in half-pixel rows (16 rows), column 0 = the character's right (-X).
+# The bangs come down flat to the top of the eyelids; the two forehead pixels under the
+# hair layer's notch make it read as one upward-pointing gap (user sketch, 2026-10-15).
+HEAD_FRONT = [row for row in [
     "YYYYYYYY",
     "YYYYYYYY",
-    "YYYYYYYY",
-    "SSSSSSSS",
+    "YYYYYSSY",
+    "YYYYYSSY",
     "SKKSSKKS",
     "SBWSSBWS",
     "SBBSSBBS",
-    "SPPSSPPS",  # a pink line right under each eye, as wide as the eye (not a cheek blush)
+] for _ in range(2)] + [
+    "SPPSSPPS",  # a thin pink line right under each eye, as wide as the eye (not a blush)
+    "SSSSSSSS",
 ]
 HEAD_SIDE_RIGHT = [  # seen from -X: column 0 = back, column 7 = front
     "YYYYYYYY", "YYYYYYYY", "YYYYYYYY", "YYYYYYYY",
@@ -137,18 +142,14 @@ HEAD_SIDE_RIGHT = [  # seen from -X: column 0 = back, column 7 = front
 ]
 HEAD_SIDE_LEFT = [row[::-1] for row in HEAD_SIDE_RIGHT]  # seen from +X: column 0 = front
 
-HAIR_FRONT = [  # 9 x 10 hair layer, transparent over the face
-    "YYYYYYYYY",
-    "YYYYYYYYY",
-    "YYYYyYYYY",
-    "YyYY.YYyY",
-    "Y...y...Y",
-    "Y.......Y",
-    "b.......b",
-    "B.......B",
-    "B.......B",
-    "b.......b",
-]
+# Hair layer front, 9 x 10 pixels in half-pixel cells (18 x 20), z 20 down to 10: flat bangs
+# down to the top of the eyelids (z 15) with one upward-pointing notch, then only the side
+# hair framing the face.
+_SIDE = lambda c: c * 2 + "." * 14 + c * 2  # noqa: E731
+HAIR_FRONT = (["Y" * 18] * 7 +
+              ["Y" * 12 + ".." + "Y" * 4] +
+              ["Y" * 11 + "...." + "Y" * 3] * 2 +
+              [_SIDE("Y")] * 4 + [_SIDE("b")] * 2 + [_SIDE("B")] * 2 + [_SIDE("b")] * 2)
 HAIR_SIDE_RIGHT = [  # seen from -X: column 0 = back, column 8 = front
     "YYYYYYYYY",
     "YYYYYYYYY",
@@ -199,7 +200,7 @@ def build_body():
     # Head 8 x 8 x 8 and the hair layer (open where the face shows, longer at the back).
     p.box((-4, -4, 11), (4, 4, 19), {"front": HEAD_FRONT, "back": "Y", "left": HEAD_SIDE_LEFT,
                                      "right": HEAD_SIDE_RIGHT, "top": "Y", "bottom": "S"})
-    p.box((-4.5, -4.5, 9.5), (4.5, 4.5, 19.5), {"front": HAIR_FRONT, "back": HAIR_BACK, "left": HAIR_SIDE_LEFT,
+    p.box((-4.5, -4.5, 10), (4.5, 4.5, 20), {"front": HAIR_FRONT, "back": HAIR_BACK, "left": HAIR_SIDE_LEFT,
                                                 "right": HAIR_SIDE_RIGHT, "top": HAIR_TOP})
     # Ponytail at the back of the head: the hair tie, a short tuft below it, and the black
     # ornaments on the tie that rise up and outward behind the head (from the front they show
