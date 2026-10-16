@@ -20,10 +20,15 @@ namespace Halka.Poc2D3D.EditorTools
         private static float clock;
         private const int ScreenW = 1280, ScreenH = 720;
 
+        // Phase 4 replaced the bench's and cushion's placeholder "すわる。" message with the real
+        // seat (the 2D game's PlayerSeatController rule), checked below as a seat, not a message.
         private static readonly Dictionary<string, string> Messages = new Dictionary<string, string>
         {
-            ["desk_basic"] = "つくえ。", ["well_basic"] = "いど。", ["bench_basic"] = "すわる。",
-            ["bed_basic"] = "ベッド。", ["cushion_basic"] = "すわる。"
+            ["desk_basic"] = "つくえ。", ["well_basic"] = "いど。", ["bed_basic"] = "ベッド。"
+        };
+        private static readonly Dictionary<string, string> SeatPoses = new Dictionary<string, string>
+        {
+            ["bench_basic"] = "bench_sit", ["cushion_basic"] = "cushion_sit"
         };
 
         [MenuItem("HALKA/POC 2D3D/Run Phase 3 Building and Furniture Checks")]
@@ -736,7 +741,17 @@ namespace Halka.Poc2D3D.EditorTools
                             point.PlayerFacing == WorldFacing.Down ? FacingDirection.Down :
                             point.PlayerFacing == WorldFacing.Left ? FacingDirection.Left : FacingDirection.Right;
                         Place(c, cell, facing, mode);
+                        var messageBefore = c.Session.LastMessageAt;
                         var a = c.Session.InteractAhead();
+                        if (SeatPoses.TryGetValue(o.DefinitionId, out var pose))
+                        {
+                            Check($"interaction ({o.DefinitionId}, {mode}): the A button seats the player ({pose}) at its Action Point",
+                                a && c.Session.IsSeated && c.Session.SeatObject == o && c.Session.SeatPose == pose &&
+                                c.Session.Cell == cell && Mathf.Approximately(c.Session.LastMessageAt, messageBefore),
+                                $"seated {c.Session.IsSeated} {c.Session.SeatPose}");
+                            c.Session.Stand();
+                            continue;
+                        }
                         var expected = o.DefinitionId == "sign_basic" ? o.SignText : Messages[o.DefinitionId];
                         Check($"interaction ({o.DefinitionId}, {mode}): the A button gives \"{expected}\" at its Action Point",
                             a && c.Session.LastMessage == expected, c.Session.LastMessage ?? "-");

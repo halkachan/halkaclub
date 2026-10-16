@@ -14,6 +14,10 @@ namespace Halka.Poc2D3D
         public bool CameraOccluder;
         public bool CastShadows = true;
         public bool FadeInFront2D;
+        // Phase 4: see-through in 3D too, with the same opacity and time as in 2D.
+        public bool FadeInFront3D;
+        public float FadeOpacity = 0.4f;
+        public float FadeSeconds = 0.25f;
         public string ModelName;
         public bool Placeholder;
         public Transform PerchAnchor;
@@ -376,13 +380,16 @@ namespace Halka.Poc2D3D
             view.CameraOccluder = binding == null || binding.cameraOccluder;
             view.CastShadows = binding == null || binding.castShadows;
             view.FadeInFront2D = binding != null && binding.fadeInFront2D;
+            view.FadeInFront3D = binding != null && binding.fadeInFront3D;
+            view.FadeOpacity = binding != null ? binding.fadeOpacity : 0.4f;
+            view.FadeSeconds = binding != null ? binding.fadeSeconds : 0.25f;
             view.PartialOcclusion = binding != null && binding.partialOcclusion;
             view.MinPickSize = binding != null ? binding.minPickSize : 0f;
             view.Placeholder = binding == null || binding.placeholder;
             view.ModelName = binding != null ? binding.Pick(instance.InstanceId).name : null;
             view.Renderers = root.GetComponentsInChildren<Renderer>();
             view.SetHidden(false);
-            if (view.PartialOcclusion) view.CacheTriangles();
+            if (view.PartialOcclusion || view.FadeInFront3D) view.CacheTriangles();
             if (binding != null && !string.IsNullOrEmpty(binding.perchAnchorName))
                 view.PerchAnchor = FindChild(root.transform, binding.perchAnchorName);
             return view;

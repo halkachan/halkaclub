@@ -20,6 +20,8 @@ namespace Halka.Poc2D3D
         }
     }
 
+    public enum SharedActionKind { None, Message, Sit }
+
     // Presentation-free map state built from the existing MapDefinition cache (Map JSON v4).
     // Blocking comes from MapPlacementRules, the same data rule the 2D runtime and editor use,
     // instead of Physics colliders, so the 2D and 3D views cannot disagree about collision.
@@ -81,11 +83,15 @@ namespace Halka.Poc2D3D
              definition.Behavior == WorldObjectBehavior.None ||
              definition.StableId == "sign_basic" || definition.StableId == "well_basic");
 
-        public bool TryInteract(SharedObjectInstance target, Vector2Int playerCell,
-            FacingDirection facing, bool playerMoving, out string message)
+        // What using an object does from this cell and facing (WorldObjectActionInteractable's
+        // rules): a message (examine, sign text, the bed's "ベッド。") or a seat pose (Phase 4:
+        // the 2D game's bench_sit, and the cushion's cushion_sit). Range and facing are unchanged.
+        public SharedActionKind ResolveInteraction(SharedObjectInstance target, Vector2Int playerCell,
+            FacingDirection facing, bool playerMoving, out string message, out string poseKey)
         {
             message = null;
-            if (target == null || playerMoving) return false;
+            poseKey = null;
+            if (target == null || playerMoving) return SharedActionKind.None;
             var definition = target.Definition;
             if (UsesAuthoredActions(definition))
             {
@@ -93,21 +99,30 @@ namespace Halka.Poc2D3D
                 {
                     if (playerCell != target.RootCell + point.PlayerCellOffset) continue;
                     if (facing != ToFacing(point.PlayerFacing)) continue;
+                    if (point.ActionType == WorldActionType.Sit)
+                    {
+                        poseKey = point.PoseKey;
+                        return string.IsNullOrEmpty(poseKey) ? SharedActionKind.None : SharedActionKind.Sit;
+                    }
                     message = point.ActionType == WorldActionType.Sleep ? "ベッド。" :
-                        point.ActionType == WorldActionType.Sit ? "すわる。" :
                         !string.IsNullOrWhiteSpace(target.SignText) ? target.SignText :
                         !string.IsNullOrWhiteSpace(point.InteractionText) ? point.InteractionText :
                         definition.ExamineMessage;
-                    return !string.IsNullOrEmpty(message);
+                    return string.IsNullOrEmpty(message) ? SharedActionKind.None : SharedActionKind.Message;
                 }
-                return false;
+                return SharedActionKind.None;
             }
-            if (definition.Behavior != WorldObjectBehavior.Examine) return false;
+            if (definition.Behavior != WorldObjectBehavior.Examine) return SharedActionKind.None;
             var delta = target.RootCell - playerCell;
-            if (Mathf.Abs(delta.x) + Mathf.Abs(delta.y) != 1 || delta != facing.ToVector()) return false;
+            if (Mathf.Abs(delta.x) + Mathf.Abs(delta.y) != 1 || delta != facing.ToVector()) return SharedActionKind.None;
             message = definition.ExamineMessage;
-            return !string.IsNullOrEmpty(message);
+            return string.IsNullOrEmpty(message) ? SharedActionKind.None : SharedActionKind.Message;
         }
+
+        // True when the object answers from here (a message or a seat); message is the text, if any.
+        public bool TryInteract(SharedObjectInstance target, Vector2Int playerCell,
+            FacingDirection facing, bool playerMoving, out string message) =>
+            ResolveInteraction(target, playerCell, facing, playerMoving, out message, out _) != SharedActionKind.None;
 
         public SharedObjectInstance FindInteractionAhead(Vector2Int playerCell, FacingDirection facing,
             out string message)

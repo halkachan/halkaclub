@@ -6,13 +6,14 @@ using UnityEngine;
 
 namespace Halka.Poc2D3D
 {
-    // Phase 1 technical controls. This panel exists only in the POC scene; the real game will
-    // expose a single "表示 2D / 3D" entry in its existing Menu instead. Labels are ASCII
-    // because the default IMGUI font has no Japanese glyphs in WebGL.
+    // Phase 1 technical controls. This panel exists only in the POC scene; the game itself uses
+    // its existing Menu (Phase 4: AUTO, Life Log and the "ひょうじ 2D / 3D" row) and the existing
+    // message box. Phase 4: the panel is hidden unless the page is opened with ?debug=1, and then
+    // sits below the Menu button. Labels are ASCII (the IMGUI font has no Japanese in WebGL).
     [DefaultExecutionOrder(200)]
     public sealed class PocDebugPanel : MonoBehaviour
     {
-        public const string PreviewTitle = "はるかわーるど ver3.0 Phase 3 Preview";
+        public const string PreviewTitle = "はるかわーるど ver3.0 Phase 4 Preview";
         private static readonly int[] PixelOptions = { 16, 24, 32 };
         private static readonly float[] PitchOptions = { 50f, 60f, 90f, 40f };
         private static readonly Color[] OutlineColors =
@@ -27,6 +28,9 @@ namespace Halka.Poc2D3D
         [SerializeField] private TouchDpad dpad;
         [SerializeField] private TouchActionButton actionButton;
         [SerializeField] private Font fallbackFont;
+        [Header("Phase 4")]
+        [SerializeField] private PocGameplay gameplay;
+        [SerializeField] private PocOrientationGuard guard;
 
         private ProfilerRecorder drawCalls;
         private ProfilerRecorder batches;
@@ -59,6 +63,21 @@ namespace Halka.Poc2D3D
             dpad = touchDpad;
             actionButton = button;
             fallbackFont = font;
+        }
+
+        public void ConfigureGame(PocGameplay sharedGameplay, PocOrientationGuard orientationGuard)
+        {
+            gameplay = sharedGameplay;
+            guard = orientationGuard;
+        }
+
+        // ?debug=1 shows the POC options; the default page shows only the game's own UI.
+        public bool PanelVisible { get; set; }
+
+        private void Awake()
+        {
+            var url = Application.absoluteURL ?? "";
+            PanelVisible = url.Contains("debug=1");
         }
 
         private void OnEnable()
@@ -96,7 +115,7 @@ namespace Halka.Poc2D3D
         }
 
         public bool IsOverControls(Vector2 screenPosition) =>
-            panelRect.Contains(new Vector2(screenPosition.x, Screen.height - screenPosition.y));
+            PanelVisible && panelRect.Contains(new Vector2(screenPosition.x, Screen.height - screenPosition.y));
 
         private float UiScale => Mathf.Clamp(Mathf.Min(Screen.width, Screen.height) / 720f, 1f, 2.4f);
 
@@ -120,12 +139,21 @@ namespace Halka.Poc2D3D
         {
             EnsureStyles();
             var s = UiScale;
+            if (guard != null && guard.GuideVisible) return;
+            if (!PanelVisible)
+            {
+                panelRect = default;
+                DrawTitle(s);
+                if (gameplay == null || gameplay.Hud == null) DrawMessage();
+                return;
+            }
             var width = 236f * s;
             var row = 24f * s;
             var x = 8f;
-            var y = 8f;
-            var rows = expanded ? 17 : 2;
-            var statsLines = showStats && expanded ? 12 : 6;
+            // Below the game's Menu button (GameMenuController: 12 px from the top, 48 px tall).
+            var y = gameplay != null && gameplay.Menu != null ? 68f : 8f;
+            var rows = expanded ? 19 : 2;
+            var statsLines = showStats && expanded ? 13 : 6;
             panelRect = new Rect(x - 4f, y - 4f, width + 8f, rows * (row + 3f) + statsLines * row * 0.78f + 12f);
             GUI.DrawTexture(panelRect, panelBackground);
 
@@ -176,10 +204,16 @@ namespace Halka.Poc2D3D
                 // Phase 3: last row, so the rows above keep their places for the browser checks.
                 if (Button(ref y, x, width, row, "3D indoor walls: " + (third.WallCutaway ? "cut camera side" : "rays only")))
                     third.WallCutaway = !third.WallCutaway;
+                // Phase 4 (for comparisons with the earlier behaviour).
+                var fade = third.TreeFade;
+                if (Button(ref y, x, width, row, "3D see-through trees: " + (fade == null || fade.Enabled ? "ON" : "OFF (hide)")))
+                    if (fade != null) fade.Enabled = !fade.Enabled;
+                if (Button(ref y, x, width, row, "3D exit camera: " + (third.ExitComposition ? "house front" : "behind (Phase 3)")))
+                    third.ExitComposition = !third.ExitComposition;
             }
             GUI.Label(new Rect(x, y, width, statsLines * row * 0.78f + 8f), BuildText(), textStyle);
             DrawTitle(s);
-            DrawMessage();
+            if (gameplay == null || gameplay.Hud == null) DrawMessage();
         }
 
         // The user-facing name is はるかわーるど; internal IDs and save keys keep their old names.
@@ -187,7 +221,8 @@ namespace Halka.Poc2D3D
         {
             var width = Mathf.Min(Screen.width - panelRect.xMax - 16f, 380f * scale);
             if (width < 120f) return;
-            var rect = new Rect(Screen.width - width - 10f, 8f, width, 26f * scale);
+            // Below the game's version label (GameHud, top right).
+            var rect = new Rect(Screen.width - width - 10f, 40f, width, 26f * scale);
             GUI.color = new Color(1f, 1f, 1f, 0.82f);
             GUI.DrawTexture(rect, Texture2D.whiteTexture);
             GUI.color = Color.white;
@@ -239,6 +274,17 @@ namespace Halka.Poc2D3D
                 .Append("  cut ").Append(views.Mode == PocViewMode.PixelView2D ? views.PixelView.CutWalls
                     : views.ThirdPerson.CutWalls).Append('\n');
             text.Append("Phase ").Append(timeOfDay.Phase).Append("  blend ").Append(timeOfDay.NightBlend.ToString("0.00"));
+            if (gameplay != null)
+            {
+                var auto = gameplay.AutoMode;
+                var crow = gameplay.Crow;
+                text.Append('\n').Append("AUTO ").Append(auto != null && auto.AutoEnabled ? "on" : "off")
+                    .Append(auto != null && auto.Active ? " walking" : "").Append("  crow ")
+                    .Append(crow != null && crow.isActiveAndEnabled ? crow.Activity.ToString() : "-")
+                    .Append(session.IsSeated ? "  seated " + session.SeatPose : "")
+                    .Append("  fade3D ").Append(views.ThirdPerson.TreeFade != null ? views.ThirdPerson.TreeFade.FadingCount : 0)
+                    .Append(views.ThirdPerson.CompositionHeld ? "  exit-cam" : "");
+            }
             return text.ToString();
         }
 

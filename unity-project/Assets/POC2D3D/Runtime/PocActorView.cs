@@ -15,6 +15,8 @@ namespace Halka.Poc2D3D
         [SerializeField] private Transform model;
         [SerializeField] private PocPresentationCatalog catalog;
         [SerializeField, Min(0f)] private float bobHeight = 0.025f;
+        [Header("Phase 4: seats")]
+        [SerializeField] private PocWorldPresenter presenter;
 
         private float yaw;
         private float yawVelocity;
@@ -42,6 +44,21 @@ namespace Halka.Poc2D3D
         // The original sprite for this frame (null when the catalog has no sprites).
         public Sprite CurrentSprite { get; private set; }
         public PocSpriteSet Sprites => catalog != null && catalog.Player != null ? catalog.Player.sprites : null;
+
+        // Phase 4: where the 2D sprite's origin goes (the player, or the seat when seated) and
+        // its 2D-game height above that point (0.25 standing; PlayerSeatController's 10/64 on
+        // the bench, scaled by the seat height for the lower cushion).
+        public Vector3 SpriteRoot { get; private set; }
+        public float SpriteOffsetNorth { get; private set; }
+        public bool Seated { get; private set; }
+        public Vector3 SeatPoint { get; private set; }
+        public float HipHeight { get; private set; }
+        // The bench seat anchor height (Phase 3 Blender bench), the reference for 10/64.
+        public const float BenchSeatHeight = 0.22f;
+        public const float SitLegDegrees = 90f;
+        public const float SitArmDegrees = 28f;
+
+        public void ConfigureSeats(PocWorldPresenter worldPresenter) => presenter = worldPresenter;
 
         // 3D clicks: does the ray hit the drawn model (its bounds)? Never in 2D (sprite view).
         public bool RayHitsBody(Ray ray, out float distance)
@@ -92,6 +109,8 @@ namespace Halka.Poc2D3D
             if (armRight != null) armRightBase = armRight.localRotation;
             if (legLeft != null) legLeftBase = legLeft.localRotation;
             if (legRight != null) legRightBase = legRight.localRotation;
+            // The hip (leg pivot) height above the feet, for the sitting pose.
+            HipHeight = legLeft != null ? Mathf.Max(0f, legLeft.position.y - instance.transform.position.y) : 0.25f;
         }
 
         // The 2D Pixel View draws the original sprite instead, so the model (and its shadow)
@@ -122,23 +141,80 @@ namespace Halka.Poc2D3D
                 position.x = Mathf.Round(position.x / PixelSnap.x) * PixelSnap.x;
                 position.z = Mathf.Round(position.z / PixelSnap.y) * PixelSnap.y;
             }
+            Seated = session.IsSeated;
+            SpriteRoot = position;
+            SpriteOffsetNorth = Sprites != null ? Sprites.offsetY : 0.25f;
+            if (Seated)
+            {
+                SeatPoint = FindSeatPoint();
+                var seat = GridSpace3D.ToWorld(session.SeatCell);
+                if (pixelView)
+                {
+                    seat.x = Mathf.Round(seat.x / PixelSnap.x) * PixelSnap.x;
+                    seat.z = Mathf.Round(seat.z / PixelSnap.y) * PixelSnap.y;
+                }
+                SpriteRoot = seat;
+                SpriteOffsetNorth = PlayerSeatController.ArtworkAboveSeatCenter *
+                    Mathf.Clamp(SeatPoint.y / BenchSeatHeight, 0.2f, 1.5f);
+                // 3D: the model sits on the seat anchor, facing the seat's front (South).
+                position = new Vector3(SeatPoint.x, 0f, SeatPoint.z);
+            }
             transform.position = position;
             SetModelVisible(!pixelView || !HasSprites);
             AnimateSprite(deltaTime);
-            var target = GridSpace3D.FacingYaw(session.Facing);
+            var target = Seated ? GridSpace3D.FacingYaw(FacingDirection.Down) : GridSpace3D.FacingYaw(session.Facing);
             if (!initialized || TurnSeconds <= 0f || deltaTime <= 0f)
             {
                 yaw = target;
                 yawVelocity = 0f;
                 initialized = true;
             }
-            else yaw = Mathf.SmoothDampAngle(yaw, target, ref yawVelocity, TurnSeconds);
+            else yaw = Mathf.SmoothDampAngle(yaw, target, ref yawVelocity, TurnSeconds, Mathf.Infinity, deltaTime);
             transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             if (model == null) return;
+            if (Seated)
+            {
+                // Hips on the seat, thighs forward, hands resting forward: a plain sitting pose.
+                model.localPosition = Vector3.up * (SeatPoint.y - HipHeight);
+                if (HasLimbs)
+                {
+                    legLeft.localRotation = legLeftBase * Quaternion.Euler(SitLegDegrees, 0f, 0f);
+                    legRight.localRotation = legRightBase * Quaternion.Euler(SitLegDegrees, 0f, 0f);
+                    armLeft.localRotation = armLeftBase * Quaternion.Euler(SitArmDegrees, 0f, 0f);
+                    armRight.localRotation = armRightBase * Quaternion.Euler(SitArmDegrees, 0f, 0f);
+                    CurrentSwingDegrees = 0f;
+                    swingWeight = 0f;
+                }
+                return;
+            }
             var step = session.IsMoving ? Mathf.Repeat(session.Position.x + session.Position.y, 1f) : 0f;
             model.localPosition = Vector3.up * (Mathf.Abs(Mathf.Sin(step * Mathf.PI * 2f)) * bobHeight);
             var presentation = catalog != null ? catalog.Player : null;
             Swing(deltaTime, presentation);
+        }
+
+        // The seat anchor (Phase 3 Blender: SeatAnchor_L / SeatAnchor_R on the bench, SitAnchor on
+        // the cushion) nearest to the seat cell; without one, the seat cell at bench height.
+        private Vector3 FindSeatPoint()
+        {
+            var cell = GridSpace3D.ToWorld(session.SeatCell);
+            var fallback = cell + Vector3.up * BenchSeatHeight;
+            var view = presenter != null && session.SeatObject != null ? presenter.FindView(session.SeatObject.InstanceId) : null;
+            if (view == null) return fallback;
+            var best = fallback;
+            var bestDistance = float.MaxValue;
+            foreach (var child in view.GetComponentsInChildren<Transform>(true))
+            {
+                if (!child.name.StartsWith("SeatAnchor") && child.name != "SitAnchor") continue;
+                var p = child.position;
+                var d = new Vector2(p.x - cell.x, p.z - cell.z).sqrMagnitude;
+                if (d < bestDistance)
+                {
+                    bestDistance = d;
+                    best = p;
+                }
+            }
+            return best;
         }
 
         // CharacterVisual.Update, frame for frame: restart a set when it changes, then advance
@@ -149,6 +225,12 @@ namespace Halka.Poc2D3D
             if (!HasSprites)
             {
                 CurrentSprite = null;
+                return;
+            }
+            // CharacterVisual: the seated artwork replaces every frame while seated.
+            if (session.IsSeated && Sprites.benchSit != null)
+            {
+                CurrentSprite = Sprites.benchSit;
                 return;
             }
             var selected = Sprites.Select(session.Facing, session.IsMoving);

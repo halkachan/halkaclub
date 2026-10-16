@@ -22,12 +22,15 @@ MonoBehaviour:
     yawDegrees: 0
     meshOffset: {x: 0, y: 0, z: 0}
     uniformScale: 1
-    cameraOccluder: 1
+    cameraOccluder: 0
     castShadows: 1
     perchAnchorName: PerchAnchor
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 1
+    fadeInFront3D: 1
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0
   - definitionId: flower_basic
@@ -42,6 +45,9 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0.3
   - definitionId: stone_basic
@@ -59,6 +65,9 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0.3
   - definitionId: house_main
@@ -73,6 +82,9 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
     partialOcclusion: 1
     minPickSize: 0
   - definitionId: bench_basic
@@ -87,6 +99,9 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0
   - definitionId: sign_basic
@@ -101,6 +116,9 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0
   - definitionId: well_basic
@@ -115,6 +133,9 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0
   - definitionId: bed_basic
@@ -129,6 +150,9 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0
   - definitionId: desk_basic
@@ -143,6 +167,9 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0
   - definitionId: cushion_basic
@@ -157,6 +184,9 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0.3
   - definitionId: recording_mic_basic
@@ -171,6 +201,9 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0
   - definitionId: art_easel_basic
@@ -185,6 +218,9 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0
   - definitionId: studio_shelf_basic
@@ -199,6 +235,9 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0
   environment:
@@ -262,6 +301,7 @@ MonoBehaviour:
       - {fileID: 21300000, guid: 11afb286725589e42b91c29daad0344b, type: 3}
       - {fileID: 21300000, guid: e7298b4d37f83284e926343a7d8ff7c1, type: 3}
       offsetY: 0.25
+      benchSit: {fileID: 21300000, guid: 606d90ddaa22ab041a9ee7dc47f7a76e, type: 3}
   interior:
     floorTiles:
     - {fileID: 919132149155446097, guid: 9e8a2d69601376d4b81eeeb4903a4f01, type: 3}

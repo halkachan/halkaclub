@@ -1,0 +1,115 @@
+{
+  "generator": "blender/scripts/build_phase4_crow.py",
+  "blenderVersion": "5.2.0 LTS",
+  "blend": "blender/sources/phase4/crow_basic.blend",
+  "fbx": "unity-project/Assets/POC2D3D/Models/Phase4/crow_basic.fbx",
+  "front": "South (-Y in Blender, -Z in Unity)",
+  "origin": "ground centre between the feet",
+  "spriteReference": "Assets/Content/World/crow_*.png (read only)",
+  "parts": {
+    "crow_basic": {
+      "triangles": 80,
+      "vertices": 42,
+      "materials": 1,
+      "pivot": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "Head": {
+      "triangles": 182,
+      "vertices": 103,
+      "materials": 1,
+      "pivot": [
+        0.0,
+        -0.02,
+        0.26
+      ]
+    },
+    "Scarf": {
+      "triangles": 80,
+      "vertices": 48,
+      "materials": 1,
+      "pivot": [
+        0.0,
+        -0.02,
+        0.26
+      ]
+    },
+    "WingL": {
+      "triangles": 20,
+      "vertices": 12,
+      "materials": 1,
+      "pivot": [
+        0.105,
+        0.0,
+        0.205
+      ]
+    },
+    "WingR": {
+      "triangles": 20,
+      "vertices": 12,
+      "materials": 1,
+      "pivot": [
+        -0.105,
+        0.0,
+        0.205
+      ]
+    },
+    "Tail": {
+      "triangles": 16,
+      "vertices": 10,
+      "materials": 1,
+      "pivot": [
+        0.0,
+        0.115,
+        0.14
+      ]
+    },
+    "LegL": {
+      "triangles": 84,
+      "vertices": 52,
+      "materials": 1,
+      "pivot": [
+        0.045,
+        0.0,
+        0.075
+      ]
+    },
+    "LegR": {
+      "triangles": 84,
+      "vertices": 52,
+      "materials": 1,
+      "pivot": [
+        -0.045,
+        0.0,
+        0.075
+      ]
+    }
+  },
+  "anchors": {
+    "PerchFeet": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "triangles": 566,
+  "materials": 1,
+  "boundsMin": [
+    -0.141,
+    -0.1897,
+    -0.001
+  ],
+  "boundsMax": [
+    0.16,
+    0.25,
+    0.4121
+  ],
+  "supplemented": [
+    "the back of the head and body (the sprites show front, back and sides only at 32 px)",
+    "the wing shape at rest (folded) and the tail fan",
+    "three toes"
+  ]
+}

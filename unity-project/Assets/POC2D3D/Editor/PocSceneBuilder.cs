@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Halka.Game.Input;
+using Halka.Game.Interaction;
+using Halka.Game.Player;
+using Halka.Game.UI;
 using Halka.Game.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -56,6 +59,14 @@ namespace Halka.Poc2D3D.EditorTools
             "house_main", "bench_basic", "sign_basic", "well_basic", "bed_basic", "desk_basic", "cushion_basic",
             "recording_mic_basic", "art_easel_basic", "studio_shelf_basic"
         };
+        // Phase 4: the crow (blender/scripts/build_phase4_crow.py), its 2D sprites and voice (the
+        // 2D game's files, read only), the seated artwork, and the 3D see-through tree material.
+        public const string Phase4Models = Root + "/Models/Phase4/";
+        public const string CrowModelPath = Phase4Models + "crow_basic.fbx";
+        public const string CrowSprites = "Assets/Content/World/crow_";
+        public const string CrowVoicePath = "Assets/Content/Audio/crow_voice.mp3";
+        public const string BenchSitPath = "Assets/Content/Character/bench_sit.png";
+        public const string TreeFadeMaterialPath = Root + "/Materials/POC_ToonVertexColorFade.mat";
         public const string OutdoorMapPath = "Assets/Content/Maps/first_field.asset";
         public const string InteriorMapPath = "Assets/Content/Maps/halka_house.asset";
         public const string MessageFontPath = "Assets/Content/Fonts/HalkaMessageSubset.ttf";
@@ -89,6 +100,8 @@ namespace Halka.Poc2D3D.EditorTools
             foreach (var name in Phase2ModelNames) RemapModelMaterial(Phase2Models + name + ".fbx", toon);
             RemapModelMaterial(PlaceholderPlayerPath, toon);
             foreach (var name in Phase3ModelNames) RemapModelMaterial(Phase3Models + name + ".fbx", toon);
+            RemapModelMaterial(CrowModelPath, toon);
+            EnsureMaterial(TreeFadeMaterialPath, "HALKA/POC/ToonVertexColorFade", null);
             EnsureMaterial(OutlineMaterialPath, "HALKA/POC/OutlineComposite", null);
             EnsureMaterial(SpriteMaterialPath, "HALKA/POC/PixelSprite", null);
             EnsureMaterial(FadeMaterialPath, "HALKA/POC/FadeLayer", null);
@@ -103,8 +116,11 @@ namespace Halka.Poc2D3D.EditorTools
             // the player and the house remain Phase 1 placeholders.
             catalog.Configure(LoadModel(PlayerModelPath), toon, grid, new List<PocPresentationBinding>
             {
+                // Phase 4: a tree that hides the player fades (40%, 0.25 s) in 3D as in 2D,
+                // instead of being hidden as a camera occluder.
                 new PocPresentationBinding { definitionId = "tree_basic", model = Phase2("tree_basic"),
-                    perchAnchorName = "PerchAnchor", fadeInFront2D = true },
+                    perchAnchorName = "PerchAnchor", fadeInFront2D = true, fadeInFront3D = true,
+                    cameraOccluder = false, fadeOpacity = 0.4f, fadeSeconds = 0.25f },
                 new PocPresentationBinding { definitionId = "flower_basic", model = Phase2("flower_basic"),
                     cameraOccluder = false, minPickSize = SmallPickSize },
                 new PocPresentationBinding { definitionId = "stone_basic", model = Phase2("stone_basic_a"),
@@ -133,11 +149,14 @@ namespace Halka.Poc2D3D.EditorTools
                 dirtCorner = Phase2("ground_dirt_corner"),
                 grassTufts = new List<GameObject> { Phase2("grass_tuft_a"), Phase2("grass_tuft_b"), Phase2("grass_tuft_c") }
             });
+            var sprites = LoadCharacterSprites();
+            sprites.benchSit = AssetDatabase.LoadAssetAtPath<Sprite>(BenchSitPath);
+            if (sprites.benchSit == null) throw new InvalidOperationException("Sprite missing: " + BenchSitPath);
             catalog.ConfigurePlayer(new PocActorPresentation
             {
                 model = LoadModel(PlaceholderPlayerPath),
                 placeholder = true,
-                sprites = LoadCharacterSprites()
+                sprites = sprites
             });
             catalog.ConfigureInterior(new PocInteriorPresentation
             {
@@ -231,7 +250,83 @@ namespace Halka.Poc2D3D.EditorTools
             switcher.Configure(pixelView, presenterCamera, thirdPerson, actor, presenter, session, input);
             time.Configure(worldTime, session, switcher, sun, thirdCamera);
             panel.Configure(session, switcher, input, time, presenter, dpad, action, font);
+            BuildPhase4Content(root, session, input, presenter, switcher, pixelView, thirdPerson, actor, panel,
+                dpad, action, font);
             return root;
+        }
+
+        // Phase 4: the game's own systems on the shared world.
+        private static void BuildPhase4Content(GameObject root, SharedWorldSession session, PocInput input,
+            PocWorldPresenter presenter, PocViewSwitcher switcher, PocPixelView2D pixelView,
+            PocThirdPersonCamera thirdPerson, PocActorView actor, PocDebugPanel panel, TouchDpad dpad,
+            TouchActionButton action, Font font)
+        {
+            var hud = root.AddComponent<GameHud>();
+            SetReference(hud, "dpad", dpad);
+            SetReference(hud, "actionButton", action);
+            SetReference(hud, "messageFont", font);
+            var lifeLog = root.AddComponent<LifeLogController>();
+            var autoMode = root.AddComponent<AutoModeController>();
+            var menu = root.AddComponent<GameMenuController>();
+            SetReference(menu, "autoMode", autoMode);
+            SetReference(menu, "lifeLog", lifeLog);
+            SetReference(menu, "hud", hud);
+            SetReference(menu, "font", font);
+
+            // The crow: shared state (CrowBehaviourCore) with the 2D game's sprites and voice.
+            var crowObject = new GameObject("Crow (shared state: CrowBehaviourCore)");
+            crowObject.transform.SetParent(root.transform, false);
+            var crow = crowObject.AddComponent<PocCrow>();
+            var source = crowObject.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.spatialBlend = 0f;
+            source.volume = 0.55f; // as the 2D game's crow
+            var voice = crowObject.AddComponent<InteractionAudio>();
+            SetReference(voice, "audioSource", source);
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(CrowVoicePath);
+            if (clip == null) throw new InvalidOperationException("Crow voice missing: " + CrowVoicePath);
+            SetReference(voice, "clip", clip);
+            crow.Configure(session, presenter, voice);
+            crow.ConfigureSprites(CrowSprite("idle_down"), CrowSprite("idle_up"), CrowSprite("idle_left"),
+                CrowSprite("idle_right"), CrowWalk("down"), CrowWalk("up"), CrowWalk("left"), CrowWalk("right"),
+                new[] { CrowSprite("flight_right_up"), CrowSprite("flight_right_down") },
+                new[] { CrowSprite("flight_down_up"), CrowSprite("flight_down_down") });
+            var crowViewObject = new GameObject("Crow 3D view (Blender crow_basic)");
+            crowViewObject.transform.SetParent(root.transform, false);
+            var crowView = crowViewObject.AddComponent<PocCrowView3D>();
+            crowView.Configure(crow, LoadModel(CrowModelPath));
+            crowView.BuildModel();
+
+            var gameplay = root.AddComponent<PocGameplay>();
+            gameplay.Configure(session, switcher, autoMode, lifeLog, hud, menu, crow);
+            var guard = root.AddComponent<PocOrientationGuard>();
+            guard.Configure(gameplay, dpad, action, menu);
+            input.ConfigureGame(menu, autoMode, gameplay);
+            switcher.ConfigureCrow(crow, crowView);
+            pixelView.ConfigureCrow(crow);
+            actor.ConfigureSeats(presenter);
+            thirdPerson.ConfigureTreeFade(AssetDatabase.LoadAssetAtPath<Material>(TreeFadeMaterialPath));
+            panel.ConfigureGame(gameplay, guard);
+        }
+
+        private static Sprite CrowSprite(string suffix)
+        {
+            var path = CrowSprites + suffix + ".png";
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite == null) throw new InvalidOperationException("Sprite missing: " + path);
+            return sprite;
+        }
+
+        private static Sprite[] CrowWalk(string direction) =>
+            new[] { CrowSprite("walk_" + direction + "_0"), CrowSprite("walk_" + direction + "_1") };
+
+        private static void SetReference(UnityEngine.Object target, string field, UnityEngine.Object value)
+        {
+            var serialized = new SerializedObject(target);
+            var property = serialized.FindProperty(field);
+            if (property == null) throw new InvalidOperationException(target.GetType().Name + " has no field " + field);
+            property.objectReferenceValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static Camera CreateCamera(string name, int depth, Color background)

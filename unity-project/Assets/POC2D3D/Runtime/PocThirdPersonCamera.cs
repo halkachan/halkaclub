@@ -13,6 +13,17 @@ namespace Halka.Poc2D3D
         FollowFacing        // Phase 1 behaviour: always behind the facing (S reverses the view).
     }
 
+    // Phase 4: a temporary camera composition (focus, yaw, pitch, distance) and the cardinal
+    // heading that camera-relative keys use while it is held.
+    public struct PocCameraPose
+    {
+        public Vector3 Focus;
+        public float Yaw;
+        public float Pitch;
+        public float Distance;
+        public Halka.Game.Player.FacingDirection Heading;
+    }
+
     // Third-person view from behind the player. It follows the interpolated step position
     // (not the cell), so a one-cell step never makes the camera jump.
     [DefaultExecutionOrder(60)]
@@ -63,6 +74,23 @@ namespace Halka.Poc2D3D
         public int HiddenOccluders { get; private set; }
         public Camera ViewCamera => viewCamera;
 
+        // Phase 4: right after leaving a building in 3D, the camera looks at its front (the
+        // player and the building together) until the next movement input; then the normal
+        // camera takes over with the same heading, so no key changes meaning and nothing turns.
+        public bool ExitComposition { get; set; } = true;
+        public bool CompositionHeld { get; private set; }
+        public PocCameraPose HeldPose { get; private set; }
+        public int CompositionsShown { get; private set; }
+        public float CompositionReleasedAt { get; private set; } = float.NegativeInfinity;
+        private bool pendingExitComposition;
+        // The heading a composition sets for the map-change snap, even if a held key releases
+        // the composition in the same frame (the camera then stays on the building's side).
+        private Halka.Game.Player.FacingDirection? snapHeading;
+
+        // Phase 4: trees that hide the player fade to 40% instead of being hidden.
+        public PocTreeFade3D TreeFade { get; private set; }
+        public void ConfigureTreeFade(Material fadeMaterial) => TreeFade = new PocTreeFade3D(fadeMaterial);
+
         public void Configure(Camera cameraComponent, SharedWorldSession worldSession, PocWorldPresenter worldPresenter,
             PocInput pocInput = null)
         {
@@ -83,10 +111,39 @@ namespace Halka.Poc2D3D
         {
             if (viewCamera != null) viewCamera.enabled = false;
             if (session != null) session.MapChanged -= OnMapChanged;
+            CompositionHeld = false;
+            pendingExitComposition = false;
             ShowAll();
         }
 
-        private void OnMapChanged(SharedWorldModel world) => snapNext = true;
+        private void OnMapChanged(SharedWorldModel world)
+        {
+            snapNext = true;
+            TreeFade?.RestoreAll();
+            CompositionHeld = false;
+            // Only the 3D view (this component enabled) frames the building; 2D is untouched.
+            pendingExitComposition = enabled && ExitComposition && session != null &&
+                session.LastTransition.Kind == SharedTransitionKind.ExitedBuilding;
+        }
+
+        public void HoldComposition(PocCameraPose pose)
+        {
+            HeldPose = pose;
+            CompositionHeld = true;
+            Heading = pose.Heading;
+            snapHeading = pose.Heading;
+            CompositionsShown++;
+            // A key still held from walking out is ignored until released, so the composition
+            // waits for the next movement input (and that input uses this heading).
+            if (input != null) input.RequireRelease();
+        }
+
+        public void ReleaseComposition(float now)
+        {
+            if (!CompositionHeld) return;
+            CompositionHeld = false;
+            CompositionReleasedAt = now;
+        }
         public void SnapToTarget() => snapNext = true;
 
         private void LateUpdate() => UpdateView(Time.unscaledDeltaTime, Time.unscaledTime);
@@ -95,9 +152,19 @@ namespace Halka.Poc2D3D
 
         public void UpdateView(float deltaTime, float now)
         {
+            if (pendingExitComposition)
+            {
+                pendingExitComposition = false;
+                if (PocExitComposition.TryCompose(session, presenter, viewCamera, out var pose)) HoldComposition(pose);
+            }
+            // The first movement (a held key, or any step such as AUTO's) ends the composition;
+            // the step's direction was already chosen from the composition's heading.
+            if (CompositionHeld && (input != null && input.AnyDirectionHeld && !input.WaitingForRelease ||
+                                    session.IsMoving || session.IsSeated))
+                ReleaseComposition(now);
             UpdateHeading(now);
-            targetYaw = GridSpace3D.FacingYaw(Heading);
-            var desired = GridSpace3D.ToWorld(session.Position, lookHeight);
+            targetYaw = CompositionHeld ? HeldPose.Yaw : GridSpace3D.FacingYaw(Heading);
+            var desired = CompositionHeld ? HeldPose.Focus : GridSpace3D.ToWorld(session.Position, lookHeight);
             var justSnapped = snapNext;
             if (snapNext)
             {
@@ -106,6 +173,7 @@ namespace Halka.Poc2D3D
                 yaw = targetYaw;
                 yawVelocity = 0f;
                 snapNext = false;
+                snapHeading = null;
             }
             else
             {
@@ -113,8 +181,8 @@ namespace Halka.Poc2D3D
                 yaw = Mathf.SmoothDampAngle(yaw, targetYaw, ref yawVelocity, yawSmooth, Mathf.Infinity, deltaTime);
             }
             var indoor = session.World.IsInterior;
-            var currentPitch = indoor ? indoorPitch : pitch;
-            var currentDistance = indoor ? indoorDistance : distance;
+            var currentPitch = CompositionHeld ? HeldPose.Pitch : indoor ? indoorPitch : pitch;
+            var currentDistance = CompositionHeld ? HeldPose.Distance : indoor ? indoorDistance : distance;
             if (indoor && IndoorMode == PocIndoorCamera.CloserOffsetAndClamp)
                 ClampInsideRoom(focus, yaw, ref currentPitch, ref currentDistance);
             if (justSnapped || deltaTime <= 0f)
@@ -132,6 +200,9 @@ namespace Halka.Poc2D3D
             viewCamera.transform.SetPositionAndRotation(focus - rotation * Vector3.forward * boomNow, rotation);
             viewCamera.fieldOfView = viewCamera.aspect < 1f ? 58f : 42f;
             UpdateOccluders();
+            if (TreeFade != null && presenter != null)
+                TreeFade.Update(presenter.Views, viewCamera.transform.position, GridSpace3D.ToWorld(session.Position),
+                    Quaternion.Euler(0f, yaw, 0f), deltaTime);
         }
 
         // The heading changes only while nothing is pressed and the player stands still, so a held
@@ -139,6 +210,8 @@ namespace Halka.Poc2D3D
         private void UpdateHeading(float now)
         {
             var facing = session.Facing;
+            if (CompositionHeld) return;
+            if (snapNext && snapHeading.HasValue) { Heading = snapHeading.Value; return; }
             if (snapNext || Follow == PocCameraFollow.FollowFacing) { Heading = facing; return; }
             if (Follow == PocCameraFollow.Fixed || session.IsMoving) return;
             if (input != null && (input.AnyDirectionHeld || now - input.LastReleaseAt < idleTurnDelay)) return;
@@ -245,6 +318,7 @@ namespace Halka.Poc2D3D
 
         public void ShowAll()
         {
+            TreeFade?.RestoreAll();
             if (presenter == null) return;
             foreach (var view in presenter.Views)
                 if (view != null)

@@ -24,6 +24,9 @@ namespace Halka.Game.Player
         public long TotalPlaySeconds => data?.TotalPlaySeconds ?? 0;
         public string StepsLabel => data?.StepsLabel ?? "0";
         public string TimeLabel => data?.TimeLabel ?? "0:00:00";
+        // ver3.0 shared 2D/3D world: true while play is suspended outside the browser's own
+        // focus rules (the phone rotation guide); that time is not play time.
+        public bool ForegroundBlocked { get; set; }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
@@ -52,7 +55,7 @@ namespace Halka.Game.Player
         private void Update()
         {
             var now = Time.realtimeSinceStartupAsDouble;
-            var foreground = ready && hasFocus && !paused && Application.isFocused;
+            var foreground = ready && hasFocus && !paused && Application.isFocused && !ForegroundBlocked;
 #if UNITY_WEBGL && !UNITY_EDITOR
             foreground = foreground && HalkaLifeLogTabVisible() != 0;
 #endif
@@ -69,7 +72,14 @@ namespace Halka.Game.Player
             dirty = true;
         }
 
-        private void OnPlayerStepCompleted(Vector2Int _) { data.CompleteStep(); dirty = true; }
+        private void OnPlayerStepCompleted(Vector2Int _) => RecordCompletedStep();
+
+        // A completed Grid step of the player from a world without PlayerMover (ver3.0 shared world).
+        public void RecordCompletedStep()
+        {
+            data.CompleteStep();
+            dirty = true;
+        }
 
         private void OnApplicationFocus(bool focused)
         {

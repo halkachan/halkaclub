@@ -1,4 +1,6 @@
 using Halka.Game.Input;
+using Halka.Game.Player;
+using Halka.Game.UI;
 using UnityEngine;
 
 namespace Halka.Poc2D3D
@@ -16,6 +18,10 @@ namespace Halka.Poc2D3D
         [SerializeField] private PocDebugPanel debugPanel;
         [SerializeField] private SharedWorldSession session;
         [SerializeField, Min(1f)] private float clickMovementLimit = 24f;
+        [Header("Phase 4: the game's menu and AUTO")]
+        [SerializeField] private GameMenuController menu;
+        [SerializeField] private AutoModeController autoMode;
+        [SerializeField] private PocGameplay gameplay;
 
         private Vector2Int latchedRaw;
         private Vector2Int latchedDirection;
@@ -43,16 +49,55 @@ namespace Halka.Poc2D3D
             session = worldSession;
         }
 
+        public void ConfigureGame(GameMenuController gameMenu, AutoModeController auto, PocGameplay sharedGameplay)
+        {
+            menu = gameMenu;
+            autoMode = auto;
+            gameplay = sharedGameplay;
+        }
+
+        // GameInput's rules: an open menu (or a touch it just used) blocks gameplay input, and any
+        // input counts as a user action that stops AUTO and restarts its 60-second idle clock.
+        private bool Blocked => menu != null && menu.BlocksGameplayInput || gameplay != null && gameplay.Suspended;
+
         private void Update()
         {
             if (UnityEngine.Input.touchCount > 0) lastTouchAt = Time.unscaledTime;
+            if (Blocked)
+            {
+                SetRaw(Vector2Int.zero, Time.unscaledTime);
+                ActionPressed = false;
+                pendingClick = false;
+                return;
+            }
             SetRaw(CardinalInput.Choose(
                 UnityEngine.Input.GetKey(KeyCode.W) || UnityEngine.Input.GetKey(KeyCode.UpArrow),
                 UnityEngine.Input.GetKey(KeyCode.S) || UnityEngine.Input.GetKey(KeyCode.DownArrow),
                 UnityEngine.Input.GetKey(KeyCode.A) || UnityEngine.Input.GetKey(KeyCode.LeftArrow),
                 UnityEngine.Input.GetKey(KeyCode.D) || UnityEngine.Input.GetKey(KeyCode.RightArrow),
                 dpad != null ? dpad.Direction : Vector2Int.zero), Time.unscaledTime);
-            ActionPressed = actionButton != null && actionButton.JustPressed && RawDirection == Vector2Int.zero;
+            var justPressed = actionButton != null && actionButton.JustPressed;
+            ActionPressed = justPressed && RawDirection == Vector2Int.zero;
+            if (autoMode != null && (RawDirection != Vector2Int.zero || justPressed || pendingClick ||
+                UnityEngine.Input.GetMouseButtonDown(0) || UnityEngine.Input.touchCount > 0))
+                autoMode.RecordUserAction(Time.unscaledTime);
+            if (pendingClick)
+            {
+                pendingClick = false;
+                Click(pendingClickPosition);
+            }
+        }
+
+        private bool pendingClick;
+        private Vector2 pendingClickPosition;
+
+        // A click: the crow when the ray lands on it, else the picked object (shared rules).
+        public void Click(Vector2 screenPosition)
+        {
+            if (views == null || session == null) return;
+            if (views.PickCrow(screenPosition) is ISharedTalkTarget crow && session.TalkTo(crow)) return;
+            var target = views.PickObject(screenPosition);
+            if (target != null) session.InteractWith(target);
         }
 
         // Also used by checks to simulate the keyboard or the D-pad.
@@ -105,10 +150,12 @@ namespace Halka.Poc2D3D
         private bool IsOverControls(Vector2 screenPosition) =>
             dpad != null && dpad.IsOverControls(screenPosition) ||
             actionButton != null && actionButton.IsOverControls(screenPosition) ||
-            debugPanel != null && debugPanel.IsOverControls(screenPosition);
+            debugPanel != null && debugPanel.IsOverControls(screenPosition) ||
+            menu != null && menu.IsOverControls(screenPosition);
 
         private void OnGUI()
         {
+            if (Blocked) return;
             if (dpad != null && dpad.Visible && !dpad.PreviewMouse) return;
             if (UnityEngine.Input.touchCount > 0 || Time.unscaledTime - lastTouchAt < 0.25f) return;
             var current = Event.current;
@@ -125,8 +172,9 @@ namespace Halka.Poc2D3D
                 mouseDown = false;
                 if (mouseStartedOnControls || IsOverControls(position) ||
                     Vector2.Distance(mouseStart, position) > clickMovementLimit) return;
-                var target = views != null ? views.PickObject(position) : null;
-                if (target != null && session != null) session.InteractWith(target);
+                // Handled in Update, like GameInput's pending click.
+                pendingClickPosition = position;
+                pendingClick = true;
             }
         }
     }

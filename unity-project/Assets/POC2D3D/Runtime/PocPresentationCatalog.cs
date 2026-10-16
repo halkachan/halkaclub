@@ -29,6 +29,12 @@ namespace Halka.Poc2D3D
         [Range(0f, 1f)] public float outlineStrength = 1f;
         [Tooltip("2D Pixel View: drawn see-through while it stands in front of the player sprite.")]
         public bool fadeInFront2D;
+        [Tooltip("3D view (Phase 4): drawn see-through while it hides the player from the camera.")]
+        public bool fadeInFront3D;
+        [Tooltip("See-through opacity, the same in 2D and 3D.")]
+        [Range(0f, 1f)] public float fadeOpacity = 0.4f;
+        [Tooltip("Seconds to fade out (and back in), the same in 2D and 3D.")]
+        [Min(0f)] public float fadeSeconds = 0.25f;
         [Tooltip("3D: hide only the parts (e.g. the house roof) that stand between camera and player.")]
         public bool partialOcclusion;
         [Tooltip("Clicks: treat the object as at least this large (0 = its real bounds), for small things.")]
@@ -94,6 +100,8 @@ namespace Halka.Poc2D3D
         public Sprite[] rightWalk;
         [Tooltip("Local Y of the sprite above the player's cell in the 2D game (FirstDay: 0.25).")]
         public float offsetY = 0.25f;
+        [Tooltip("Phase 4: the seated artwork (bench_sit.png, CharacterVisual.benchSit).")]
+        public Sprite benchSit;
 
         public bool IsComplete => Has(frontIdle) && Has(backIdle) && Has(leftIdle) && Has(rightIdle) &&
             Has(frontWalk) && Has(backWalk) && Has(leftWalk) && Has(rightWalk);

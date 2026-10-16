@@ -1,0 +1,197 @@
+using Halka.Game.Player;
+using Halka.Game.World;
+using UnityEngine;
+
+namespace Halka.Poc2D3D
+{
+    // Phase 4: draws the shared crow in the 3D view with the Blender model. It reads PocCrow
+    // every frame and never writes to it. Simple transform animation per activity (no Rig):
+    // ground idle (breathing bob), ground walk (hop and leg swing), takeoff / leaving the perch
+    // (fast flaps, leaning up), flying (flapping), perched (wings folded, a slow look-around),
+    // landing (flaps slowing, legs down). Hidden in the 2D view, which draws the sprite instead.
+    [DefaultExecutionOrder(55)]
+    public sealed class PocCrowView3D : MonoBehaviour
+    {
+        public const float FlapCyclesPerSecond = 3.2f;
+        public const float FlapDegrees = 62f;
+
+        [SerializeField] private PocCrow crow;
+        [SerializeField] private GameObject modelPrefab;
+        [SerializeField] private float turnSeconds = 0.12f;
+
+        private GameObject instance;
+        private Transform head, wingLeft, wingRight, tail, legLeft, legRight;
+        private Quaternion headBase, wingLeftBase, wingRightBase, tailBase, legLeftBase, legRightBase;
+        private float yaw;
+        private float yawVelocity;
+        private bool initialized;
+        private bool shown = true;
+
+        public bool Visible { get; set; } = true;
+        public GameObject ModelInstance => instance;
+        public float CurrentFlapDegrees { get; private set; }
+        public float CurrentYaw => yaw;
+        public bool ModelShown => shown && instance != null && instance.activeSelf;
+
+        public void Configure(PocCrow sharedCrow, GameObject model)
+        {
+            crow = sharedCrow;
+            modelPrefab = model;
+        }
+
+        private void Awake()
+        {
+            if (modelPrefab != null && instance == null) BuildModel();
+        }
+
+        public void BuildModel()
+        {
+            if (instance != null) DestroyImmediate(instance);
+            instance = Instantiate(modelPrefab, transform, false);
+            instance.name = modelPrefab.name;
+            // Blender fronts face South; turn the model so it looks along this transform's forward.
+            instance.transform.localRotation = Quaternion.Euler(0f, GridSpace3D.ModelFrontYawOffset, 0f);
+            head = Find("Head");
+            wingLeft = Find("WingL");
+            wingRight = Find("WingR");
+            tail = Find("Tail");
+            legLeft = Find("LegL");
+            legRight = Find("LegR");
+            if (head != null) headBase = head.localRotation;
+            if (wingLeft != null) wingLeftBase = wingLeft.localRotation;
+            if (wingRight != null) wingRightBase = wingRight.localRotation;
+            if (tail != null) tailBase = tail.localRotation;
+            if (legLeft != null) legLeftBase = legLeft.localRotation;
+            if (legRight != null) legRightBase = legRight.localRotation;
+        }
+
+        public bool HasParts => head != null && wingLeft != null && wingRight != null && tail != null &&
+            legLeft != null && legRight != null;
+
+        private Transform Find(string childName)
+        {
+            foreach (var child in instance.GetComponentsInChildren<Transform>(true))
+                if (child.name == childName) return child;
+            return null;
+        }
+
+        // 3D clicks: does the ray hit the drawn crow (its bounds, at least 0.3 wide)?
+        public bool RayHits(Ray ray, out float distance)
+        {
+            distance = float.MaxValue;
+            if (!ModelShown) return false;
+            var found = false;
+            var bounds = new Bounds();
+            foreach (var item in instance.GetComponentsInChildren<Renderer>())
+            {
+                if (!item.enabled) continue;
+                if (!found) bounds = item.bounds;
+                else bounds.Encapsulate(item.bounds);
+                found = true;
+            }
+            if (!found) return false;
+            bounds.size = Vector3.Max(bounds.size, Vector3.one * 0.3f);
+            return bounds.IntersectRay(ray, out distance);
+        }
+
+        private void LateUpdate() => Apply(Time.deltaTime, Time.time);
+
+        public void Apply(float deltaTime, float now)
+        {
+            var show = Visible && crow != null && crow.isActiveAndEnabled;
+            if (instance != null && instance.activeSelf != show) instance.SetActive(show);
+            shown = show;
+            if (!show || instance == null) return;
+            transform.position = crow.transform.position;
+            var targetYaw = TargetYaw();
+            if (!initialized || deltaTime <= 0f || turnSeconds <= 0f)
+            {
+                yaw = targetYaw;
+                yawVelocity = 0f;
+                initialized = true;
+            }
+            else yaw = Mathf.SmoothDampAngle(yaw, targetYaw, ref yawVelocity, turnSeconds, Mathf.Infinity, deltaTime);
+            transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            Animate(now);
+        }
+
+        // On the ground: the Grid facing. In the air: the leg's horizontal direction (perched: the
+        // last flight direction, turned toward the camera side like the 2D idle-right frame).
+        private float TargetYaw()
+        {
+            switch (crow.Activity)
+            {
+                case CrowActivity.GroundIdle:
+                case CrowActivity.GroundWalk:
+                    return GridSpace3D.FacingYaw(crow.Facing);
+                case CrowActivity.Perched:
+                    return yaw;
+                default:
+                    var delta = crow.LegEnd - crow.LegStart;
+                    delta.y = 0f;
+                    return delta.sqrMagnitude > 0.0004f ? Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg : yaw;
+            }
+        }
+
+        private void Animate(float now)
+        {
+            if (!HasParts) return;
+            var flap = 0f;
+            var legSwing = 0f;
+            var bob = 0f;
+            var pitch = 0f;
+            var headTurn = 0f;
+            var tailLift = 0f;
+            switch (crow.Activity)
+            {
+                case CrowActivity.GroundIdle:
+                    bob = Mathf.Sin(now * 2.4f) * 0.006f;
+                    headTurn = Mathf.Sin(now * 0.7f) * 12f;
+                    break;
+                case CrowActivity.GroundWalk:
+                    var phase = crow.StepProgressNormalized;
+                    bob = Mathf.Abs(Mathf.Sin(phase * Mathf.PI)) * 0.03f;
+                    legSwing = Mathf.Sin(phase * Mathf.PI * 2f) * 28f;
+                    pitch = -6f; // leaning into the hop
+                    break;
+                case CrowActivity.Takeoff:
+                case CrowActivity.LeavingPerch:
+                    flap = Wave(now, 1.4f);
+                    pitch = 14f; // nose up while climbing
+                    tailLift = 10f;
+                    break;
+                case CrowActivity.Flying:
+                    flap = Wave(now, 1f);
+                    pitch = -6f;
+                    tailLift = 6f;
+                    break;
+                case CrowActivity.LandingGround:
+                    flap = Wave(now, 0.7f) * 0.8f;
+                    pitch = 12f; // flaring before touchdown
+                    break;
+                case CrowActivity.Perched:
+                    bob = Mathf.Sin(now * 2f) * 0.004f;
+                    headTurn = Mathf.Sin(now * 0.9f) * 25f;
+                    break;
+            }
+            CurrentFlapDegrees = flap;
+            instance.transform.localPosition = Vector3.up * bob;
+            instance.transform.localRotation = Quaternion.Euler(pitch, GridSpace3D.ModelFrontYawOffset, 0f);
+            // Wings rotate about the body's front-back axis (local Z after import): up and down.
+            wingLeft.localRotation = wingLeftBase * Quaternion.Euler(0f, 0f, flap);
+            wingRight.localRotation = wingRightBase * Quaternion.Euler(0f, 0f, -flap);
+            legLeft.localRotation = legLeftBase * Quaternion.Euler(legSwing, 0f, 0f);
+            legRight.localRotation = legRightBase * Quaternion.Euler(-legSwing, 0f, 0f);
+            head.localRotation = headBase * Quaternion.Euler(0f, headTurn, 0f);
+            tail.localRotation = tailBase * Quaternion.Euler(-tailLift, 0f, 0f);
+        }
+
+        // 0 (folded) .. FlapDegrees (raised), a quick downstroke like a real wingbeat.
+        private static float Wave(float now, float speed)
+        {
+            var t = Mathf.Repeat(now * FlapCyclesPerSecond * speed, 1f);
+            var s = t < 0.45f ? t / 0.45f : 1f - (t - 0.45f) / 0.55f;
+            return Mathf.SmoothStep(0f, 1f, s) * FlapDegrees;
+        }
+    }
+}

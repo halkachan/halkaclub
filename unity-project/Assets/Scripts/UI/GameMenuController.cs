@@ -3,6 +3,15 @@ using UnityEngine;
 
 namespace Halka.Game.UI
 {
+    // An optional extra menu row with a value button, like AUTO (ver3.0 shared 2D/3D world: the
+    // view). The 2D game sets none, so its menu is unchanged.
+    public interface IGameMenuItem
+    {
+        string Label { get; }
+        string Value { get; }
+        void Activate(float now);
+    }
+
     // Persistent IMGUI HUD control. AUTO remains owned by AutoModeController.
     [DefaultExecutionOrder(-110)]
     public sealed class GameMenuController : MonoBehaviour
@@ -18,11 +27,15 @@ namespace Halka.Game.UI
         private float pointerCaptureUntil;
         private float touchUiUntil;
         private bool suppressTouchUntilRelease;
+        private IGameMenuItem extraItem;
 
         public bool IsOpen { get; private set; }
         public bool IsLifeLogOpen { get; private set; }
         public bool BlocksGameplayInput => IsOpen || suppressTouchUntilRelease ||
             Time.unscaledTime < pointerCaptureUntil;
+        public IGameMenuItem ExtraItem => extraItem;
+
+        public void SetExtraItem(IGameMenuItem item) => extraItem = item;
 
         public void SetOpen(bool open, float now)
         {
@@ -38,6 +51,13 @@ namespace Halka.Game.UI
         {
             if (!IsOpen || IsLifeLogOpen || autoMode == null) return;
             autoMode.SetAutoEnabled(!autoMode.AutoEnabled, now);
+            pointerCaptureUntil = now + 0.25f;
+        }
+
+        public void ActivateExtraItem(float now)
+        {
+            if (!IsOpen || IsLifeLogOpen || extraItem == null) return;
+            extraItem.Activate(now);
             pointerCaptureUntil = now + 0.25f;
         }
 
@@ -73,6 +93,8 @@ namespace Halka.Game.UI
                 if (ButtonRect().Contains(point)) SetOpen(!IsOpen, now);
                 else if (IsOpen && IsLifeLogOpen && BackRect().Contains(point)) BackFromLifeLog(now);
                 else if (IsOpen && !IsLifeLogOpen && AutoRect().Contains(point)) ToggleAuto(now);
+                else if (IsOpen && !IsLifeLogOpen && extraItem != null && ExtraRect().Contains(point))
+                    ActivateExtraItem(now);
                 else if (IsOpen && !IsLifeLogOpen && LifeLogRect().Contains(point)) OpenLifeLog(now);
                 else if (IsOpen && !PanelRect().Contains(point)) SetOpen(false, now);
                 else if (!IsOpen) continue;
@@ -124,6 +146,14 @@ namespace Halka.Game.UI
                     20, valueStyle.normal.textColor, TextAnchor.MiddleCenter, font);
                 if (useMouse && GUI.Button(autoButton, GUIContent.none, GUIStyle.none))
                     ToggleAuto(Time.unscaledTime);
+                if (extraItem != null)
+                {
+                    Label(new Rect(panel.x + 12f, panel.y + 101f, 96f, 32f), extraItem.Label, 20);
+                    var extraButton = ExtraRect();
+                    DrawTextButton(extraButton, extraItem.Value, Color.white);
+                    if (useMouse && GUI.Button(extraButton, GUIContent.none, GUIStyle.none))
+                        ActivateExtraItem(Time.unscaledTime);
+                }
                 var lifeButton = LifeLogRect();
                 DrawTextButton(lifeButton, "せいかつきろく", Color.white);
                 if (useMouse && GUI.Button(lifeButton, GUIContent.none, GUIStyle.none))
@@ -150,7 +180,7 @@ namespace Halka.Game.UI
             var safe = Screen.safeArea;
             var button = ButtonRect();
             var width = Mathf.Min(IsLifeLogOpen ? 240f : 200f, Mathf.Max(120f, safe.width - 24f));
-            var height = IsLifeLogOpen ? 208f : 150f;
+            var height = IsLifeLogOpen ? 208f : extraItem != null ? 198f : 150f;
             var y = Mathf.Min(button.yMax + 6f, Screen.height - safe.yMin - height - 4f);
             return new Rect(button.x, y, width, height);
         }
@@ -161,10 +191,16 @@ namespace Halka.Game.UI
             return new Rect(panel.xMax - 80f, panel.y + 48f, 66f, 38f);
         }
 
+        private Rect ExtraRect()
+        {
+            var panel = PanelRect();
+            return new Rect(panel.xMax - 80f, panel.y + 96f, 66f, 38f);
+        }
+
         private Rect LifeLogRect()
         {
             var panel = PanelRect();
-            return new Rect(panel.x + 12f, panel.y + 98f, panel.width - 24f, 38f);
+            return new Rect(panel.x + 12f, panel.y + (extraItem != null ? 146f : 98f), panel.width - 24f, 38f);
         }
 
         private Rect BackRect()

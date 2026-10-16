@@ -27,6 +27,8 @@ namespace Halka.Poc2D3D
         [Header("2D see-through trees (Phase 2.1)")]
         [SerializeField] private PocWorldPresenter worldPresenter;
         [SerializeField] private Material fadeMaterial;
+        [Header("Phase 4: the crow's original sprites")]
+        [SerializeField] private PocCrow crow;
 
         private RenderTexture target;
         private RenderTexture outlineMask;
@@ -89,6 +91,12 @@ namespace Halka.Poc2D3D
         }
 
         public void ConfigureSprite(Material material) => spriteMaterial = material;
+        public void ConfigureCrow(PocCrow sharedCrow) => crow = sharedCrow;
+
+        // Where the crow sprite was last drawn (destination pixels), and whether it was drawn on top.
+        public RectInt LastCrowRect { get; private set; }
+        public bool LastCrowOnTop { get; private set; }
+        public Sprite LastCrowSprite { get; private set; }
 
         public void ConfigureFade(PocWorldPresenter presenter, Material material)
         {
@@ -207,7 +215,6 @@ namespace Halka.Poc2D3D
                     if (ScreenRect(view).Overlaps(spriteRect)) targets.Add(view);
                 }
             }
-            var step = FadeSeconds > 0f ? deltaTime / FadeSeconds * (1f - FadedAlpha) : 1f;
             foreach (var view in targets)
                 if (!fades.ContainsKey(view))
                 {
@@ -218,7 +225,11 @@ namespace Halka.Poc2D3D
             {
                 var view = fadeOrder[i];
                 var inFront = targets.Contains(view);
-                var alpha = Mathf.MoveTowards(fades[view], inFront ? FadedAlpha : 1f, step);
+                // Phase 4: the view's own opacity and time (Presentation Metadata, shared with 3D).
+                var opacity = view != null ? view.FadeOpacity : FadedAlpha;
+                var seconds = view != null ? view.FadeSeconds : FadeSeconds;
+                var step = seconds > 0f ? deltaTime / seconds * (1f - opacity) : 1f;
+                var alpha = Mathf.MoveTowards(fades[view], inFront ? opacity : 1f, step);
                 if (view == null || (!inFront && alpha >= 1f))
                 {
                     Restore(view);
@@ -358,10 +369,54 @@ namespace Halka.Poc2D3D
         }
 
         // Everything drawn after the upscaled view and before the night overlay and the UI.
+        // Phase 4: the crow on the ground is ordered with the player by row (the one further
+        // North first) and hidden by the world like the player; in the air it is drawn last, above
+        // everything, like the 2D game's raised sorting order during a flight.
         public void DrawOverlays(int screenWidth, int screenHeight)
         {
+            LastCrowRect = default;
+            LastCrowSprite = null;
+            var crowCard = CrowCard(out var crowOnTop);
+            var crowFirst = crowCard.HasValue && !crowOnTop && crowCard.Value.Root.z > actor.transform.position.z;
+            if (crowFirst) DrawCrow(crowCard.Value, false, screenWidth, screenHeight);
             DrawActorSprite(screenWidth, screenHeight);
+            if (crowCard.HasValue && !crowOnTop && !crowFirst) DrawCrow(crowCard.Value, false, screenWidth, screenHeight);
             DrawFadeLayer(screenWidth, screenHeight);
+            if (crowCard.HasValue && crowOnTop) DrawCrow(crowCard.Value, true, screenWidth, screenHeight);
+        }
+
+        // One upright sprite card: the sprite's local origin goes to Root (x East, y height, z North),
+        // its 2D-game vertical offset becomes a North offset on the ground, as for the player.
+        public struct SpriteCard
+        {
+            public Sprite Sprite;
+            public Vector3 Root;
+            public float OffsetNorth;
+            public bool FlipX;
+        }
+
+        private SpriteCard? CrowCard(out bool onTop)
+        {
+            onTop = false;
+            if (crow == null || !crow.isActiveAndEnabled || crow.CurrentSprite == null || target == null) return null;
+            onTop = crow.Airborne;
+            var root = crow.transform.position;
+            if (!onTop) root.y = 0f;
+            if (actor != null && actor.PixelSnap.x > 0f)
+            {
+                root.x = Mathf.Round(root.x / actor.PixelSnap.x) * actor.PixelSnap.x;
+                root.z = Mathf.Round(root.z / actor.PixelSnap.y) * actor.PixelSnap.y;
+            }
+            return new SpriteCard { Sprite = crow.CurrentSprite, Root = root, OffsetNorth = 0f, FlipX = crow.CurrentFlipX };
+        }
+
+        private void DrawCrow(SpriteCard card, bool onTop, int screenWidth, int screenHeight)
+        {
+            if (!PlaceCard(card, out var rect, out _, out var depthBottom, out var depthTop)) return;
+            LastCrowRect = rect;
+            LastCrowOnTop = onTop;
+            LastCrowSprite = card.Sprite;
+            DrawCard(card, rect, depthBottom, depthTop, !onTop, screenWidth, screenHeight);
         }
 
         // Same camera, same pixel-snapped matrices, so the mask lines up texel for texel.
@@ -421,12 +476,20 @@ namespace Halka.Poc2D3D
             LastSpritePixelSize = pixelSize;
             LastSpriteDepthBottom = depthBottom;
             LastSpriteDepthTop = depthTop;
+            DrawCard(new SpriteCard { Sprite = sprite }, placed, depthBottom, depthTop, true, screenWidth, screenHeight);
+        }
+
+        private void DrawCard(SpriteCard card, RectInt placed, float depthBottom, float depthTop, bool depthTest,
+            int screenWidth, int screenHeight)
+        {
+            var sprite = card.Sprite;
             int x0 = placed.x, y0 = placed.y, width = placed.width, height = placed.height;
 
             var texture = sprite.texture;
             var tr = sprite.textureRect;
             var u0 = tr.xMin / texture.width;
             var u1 = tr.xMax / texture.width;
+            if (card.FlipX) (u0, u1) = (u1, u0);
             var v0 = tr.yMin / texture.height;
             var v1 = tr.yMax / texture.height;
             var maskW = (float)target.width * Scale;
@@ -436,7 +499,7 @@ namespace Halka.Poc2D3D
             var my0 = (y0 + Offset.y) / maskH;
             var my1 = (y0 + height + Offset.y) / maskH;
 
-            var useMask = outlineMask != null && outlineMaskShader != null;
+            var useMask = depthTest && outlineMask != null && outlineMaskShader != null;
             spriteMaterial.mainTexture = texture;
             spriteMaterial.SetTexture("_MaskTex", outlineMask);
             spriteMaterial.SetFloat("_UseMask", useMask ? 1f : 0f);
@@ -468,16 +531,29 @@ namespace Halka.Poc2D3D
             if (!SpriteReady || target == null) return false;
             sprite = actor.CurrentSprite;
             if (sprite == null) return false;
-            var sprites = actor.Sprites;
+            // Phase 4: seated, the artwork moves onto the seat (PlayerSeatController's rule).
+            return PlaceCard(new SpriteCard { Sprite = sprite, Root = actor.SpriteRoot, OffsetNorth = actor.SpriteOffsetNorth },
+                out rect, out pixelSize, out depthBottom, out depthTop);
+        }
+
+        private bool PlaceCard(SpriteCard spriteCard, out RectInt rect, out float pixelSize,
+            out float depthBottom, out float depthTop)
+        {
+            rect = default;
+            pixelSize = 0f;
+            depthBottom = depthTop = 0f;
+            var sprite = spriteCard.Sprite;
+            if (sprite == null || target == null) return false;
             var unitsPerSpritePixel = 1f / sprite.pixelsPerUnit;
             pixelSize = Scale * PixelsPerCell / (GridSpace3D.CellSize * sprite.pixelsPerUnit);
             var spriteRect = sprite.rect;
 
             // The sprite's bottom-left corner in the 2D game (x = East, y = North), placed on the
-            // ground of this view; the card stands up from there toward the camera.
-            var root = actor.transform.position;
-            var corner = new Vector3(root.x - sprite.pivot.x * unitsPerSpritePixel, 0f,
-                root.z + sprites.offsetY - sprite.pivot.y * unitsPerSpritePixel);
+            // ground of this view (or at its height, for a crow in the air); the card stands up
+            // from there toward the camera.
+            var root = spriteCard.Root;
+            var corner = new Vector3(root.x - sprite.pivot.x * unitsPerSpritePixel, root.y,
+                root.z + spriteCard.OffsetNorth - sprite.pivot.y * unitsPerSpritePixel);
             // Draw order uses a card slightly in front of that edge, so a wide crown whose front
             // reaches the edge from the cell North of the player stays behind it.
             var card = corner + Vector3.back * SpriteDepthBias;

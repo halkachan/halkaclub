@@ -16,6 +16,9 @@ namespace Halka.Poc2D3D
         [SerializeField] private SharedWorldSession session;
         [SerializeField] private PocInput input;
         [SerializeField] private PocViewMode initialMode = PocViewMode.PixelView2D;
+        [Header("Phase 4: the crow")]
+        [SerializeField] private PocCrow crow;
+        [SerializeField] private PocCrowView3D crowView;
 
         private bool applied;
 
@@ -28,6 +31,13 @@ namespace Halka.Poc2D3D
             ? thirdPerson.Heading : Halka.Game.Player.FacingDirection.Up;
         public PocPixelView2D PixelView => pixelView;
         public PocThirdPersonCamera ThirdPerson => thirdPerson;
+        public PocCrowView3D CrowView => crowView;
+
+        public void ConfigureCrow(PocCrow sharedCrow, PocCrowView3D crowView3D)
+        {
+            crow = sharedCrow;
+            crowView = crowView3D;
+        }
 
         public void Configure(PocPixelView2D pixel, Camera presenterCam, PocThirdPersonCamera third,
             PocActorView actorView, PocWorldPresenter worldPresenter, SharedWorldSession worldSession,
@@ -62,6 +72,8 @@ namespace Halka.Poc2D3D
             thirdPerson.enabled = !pixel;
             thirdPerson.ViewCamera.enabled = !pixel;
             actor.TurnSeconds = pixel ? 0f : 0.09f;
+            // The 3D crow model is the 3D view's; the 2D view draws the crow's original sprite.
+            if (crowView != null) crowView.Visible = !pixel;
             if (!pixel) actor.PixelSnap = Vector2.zero;
             // Trees made see-through for the 2D sprite are opaque again in 3D.
             if (!pixel) pixelView.RestoreAllFades();
@@ -114,5 +126,21 @@ namespace Halka.Poc2D3D
         }
 
         public bool LastPickUsedPlayer { get; private set; }
+
+        // Phase 4: the crow under the pointer (its 2D sprite as drawn, or its 3D model), unless a
+        // standing wall is nearer. Talking keeps ExamineInteractable's range rule (PocCrow.TryTalk).
+        public PocCrow PickCrow(Vector2 screenPosition)
+        {
+            if (crow == null || !crow.isActiveAndEnabled) return null;
+            if (Mode == PocViewMode.PixelView2D)
+            {
+                var rect = pixelView.LastCrowRect;
+                return rect.width > 0 && rect.Contains(new Vector2Int(Mathf.FloorToInt(screenPosition.x),
+                    Mathf.FloorToInt(screenPosition.y))) ? crow : null;
+            }
+            if (crowView == null) return null;
+            var ray = thirdPerson.ViewCamera.ScreenPointToRay(screenPosition);
+            return crowView.RayHits(ray, out _) ? crow : null;
+        }
     }
 }
