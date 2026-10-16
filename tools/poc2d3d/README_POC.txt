@@ -17,8 +17,9 @@ What is new in Phase 4 (one shared world: 2D and 3D show the same game state):
   - The crow: one crow for both views. 2D draws the original crow sprites; 3D draws a
     Blender low-poly crow. It walks, flies to a tree, perches, comes back down. Click it
     (or press A while standing in front of it): 「カァ。」, its voice, and it flies off.
-  - Bench and cushion: press A (or click) in front of them to sit; A again or a move to
-    stand up. 2D uses the game's sitting sprite, 3D a sitting pose on the seat.
+  - Bench and cushion: press A (or click) in front of them to sit; press A again (or click
+    ﾊﾙｶﾁｬﾝ or the seat) to stand up. As in the game, she does not walk while seated.
+    2D uses the game's sitting sprite, 3D a sitting pose on the seat.
   - 3D, leaving the house: the camera first shows the house front with ﾊﾙｶﾁｬﾝ. The next
     move returns to the usual camera (a key still held from walking out has to be released
     once).
