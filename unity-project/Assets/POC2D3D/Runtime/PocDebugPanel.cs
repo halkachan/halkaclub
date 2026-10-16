@@ -153,7 +153,7 @@ namespace Halka.Poc2D3D
             // Below the game's Menu button (GameMenuController: 12 px from the top, 48 px tall).
             var y = gameplay != null && gameplay.Menu != null ? 68f : 8f;
             var rows = expanded ? 19 : 2;
-            var statsLines = showStats && expanded ? 13 : 6;
+            var statsLines = showStats ? expanded ? 13 : 8 : 6;
             panelRect = new Rect(x - 4f, y - 4f, width + 8f, rows * (row + 3f) + statsLines * row * 0.78f + 12f);
             GUI.DrawTexture(panelRect, panelBackground);
 
@@ -259,33 +259,46 @@ namespace Halka.Poc2D3D
             if (views.Mode == PocViewMode.PixelView2D && views.PixelView.Target != null)
                 text.Append("  RT ").Append(views.PixelView.Target.width).Append('x')
                     .Append(views.PixelView.Target.height).Append(" x").Append(views.PixelView.Scale);
-            if (!(showStats && expanded)) return text.ToString();
+            if (!showStats) return text.ToString();
+            if (!expanded)
+            {
+                // Collapsed (small screens such as a phone held sideways): the counters in one line.
+                text.Append('\n').Append("DC ").Append(Value(drawCalls)).Append("  SetPass ").Append(Value(setPass))
+                    .Append("  Tris ").Append(Value(renderedTriangles)).Append("  Mem ").Append(Memory());
+                AppendGameLine();
+                return text.ToString();
+            }
             text.Append('\n');
             text.Append("Mesh tris (map) ").Append(presenter.BuiltTriangles);
             if (presenter.Environment != null) text.Append("  tufts ").Append(presenter.Environment.Tufts);
             text.Append('\n');
             text.Append("DrawCalls ").Append(Value(drawCalls)).Append("  Batches ").Append(Value(batches)).Append('\n');
             text.Append("SetPass ").Append(Value(setPass)).Append("  Tris/frame ").Append(Value(renderedTriangles)).Append('\n');
-            text.Append("Used memory ").Append(usedMemory.Valid && usedMemory.LastValue > 0
-                ? (usedMemory.LastValue / (1024f * 1024f)).ToString("0.0") + " MB" : "n/a").Append('\n');
+            text.Append("Used memory ").Append(Memory()).Append('\n');
             text.Append("3D heading ").Append(views.ThirdPerson.Heading).Append("  Yaw ")
                 .Append(views.ThirdPerson.CurrentYaw.ToString("0")).Append("  hidden ")
                 .Append(views.ThirdPerson.HiddenOccluders).Append("  parts ").Append(views.ThirdPerson.HiddenParts)
                 .Append("  cut ").Append(views.Mode == PocViewMode.PixelView2D ? views.PixelView.CutWalls
                     : views.ThirdPerson.CutWalls).Append('\n');
             text.Append("Phase ").Append(timeOfDay.Phase).Append("  blend ").Append(timeOfDay.NightBlend.ToString("0.00"));
-            if (gameplay != null)
-            {
-                var auto = gameplay.AutoMode;
-                var crow = gameplay.Crow;
-                text.Append('\n').Append("AUTO ").Append(auto != null && auto.AutoEnabled ? "on" : "off")
-                    .Append(auto != null && auto.Active ? " walking" : "").Append("  crow ")
-                    .Append(crow != null && crow.isActiveAndEnabled ? crow.Activity.ToString() : "-")
-                    .Append(session.IsSeated ? "  seated " + session.SeatPose : "")
-                    .Append("  fade3D ").Append(views.ThirdPerson.TreeFade != null ? views.ThirdPerson.TreeFade.FadingCount : 0)
-                    .Append(views.ThirdPerson.CompositionHeld ? "  exit-cam" : "");
-            }
+            AppendGameLine();
             return text.ToString();
+        }
+
+        private string Memory() => usedMemory.Valid && usedMemory.LastValue > 0
+            ? (usedMemory.LastValue / (1024f * 1024f)).ToString("0.0") + " MB" : "n/a";
+
+        private void AppendGameLine()
+        {
+            if (gameplay == null) return;
+            var auto = gameplay.AutoMode;
+            var crow = gameplay.Crow;
+            text.Append('\n').Append("AUTO ").Append(auto != null && auto.AutoEnabled ? "on" : "off")
+                .Append(auto != null && auto.Active ? " walking" : "").Append("  crow ")
+                .Append(crow != null && crow.isActiveAndEnabled ? crow.Activity.ToString() : "-")
+                .Append(session.IsSeated ? "  seated " + session.SeatPose : "")
+                .Append("  fade3D ").Append(views.ThirdPerson.TreeFade != null ? views.ThirdPerson.TreeFade.FadingCount : 0)
+                .Append(views.ThirdPerson.CompositionHeld ? "  exit-cam" : "");
         }
 
         private static string Value(ProfilerRecorder recorder) =>
