@@ -75,6 +75,84 @@ namespace Halka.Poc2D3D.EditorTools
             }
         }
 
+        // ---------------------------------------------------------------- crow video frames
+
+        // Batch: -executeMethod Halka.Poc2D3D.EditorTools.Phase4Capture.CrowVideoBatch
+        public static void CrowVideoBatch()
+        {
+            try
+            {
+                CrowVideo(Environment.GetEnvironmentVariable("HARUKA_PHASE4_VIDEO_DIR") ??
+                    Path.Combine(PocSceneBuilder.RepositoryRoot, "..", "HARUKA_WORLD_ver3.0_PHASE4_CAPTURES", "video_frames", "crow_3d"));
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        // The shared crow stepped 30 times a second (as the game ticks it) and drawn by its 3D view
+        // from a camera that follows it: hops on the ground, takeoff, flight, perch (shortened),
+        // leaving the perch and landing. Frames f_0000.png... for a video at 30 fps.
+        public static void CrowVideo(string folder)
+        {
+            output = Path.GetFullPath(folder);
+            Directory.CreateDirectory(output);
+            foreach (var old in Directory.GetFiles(output, "f_*.png")) File.Delete(old);
+            var randomState = UnityEngine.Random.state;
+            UnityEngine.Random.InitState(11);
+            var root = Setup();
+            try
+            {
+                time.Override = PocPhaseOverride.Morning;
+                ToOutdoor(new Vector2Int(2, -2), FacingDirection.Up);
+                switcher.SetMode(PocViewMode.ThirdPerson3D);
+                Advance(0f, 960, 540);
+                var now = 4000f;
+                var frame = 0;
+                Set(crow, "nextFlightAt", now + 1000f);
+                Set(crow, "nextActionAt", now + 0.4f);
+                crow.Tick(now);
+                var focus = crow.transform.position;
+                var camera = third.ViewCamera;
+                void Shoot(float seconds, Func<bool> until = null)
+                {
+                    for (var t = 0f; t < seconds && (until == null || !until()); t += 1f / 30f)
+                    {
+                        now += 1f / 30f;
+                        crow.Tick(now);
+                        crowView.Apply(1f / 30f, now);
+                        focus = Vector3.Lerp(focus, crow.transform.position, 0.12f);
+                        var rotation = Quaternion.Euler(24f, 35f, 0f);
+                        camera.transform.SetPositionAndRotation(
+                            focus + Vector3.up * 0.15f - rotation * Vector3.forward * 3.4f, rotation);
+                        camera.fieldOfView = 40f;
+                        Save3D($"f_{frame++:0000}", 960, 540);
+                    }
+                }
+                for (var i = 0; i < 3; i++)
+                {
+                    Set(crow, "nextActionAt", now + 0.6f);
+                    Shoot(1.3f);
+                }
+                Set(crow, "nextFlightAt", now);
+                Shoot(6f, () => crow.Activity == CrowActivity.Perched);
+                Shoot(0.5f);
+                Set(crow, "perchedUntil", now + 1.5f);
+                Shoot(2f);
+                Shoot(8f, () => crow.Activity == CrowActivity.GroundIdle);
+                Shoot(1.2f);
+                Debug.Log($"HARUKA Phase 4 crow video: {frame} frames in {output}");
+            }
+            finally
+            {
+                UnityEngine.Random.state = randomState;
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
         // ---------------------------------------------------------------- exit camera
 
         private static void ExitCamera(string suffix)
