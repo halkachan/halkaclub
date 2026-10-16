@@ -12,8 +12,16 @@ namespace Halka.Game.World
         public static bool TryFind(GridWorld2D world, Vector2Int start, Vector2Int goal,
             List<Vector2Int> path, Func<Vector2Int, bool> canEnter = null)
         {
-            path.Clear();
             canEnter ??= world.CanEnter;
+            return TryFind(start, goal, path, canEnter);
+        }
+
+        // The same breadth-first search on any Grid (the shared 2D/3D world has no GridWorld2D).
+        public static bool TryFind(Vector2Int start, Vector2Int goal, List<Vector2Int> path,
+            Func<Vector2Int, bool> canEnter)
+        {
+            path.Clear();
+            if (canEnter == null) throw new ArgumentNullException(nameof(canEnter));
             if (start == goal || !canEnter(goal)) return false;
             var queue = new Queue<Vector2Int>();
             var parents = new Dictionary<Vector2Int, Vector2Int> { [start] = start };

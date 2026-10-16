@@ -31,22 +31,33 @@ namespace Halka.Game.Player
         private bool paused;
         private string observedMapId;
         private Vector2Int? previousIndoorGoal;
+        // ver3.0 shared 2D/3D world: the same decisions on another world (see IAutoModeWorld).
+        private IAutoModeWorld sharedWorld;
+        private IAutoModeWorld defaultWorld;
 
         public bool AutoEnabled { get; private set; }
         public bool Active { get; private set; }
         public bool MenuSuspended => menuSuspended;
         public float LastUserAt => lastUserAt;
+        private IAutoModeWorld World => sharedWorld ?? (defaultWorld ??= new SceneWorld(this));
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
         private static extern int HalkaLifeLogTabVisible();
 #endif
 
+        // Runs AUTO on another world (null returns to the 2D game's components).
+        public void UseWorld(IAutoModeWorld autoWorld)
+        {
+            sharedWorld = autoWorld;
+            observedMapId = World.HasMapRegistry ? World.ActiveMapId : null;
+        }
+
         private void Awake()
         {
             AutoEnabled = enabledByDefault;
             lastUserAt = Time.unscaledTime;
-            observedMapId = maps != null ? maps.ActiveMapId : null;
+            observedMapId = World.HasMapRegistry ? World.ActiveMapId : null;
         }
 
         private void OnEnable()
@@ -68,7 +79,7 @@ namespace Halka.Game.Player
 #if UNITY_WEBGL && !UNITY_EDITOR
             foreground = foreground && HalkaLifeLogTabVisible() != 0;
 #endif
-            return foreground;
+            return foreground && !World.Suspended;
         }
 
         // The overload lets regression checks advance the existing idle clock without waiting a minute.
@@ -82,8 +93,8 @@ namespace Halka.Game.Player
                 return;
             }
 
-            var mapId = maps != null ? maps.ActiveMapId :
-                house != null && house.IsInside ? "halka_house" : "first_field";
+            var world = World;
+            var mapId = world.ActiveMapId;
             if (observedMapId != mapId)
             {
                 observedMapId = mapId;
@@ -91,24 +102,24 @@ namespace Halka.Game.Player
                 RecordUserAction(now);
                 return;
             }
-            if (!AutoEnabled || menuSuspended || player == null || player.MovementLocked ||
-                hud != null && hud.HasActiveMessage ||
+            if (!AutoEnabled || menuSuspended || !world.HasPlayer || world.PlayerMovementLocked ||
+                world.HasActiveMessage ||
                 mapId != "first_field" && mapId != "halka_house" ||
-                mapId == "halka_house" && maps == null)
+                mapId == "halka_house" && !world.HasMapRegistry)
             {
-                if (hud != null && hud.HasActiveMessage) RecordUserAction(now);
+                if (world.HasActiveMessage) RecordUserAction(now);
                 else if (Active) StopAuto();
                 return;
             }
             if (!Active)
             {
-                if (now - lastUserAt < IdleSeconds || player.IsMoving) return;
+                if (now - lastUserAt < IdleSeconds || world.PlayerIsMoving) return;
                 Active = true;
                 nextActionAt = now + 1f;
                 route.Clear();
                 routeIndex = 0;
             }
-            if (player.IsMoving || now < nextActionAt) return;
+            if (world.PlayerIsMoving || now < nextActionAt) return;
             if (routeIndex >= route.Count)
             {
                 if (mapId == "halka_house") PlanIndoorRoute();
@@ -120,8 +131,8 @@ namespace Halka.Game.Player
                     return;
                 }
             }
-            var direction = route[routeIndex] - player.Cell;
-            if (player.TryStep(direction)) routeIndex++;
+            var direction = route[routeIndex] - world.PlayerCell;
+            if (world.TryStep(direction)) routeIndex++;
             else
             {
                 route.Clear();
@@ -137,16 +148,17 @@ namespace Halka.Game.Player
         private void PlanOutdoorRoute()
         {
             route.Clear();
+            var world = World;
             // Keep the established outdoor interests and route selection unchanged.
-            var crowNearby = crow != null && crow.isActiveAndEnabled
-                ? crow.Cell + Vector2Int.down : player.Cell;
-            var interests = new[] { house.OutsideEntryCell, new Vector2Int(-3, 0),
+            var crowNearby = world.TryGetCrowCell(out var crowCell)
+                ? crowCell + Vector2Int.down : world.PlayerCell;
+            var interests = new[] { world.OutsideEntryCell, new Vector2Int(-3, 0),
                 new Vector2Int(5, 0), crowNearby, new Vector2Int(0, -1) };
             for (var attempt = 0; attempt < 12; attempt++)
             {
                 var goal = attempt < 5 ? interests[Random.Range(0, interests.Length)] :
-                    player.Cell + new Vector2Int(Random.Range(-4, 5), Random.Range(-4, 5));
-                if (GridPathfinder2D.TryFind(world, player.Cell, goal, route,
+                    world.PlayerCell + new Vector2Int(Random.Range(-4, 5), Random.Range(-4, 5));
+                if (GridPathfinder2D.TryFind(world.PlayerCell, goal, route,
                     CanAutoEnter)) return;
             }
         }
@@ -154,14 +166,15 @@ namespace Halka.Game.Player
         private void PlanIndoorRoute()
         {
             route.Clear();
-            var room = maps.GetMap("halka_house");
+            var world = World;
+            var room = world.GetMap("halka_house");
             var destinations = IndoorAutoRoutePlanner2D.CollectDestinations(
-                room, player.Cell, previousIndoorGoal, CanAutoEnter);
+                room, world.PlayerCell, previousIndoorGoal, CanAutoEnter);
             while (destinations.Count > 0)
             {
                 var index = Random.Range(0, destinations.Count);
                 var goal = destinations[index];
-                if (GridPathfinder2D.TryFind(world, player.Cell, goal, route, CanAutoEnter))
+                if (GridPathfinder2D.TryFind(world.PlayerCell, goal, route, CanAutoEnter))
                 {
                     previousIndoorGoal = goal;
                     return;
@@ -172,19 +185,19 @@ namespace Halka.Game.Player
 
         public bool CanAutoEnter(Vector2Int cell)
         {
-            var mapId = maps != null ? maps.ActiveMapId : "first_field";
-            if (mapId == "first_field" && house != null && cell == house.HouseDoorCell)
+            var world = World;
+            var mapId = world.HasMapRegistry ? world.ActiveMapId : "first_field";
+            if (mapId == "first_field" && world.HasHouse && cell == world.HouseDoorCell)
                 return false;
             if (mapId == "halka_house")
             {
-                var room = maps.GetMap("halka_house");
+                var room = world.GetMap("halka_house");
                 if (!room.Contains(cell) ||
                     room.TryGetMarker("interior_exit", out var exit) && cell == exit)
                     return false;
             }
             else if (mapId != "first_field") return false;
-            return world != null && world.CanEnter(cell) &&
-                (occupancy == null || occupancy.CanPlayerEnter(cell));
+            return world.CanEnter(cell) && world.CanPlayerEnter(cell);
         }
 
         private void OnUserActed() => RecordUserAction(Time.unscaledTime);
@@ -221,10 +234,45 @@ namespace Halka.Game.Player
 
         private void StopAuto()
         {
-            if (Active && player != null) player.CancelStep();
+            if (Active && World.HasPlayer) World.CancelStep();
             Active = false;
             route.Clear();
             routeIndex = 0;
+        }
+
+        // The 2D game's own components, read at call time (scene wiring and checks may set them).
+        private sealed class SceneWorld : IAutoModeWorld
+        {
+            private readonly AutoModeController owner;
+
+            public SceneWorld(AutoModeController controller) => owner = controller;
+
+            public string ActiveMapId => owner.maps != null ? owner.maps.ActiveMapId :
+                owner.house != null && owner.house.IsInside ? "halka_house" : "first_field";
+            public bool HasMapRegistry => owner.maps != null;
+            public MapDefinition GetMap(string mapId) => owner.maps.GetMap(mapId);
+            public bool HasPlayer => owner.player != null;
+            public Vector2Int PlayerCell => owner.player.Cell;
+            public bool PlayerIsMoving => owner.player.IsMoving;
+            public bool PlayerMovementLocked => owner.player.MovementLocked;
+            public bool TryStep(Vector2Int direction) => owner.player.TryStep(direction);
+            public void CancelStep() => owner.player.CancelStep();
+            public bool HasActiveMessage => owner.hud != null && owner.hud.HasActiveMessage;
+            public bool HasHouse => owner.house != null;
+            public Vector2Int HouseDoorCell => owner.house.HouseDoorCell;
+            public Vector2Int OutsideEntryCell => owner.house.OutsideEntryCell;
+            public bool CanEnter(Vector2Int cell) => owner.world != null && owner.world.CanEnter(cell);
+            public bool CanPlayerEnter(Vector2Int cell) =>
+                owner.occupancy == null || owner.occupancy.CanPlayerEnter(cell);
+
+            public bool TryGetCrowCell(out Vector2Int cell)
+            {
+                var active = owner.crow != null && owner.crow.isActiveAndEnabled;
+                cell = active ? owner.crow.Cell : default;
+                return active;
+            }
+
+            public bool Suspended => false;
         }
     }
 }
