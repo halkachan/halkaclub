@@ -1,0 +1,166 @@
+/* みねはうす web page: the game fills the window; the backdrop colour matches the game's. */
+:root {
+  --backdrop: #e7ded6;   /* = MineHouseSetup.Backdrop */
+  --ink: #6b4e3d;
+  --accent: #f6c945;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--backdrop);
+  overscroll-behavior: none;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#game-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: var(--backdrop);
+  outline: none;
+  touch-action: none;
+}
+
+#loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--ink);
+  font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+}
+
+#loading-title {
+  font-size: 28px;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+}
+
+#loading-bar {
+  width: min(240px, 60vw);
+  height: 10px;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff8ee;
+}
+
+#loading-fill {
+  width: 0%;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.15s linear;
+}
+
+#loading-text {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+/* Portrait phones: the 16:9 room leaves empty space above it, so a small hint fits there
+   without covering the game. Never blocks touches. */
+#rotate-hint {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: calc(env(safe-area-inset-top, 0px) + 16px);
+  padding: 0 16px;
+  text-align: center;
+  color: var(--ink);
+  font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+  #rotate-hint { display: block; }
+}
+
+#message {
+  display: none;
+  position: fixed;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  max-width: 90vw;
+  font-family: sans-serif;
+  font-size: 14px;
+}
+
+#message div {
+  background: #fff3c4;
+  color: #4a3a20;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+#message div.error {
+  background: #ffd9d6;
+  color: #6d1f1a;
+}
+
+#loading-credit {
+  max-width: min(420px, 86vw);
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: center;
+  opacity: 0.75;
+}
+
+/* Browser check panel: only with ?debug=1 (TemplateData/diagnostics.js). Small, at the bottom left. */
+#diag {
+  position: fixed;
+  left: calc(env(safe-area-inset-left, 0px) + 6px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+  max-width: min(560px, calc(100vw - 12px));
+  max-height: 60vh;
+  overflow: auto;
+  background: rgba(255, 254, 246, 0.94);
+  border: 1px solid #16150f;
+  color: #16150f;
+  font: 11px/1.45 ui-monospace, Menlo, Consolas, monospace;
+  z-index: 10;
+  -webkit-user-select: text;
+  user-select: text;
+  touch-action: auto;
+}
+
+#diag-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px;
+  border-bottom: 1px solid #16150f;
+}
+
+#diag-bar button {
+  min-height: 32px;
+  padding: 0 10px;
+  font: inherit;
+  background: #ffdc18;
+  border: 1px solid #16150f;
+  color: #16150f;
+}
+
+#diag-text {
+  margin: 0;
+  padding: 4px 6px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

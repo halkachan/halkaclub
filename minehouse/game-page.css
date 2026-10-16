@@ -1,0 +1,105 @@
+/* みねはうす page: the site's notebook look (../style.css) plus the game frame. */
+.game-notebook {
+  padding-bottom: 34px;
+}
+
+.game-page {
+  padding-top: 25px;
+}
+
+.game-page h1 {
+  margin: 0 0 4px;
+  font-size: clamp(24px, 4vw, 38px);
+}
+
+.game-current-version {
+  margin: 0 0 14px;
+  color: var(--pencil);
+  font-size: 13px;
+}
+
+/* The room is 16:9. The frame keeps that shape and is never taller than the screen, so on a phone held
+   sideways the whole room stays in view (the game inside letterboxes itself, nothing is cut). */
+.minehouse-frame {
+  position: relative;
+  width: min(100%, calc((100vh - 32px) * 16 / 9));
+  width: min(100%, calc((100svh - 32px) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 2px solid var(--ink);
+  background: #e7ded6;
+}
+
+.minehouse-frame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* separate rules: a browser that does not know one of these selectors would drop a combined rule */
+.minehouse-frame:fullscreen {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.minehouse-frame:-webkit-full-screen {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.game-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: 12px;
+}
+
+.game-fullscreen {
+  min-height: 44px;
+  padding: 0 16px;
+  color: var(--ink);
+  background: var(--yellow);
+  border: 2px solid var(--ink);
+  border-radius: 10px 4px 10px 4px / 4px 10px 4px 10px;
+  box-shadow: 3px 4px 0 rgba(22, 21, 15, 0.14);
+  cursor: pointer;
+}
+
+.game-fullscreen:hover,
+.game-fullscreen:focus-visible {
+  box-shadow: 5px 6px 0 var(--ink);
+}
+
+.game-fullscreen:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.game-rotate-hint,
+.game-controls,
+.game-credit {
+  margin: 0;
+  color: var(--pencil);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.game-controls {
+  margin-top: 12px;
+}
+
+.game-credit {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ink);
+  font-size: 12px;
+}
+
+.game-credit a {
+  color: inherit;
+}

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#e7ded6">
+    <title>みねはうす</title>
+    <link rel="stylesheet" href="TemplateData/style.css">
+    <script>
+      // Browser check panel (development use): only with ?debug=1 in the page address.
+      if (/(?:^|[?&])debug=1(?:&|$)/.test(location.search)) {
+        document.write('<script src="TemplateData/diagnostics.js"><\/script>');
+      }
+    </script>
+  </head>
+  <body>
+    <canvas id="game-canvas" tabindex="-1" aria-label="みねはうす"></canvas>
+
+    <div id="loading">
+      <div id="loading-title">みねはうす</div>
+      <div id="loading-bar"><div id="loading-fill"></div></div>
+      <div id="loading-text">よみこみ中…</div>
+      <div id="loading-credit">この作品は、<a href="https://piapro.jp/license/pcl/summary" target="_blank" rel="noopener">ピアプロ・キャラクター・ライセンス</a>に基づいてクリプトン・フューチャー・メディア株式会社のキャラクター「鏡音リン」「鏡音レン」を描いたものです。非公式の二次創作ゲームです。</div>
+    </div>
+
+    <div id="rotate-hint" aria-hidden="true">スマホを横向きにすると、大きく表示されます</div>
+    <div id="message" role="alert"></div>
+
+    <script>
+      var canvas = document.getElementById("game-canvas");
+      var messageBox = document.getElementById("message");
+
+      function showMessage(text, isError) {
+        if (isError && window.mineHouseDiag) window.mineHouseDiag.error(text);
+        var div = document.createElement("div");
+        div.textContent = text;
+        if (isError) div.className = "error";
+        messageBox.appendChild(div);
+        messageBox.style.display = "block";
+        if (!isError) setTimeout(function () {
+          messageBox.removeChild(div);
+          if (!messageBox.children.length) messageBox.style.display = "none";
+        }, 5000);
+      }
+
+      // The page itself never scrolls, zooms or opens a long-press menu over the game.
+      // Touches on the game also must not turn into emulated mouse clicks (Unity reads the touches itself).
+      canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+      document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
+      ["touchstart", "touchmove", "touchend"].forEach(function (type) {
+        canvas.addEventListener(type, function (e) { if (e.cancelable) e.preventDefault(); }, { passive: false });
+      });
+
+      var buildUrl = "Build";
+      var config = {
+        arguments: [],
+        dataUrl: buildUrl + "/0f71365ac95f73b87852e24d4c44d311.data.unityweb",
+        frameworkUrl: buildUrl + "/36dfcae9ba3654c52e0966e1e9e78118.framework.js.unityweb",
+        codeUrl: buildUrl + "/2180e9f7b5bb51e734301bf2bbce9db1.wasm.unityweb",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "HALKA",
+        productName: "みねはうす",
+        productVersion: "1.0.0",
+        showBanner: function (msg, type) { showMessage(msg, type === "error"); },
+      };
+
+      var script = document.createElement("script");
+      script.src = buildUrl + "/a460d14a3d53b072215c37eba148b94f.loader.js";
+      script.onload = function () {
+        createUnityInstance(canvas, config, function (progress) {
+          document.getElementById("loading-fill").style.width = Math.round(100 * progress) + "%";
+        }).then(function (instance) {
+          window.mineHouse = instance;
+          document.getElementById("loading").style.display = "none";
+        }).catch(function (message) {
+          document.getElementById("loading").style.display = "none";
+          showMessage("起動できませんでした: " + message, true);
+        });
+      };
+      script.onerror = function () {
+        showMessage("ゲームファイルを読み込めませんでした。", true);
+      };
+      document.body.appendChild(script);
+    </script>
+  </body>
+</html>

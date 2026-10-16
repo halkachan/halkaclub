@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="鏡音リン・レンが暮らす小さな家。ブラウザで遊べる二次創作ゲームです。" />
+    <title>みねはうす | HALKA</title>
+    <link rel="canonical" href="https://halkaclub.com/minehouse/" />
+
+    <!-- X / Discord などでURLを貼ったときのカード表示 -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="HALKA" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:url" content="https://halkaclub.com/minehouse/" />
+    <meta property="og:title" content="みねはうす | HALKA" />
+    <meta property="og:description" content="鏡音リン・レンが暮らす小さな家。ブラウザで遊べる二次創作ゲームです。" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="@halkamine" />
+    <meta name="twitter:creator" content="@halkamine" />
+    <link rel="icon" href="/favicon.png?v=2" type="image/png" />
+    <link rel="stylesheet" href="../style.css?v=1" />
+    <link rel="stylesheet" href="game-page.css?v=1" />
+  </head>
+  <body>
+    <main id="top">
+      <div class="yellow-tape" aria-hidden="true">
+        <span>みねはうす</span>
+        <span>little house of Rin &amp; Len</span>
+      </div>
+
+      <div class="notebook game-notebook">
+        <header class="site-header">
+          <a class="small-sign" href="../index.html">HALKA</a>
+          <p>みねはうす</p>
+          <span class="header-doodle" aria-hidden="true">家　〰</span>
+        </header>
+
+        <section class="game-page" aria-labelledby="game-title">
+          <h1 id="game-title">みねはうす</h1>
+          <p class="game-current-version">v0.3（試験公開）</p>
+
+          <!-- ゲーム本体は webgl/（Unity の Web ビルド）。?debug=1 を付けて開くと診断表示が出ます。 -->
+          <div class="minehouse-frame" id="minehouse-frame">
+            <iframe id="minehouse-game" src="webgl/?v=0.3" title="みねはうす（ゲーム画面）" allow="fullscreen; clipboard-write" loading="eager"></iframe>
+          </div>
+
+          <div class="game-tools">
+            <button type="button" class="game-fullscreen" id="minehouse-fullscreen">全画面で遊ぶ</button>
+            <p class="game-rotate-hint">スマホは横向きがおすすめです。</p>
+          </div>
+
+          <p class="game-controls">リンとレンが暮らす小さな家です。時間帯は現実の時計に合わせて、朝・昼・夕・夜・深夜と変わります。マウスや指でつまむと持ち上げられます。</p>
+
+          <p class="game-credit">
+            この作品は、<a href="https://piapro.jp/license/pcl/summary" target="_blank" rel="noopener">ピアプロ・キャラクター・ライセンス</a>に基づいてクリプトン・フューチャー・メディア株式会社のキャラクター「鏡音リン」「鏡音レン」を描いたものです。<br />
+            HALKA による非公式の二次創作ゲームです（無料）。
+          </p>
+
+          <a class="back-link" href="../index.html">← リンク集へ戻る</a>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      (function () {
+        "use strict";
+        var frame = document.getElementById("minehouse-frame");
+        var game = document.getElementById("minehouse-game");
+        var button = document.getElementById("minehouse-fullscreen");
+
+        // the browser check panel of the game (development use): /minehouse/?debug=1
+        if (/(?:^|[?&])debug=1(?:&|$)/.test(location.search)) game.src = "webgl/?v=0.3&debug=1";
+
+        // full screen: the game frame fills the screen; where a page element cannot go full screen
+        // (iPhone Safari), the game opens on its own page, which already fills the window
+        function openGamePage() {
+          location.href = game.getAttribute("src");
+        }
+        button.addEventListener("click", function () {
+          var request = frame.requestFullscreen || frame.webkitRequestFullscreen;
+          if (!request) {
+            openGamePage();
+            return;
+          }
+          try {
+            var result = request.call(frame);
+            if (result && typeof result.catch === "function") result.catch(openGamePage);
+          } catch (e) {
+            openGamePage();
+          }
+        });
+      })();
+    </script>
+    <!-- アクセス解析（Cloudflare Web Analytics）。Cookie は使いません。 -->
+    <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "b477de71645a48dca466e57a6464c448"}'></script>
+  </body>
+</html>
