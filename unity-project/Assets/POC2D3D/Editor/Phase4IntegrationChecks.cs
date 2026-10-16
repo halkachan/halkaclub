@@ -66,6 +66,7 @@ namespace Halka.Poc2D3D.EditorTools
                 else PlayerPrefs.DeleteKey(LifeLogController.SaveKey);
                 PlayerPrefs.Save();
             }
+            SavedSceneChecks();
             foreach (var failure in failures) Debug.LogError("PHASE4 FAIL " + failure);
             Debug.Log($"HARUKA Phase 4 integration checks: {passes} passed, {failures.Count} failed");
             return failures.Count == 0;
@@ -660,6 +661,29 @@ namespace Halka.Poc2D3D.EditorTools
                 back = Mathf.Max(back, -Vector3.Dot(offset, view.transform.forward));
             }
             return (left, right, up, back);
+        }
+
+        // The saved POC scene, started as the WebGL player starts it: the crow model built in the
+        // Editor is in the file, and starting the view must leave exactly one crow model (the first
+        // Phase 4 WebGL build showed the saved copy as a second, frozen crow).
+        private static void SavedSceneChecks()
+        {
+            EditorSceneManager.OpenScene(PocSceneBuilder.ScenePath, OpenSceneMode.Single);
+            try
+            {
+                var view = UnityEngine.Object.FindAnyObjectByType<PocCrowView3D>(FindObjectsInactive.Include);
+                var before = view != null ? view.transform.childCount : -1;
+                if (view != null) Invoke(view, "Awake");
+                var wings = view != null ? view.GetComponentsInChildren<Transform>(true).Count(t => t.name == "WingL") : -1;
+                Check("saved scene: starting the crow view leaves exactly one crow model (the Editor-built copy is replaced)",
+                    view != null && view.transform.childCount == 1 && wings == 1 &&
+                    view.transform.GetChild(0).gameObject == view.ModelInstance,
+                    $"children before {before}, after {(view != null ? view.transform.childCount : -1)}, wings {wings}");
+            }
+            finally
+            {
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            }
         }
 
         private static void CrowChecks(Ctx c)

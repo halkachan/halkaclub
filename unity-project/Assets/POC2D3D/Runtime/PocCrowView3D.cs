@@ -55,9 +55,11 @@ namespace Halka.Poc2D3D
             if (modelPrefab != null && instance == null) BuildModel();
         }
 
+        // (Re)creates the model. The scene keeps the copy built in the Editor; it is replaced here
+        // (like PocActorView), so only one crow model ever exists under this view.
         public void BuildModel()
         {
-            if (instance != null) DestroyImmediate(instance);
+            for (var i = transform.childCount - 1; i >= 0; i--) DestroyImmediate(transform.GetChild(i).gameObject);
             instance = Instantiate(modelPrefab, transform, false);
             instance.name = modelPrefab.name;
             // Blender fronts face South; turn the model so it looks along this transform's forward.
