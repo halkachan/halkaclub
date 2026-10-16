@@ -155,12 +155,22 @@ namespace Halka.Poc2D3D.EditorTools
       // exactly one CSS pixel per authored sprite pixel. Center with integer
       // offsets, leaving the existing mobile layout untouched. The canvas stays
       // inside the safe area (notch, home indicator); the insets are zero on desktops.
+      // Phones size it relative to the window, so a turn never leaves a canvas wider than the
+      // new window (which made the browser zoom the page out).
       function layoutCanvas() {
         const inset = safeInsets();
         const width = window.innerWidth - inset.left - inset.right;
         const height = window.innerHeight - inset.top - inset.bottom;
         const desktop = width >= 800 && height >= 576 && width >= height;
-        const scale = desktop ? Math.min(1, 576 / height) : 1;
+        if (!desktop) {
+          canvas.style.left = `${inset.left}px`;
+          canvas.style.top = `${inset.top}px`;
+          canvas.style.width = `calc(100% - ${inset.left + inset.right}px)`;
+          canvas.style.height = `calc(100% - ${inset.top + inset.bottom}px)`;
+          updateRotateGuide();
+          return;
+        }
+        const scale = Math.min(1, 576 / height);
         const canvasWidth = Math.floor(width * scale);
         const canvasHeight = Math.floor(height * scale);
         canvas.style.width = `${canvasWidth}px`;
