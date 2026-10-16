@@ -18,18 +18,121 @@ namespace Halka.Poc2D3D
         public bool Placeholder;
         public Transform PerchAnchor;
         public Renderer[] Renderers;
+        // Phase 3: interior wall sides (cut away on the camera side) and part-wise occlusion.
+        public bool IsWall;
+        public Vector2 WallOutward;
+        public Renderer[] CutawayRenderers;
+        public bool PartialOcclusion;
+        public float MinPickSize;
+        public bool CutAway { get; private set; }
 
-        public bool TryRaycast(Ray ray, out float distance)
+        private readonly Dictionary<Renderer, Vector3[]> triangles = new Dictionary<Renderer, Vector3[]>();
+
+        // Bounds test (fast, generous): occluders and clicks. Renderers switched off by a cutaway
+        // or the 2D see-through layer never block. forPick enlarges tiny things to MinPickSize.
+        public bool TryRaycast(Ray ray, out float distance, bool forPick = false)
         {
             distance = float.MaxValue;
             var hit = false;
             foreach (var item in Renderers)
-                if (item != null && item.enabled && item.bounds.IntersectRay(ray, out var d) && d < distance)
+            {
+                if (item == null || !item.enabled || item.forceRenderingOff) continue;
+                var bounds = item.bounds;
+                if (forPick && MinPickSize > 0f)
+                    bounds.size = Vector3.Max(bounds.size, Vector3.one * MinPickSize);
+                if (bounds.IntersectRay(ray, out var d) && d < distance)
+                {
+                    distance = d;
+                    hit = true;
+                }
+            }
+            return hit;
+        }
+
+        // Clicks: exact triangles for part-wise objects (the house, whose box also holds the space
+        // in front of it); otherwise the (enlarged) bounds, ignoring a ray that starts inside them.
+        public bool TryPick(Ray ray, out float distance)
+        {
+            distance = float.MaxValue;
+            var hit = false;
+            if (PartialOcclusion)
+            {
+                foreach (var part in Renderers)
+                    if (!HiddenForCamera(part) && RaycastPart(part, ray, out var d) && d < distance)
+                    {
+                        distance = d;
+                        hit = true;
+                    }
+                return hit;
+            }
+            foreach (var item in Renderers)
+            {
+                if (item == null || !item.enabled || item.forceRenderingOff || HiddenForCamera(item)) continue;
+                var bounds = item.bounds;
+                if (MinPickSize > 0f) bounds.size = Vector3.Max(bounds.size, Vector3.one * MinPickSize);
+                if (bounds.Contains(ray.origin)) continue;
+                if (bounds.IntersectRay(ray, out var d) && d < distance)
+                {
+                    distance = d;
+                    hit = true;
+                }
+            }
+            return hit;
+        }
+
+        // A part the 3D camera has hidden (only its shadow is drawn) does not stop a click.
+        private static bool HiddenForCamera(Renderer item) =>
+            item.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
+
+        // Exact triangle test for one part (the house roof, walls, door). The world-space
+        // triangles are cached when the view is built, before static batching merges meshes.
+        public void CacheTriangles()
+        {
+            triangles.Clear();
+            foreach (var item in Renderers)
+            {
+                var filter = item != null ? item.GetComponent<MeshFilter>() : null;
+                if (filter == null || filter.sharedMesh == null || !filter.sharedMesh.isReadable) continue;
+                var mesh = filter.sharedMesh;
+                var local = mesh.vertices;
+                var indices = mesh.triangles;
+                var world = new Vector3[indices.Length];
+                var matrix = item.transform.localToWorldMatrix;
+                for (var i = 0; i < indices.Length; i++) world[i] = matrix.MultiplyPoint3x4(local[indices[i]]);
+                triangles[item] = world;
+            }
+        }
+
+        public bool RaycastPart(Renderer part, Ray ray, out float distance)
+        {
+            distance = float.MaxValue;
+            if (part == null || part.forceRenderingOff) return false;
+            if (!triangles.TryGetValue(part, out var world)) return part.bounds.IntersectRay(ray, out distance);
+            var hit = false;
+            for (var i = 0; i + 2 < world.Length; i += 3)
+                if (PocMeshRay.Intersect(ray, world[i], world[i + 1], world[i + 2], out var d) && d < distance)
                 {
                     distance = d;
                     hit = true;
                 }
             return hit;
+        }
+
+        public void SetCutaway(bool cut)
+        {
+            CutAway = cut && CutawayRenderers != null && CutawayRenderers.Length > 0;
+            if (CutawayRenderers == null) return;
+            foreach (var item in CutawayRenderers)
+                if (item != null) item.forceRenderingOff = cut;
+        }
+
+        public void SetRendererHidden(Renderer item, bool hidden)
+        {
+            if (item == null) return;
+            item.shadowCastingMode = hidden
+                ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly
+                : CastShadows ? UnityEngine.Rendering.ShadowCastingMode.On
+                : UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
         public void SetHidden(bool hidden)
@@ -40,6 +143,30 @@ namespace Halka.Poc2D3D
                         ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly
                         : CastShadows ? UnityEngine.Rendering.ShadowCastingMode.On
                         : UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+    }
+
+    // Moller-Trumbore ray / triangle test (both faces), for exact part-wise occlusion without
+    // a physics module (the project ships with 2D physics only).
+    public static class PocMeshRay
+    {
+        public static bool Intersect(Ray ray, Vector3 a, Vector3 b, Vector3 c, out float distance)
+        {
+            distance = 0f;
+            var e1 = b - a;
+            var e2 = c - a;
+            var p = Vector3.Cross(ray.direction, e2);
+            var det = Vector3.Dot(e1, p);
+            if (Mathf.Abs(det) < 1e-8f) return false;
+            var inv = 1f / det;
+            var t = ray.origin - a;
+            var u = Vector3.Dot(t, p) * inv;
+            if (u < 0f || u > 1f) return false;
+            var q = Vector3.Cross(t, e1);
+            var v = Vector3.Dot(ray.direction, q) * inv;
+            if (v < 0f || u + v > 1f) return false;
+            distance = Vector3.Dot(e2, q) * inv;
+            return distance > 0f;
         }
     }
 
@@ -62,6 +189,7 @@ namespace Halka.Poc2D3D
         public int BuiltTriangles { get; private set; }
         public string BuiltMapId { get; private set; }
         public PocEnvironmentStats Environment { get; private set; }
+        public PocInteriorStats Interior { get; private set; }
         public GameObject GroundObject { get; private set; }
         public GameObject TuftObject { get; private set; }
 
@@ -124,6 +252,7 @@ namespace Halka.Poc2D3D
         private void BuildGround(SharedWorldModel world)
         {
             Environment = null;
+            Interior = null;
             GroundObject = TuftObject = null;
             var dressing = catalog.Environment;
             if (!world.IsInterior && dressing != null && dressing.IsComplete)
@@ -139,7 +268,14 @@ namespace Halka.Poc2D3D
                 BuildWalls(world);
                 return;
             }
-            // Interiors keep the Phase 1 generated floor until the house is modeled.
+            var interior = catalog.Interior;
+            if (world.IsInterior && interior != null && interior.IsComplete)
+            {
+                Interior = PocInteriorBuilder.Build(world, interior, catalog.VertexColorMaterial, mapRoot, views);
+                BuiltTriangles += Interior.Triangles;
+                return;
+            }
+            // Fallback: the Phase 1 generated floor and wall boxes.
             var mesh = new PocMeshBuilder();
             var map = world.Map;
             var margin = world.IsInterior ? 0 : OutdoorMargin;
@@ -240,10 +376,13 @@ namespace Halka.Poc2D3D
             view.CameraOccluder = binding == null || binding.cameraOccluder;
             view.CastShadows = binding == null || binding.castShadows;
             view.FadeInFront2D = binding != null && binding.fadeInFront2D;
+            view.PartialOcclusion = binding != null && binding.partialOcclusion;
+            view.MinPickSize = binding != null ? binding.minPickSize : 0f;
             view.Placeholder = binding == null || binding.placeholder;
             view.ModelName = binding != null ? binding.Pick(instance.InstanceId).name : null;
             view.Renderers = root.GetComponentsInChildren<Renderer>();
             view.SetHidden(false);
+            if (view.PartialOcclusion) view.CacheTriangles();
             if (binding != null && !string.IsNullOrEmpty(binding.perchAnchorName))
                 view.PerchAnchor = FindChild(root.transform, binding.perchAnchorName);
             return view;

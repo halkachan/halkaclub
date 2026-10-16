@@ -1,0 +1,4 @@
+fa178855e7bd6a947133fa669b49b471e716a598a0f46117fd8ec00f87c301c2 *unity-project/Assets/Content/Maps/Authoring/entity_catalog.hwentitycatalog.json
+5e2b03807c4c338c523d27b3eedd3fb7368f60f6fdb7515d8d91f5e37855d16a *unity-project/Assets/Content/Maps/Authoring/first_field.hwmap.json
+52c4d683f4506a2b077c18dc7c58358598a57be6ee416ba0cb11b999f430cfb2 *unity-project/Assets/Content/Maps/Authoring/halka_house.hwmap.json
+3e5d7eecb1612d33e6c60fab5cffc5c5db48a24f5311fef478833f2757bfb6da *unity-project/Assets/Content/Maps/Authoring/object_catalog.hwcatalog.json

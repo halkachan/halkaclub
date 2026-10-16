@@ -42,6 +42,23 @@ namespace Halka.Poc2D3D
         // The original sprite for this frame (null when the catalog has no sprites).
         public Sprite CurrentSprite { get; private set; }
         public PocSpriteSet Sprites => catalog != null && catalog.Player != null ? catalog.Player.sprites : null;
+
+        // 3D clicks: does the ray hit the drawn model (its bounds)? Never in 2D (sprite view).
+        public bool RayHitsBody(Ray ray, out float distance)
+        {
+            distance = float.MaxValue;
+            if (instance == null || !modelVisible) return false;
+            var found = false;
+            var bounds = new Bounds();
+            foreach (var item in instance.GetComponentsInChildren<Renderer>())
+            {
+                if (!item.enabled || item.forceRenderingOff) continue;
+                if (!found) bounds = item.bounds;
+                else bounds.Encapsulate(item.bounds);
+                found = true;
+            }
+            return found && bounds.IntersectRay(ray, out distance);
+        }
         public bool HasSprites => Sprites != null && Sprites.IsComplete;
 
         public void Configure(SharedWorldSession worldSession, Transform modelTransform, PocPresentationCatalog presentation = null)

@@ -10,11 +10,11 @@ namespace Halka.Poc2D3D.EditorTools
     // ProjectBuilder, never touches halkaworld/webgl and does not change Build Settings.
     public static class PocBuilder
     {
-        public const string OutputFolderName = "HARUKA_WORLD_ver3.0_PHASE2_1_PREVIEW";
+        public const string OutputFolderName = "HARUKA_WORLD_ver3.0_PHASE3_PREVIEW";
 
         public static string OutputPath => Path.GetFullPath(Path.Combine(PocSceneBuilder.RepositoryRoot, "..", OutputFolderName));
 
-        [MenuItem("HALKA/POC 2D3D/Build Phase 2.1 Preview WebGL outside repository")]
+        [MenuItem("HALKA/POC 2D3D/Build Phase 3 Preview WebGL outside repository")]
         public static void BuildFromMenu() => Build();
 
         public static void BuildBatch()

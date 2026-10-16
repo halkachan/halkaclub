@@ -161,11 +161,30 @@ namespace Halka.Poc2D3D
             worldCamera.farClipPlane = FarPlane;
             worldCamera.projectionMatrix = Matrix4x4.Ortho(-width * 0.5f, width * 0.5f,
                 -height * 0.5f, height * 0.5f, NearPlane, FarPlane);
+            UpdateWallCutaway();
             UpdateFades(deltaTime);
             // The mask also orders the player sprite against the world (and the faded trees are
             // depth-tested against it), so it is needed even with the outline off.
             if ((OutlinePixels > 0 || SpriteReady || fades.Count > 0) && outlineMaskShader != null) RenderOutlineMask();
             RenderFadeLayer();
+        }
+
+        // The 2D camera always looks North: interior wall sides facing South are cut down to
+        // their base, like the flat wall rows of the 2D room (walls never hide the floor).
+        public int CutWalls { get; private set; }
+
+        private void UpdateWallCutaway()
+        {
+            CutWalls = 0;
+            if (worldPresenter == null) return;
+            var interior = session.World.IsInterior;
+            foreach (var view in worldPresenter.Views)
+            {
+                if (view == null || !view.IsWall) continue;
+                var cut = interior && Vector2.Dot(view.WallOutward, Vector2.down) > PocThirdPersonCamera.CutawayFacing;
+                view.SetCutaway(cut);
+                if (cut) CutWalls++;
+            }
         }
 
         // ------------------------------------------------------------ see-through trees

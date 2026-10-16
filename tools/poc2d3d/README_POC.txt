@@ -1,26 +1,26 @@
-はるかわーるど ver3.0 Phase 2.1 Preview (local technical preview, not a release)
-==============================================================================
+はるかわーるど ver3.0 Phase 3 Preview (local technical preview, not a release)
+============================================================================
 
 Start (Unity Editor is not needed):
   1. Open PowerShell in this folder.
-  2. python serve_poc.py --port 8892
-  3. Open http://127.0.0.1:8892/ in Chrome.
-     Phone-style controls on a PC: http://127.0.0.1:8892/?touchControls=1
+  2. python serve_poc.py --port 8893
+  3. Open http://127.0.0.1:8893/ in Chrome.
+     Phone-style controls on a PC: http://127.0.0.1:8893/?touchControls=1
 
-What is new in Phase 2.1:
-  - 3D view: W/S/A/D (and the D-pad) move forward/back/left/right as seen from the camera.
-    A held key keeps its direction; S walks back toward the camera without spinning it.
-    After a sideways move the camera swings behind the player once you stop.
-  - 2D view: dark pixel outlines (1 px by default) around trees, flowers, stones, the house
-    and boxes, drawn in the low-resolution image before the integer upscale.
-  - 2D view: ﾊﾙｶﾁｬﾝ is the original hand-drawn sprite (same frames and timing as the game),
-    at the game's own pixel density, in front of or behind objects like in the 2D game.
-  - 2D view: a tree standing in front of ﾊﾙｶﾁｬﾝ turns see-through (40 %) while she is behind
-    it, and back when she leaves ("2D see-through trees" in the POC options).
-  - 3D view: a TEMPORARY blocky ﾊﾙｶﾁｬﾝ, Minecraft-like boxes painted after the 2D sprites,
-    replaces the grey mannequin. It is not the official model; the official one will
-    replace it later.
-  Phase 2 scenery (ground, roads, grass, trees, flowers, stones) is unchanged.
+What is new in Phase 3:
+  - The house, the bench, the signs and the well are Blender low-poly models (2D and 3D).
+  - Walk up into the house's entrance alcove to go inside, as before. The door sits at the
+    back of the alcove, so ﾊﾙｶﾁｬﾝ steps up to it instead of walking into it.
+  - The room is built from Blender pieces: floor, walls, the doorway and all furniture
+    (bed, desk, cushion, recording mic, easel, shelf).
+  - 3D indoors: the wall sides facing the camera are cut down to a low base, so the room,
+    the furniture and the player stay in sight from every direction.
+  - 3D outdoors: walking behind the house hides only the parts in the way (the roof alone,
+    or the walls with the door and the roof); the ground shadow stays.
+  - 3D clicks: a click that lands on ﾊﾙｶﾁｬﾝ but on no object examines what she faces (the
+    same as the A button); a standing wall stops clicks on things behind it.
+  Phase 2 scenery, the Phase 2.1 controls, outlines, see-through trees and the 2D sprite
+  of ﾊﾙｶﾁｬﾝ are unchanged. The 3D ﾊﾙｶﾁｬﾝ is still the TEMPORARY blocky model.
 
 Controls (same as the game):
   WASD / arrow keys : move one cell (hold to keep walking)
@@ -43,6 +43,7 @@ POC-only panel (top left, will NOT go into the real game):
   Grass outline     : OFF (default) / soft
   Inner lines       : soft (default) / OFF
   2D see-through trees : ON (default) / OFF
+  3D indoor walls   : cut camera side (default) / rays only (Phase 1/2 behaviour)
 
 The published game (ver2.9, still titled HALKA WORLD) and the ver3.0 Preview are not
-changed by this build.
+changed by this build. Phase 1, 2 and 2.1 previews stay in their own folders.

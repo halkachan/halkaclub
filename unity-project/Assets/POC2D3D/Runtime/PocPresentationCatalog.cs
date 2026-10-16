@@ -29,6 +29,10 @@ namespace Halka.Poc2D3D
         [Range(0f, 1f)] public float outlineStrength = 1f;
         [Tooltip("2D Pixel View: drawn see-through while it stands in front of the player sprite.")]
         public bool fadeInFront2D;
+        [Tooltip("3D: hide only the parts (e.g. the house roof) that stand between camera and player.")]
+        public bool partialOcclusion;
+        [Tooltip("Clicks: treat the object as at least this large (0 = its real bounds), for small things.")]
+        [Min(0f)] public float minPickSize;
 
         public GameObject Pick(string instanceId)
         {
@@ -55,6 +59,24 @@ namespace Halka.Poc2D3D
 
         public bool IsComplete => grassTiles.Count > 0 && dirtFull != null && dirtEdge != null &&
             dirtCorner != null && grassTufts.Count > 0;
+    }
+
+    // How interior maps are built in 3D (Phase 3): Blender floor tiles on every floor cell, and
+    // the blocking wall Surfaces as a low base (always shown) plus an upper part that is cut
+    // away on the camera's side. The doorway sits on the interior_exit marker cell.
+    [Serializable]
+    public sealed class PocInteriorPresentation
+    {
+        public List<GameObject> floorTiles = new List<GameObject>();
+        public GameObject wallBase;
+        public GameObject wallUpper;
+        public GameObject doorwayBase;
+        public GameObject doorwayUpper;
+        [Tooltip("Height of the wall base that stays visible when a wall is cut away.")]
+        public float wallBaseHeight = 0.14f;
+
+        public bool IsComplete => floorTiles.Count > 0 && floorTiles.TrueForAll(t => t != null) &&
+            wallBase != null && wallUpper != null && doorwayBase != null && doorwayUpper != null;
     }
 
     // The existing hand-drawn ﾊﾙｶﾁｬﾝ sprites, referenced as they are (the files are never
@@ -125,6 +147,7 @@ namespace Halka.Poc2D3D
         [SerializeField] private List<PocPresentationBinding> bindings = new List<PocPresentationBinding>();
         [SerializeField] private PocEnvironmentPresentation environment = new PocEnvironmentPresentation();
         [SerializeField] private PocActorPresentation player = new PocActorPresentation();
+        [SerializeField] private PocInteriorPresentation interior = new PocInteriorPresentation();
 
         public GameObject PlayerModel => playerModel;
         public Material VertexColorMaterial => vertexColorMaterial;
@@ -133,6 +156,8 @@ namespace Halka.Poc2D3D
         public PocEnvironmentPresentation Environment => environment;
         public PocActorPresentation Player => player;
         public void ConfigurePlayer(PocActorPresentation presentation) => player = presentation;
+        public PocInteriorPresentation Interior => interior;
+        public void ConfigureInterior(PocInteriorPresentation presentation) => interior = presentation;
 
         public void Configure(GameObject player, Material vertexColor, Material overlay,
             List<PocPresentationBinding> entries, PocEnvironmentPresentation dressing = null)
@@ -150,6 +175,35 @@ namespace Halka.Poc2D3D
                 if (binding.definitionId == definitionId && (binding.model != null ||
                     binding.variants != null && binding.variants.Count > 0)) return binding;
             return null;
+        }
+    }
+
+    // Phase 3: which Object Definitions still lack a real 3D model. A placeholder or no binding
+    // (drawn as a generated box) counts as missing, so a newly added Catalog object shows up.
+    public static class PocBindingAudit
+    {
+        public static IEnumerable<string> Missing(PocPresentationCatalog catalog, IEnumerable<string> definitionIds)
+        {
+            foreach (var id in definitionIds)
+            {
+                var binding = catalog != null ? catalog.Find(id) : null;
+                if (binding == null || binding.placeholder) yield return id;
+            }
+        }
+
+        public static string Report(PocPresentationCatalog catalog, IEnumerable<string> definitionIds)
+        {
+            var text = new System.Text.StringBuilder();
+            text.AppendLine("| Definition ID | 3D model | Status |");
+            text.AppendLine("|---|---|---|");
+            foreach (var id in definitionIds)
+            {
+                var binding = catalog.Find(id);
+                var model = binding == null ? "-" : binding.Pick(id).name;
+                var status = binding == null ? "missing (generated box)" : binding.placeholder ? "placeholder" : "Blender model";
+                text.Append("| ").Append(id).Append(" | ").Append(model).Append(" | ").Append(status).AppendLine(" |");
+            }
+            return text.ToString();
         }
     }
 

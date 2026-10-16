@@ -327,8 +327,12 @@ namespace Halka.Poc2D3D.EditorTools
             var stable = before.All(pair => c.Presenter.FindView(pair.Key).ModelName == pair.Value);
             Check("stones: variants chosen from the Instance ID, the same after a rebuild", variants >= 2 && stable,
                 string.Join(", ", before.Values.GroupBy(v => v).Select(g => g.Key + "x" + g.Count())));
-            Check("placeholders: house is still marked as a Phase 1 placeholder",
-                world.Objects.Where(o => o.DefinitionId == "house_main").All(o => c.Presenter.FindView(o.InstanceId).Placeholder));
+            // Phase 3 replaced the Phase 1 placeholder house with the Blender model; this check now
+            // confirms that state (it used to confirm the house was still the placeholder).
+            Check("house: the Phase 3 Blender model replaced the Phase 1 placeholder",
+                world.Objects.Where(o => o.DefinitionId == "house_main").All(o =>
+                    !c.Presenter.FindView(o.InstanceId).Placeholder && !c.Presenter.FindView(o.InstanceId).IsFallback &&
+                    c.Presenter.FindView(o.InstanceId).ModelName == "house_main"));
         }
 
         // ---------------------------------------------------------------- interaction

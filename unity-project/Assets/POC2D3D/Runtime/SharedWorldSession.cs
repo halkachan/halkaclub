@@ -99,6 +99,22 @@ namespace Halka.Poc2D3D
             Facing = facing;
         }
 
+        // Phase 3 checks and captures: a MAP EDITOR copy of the interior (never the official
+        // file), and a direct jump to either map that raises MapChanged like a real door.
+        public void UseInteriorMapForTest(MapDefinition map)
+        {
+            interiorMap = map;
+            World = null;
+            Initialize();
+        }
+
+        public void LoadMapForCheck(bool interiorMap, Vector2Int cell, FacingDirection facing)
+        {
+            var target = interiorMap ? interior : outdoor;
+            if (target == null) throw new InvalidOperationException("No interior map configured");
+            LoadMap(target, cell, facing);
+        }
+
         public void SetFacing(FacingDirection facing)
         {
             if (!motion.IsMoving) Facing = facing;

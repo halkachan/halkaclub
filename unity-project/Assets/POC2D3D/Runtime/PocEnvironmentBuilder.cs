@@ -152,14 +152,14 @@ namespace Halka.Poc2D3D
         private static float Jitter(string mapId, Vector2Int cell, string salt, float range) =>
             (PocStableHash.Unit(PocStableHash.Of(mapId, cell, salt)) * 2f - 1f) * range;
 
-        private static Mesh Mesh(GameObject model)
+        internal static Mesh Mesh(GameObject model)
         {
             var filter = model.GetComponentInChildren<MeshFilter>();
             return filter != null ? filter.sharedMesh : null;
         }
 
         // Copies transformed vertices into one mesh, so the whole ground is one draw call.
-        private sealed class MeshAppender
+        internal sealed class MeshAppender
         {
             private readonly List<Vector3> vertices = new List<Vector3>();
             private readonly List<Vector3> normals = new List<Vector3>();

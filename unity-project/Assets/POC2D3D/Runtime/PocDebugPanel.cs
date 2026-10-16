@@ -12,7 +12,7 @@ namespace Halka.Poc2D3D
     [DefaultExecutionOrder(200)]
     public sealed class PocDebugPanel : MonoBehaviour
     {
-        public const string PreviewTitle = "はるかわーるど ver3.0 Phase 2.1 Preview";
+        public const string PreviewTitle = "はるかわーるど ver3.0 Phase 3 Preview";
         private static readonly int[] PixelOptions = { 16, 24, 32 };
         private static readonly float[] PitchOptions = { 50f, 60f, 90f, 40f };
         private static readonly Color[] OutlineColors =
@@ -124,7 +124,7 @@ namespace Halka.Poc2D3D
             var row = 24f * s;
             var x = 8f;
             var y = 8f;
-            var rows = expanded ? 16 : 2;
+            var rows = expanded ? 17 : 2;
             var statsLines = showStats && expanded ? 12 : 6;
             panelRect = new Rect(x - 4f, y - 4f, width + 8f, rows * (row + 3f) + statsLines * row * 0.78f + 12f);
             GUI.DrawTexture(panelRect, panelBackground);
@@ -173,6 +173,9 @@ namespace Halka.Poc2D3D
                     pixel.InnerLines = pixel.InnerLines > 0f ? 0f : 0.5f;
                 if (Button(ref y, x, width, row, "2D see-through trees: " + (pixel.FadeEnabled ? "ON" : "OFF")))
                     pixel.FadeEnabled = !pixel.FadeEnabled;
+                // Phase 3: last row, so the rows above keep their places for the browser checks.
+                if (Button(ref y, x, width, row, "3D indoor walls: " + (third.WallCutaway ? "cut camera side" : "rays only")))
+                    third.WallCutaway = !third.WallCutaway;
             }
             GUI.Label(new Rect(x, y, width, statsLines * row * 0.78f + 8f), BuildText(), textStyle);
             DrawTitle(s);
@@ -232,7 +235,9 @@ namespace Halka.Poc2D3D
                 ? (usedMemory.LastValue / (1024f * 1024f)).ToString("0.0") + " MB" : "n/a").Append('\n');
             text.Append("3D heading ").Append(views.ThirdPerson.Heading).Append("  Yaw ")
                 .Append(views.ThirdPerson.CurrentYaw.ToString("0")).Append("  hidden ")
-                .Append(views.ThirdPerson.HiddenOccluders).Append('\n');
+                .Append(views.ThirdPerson.HiddenOccluders).Append("  parts ").Append(views.ThirdPerson.HiddenParts)
+                .Append("  cut ").Append(views.Mode == PocViewMode.PixelView2D ? views.PixelView.CutWalls
+                    : views.ThirdPerson.CutWalls).Append('\n');
             text.Append("Phase ").Append(timeOfDay.Phase).Append("  blend ").Append(timeOfDay.NightBlend.ToString("0.00"));
             return text.ToString();
         }

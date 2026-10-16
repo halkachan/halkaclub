@@ -75,6 +75,11 @@ namespace Halka.Poc2D3D
 
         // Shared picking for clicks: a ray from whichever camera is visible, tested against the
         // same Object views. The result is an Object Instance, not a camera-specific object.
+        // Phase 3: a wall in sight stops the click (nothing behind it is picked); small things
+        // use their MinPickSize; and in 3D a click that lands on ﾊﾙｶﾁｬﾝ but on no object means
+        // "what she faces" (exactly the A button's target), so a flower hidden behind her body
+        // can still be examined. An object on the click ray always wins, as before.
+        // Distance, facing and Action Point rules stay in SharedWorldModel.TryInteract.
         public SharedObjectInstance PickObject(Vector2 screenPosition)
         {
             var ray = Mode == PocViewMode.PixelView2D
@@ -82,16 +87,32 @@ namespace Halka.Poc2D3D
                 : thirdPerson.ViewCamera.ScreenPointToRay(screenPosition);
             PocObjectView best = null;
             var bestDistance = float.MaxValue;
+            var wallDistance = float.MaxValue;
             foreach (var view in presenter.Views)
             {
-                if (view == null || view.InstanceId == null || view.InstanceId.StartsWith("wall_")) continue;
-                if (view.TryRaycast(ray, out var distance) && distance < bestDistance)
+                if (view == null || view.InstanceId == null) continue;
+                if (view.InstanceId.StartsWith("wall_"))
+                {
+                    if (view.TryRaycast(ray, out var wall) && wall < wallDistance) wallDistance = wall;
+                    continue;
+                }
+                if (view.TryPick(ray, out var distance) && distance < bestDistance)
                 {
                     best = view;
                     bestDistance = distance;
                 }
             }
+            if (best != null && wallDistance < bestDistance) best = null;
+            LastPickUsedPlayer = false;
+            if (best == null && Mode == PocViewMode.ThirdPerson3D && actor != null &&
+                actor.RayHitsBody(ray, out var body) && body < wallDistance)
+            {
+                LastPickUsedPlayer = true;
+                return session.World.FindInteractionAhead(session.Cell, session.Facing, out _);
+            }
             return best != null ? session.World.FindInstance(best.InstanceId) : null;
         }
+
+        public bool LastPickUsedPlayer { get; private set; }
     }
 }

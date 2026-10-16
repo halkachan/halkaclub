@@ -41,6 +41,21 @@ namespace Halka.Poc2D3D.EditorTools
             "ground_dirt_corner", "grass_tuft_a", "grass_tuft_b", "grass_tuft_c", "tree_basic", "flower_basic",
             "stone_basic_a", "stone_basic_b", "stone_basic_c"
         };
+        // Phase 3: the house, outdoor fixtures, interior pieces and furniture made in Blender
+        // (blender/scripts/build_phase3_buildings.py).
+        public const string Phase3Models = Root + "/Models/Phase3/";
+        public static readonly string[] Phase3ModelNames =
+        {
+            "house_main", "bench_basic", "sign_basic", "well_basic", "bed_basic", "desk_basic", "cushion_basic",
+            "recording_mic_basic", "art_easel_basic", "studio_shelf_basic", "interior_floor_a", "interior_floor_b",
+            "interior_wall_base", "interior_wall_upper", "interior_doorway_base", "interior_doorway_upper"
+        };
+        // Definitions that Phase 3 turns from generated boxes / the Phase 1 house into Blender models.
+        public static readonly string[] Phase3Definitions =
+        {
+            "house_main", "bench_basic", "sign_basic", "well_basic", "bed_basic", "desk_basic", "cushion_basic",
+            "recording_mic_basic", "art_easel_basic", "studio_shelf_basic"
+        };
         public const string OutdoorMapPath = "Assets/Content/Maps/first_field.asset";
         public const string InteriorMapPath = "Assets/Content/Maps/halka_house.asset";
         public const string MessageFontPath = "Assets/Content/Fonts/HalkaMessageSubset.ttf";
@@ -73,6 +88,7 @@ namespace Halka.Poc2D3D.EditorTools
             foreach (var path in new[] { PlayerModelPath, TreeModelPath, HouseModelPath }) RemapModelMaterial(path, toon);
             foreach (var name in Phase2ModelNames) RemapModelMaterial(Phase2Models + name + ".fbx", toon);
             RemapModelMaterial(PlaceholderPlayerPath, toon);
+            foreach (var name in Phase3ModelNames) RemapModelMaterial(Phase3Models + name + ".fbx", toon);
             EnsureMaterial(OutlineMaterialPath, "HALKA/POC/OutlineComposite", null);
             EnsureMaterial(SpriteMaterialPath, "HALKA/POC/PixelSprite", null);
             EnsureMaterial(FadeMaterialPath, "HALKA/POC/FadeLayer", null);
@@ -90,12 +106,25 @@ namespace Halka.Poc2D3D.EditorTools
                 new PocPresentationBinding { definitionId = "tree_basic", model = Phase2("tree_basic"),
                     perchAnchorName = "PerchAnchor", fadeInFront2D = true },
                 new PocPresentationBinding { definitionId = "flower_basic", model = Phase2("flower_basic"),
-                    cameraOccluder = false },
+                    cameraOccluder = false, minPickSize = SmallPickSize },
                 new PocPresentationBinding { definitionId = "stone_basic", model = Phase2("stone_basic_a"),
-                    cameraOccluder = false, variants = new List<GameObject>
+                    cameraOccluder = false, minPickSize = SmallPickSize, variants = new List<GameObject>
                     { Phase2("stone_basic_a"), Phase2("stone_basic_b"), Phase2("stone_basic_c") } },
-                new PocPresentationBinding { definitionId = "house_main", model = LoadModel(HouseModelPath),
-                    placeholder = true }
+                // Phase 3 (Blender). The house hides only its blocking parts (roof / walls / door);
+                // low furniture never hides itself for the camera, tall thin pieces may.
+                new PocPresentationBinding { definitionId = "house_main", model = Phase3("house_main"),
+                    partialOcclusion = true },
+                new PocPresentationBinding { definitionId = "bench_basic", model = Phase3("bench_basic"), cameraOccluder = false },
+                new PocPresentationBinding { definitionId = "sign_basic", model = Phase3("sign_basic"), cameraOccluder = false },
+                new PocPresentationBinding { definitionId = "well_basic", model = Phase3("well_basic"), cameraOccluder = false },
+                new PocPresentationBinding { definitionId = "bed_basic", model = Phase3("bed_basic"), cameraOccluder = false },
+                new PocPresentationBinding { definitionId = "desk_basic", model = Phase3("desk_basic"), cameraOccluder = false },
+                new PocPresentationBinding { definitionId = "cushion_basic", model = Phase3("cushion_basic"),
+                    cameraOccluder = false, minPickSize = SmallPickSize },
+                new PocPresentationBinding { definitionId = "recording_mic_basic", model = Phase3("recording_mic_basic") },
+                new PocPresentationBinding { definitionId = "art_easel_basic", model = Phase3("art_easel_basic") },
+                new PocPresentationBinding { definitionId = "studio_shelf_basic", model = Phase3("studio_shelf_basic"),
+                    cameraOccluder = false }
             }, new PocEnvironmentPresentation
             {
                 grassTiles = new List<GameObject> { Phase2("ground_grass_a"), Phase2("ground_grass_b"), Phase2("ground_grass_c") },
@@ -109,6 +138,14 @@ namespace Halka.Poc2D3D.EditorTools
                 model = LoadModel(PlaceholderPlayerPath),
                 placeholder = true,
                 sprites = LoadCharacterSprites()
+            });
+            catalog.ConfigureInterior(new PocInteriorPresentation
+            {
+                floorTiles = new List<GameObject> { Phase3("interior_floor_a"), Phase3("interior_floor_b") },
+                wallBase = Phase3("interior_wall_base"),
+                wallUpper = Phase3("interior_wall_upper"),
+                doorwayBase = Phase3("interior_doorway_base"),
+                doorwayUpper = Phase3("interior_doorway_upper")
             });
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
@@ -261,6 +298,9 @@ namespace Halka.Poc2D3D.EditorTools
         }
 
         public static GameObject Phase2(string name) => LoadModel(Phase2Models + name + ".fbx");
+        public static GameObject Phase3(string name) => LoadModel(Phase3Models + name + ".fbx");
+        // Clicks on small things (flower, stone, cushion) count within at least this cube.
+        public const float SmallPickSize = 0.3f;
 
         private static GameObject LoadModel(string path)
         {

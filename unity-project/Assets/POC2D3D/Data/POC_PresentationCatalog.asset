@@ -28,6 +28,8 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 1
+    partialOcclusion: 0
+    minPickSize: 0
   - definitionId: flower_basic
     model: {fileID: 919132149155446097, guid: b07fa73f3afe0c144a758836c02cbb37, type: 3}
     variants: []
@@ -40,6 +42,8 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
+    partialOcclusion: 0
+    minPickSize: 0.3
   - definitionId: stone_basic
     model: {fileID: 919132149155446097, guid: bf617b6918105564c99b19ee64fa1bbf, type: 3}
     variants:
@@ -55,8 +59,10 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
+    partialOcclusion: 0
+    minPickSize: 0.3
   - definitionId: house_main
-    model: {fileID: 919132149155446097, guid: f324ab4544efe924a86b56261b79154b, type: 3}
+    model: {fileID: 919132149155446097, guid: 6fba3904bb5f465419287ff31b267e0a, type: 3}
     variants: []
     yawDegrees: 0
     meshOffset: {x: 0, y: 0, z: 0}
@@ -64,9 +70,137 @@ MonoBehaviour:
     cameraOccluder: 1
     castShadows: 1
     perchAnchorName: 
-    placeholder: 1
+    placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
+    partialOcclusion: 1
+    minPickSize: 0
+  - definitionId: bench_basic
+    model: {fileID: 919132149155446097, guid: bde8572dfde9124438d705db87ca3997, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: sign_basic
+    model: {fileID: 919132149155446097, guid: d7c6dc2c3b283204e82aee1cb2ba8736, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: well_basic
+    model: {fileID: 919132149155446097, guid: d38080a5b171443419ed5d39409c2106, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: bed_basic
+    model: {fileID: 919132149155446097, guid: 0d03ba6120c139f4aa3c7b363c7858ea, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: desk_basic
+    model: {fileID: 919132149155446097, guid: dba0467e8dc374f4a8fe1fe15ca56320, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: cushion_basic
+    model: {fileID: 919132149155446097, guid: 9bbb8de1e3744ea4b9a59f4a3bc21ed1, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    partialOcclusion: 0
+    minPickSize: 0.3
+  - definitionId: recording_mic_basic
+    model: {fileID: 919132149155446097, guid: 79c4a62415e9f9143ba07b3da8965bf9, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 1
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: art_easel_basic
+    model: {fileID: 919132149155446097, guid: c2159fa0d1ff8af4694cf0b3b4ca97de, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 1
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: studio_shelf_basic
+    model: {fileID: 919132149155446097, guid: 2a5cc87d220504d4383bdd2015f5efce, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    partialOcclusion: 0
+    minPickSize: 0
   environment:
     grassTiles:
     - {fileID: 919132149155446097, guid: 63963ae3c0300124ca9d7edb73f246bc, type: 3}
@@ -128,3 +262,12 @@ MonoBehaviour:
       - {fileID: 21300000, guid: 11afb286725589e42b91c29daad0344b, type: 3}
       - {fileID: 21300000, guid: e7298b4d37f83284e926343a7d8ff7c1, type: 3}
       offsetY: 0.25
+  interior:
+    floorTiles:
+    - {fileID: 919132149155446097, guid: 9e8a2d69601376d4b81eeeb4903a4f01, type: 3}
+    - {fileID: 919132149155446097, guid: 8482797b33950ff40a6fafc2ab463e01, type: 3}
+    wallBase: {fileID: 919132149155446097, guid: 516bcc850162ca348836c6a5441de670, type: 3}
+    wallUpper: {fileID: 919132149155446097, guid: 385852247231c8142b07a9ffd4dd21a2, type: 3}
+    doorwayBase: {fileID: 919132149155446097, guid: 2030bbff78ccc284a89ebddd12416e6f, type: 3}
+    doorwayUpper: {fileID: 919132149155446097, guid: 66e77b1a1cd00094d8d8a8faf480e0e7, type: 3}
+    wallBaseHeight: 0.14

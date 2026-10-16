@@ -77,7 +77,11 @@ namespace Halka.Poc2D3D
                 sun.color = Color.Lerp(new Color(1f, 0.96f, 0.88f), new Color(0.55f, 0.62f, 1f), lightNight);
                 sun.intensity = Mathf.Lerp(DaySunIntensity, indoor ? 0.42f : 0.26f, lightNight);
             }
-            if (skyCamera != null) skyCamera.backgroundColor = Color.Lerp(DaySky, NightSky, lightNight);
+            // Indoors the 3D view shows the map backdrop around the room, never the sky.
+            if (skyCamera != null)
+                skyCamera.backgroundColor = indoor && session != null && session.World != null
+                    ? session.World.Map.BackdropColor
+                    : Color.Lerp(DaySky, NightSky, lightNight);
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientLight = Color.Lerp(DayAmbient,
                 indoor ? new Color(0.3f, 0.32f, 0.45f) : new Color(0.16f, 0.2f, 0.36f), lightNight);

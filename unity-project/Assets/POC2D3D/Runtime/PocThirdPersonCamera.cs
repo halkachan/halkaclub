@@ -28,8 +28,8 @@ namespace Halka.Poc2D3D
         [SerializeField] private float distance = 2.5f;
         [SerializeField] private float pitch = 26f;
         [Header("Indoor")]
-        [SerializeField] private float indoorDistance = 2.2f;
-        [SerializeField] private float indoorPitch = 50f;
+        [SerializeField] private float indoorDistance = 2.9f; // Phase 3: wider room view (walls are cut away)
+        [SerializeField] private float indoorPitch = 52f;
         [Header("Smoothing")]
         [SerializeField] private float positionSmooth = 0.12f;
         [SerializeField] private float yawSmooth = 0.3f;
@@ -52,6 +52,13 @@ namespace Halka.Poc2D3D
         public float TargetYaw => targetYaw;
         public float CurrentYaw => yaw;
         public bool HideOccluders { get; set; } = true;
+        // Phase 3 interiors: the wall sides that face the camera are cut down to their base
+        // (a dollhouse view), so the room, the furniture and the player stay in sight.
+        public bool WallCutaway { get; set; } = true;
+        public const float CutawayFacing = 0.3f; // cos 72 deg: a side counts as facing the camera
+        public const float ChestHeight = 0.45f;
+        public int CutWalls { get; private set; }
+        public int HiddenParts { get; private set; }
         public PocIndoorCamera IndoorMode { get; set; } = PocIndoorCamera.CloserOffset;
         public int HiddenOccluders { get; private set; }
         public Camera ViewCamera => viewCamera;
@@ -162,17 +169,70 @@ namespace Halka.Poc2D3D
         private void UpdateOccluders()
         {
             HiddenOccluders = 0;
+            CutWalls = 0;
+            HiddenParts = 0;
             if (presenter == null) return;
             var cameraPosition = viewCamera.transform.position;
             var player = GridSpace3D.ToWorld(session.Position);
+            var forward = viewCamera.transform.forward;
+            var towardCamera = -new Vector2(forward.x, forward.z).normalized;
+            var interior = session.World.IsInterior;
             foreach (var view in presenter.Views)
             {
-                if (view == null || !view.CameraOccluder) continue;
+                if (view == null) continue;
+                if (view.IsWall)
+                {
+                    // Cutting away is a way of hiding occluders: off when hiding is off.
+                    var cut = HideOccluders && WallCutaway && interior &&
+                              Vector2.Dot(view.WallOutward, towardCamera) > CutawayFacing;
+                    view.SetCutaway(cut);
+                    if (cut)
+                    {
+                        CutWalls++;
+                        HiddenOccluders++;
+                        continue;
+                    }
+                }
+                if (!view.CameraOccluder) continue;
+                if (view.PartialOcclusion)
+                {
+                    // Only the parts that hide the player's body go: the roof alone when it is in
+                    // the way, or the whole body (walls with the door, and then the roof too, so
+                    // nothing floats). Standing in the entrance alcove hides nothing.
+                    var target = player + Vector3.up * ChestHeight;
+                    var hideBody = false;
+                    var hideRoof = false;
+                    foreach (var part in view.Renderers)
+                    {
+                        if (!HideOccluders || part == null || !BlocksPart(view, part, cameraPosition, target)) continue;
+                        if (IsRoof(part)) hideRoof = true;
+                        else hideBody = true;
+                    }
+                    hideRoof |= hideBody;
+                    foreach (var part in view.Renderers)
+                    {
+                        var hidePart = IsRoof(part) ? hideRoof : hideBody;
+                        view.SetRendererHidden(part, hidePart);
+                        if (hidePart) HiddenParts++;
+                    }
+                    continue;
+                }
                 var hide = HideOccluders && (Blocks(view, cameraPosition, player + Vector3.up * 0.75f) ||
                     Blocks(view, cameraPosition, player + Vector3.up * 0.2f));
                 view.SetHidden(hide);
                 if (hide) HiddenOccluders++;
             }
+        }
+
+        // Blender part names: "HouseRoof" is the roof; every other part belongs to the body.
+        public static bool IsRoof(Renderer part) => part != null && part.name.Contains("Roof");
+
+        private static bool BlocksPart(PocObjectView view, Renderer part, Vector3 from, Vector3 to)
+        {
+            var direction = to - from;
+            var length = direction.magnitude;
+            var ray = new Ray(from, direction / length);
+            return view.RaycastPart(part, ray, out var hit) && hit < length - 0.15f;
         }
 
         private static bool Blocks(PocObjectView view, Vector3 from, Vector3 to)
@@ -187,8 +247,14 @@ namespace Halka.Poc2D3D
         {
             if (presenter == null) return;
             foreach (var view in presenter.Views)
-                if (view != null) view.SetHidden(false);
+                if (view != null)
+                {
+                    view.SetHidden(false);
+                    view.SetCutaway(false);
+                }
             HiddenOccluders = 0;
+            CutWalls = 0;
+            HiddenParts = 0;
         }
     }
 }
