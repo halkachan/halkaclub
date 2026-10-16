@@ -33,6 +33,8 @@ namespace Halka.Poc2D3D
 
         public PocTreeFade3D(Material material) => fadeMaterial = material;
 
+        public Material FadeMaterial => fadeMaterial;
+
         public bool Enabled { get; set; } = true;
         public int FadingCount => order.Count;
         public float AlphaOf(PocObjectView view) => view != null && faded.TryGetValue(view, out var f) ? f.Alpha : 1f;

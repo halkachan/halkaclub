@@ -87,9 +87,20 @@ namespace Halka.Poc2D3D
         // the composition in the same frame (the camera then stays on the building's side).
         private Halka.Game.Player.FacingDirection? snapHeading;
 
-        // Phase 4: trees that hide the player fade to 40% instead of being hidden.
-        public PocTreeFade3D TreeFade { get; private set; }
-        public void ConfigureTreeFade(Material fadeMaterial) => TreeFade = new PocTreeFade3D(fadeMaterial);
+        // Phase 4: trees that hide the player fade to 40% instead of being hidden. The scene keeps
+        // the fade material; the fader itself is made from it on first use (also in a build).
+        [SerializeField] private Material treeFadeMaterial;
+        private PocTreeFade3D treeFade;
+
+        public PocTreeFade3D TreeFade =>
+            treeFade ??= treeFadeMaterial != null ? new PocTreeFade3D(treeFadeMaterial) : null;
+
+        public void ConfigureTreeFade(Material fadeMaterial)
+        {
+            treeFade?.RestoreAll();
+            treeFade = null;
+            treeFadeMaterial = fadeMaterial;
+        }
 
         public void Configure(Camera cameraComponent, SharedWorldSession worldSession, PocWorldPresenter worldPresenter,
             PocInput pocInput = null)

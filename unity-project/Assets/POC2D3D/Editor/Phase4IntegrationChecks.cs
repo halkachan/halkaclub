@@ -679,6 +679,14 @@ namespace Halka.Poc2D3D.EditorTools
                     view != null && view.transform.childCount == 1 && wings == 1 &&
                     view.transform.GetChild(0).gameObject == view.ModelInstance,
                     $"children before {before}, after {(view != null ? view.transform.childCount : -1)}, wings {wings}");
+                // Runtime state the builder sets must come back from the file (the first WebGL build lost
+                // the 3D tree fade): the fader is rebuilt from the saved fade material.
+                var third = UnityEngine.Object.FindAnyObjectByType<PocThirdPersonCamera>(FindObjectsInactive.Include);
+                var fade = third != null ? third.TreeFade : null;
+                Check("saved scene: the 3D tree fade comes back from the file with the fade shader",
+                    fade != null && fade.Enabled && fade.FadeMaterial != null &&
+                    fade.FadeMaterial.shader.name == "HALKA/POC/ToonVertexColorFade",
+                    fade == null ? "no fader" : fade.FadeMaterial != null ? fade.FadeMaterial.shader.name : "no material");
             }
             finally
             {
