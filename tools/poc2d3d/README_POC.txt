@@ -15,8 +15,8 @@ What is new in Phase 4 (one shared world: 2D and 3D show the same game state):
     (she never enters or leaves the house by herself). Any key, click or touch stops it.
   - Life Log: steps and play time count the same way in 2D and 3D.
   - The crow: one crow for both views. 2D draws the original crow sprites; 3D draws a
-    Blender low-poly crow. It walks, flies to a tree, perches, comes back down. Click it
-    (or press A while standing in front of it): 「カァ。」, its voice, and it flies off.
+    Blender low-poly crow. It walks, flies to a tree, perches, comes back down. Stand next
+    to it, facing it, and press A (or click it): 「カァ。」, its voice, and it flies off.
   - Bench and cushion: press A (or click) in front of them to sit; press A again (or click
     ﾊﾙｶﾁｬﾝ or the seat) to stand up. As in the game, she does not walk while seated.
     2D uses the game's sitting sprite, 3D a sitting pose on the seat.
