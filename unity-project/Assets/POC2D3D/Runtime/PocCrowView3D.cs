@@ -7,13 +7,22 @@ namespace Halka.Poc2D3D
     // Phase 4: draws the shared crow in the 3D view with the Blender model. It reads PocCrow
     // every frame and never writes to it. Simple transform animation per activity (no Rig):
     // ground idle (breathing bob), ground walk (hop and leg swing), takeoff / leaving the perch
-    // (fast flaps, leaning up), flying (flapping), perched (wings folded, a slow look-around),
-    // landing (flaps slowing, legs down). Hidden in the 2D view, which draws the sprite instead.
+    // (wings open, fast beats, leaning up), flying (wingbeats), perched (wings folded, a slow
+    // look-around), landing (slower beats, flaring). The wings open and fold in FoldSeconds.
+    // Hidden in the 2D view, which draws the sprite instead.
     [DefaultExecutionOrder(55)]
     public sealed class PocCrowView3D : MonoBehaviour
     {
         public const float FlapCyclesPerSecond = 3.2f;
-        public const float FlapDegrees = 62f;
+        // The folded wings lie along the body, tips back. Opening swings each wing out to its side
+        // (SpreadDegrees about the vertical axis) and turns its flat side toward level
+        // (TwistDegrees about its own length); a wingbeat then moves the open wing about the
+        // body's front-back axis, from DownstrokeDegrees (below level) to UpstrokeDegrees.
+        public const float SpreadDegrees = 80f;
+        public const float TwistDegrees = 55f;
+        public const float DownstrokeDegrees = -20f;
+        public const float UpstrokeDegrees = 40f;
+        public const float FoldSeconds = 0.15f;
 
         [SerializeField] private PocCrow crow;
         [SerializeField] private GameObject modelPrefab;
@@ -24,12 +33,14 @@ namespace Halka.Poc2D3D
         private Quaternion headBase, wingLeftBase, wingRightBase, tailBase, legLeftBase, legRightBase;
         private float yaw;
         private float yawVelocity;
+        private float open; // 0 folded .. 1 open
         private bool initialized;
         private bool shown = true;
 
         public bool Visible { get; set; } = true;
         public GameObject ModelInstance => instance;
-        public float CurrentFlapDegrees { get; private set; }
+        public float CurrentWingOpen { get; private set; }
+        public float CurrentWingRaiseDegrees { get; private set; }
         public float CurrentYaw => yaw;
         public bool ModelShown => shown && instance != null && instance.activeSelf;
 
@@ -104,7 +115,8 @@ namespace Halka.Poc2D3D
             if (!show || instance == null) return;
             transform.position = crow.transform.position;
             var targetYaw = TargetYaw();
-            if (!initialized || deltaTime <= 0f || turnSeconds <= 0f)
+            var snap = !initialized || deltaTime <= 0f || turnSeconds <= 0f;
+            if (snap)
             {
                 yaw = targetYaw;
                 yawVelocity = 0f;
@@ -112,6 +124,10 @@ namespace Halka.Poc2D3D
             }
             else yaw = Mathf.SmoothDampAngle(yaw, targetYaw, ref yawVelocity, turnSeconds, Mathf.Infinity, deltaTime);
             transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            var activity = crow.Activity;
+            var targetOpen = activity == CrowActivity.Takeoff || activity == CrowActivity.LeavingPerch ||
+                activity == CrowActivity.Flying || activity == CrowActivity.LandingGround ? 1f : 0f;
+            open = snap ? targetOpen : Mathf.MoveTowards(open, targetOpen, deltaTime / FoldSeconds);
             Animate(now);
         }
 
@@ -136,7 +152,7 @@ namespace Halka.Poc2D3D
         private void Animate(float now)
         {
             if (!HasParts) return;
-            var flap = 0f;
+            var beat = 0f;
             var legSwing = 0f;
             var bob = 0f;
             var pitch = 0f;
@@ -156,17 +172,17 @@ namespace Halka.Poc2D3D
                     break;
                 case CrowActivity.Takeoff:
                 case CrowActivity.LeavingPerch:
-                    flap = Wave(now, 1.4f);
+                    beat = Wave(now, 1.4f);
                     pitch = 14f; // nose up while climbing
                     tailLift = 10f;
                     break;
                 case CrowActivity.Flying:
-                    flap = Wave(now, 1f);
+                    beat = Wave(now, 1f);
                     pitch = -6f;
                     tailLift = 6f;
                     break;
                 case CrowActivity.LandingGround:
-                    flap = Wave(now, 0.7f) * 0.8f;
+                    beat = Wave(now, 0.7f) * 0.8f;
                     pitch = 12f; // flaring before touchdown
                     break;
                 case CrowActivity.Perched:
@@ -174,24 +190,38 @@ namespace Halka.Poc2D3D
                     headTurn = Mathf.Sin(now * 0.9f) * 25f;
                     break;
             }
-            CurrentFlapDegrees = flap;
             instance.transform.localPosition = Vector3.up * bob;
             instance.transform.localRotation = Quaternion.Euler(pitch, GridSpace3D.ModelFrontYawOffset, 0f);
-            // Wings rotate about the body's front-back axis (local Z after import): up and down.
-            wingLeft.localRotation = wingLeftBase * Quaternion.Euler(0f, 0f, flap);
-            wingRight.localRotation = wingRightBase * Quaternion.Euler(0f, 0f, -flap);
+            PoseWings(open, beat);
             legLeft.localRotation = legLeftBase * Quaternion.Euler(legSwing, 0f, 0f);
             legRight.localRotation = legRightBase * Quaternion.Euler(-legSwing, 0f, 0f);
             head.localRotation = headBase * Quaternion.Euler(0f, headTurn, 0f);
             tail.localRotation = tailBase * Quaternion.Euler(-tailLift, 0f, 0f);
         }
 
-        // 0 (folded) .. FlapDegrees (raised), a quick downstroke like a real wingbeat.
+        // openAmount 0 (folded) .. 1 (open); beatAmount 0 (bottom of the downstroke) .. 1 (top of
+        // the upstroke). In the model's own axes (front -Z, up Y): WingL is on +X, the tips point +Z.
+        public void PoseWings(float openAmount, float beatAmount)
+        {
+            if (!HasParts) return;
+            var spread = openAmount * SpreadDegrees;
+            var twist = openAmount * TwistDegrees;
+            var raise = openAmount * Mathf.Lerp(DownstrokeDegrees, UpstrokeDegrees, beatAmount);
+            CurrentWingOpen = openAmount;
+            CurrentWingRaiseDegrees = raise;
+            wingLeft.localRotation = wingLeftBase * Quaternion.Euler(0f, 0f, raise) *
+                Quaternion.Euler(0f, spread, 0f) * Quaternion.Euler(0f, 0f, -twist);
+            wingRight.localRotation = wingRightBase * Quaternion.Euler(0f, 0f, -raise) *
+                Quaternion.Euler(0f, -spread, 0f) * Quaternion.Euler(0f, 0f, twist);
+        }
+
+        // One wingbeat: 0 (bottom of the downstroke) .. 1 (top of the upstroke); the upstroke
+        // takes 45% of a beat, the (power) downstroke 55%.
         private static float Wave(float now, float speed)
         {
             var t = Mathf.Repeat(now * FlapCyclesPerSecond * speed, 1f);
             var s = t < 0.45f ? t / 0.45f : 1f - (t - 0.45f) / 0.55f;
-            return Mathf.SmoothStep(0f, 1f, s) * FlapDegrees;
+            return Mathf.SmoothStep(0f, 1f, s);
         }
     }
 }

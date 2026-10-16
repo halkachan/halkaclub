@@ -132,6 +132,7 @@ namespace Halka.Poc2D3D.EditorTools
             Set(crow, "nextActionAt", now + 1000f);
             crow.Tick(now);
             CrowFixed("crow_3d_ground_idle" + suffix, 0.25f);
+            if (suffix.Length == 0) CrowPoses();
             Shot2D("crow_2d_ground" + suffix, 1280, 720);
             // A wander step, caught half way.
             for (var i = 0; i < 40 && !crow.IsMoving; i++)
@@ -147,10 +148,10 @@ namespace Halka.Poc2D3D.EditorTools
             Set(crow, "nextFlightAt", now);
             crow.Tick(now += 0.01f);
             crow.Tick(now += 0.25f);
-            CrowFixed("crow_3d_takeoff" + suffix, 0.6f);
+            CrowFixed("crow_3d_takeoff" + suffix, 0.6f, true);
             crow.Tick(now += 0.3f);
             crow.Tick(now += 0.4f);
-            CrowFixed("crow_3d_flying" + suffix, 1.2f);
+            CrowFixed("crow_3d_flying" + suffix, 1.2f, true);
             switcher.SetMode(PocViewMode.PixelView2D);
             Shot2D("crow_2d_flying" + suffix, 1280, 720);
             for (var i = 0; i < 80 && crow.Activity != CrowActivity.Perched; i++) crow.Tick(now += 0.1f);
@@ -161,11 +162,39 @@ namespace Halka.Poc2D3D.EditorTools
             CrowFixed("crow_3d_landed" + suffix, 0.25f);
         }
 
-        private static void CrowFixed(string name, float height)
+        // Model sheet: wings folded, open at the bottom of a beat and at its top; from the front,
+        // the side and from behind (about where the 3D camera follows).
+        private static void CrowPoses()
+        {
+            switcher.SetMode(PocViewMode.ThirdPerson3D);
+            Advance(0f, 400, 400);
+            crowView.Apply(1f / 60f, fakeNow);
+            var target = crow.transform.position + Vector3.up * 0.14f;
+            var camera = third.ViewCamera;
+            foreach (var (pose, open, beat) in new[] { ("folded", 0f, 0f), ("down", 1f, 0f), ("up", 1f, 1f) })
+            foreach (var (view, viewYaw, pitch) in new[] { ("front", 180f, 8f), ("side", 90f, 8f), ("back", 25f, 28f) })
+            {
+                crowView.PoseWings(open, beat);
+                var rotation = Quaternion.Euler(pitch, crowView.CurrentYaw + viewYaw, 0f);
+                camera.transform.SetPositionAndRotation(target - rotation * Vector3.forward * 1.5f, rotation);
+                camera.fieldOfView = 30f;
+                Save3D($"crow_3d_pose_{pose}_{view}", 400, 400);
+            }
+            crowView.PoseWings(0f, 0f);
+        }
+
+        private static void CrowFixed(string name, float height, bool wingsUp = false)
         {
             switcher.SetMode(PocViewMode.ThirdPerson3D);
             Advance(0f, 1000, 750);
-            crowView.Apply(1f / 60f, fakeNow);
+            // Flapping shots are taken at the top of a wingbeat (as a photo of a bird would be).
+            var at = fakeNow;
+            for (var i = 0; wingsUp && i < 120; i++, at += 1f / 240f)
+            {
+                crowView.Apply(1f / 60f, at);
+                if (crowView.CurrentWingRaiseDegrees > PocCrowView3D.UpstrokeDegrees * 0.9f) break;
+            }
+            crowView.Apply(1f / 60f, at);
             var target = crow.transform.position + Vector3.up * 0.12f;
             var camera = third.ViewCamera;
             var rotation = Quaternion.Euler(18f, -30f, 0f);

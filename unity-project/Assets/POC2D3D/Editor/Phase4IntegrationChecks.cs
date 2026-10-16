@@ -642,6 +642,26 @@ namespace Halka.Poc2D3D.EditorTools
 
         // ---------------------------------------------------------------- 5. crow
 
+        // How far the wing meshes reach from the crow: to its left and right, above its feet and
+        // behind it (world space, along the crow's own axes).
+        private static (float left, float right, float up, float back) WingReach(PocCrowView3D view)
+        {
+            var origin = view.transform.position;
+            float left = 0f, right = 0f, up = 0f, back = 0f;
+            foreach (var wing in view.ModelInstance.GetComponentsInChildren<MeshFilter>()
+                         .Where(f => f.name == "WingL" || f.name == "WingR"))
+            foreach (var vertex in wing.sharedMesh.vertices)
+            {
+                var offset = wing.transform.TransformPoint(vertex) - origin;
+                var side = Vector3.Dot(offset, view.transform.right);
+                if (wing.name == "WingL") left = Mathf.Max(left, -side);
+                else right = Mathf.Max(right, side);
+                up = Mathf.Max(up, offset.y);
+                back = Mathf.Max(back, -Vector3.Dot(offset, view.transform.forward));
+            }
+            return (left, right, up, back);
+        }
+
         private static void CrowChecks(Ctx c)
         {
             var crow = c.Crow;
@@ -680,6 +700,9 @@ namespace Halka.Poc2D3D.EditorTools
                 c.CrowView.HasParts && c.CrowView.ModelShown &&
                 Vector3.Distance(c.CrowView.transform.position, crow.transform.position) < 0.001f,
                 $"parts {c.CrowView.HasParts} shown {c.CrowView.ModelShown}");
+            for (var i = 0; i < 12; i++) c.CrowView.Apply(1f / 60f, now);
+            var folded = WingReach(c.CrowView);
+            Check("crow on the ground in 3D: wings folded", c.CrowView.CurrentWingOpen == 0f, $"{c.CrowView.CurrentWingOpen:0.00}");
 
             // Natural flight: takeoff (still on the ground), flying (ground freed), perch on a tree.
             var ground = crow.Cell;
@@ -688,14 +711,34 @@ namespace Halka.Poc2D3D.EditorTools
             crow.Tick(now += 0.01f);
             Check("crow takeoff: keeps its ground cell until airborne; flight frames", crow.Activity == CrowActivity.Takeoff &&
                 !c.Session.CanPlayerEnter(ground) && crow.CurrentSprite.name.StartsWith("crow_flight_"));
-            crow.Tick(now += 0.3f);
             c.CrowView.Apply(1f / 60f, now);
-            var flapA = c.CrowView.CurrentFlapDegrees;
+            var opening = c.CrowView.CurrentWingOpen;
+            for (var i = 0; i < 12; i++) c.CrowView.Apply(1f / 60f, now);
+            Check("crow takeoff in 3D: the wings open over a moment (not at once)",
+                opening > 0f && opening < 1f && c.CrowView.CurrentWingOpen == 1f, $"{opening:0.00} -> {c.CrowView.CurrentWingOpen:0.00}");
             crow.Tick(now += 0.3f);
-            c.CrowView.Apply(1f / 60f, now + 0.07f);
-            var flapB = c.CrowView.CurrentFlapDegrees;
-            Check("crow flying: the ground is free; the 3D wings flap", crow.Activity == CrowActivity.Flying &&
-                c.Session.CanPlayerEnter(ground) && Mathf.Abs(flapA - flapB) > 1f, $"{flapA:0} {flapB:0}");
+            crow.Tick(now += 0.3f);
+            var flaps = Enumerable.Range(0, 20).Select(i =>
+            {
+                c.CrowView.Apply(1f / 60f, now + i / 60f);
+                return c.CrowView.CurrentWingRaiseDegrees;
+            }).ToArray();
+            Check("crow flying: the ground is free; the 3D wings beat", crow.Activity == CrowActivity.Flying &&
+                c.Session.CanPlayerEnter(ground) && flaps.Max() - flaps.Min() > 40f, $"{flaps.Min():0}..{flaps.Max():0}");
+            // Open wings reach out to both sides (not back along the body); a wingbeat moves them
+            // between a little below level and well above the back.
+            var beat = PocCrowView3D.FlapCyclesPerSecond;
+            c.CrowView.Apply(1f / 60f, (Mathf.Floor(now * beat) + 1f) / beat);
+            var down = WingReach(c.CrowView);
+            var downDegrees = c.CrowView.CurrentWingRaiseDegrees;
+            c.CrowView.Apply(1f / 60f, (Mathf.Floor(now * beat) + 1.45f) / beat);
+            var up = WingReach(c.CrowView);
+            Check("crow flying 3D: wings open out to both sides; the upstroke lifts them above the back",
+                down.left > folded.left + 0.08f && down.right > folded.right + 0.08f &&
+                down.back < folded.back && up.up > down.up + 0.04f && up.up > folded.up + 0.05f &&
+                Mathf.Approximately(downDegrees, PocCrowView3D.DownstrokeDegrees) &&
+                Mathf.Approximately(c.CrowView.CurrentWingRaiseDegrees, PocCrowView3D.UpstrokeDegrees),
+                $"folded {folded} down {down} up {up} ({downDegrees:0}..{c.CrowView.CurrentWingRaiseDegrees:0})");
             // View switches during the flight change nothing in the crow's state.
             var state = (crow.Activity, crow.TargetTreeView, crow.LegStart, crow.LegEnd);
             for (var i = 0; i < 4; i++) c.Switcher.Toggle();
@@ -709,10 +752,10 @@ namespace Halka.Poc2D3D.EditorTools
                 Vector3.Distance(crow.transform.position, perch.PerchAnchor.position) < 0.001f &&
                 c.Session.CanPlayerEnter(ground) && crow.CurrentSprite.name == "crow_idle_right");
             c.Switcher.SetMode(PocViewMode.ThirdPerson3D);
-            c.CrowView.Apply(1f / 60f, now);
+            for (var i = 0; i < 12; i++) c.CrowView.Apply(1f / 60f, now);
             Check("crow perched in 3D: the model sits at the anchor with folded wings",
                 Vector3.Distance(c.CrowView.transform.position, perch.PerchAnchor.position) < 0.001f &&
-                Mathf.Approximately(c.CrowView.CurrentFlapDegrees, 0f));
+                c.CrowView.CurrentWingOpen == 0f);
             c.Switcher.SetMode(PocViewMode.PixelView2D);
             Frame(c, 1f / 60f, Vector2Int.zero, false);
             Draw2D(c);
