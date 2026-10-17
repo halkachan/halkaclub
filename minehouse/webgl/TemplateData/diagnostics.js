@@ -19,6 +19,8 @@
   }
 
   window.mineHouseDiag = {
+    // the game's last report (for automated checks of the page)
+    last: function () { return game; },
     report: function (json) {
       try { game = JSON.parse(json); gameAt = performance.now(); }
       catch (e) { addError("diag: " + e.message); }
@@ -138,6 +140,11 @@
       if (game.hugs !== undefined)
         lines.push("ハグ: " + game.hugs + " 回 (抽選 " + game.hugDraws + " 回)" + (game.hugging ? " / ハグ中" : "") +
           (game.hugCooldown > 0 ? " / 待ち " + game.hugCooldown + "秒" : ""));
+      if (game.furniture)
+        lines.push("家具: 置いている " + game.furniture.placed + " / 持っている " + game.furniture.owned +
+          (game.furniture.editing ? " / 模様替え中" : "") +
+          " / 保存 " + (!game.furniture.canSave ? "できない" : game.furniture.saveFailed ? "失敗" : "OK") +
+          " (" + game.furniture.saves + " 回, 読み込み " + game.furniture.loaded + ")");
     } else {
       lines.push("ゲーム: " + (window.mineHouse ? "起動済み・状態待ち" : "読み込み中"));
     }

@@ -123,11 +123,12 @@ html, body {
   opacity: 0.75;
 }
 
-/* Browser check panel: only with ?debug=1 (TemplateData/diagnostics.js). Small, at the bottom left. */
+/* Browser check panel: only with ?debug=1 (TemplateData/diagnostics.js). Small, at the top left: the furniture
+   list and its buttons are along the bottom of the game, the furniture button at its top right. */
 #diag {
   position: fixed;
   left: calc(env(safe-area-inset-left, 0px) + 6px);
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+  top: calc(env(safe-area-inset-top, 0px) + 6px);
   max-width: min(560px, calc(100vw - 12px));
   max-height: 60vh;
   overflow: auto;
