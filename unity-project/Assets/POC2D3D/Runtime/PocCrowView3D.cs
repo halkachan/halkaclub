@@ -8,7 +8,8 @@ namespace Halka.Poc2D3D
     // every frame and never writes to it. Simple transform animation per activity (no Rig):
     // ground idle (breathing bob), ground walk (hop and leg swing), takeoff / leaving the perch
     // (wings open, fast beats, leaning up), flying (wingbeats), perched (wings folded, a slow
-    // look-around), landing (slower beats, flaring). The wings open and fold in FoldSeconds.
+    // look-around), landing (slower beats, flaring). The wings open and fold in FoldSeconds. In the
+    // air the legs are tucked back under the tail; for a ground landing they reach forward and down.
     // Hidden in the 2D view, which draws the sprite instead.
     [DefaultExecutionOrder(55)]
     public sealed class PocCrowView3D : MonoBehaviour
@@ -23,6 +24,12 @@ namespace Halka.Poc2D3D
         public const float DownstrokeDegrees = -20f;
         public const float UpstrokeDegrees = 40f;
         public const float FoldSeconds = 0.15f;
+        // Legs, about the hip's side-to-side axis (negative = feet back toward the tail). Tucked
+        // legs are also drawn smaller, as if drawn up into the belly feathers.
+        public const float LegTuckDegrees = -85f;
+        public const float LegTuckScale = 0.65f;
+        public const float LegReachDegrees = 30f;
+        public const float LegSeconds = 0.25f;
 
         [SerializeField] private PocCrow crow;
         [SerializeField] private GameObject modelPrefab;
@@ -31,9 +38,12 @@ namespace Halka.Poc2D3D
         private GameObject instance;
         private Transform head, wingLeft, wingRight, tail, legLeft, legRight;
         private Quaternion headBase, wingLeftBase, wingRightBase, tailBase, legLeftBase, legRightBase;
+        private Vector3 legLeftScale = Vector3.one, legRightScale = Vector3.one;
         private float yaw;
         private float yawVelocity;
         private float open; // 0 folded .. 1 open
+        private float tuck; // 0 standing .. 1 tucked back (flight)
+        private float reach; // 0 standing .. 1 reaching forward (landing)
         private bool initialized;
         private bool shown = true;
 
@@ -41,6 +51,7 @@ namespace Halka.Poc2D3D
         public GameObject ModelInstance => instance;
         public float CurrentWingOpen { get; private set; }
         public float CurrentWingRaiseDegrees { get; private set; }
+        public float CurrentLegPitchDegrees { get; private set; }
         public float CurrentYaw => yaw;
         public bool ModelShown => shown && instance != null && instance.activeSelf;
 
@@ -74,8 +85,8 @@ namespace Halka.Poc2D3D
             if (wingLeft != null) wingLeftBase = wingLeft.localRotation;
             if (wingRight != null) wingRightBase = wingRight.localRotation;
             if (tail != null) tailBase = tail.localRotation;
-            if (legLeft != null) legLeftBase = legLeft.localRotation;
-            if (legRight != null) legRightBase = legRight.localRotation;
+            if (legLeft != null) { legLeftBase = legLeft.localRotation; legLeftScale = legLeft.localScale; }
+            if (legRight != null) { legRightBase = legRight.localRotation; legRightScale = legRight.localScale; }
         }
 
         public bool HasParts => head != null && wingLeft != null && wingRight != null && tail != null &&
@@ -130,6 +141,11 @@ namespace Halka.Poc2D3D
             var targetOpen = activity == CrowActivity.Takeoff || activity == CrowActivity.LeavingPerch ||
                 activity == CrowActivity.Flying || activity == CrowActivity.LandingGround ? 1f : 0f;
             open = snap ? targetOpen : Mathf.MoveTowards(open, targetOpen, deltaTime / FoldSeconds);
+            var targetTuck = activity == CrowActivity.Takeoff || activity == CrowActivity.LeavingPerch ||
+                activity == CrowActivity.Flying ? 1f : 0f;
+            var targetReach = activity == CrowActivity.LandingGround ? 1f : 0f;
+            tuck = snap ? targetTuck : Mathf.MoveTowards(tuck, targetTuck, deltaTime / LegSeconds);
+            reach = snap ? targetReach : Mathf.MoveTowards(reach, targetReach, deltaTime / LegSeconds);
             Animate(now);
         }
 
@@ -195,8 +211,7 @@ namespace Halka.Poc2D3D
             instance.transform.localPosition = Vector3.up * bob;
             instance.transform.localRotation = Quaternion.Euler(pitch, GridSpace3D.ModelFrontYawOffset, 0f);
             PoseWings(open, beat);
-            legLeft.localRotation = legLeftBase * Quaternion.Euler(legSwing, 0f, 0f);
-            legRight.localRotation = legRightBase * Quaternion.Euler(-legSwing, 0f, 0f);
+            PoseLegs(tuck, reach, legSwing);
             head.localRotation = headBase * Quaternion.Euler(0f, headTurn, 0f);
             tail.localRotation = tailBase * Quaternion.Euler(-tailLift, 0f, 0f);
         }
@@ -215,6 +230,20 @@ namespace Halka.Poc2D3D
                 Quaternion.Euler(0f, spread, 0f) * Quaternion.Euler(0f, 0f, -twist);
             wingRight.localRotation = wingRightBase * Quaternion.Euler(0f, 0f, -raise) *
                 Quaternion.Euler(0f, -spread, 0f) * Quaternion.Euler(0f, 0f, twist);
+        }
+
+        // tuckAmount 0 (standing) .. 1 (tucked back under the tail, flight); reachAmount 0 .. 1
+        // (reaching forward and down for a landing); swing: the walk's alternating leg swing.
+        public void PoseLegs(float tuckAmount, float reachAmount, float swing = 0f)
+        {
+            if (!HasParts) return;
+            var legPitch = tuckAmount * LegTuckDegrees + reachAmount * LegReachDegrees;
+            CurrentLegPitchDegrees = legPitch;
+            legLeft.localRotation = legLeftBase * Quaternion.Euler(legPitch + swing, 0f, 0f);
+            legRight.localRotation = legRightBase * Quaternion.Euler(legPitch - swing, 0f, 0f);
+            var size = Mathf.Lerp(1f, LegTuckScale, tuckAmount);
+            legLeft.localScale = legLeftScale * size;
+            legRight.localScale = legRightScale * size;
         }
 
         // One wingbeat: 0 (bottom of the downstroke) .. 1 (top of the upstroke); the upstroke

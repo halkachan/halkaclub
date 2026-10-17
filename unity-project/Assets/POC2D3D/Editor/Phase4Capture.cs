@@ -75,6 +75,66 @@ namespace Halka.Poc2D3D.EditorTools
             }
         }
 
+        // ---------------------------------------------------------------- camera distance
+
+        // Batch: -executeMethod Halka.Poc2D3D.EditorTools.Phase4Capture.CameraDistanceBatch
+        // The same places from the 3D camera at several distances (outdoor / indoor pairs).
+        public static void CameraDistanceBatch()
+        {
+            try
+            {
+                output = Path.GetFullPath(Path.Combine(PocSceneBuilder.RepositoryRoot, "..",
+                    "HARUKA_WORLD_ver3.0_PHASE4_CAPTURES", "unity", "camera_distance"));
+                Directory.CreateDirectory(output);
+                var randomState = UnityEngine.Random.state;
+                UnityEngine.Random.InitState(4);
+                var root = Setup();
+                try
+                {
+                    time.Override = PocPhaseOverride.Morning;
+                    foreach (var (outdoor, indoor) in new[] { (2.5f, 2.9f), (3.0f, 3.3f), (3.4f, 3.6f), (3.8f, 4.0f) })
+                    {
+                        third.OutdoorDistance = outdoor;
+                        third.IndoorDistance = indoor;
+                        var tag = $"{outdoor:0.0}_{indoor:0.0}";
+                        foreach (var (name, cell, facing, w, h) in new[]
+                                 {
+                                     ("outdoor_start", new Vector2Int(0, 0), FacingDirection.Up, 1280, 720),
+                                     ("outdoor_trees", new Vector2Int(4, -2), FacingDirection.Up, 1280, 720),
+                                     ("phone_844x390", new Vector2Int(0, 0), FacingDirection.Up, 1688, 780),
+                                 })
+                        {
+                            ToOutdoor(cell, facing);
+                            switcher.SetMode(PocViewMode.ThirdPerson3D);
+                            session.PlaceForCheck(cell, facing);
+                            third.SnapToTarget();
+                            Settle3D(w, h, 0.6f);
+                            Save3D($"{name}_{tag}", w, h);
+                        }
+                        ToInterior(new Vector2Int(0, -2));
+                        switcher.SetMode(PocViewMode.ThirdPerson3D);
+                        session.PlaceForCheck(new Vector2Int(0, -2), FacingDirection.Up);
+                        third.SnapToTarget();
+                        Settle3D(1280, 720, 0.6f);
+                        Save3D($"indoor_{tag}", 1280, 720);
+                        switcher.SetMode(PocViewMode.PixelView2D);
+                    }
+                    Debug.Log("HARUKA Phase 4 camera distance captures: " + output);
+                }
+                finally
+                {
+                    UnityEngine.Random.state = randomState;
+                    UnityEngine.Object.DestroyImmediate(root);
+                }
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
+
         // ---------------------------------------------------------------- crow video frames
 
         // Batch: -executeMethod Halka.Poc2D3D.EditorTools.Phase4Capture.CrowVideoBatch
@@ -249,16 +309,19 @@ namespace Halka.Poc2D3D.EditorTools
             crowView.Apply(1f / 60f, fakeNow);
             var target = crow.transform.position + Vector3.up * 0.14f;
             var camera = third.ViewCamera;
-            foreach (var (pose, open, beat) in new[] { ("folded", 0f, 0f), ("down", 1f, 0f), ("up", 1f, 1f) })
+            foreach (var (pose, open, beat, tuck, reach) in new[]
+                     { ("folded", 0f, 0f, 0f, 0f), ("down", 1f, 0f, 1f, 0f), ("up", 1f, 1f, 1f, 0f), ("landing", 1f, 0.4f, 0f, 1f) })
             foreach (var (view, viewYaw, pitch) in new[] { ("front", 180f, 8f), ("side", 90f, 8f), ("back", 25f, 28f) })
             {
                 crowView.PoseWings(open, beat);
+                crowView.PoseLegs(tuck, reach);
                 var rotation = Quaternion.Euler(pitch, crowView.CurrentYaw + viewYaw, 0f);
                 camera.transform.SetPositionAndRotation(target - rotation * Vector3.forward * 1.5f, rotation);
                 camera.fieldOfView = 30f;
                 Save3D($"crow_3d_pose_{pose}_{view}", 400, 400);
             }
             crowView.PoseWings(0f, 0f);
+            crowView.PoseLegs(0f, 0f);
         }
 
         private static void CrowFixed(string name, float height, bool wingsUp = false)

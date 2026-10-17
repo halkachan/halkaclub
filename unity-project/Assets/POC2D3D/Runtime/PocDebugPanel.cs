@@ -152,7 +152,7 @@ namespace Halka.Poc2D3D
             var x = 8f;
             // Below the game's Menu button (GameMenuController: 12 px from the top, 48 px tall).
             var y = gameplay != null && gameplay.Menu != null ? 68f : 8f;
-            var rows = expanded ? 19 : 2;
+            var rows = expanded ? 20 : 2;
             var statsLines = showStats ? expanded ? 13 : 8 : 6;
             panelRect = new Rect(x - 4f, y - 4f, width + 8f, rows * (row + 3f) + statsLines * row * 0.78f + 12f);
             GUI.DrawTexture(panelRect, panelBackground);
@@ -210,6 +210,8 @@ namespace Halka.Poc2D3D
                     if (fade != null) fade.Enabled = !fade.Enabled;
                 if (Button(ref y, x, width, row, "3D exit camera: " + (third.ExitComposition ? "house front" : "behind (Phase 3)")))
                     third.ExitComposition = !third.ExitComposition;
+                if (Button(ref y, x, width, row, "3D cam distance: " + DistanceLabel(third)))
+                    NextDistance(third);
             }
             GUI.Label(new Rect(x, y, width, statsLines * row * 0.78f + 8f), BuildText(), textStyle);
             DrawTitle(s);
@@ -235,6 +237,30 @@ namespace Halka.Poc2D3D
             var clicked = GUI.Button(new Rect(x, y, width, height), label, buttonStyle);
             y += height + 3f;
             return clicked;
+        }
+
+        // Outdoor / indoor camera distances to compare (POC only): the new standard first.
+        private static readonly (float outdoor, float indoor, string name)[] Distances =
+        {
+            (PocThirdPersonCamera.StandardOutdoorDistance, PocThirdPersonCamera.StandardIndoorDistance, "standard"),
+            (2.5f, 2.9f, "Phase 3"), (3.0f, 3.3f, "a little closer"), (3.8f, 4.0f, "farther")
+        };
+
+        private static int DistanceIndex(PocThirdPersonCamera camera) => System.Array.FindIndex(Distances, d =>
+            Mathf.Approximately(d.outdoor, camera.OutdoorDistance) && Mathf.Approximately(d.indoor, camera.IndoorDistance));
+
+        private static string DistanceLabel(PocThirdPersonCamera camera)
+        {
+            var index = DistanceIndex(camera);
+            return camera.OutdoorDistance.ToString("0.0") + "/" + camera.IndoorDistance.ToString("0.0") +
+                (index >= 0 ? " " + Distances[index].name : "");
+        }
+
+        private static void NextDistance(PocThirdPersonCamera camera)
+        {
+            var next = Distances[(DistanceIndex(camera) + 1) % Distances.Length];
+            camera.OutdoorDistance = next.outdoor;
+            camera.IndoorDistance = next.indoor;
         }
 
         private static T Next<T>(T[] options, T current)

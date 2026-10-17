@@ -35,11 +35,16 @@ namespace Halka.Poc2D3D
         [SerializeField] private PocInput input;
         [SerializeField, Min(0f)] private float idleTurnDelay = 0.35f;
 
+        // Phase 4 (user feedback): the camera stands a little farther back than in Phase 3
+        // (outdoor 2.5, indoor 2.9), so she is smaller and more of the world shows; same angles.
+        public const float StandardOutdoorDistance = 3.4f;
+        public const float StandardIndoorDistance = 3.6f;
+
         [Header("Outdoor")]
-        [SerializeField] private float distance = 2.5f;
+        [SerializeField] private float distance = StandardOutdoorDistance;
         [SerializeField] private float pitch = 26f;
         [Header("Indoor")]
-        [SerializeField] private float indoorDistance = 2.9f; // Phase 3: wider room view (walls are cut away)
+        [SerializeField] private float indoorDistance = StandardIndoorDistance; // walls are cut away
         [SerializeField] private float indoorPitch = 52f;
         [Header("Smoothing")]
         [SerializeField] private float positionSmooth = 0.12f;
@@ -71,6 +76,9 @@ namespace Halka.Poc2D3D
         public int CutWalls { get; private set; }
         public int HiddenParts { get; private set; }
         public PocIndoorCamera IndoorMode { get; set; } = PocIndoorCamera.CloserOffset;
+        // The camera's distance behind the player (outdoors / indoors); the angle stays the same.
+        public float OutdoorDistance { get => distance; set => distance = value; }
+        public float IndoorDistance { get => indoorDistance; set => indoorDistance = value; }
         public int HiddenOccluders { get; private set; }
         public Camera ViewCamera => viewCamera;
 

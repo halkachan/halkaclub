@@ -24,6 +24,8 @@ What is new in Phase 4 (one shared world: 2D and 3D show the same game state):
     move returns to the usual camera (a key still held from walking out has to be released
     once).
   - 3D: a tree between the camera and ﾊﾙｶﾁｬﾝ turns 40% see-through (0.25 s), like 2D.
+  - 3D: the camera stands a little farther back than in Phase 3 (outdoor 3.4, indoor 3.6).
+  - 3D crow: in flight its legs are drawn up under the body; for a landing they reach forward.
   - Phones are played in landscape. Held upright, the page shows
     「スマホを横向きにしてください」 and the game pauses (no walking, no A, no AUTO, the play
     time does not count; the world clock keeps running). Turning the phone back continues
@@ -57,6 +59,7 @@ POC-only panel (?debug=1, below the Menu button; will NOT go into the real game)
   3D indoor walls   : cut camera side (default) / rays only (Phase 1/2 behaviour)
   3D see-through trees : ON (default) / OFF (hide, the Phase 3 behaviour)
   3D exit camera    : house front (default) / behind (Phase 3 behaviour)
+  3D cam distance   : 3.4/3.6 standard / 2.5/2.9 Phase 3 / 3.0/3.3 / 3.8/4.0 (outdoor/indoor)
 
 The published game (ver2.9, still titled HALKA WORLD) and the ver3.0 Preview are not
 changed by this build. Phase 1, 2, 2.1 and 3 previews stay in their own folders.

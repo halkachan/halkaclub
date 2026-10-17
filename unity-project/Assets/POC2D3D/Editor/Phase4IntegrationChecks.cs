@@ -53,6 +53,7 @@ namespace Halka.Poc2D3D.EditorTools
                 TreeFadeChecks(c);
                 LandscapeChecks(c);
                 AutoChecks(c);
+                CameraDistanceChecks(c);
                 CrowChecks(c);
                 SeatChecks(c);
                 LifeLogTimeMenuChecks(c);
@@ -694,6 +695,51 @@ namespace Halka.Poc2D3D.EditorTools
             }
         }
 
+        // How the leg meshes sit: the lowest point above the crow's feet, and how far they reach
+        // behind and in front of it (world space, along the crow's own forward axis).
+        private static (float low, float back, float front) LegReach(PocCrowView3D view)
+        {
+            var origin = view.transform.position;
+            float low = float.MaxValue, back = 0f, front = 0f;
+            foreach (var leg in view.ModelInstance.GetComponentsInChildren<MeshFilter>()
+                         .Where(f => f.name == "LegL" || f.name == "LegR"))
+            foreach (var vertex in leg.sharedMesh.vertices)
+            {
+                var offset = leg.transform.TransformPoint(vertex) - origin;
+                var along = Vector3.Dot(offset, view.transform.forward);
+                low = Mathf.Min(low, offset.y);
+                back = Mathf.Max(back, -along);
+                front = Mathf.Max(front, along);
+            }
+            return (low, back, front);
+        }
+
+        // Phase 4 feedback: the 3D camera stands farther back than in Phase 3 (same angles).
+        private static void CameraDistanceChecks(Ctx c)
+        {
+            c.Switcher.SetMode(PocViewMode.ThirdPerson3D);
+            float Boom()
+            {
+                c.Third.SnapToTarget();
+                c.Third.UpdateView(1f / 60f, clock);
+                var focus = GridSpace3D.ToWorld(c.Session.Position, 0.5f);
+                return Vector3.Distance(c.Third.ViewCamera.transform.position, focus);
+            }
+            ToMap(c, false, new Vector2Int(0, 0), FacingDirection.Up);
+            var outdoor = Boom();
+            var outdoorPitch = c.Third.ViewCamera.transform.eulerAngles.x;
+            ToMap(c, true, new Vector2Int(0, -2), FacingDirection.Up);
+            var indoor = Boom();
+            var indoorPitch = c.Third.ViewCamera.transform.eulerAngles.x;
+            Check("3D camera distance: outdoor 3.4 and indoor 3.6, farther than Phase 3 (2.5 / 2.9); angles 26 / 52 kept",
+                Mathf.Abs(outdoor - PocThirdPersonCamera.StandardOutdoorDistance) < 0.01f && outdoor > 2.5f + 0.5f &&
+                Mathf.Abs(indoor - PocThirdPersonCamera.StandardIndoorDistance) < 0.01f && indoor > 2.9f + 0.5f &&
+                Mathf.Abs(Mathf.DeltaAngle(outdoorPitch, 26f)) < 0.1f && Mathf.Abs(Mathf.DeltaAngle(indoorPitch, 52f)) < 0.1f,
+                $"outdoor {outdoor:0.00} ({outdoorPitch:0}) indoor {indoor:0.00} ({indoorPitch:0})");
+            ToMap(c, false, new Vector2Int(0, 0), FacingDirection.Down);
+            c.Switcher.SetMode(PocViewMode.PixelView2D);
+        }
+
         private static void CrowChecks(Ctx c)
         {
             var crow = c.Crow;
@@ -734,7 +780,11 @@ namespace Halka.Poc2D3D.EditorTools
                 $"parts {c.CrowView.HasParts} shown {c.CrowView.ModelShown}");
             for (var i = 0; i < 12; i++) c.CrowView.Apply(1f / 60f, now);
             var folded = WingReach(c.CrowView);
+            var standingLegs = LegReach(c.CrowView);
             Check("crow on the ground in 3D: wings folded", c.CrowView.CurrentWingOpen == 0f, $"{c.CrowView.CurrentWingOpen:0.00}");
+            Check("crow on the ground in 3D: standing on its feet (legs straight down)",
+                Mathf.Approximately(c.CrowView.CurrentLegPitchDegrees, 0f) && Mathf.Abs(standingLegs.low) < 0.02f,
+                $"leg pitch {c.CrowView.CurrentLegPitchDegrees:0} lowest {standingLegs.low:0.000}");
 
             // Natural flight: takeoff (still on the ground), flying (ground freed), perch on a tree.
             var ground = crow.Cell;
@@ -755,6 +805,13 @@ namespace Halka.Poc2D3D.EditorTools
                 c.CrowView.Apply(1f / 60f, now + i / 60f);
                 return c.CrowView.CurrentWingRaiseDegrees;
             }).ToArray();
+            for (var i = 0; i < 20; i++) c.CrowView.Apply(1f / 60f, now);
+            var flyingLegs = LegReach(c.CrowView);
+            Check("crow flying 3D: the legs are drawn up and back under the body (feet off the ground line, toes not forward)",
+                Mathf.Approximately(c.CrowView.CurrentLegPitchDegrees, PocCrowView3D.LegTuckDegrees) &&
+                flyingLegs.low > standingLegs.low + 0.03f && flyingLegs.front < standingLegs.front - 0.02f &&
+                flyingLegs.back >= standingLegs.back,
+                $"standing {standingLegs} flying {flyingLegs}");
             Check("crow flying: the ground is free; the 3D wings beat", crow.Activity == CrowActivity.Flying &&
                 c.Session.CanPlayerEnter(ground) && flaps.Max() - flaps.Min() > 40f, $"{flaps.Min():0}..{flaps.Max():0}");
             // Open wings reach out to both sides (not back along the body); a wingbeat moves them
@@ -796,11 +853,23 @@ namespace Halka.Poc2D3D.EditorTools
             for (var i = 0; i < 160 && crow.Activity != CrowActivity.LeavingPerch; i++) crow.Tick(now += 0.1f);
             Check("crow leaving the perch: a separate takeoff from the tree", crow.Activity == CrowActivity.LeavingPerch);
             var sawLanding = false;
+            var landingLegsSeen = false;
+            c.Switcher.SetMode(PocViewMode.ThirdPerson3D);
             for (var i = 0; i < 200 && crow.Activity != CrowActivity.GroundIdle; i++)
             {
                 crow.Tick(now += 0.05f);
+                c.CrowView.Apply(0.05f, now);
                 sawLanding |= crow.Activity == CrowActivity.LandingGround;
+                if (crow.Activity == CrowActivity.LandingGround && c.CrowView.CurrentLegPitchDegrees > 20f)
+                {
+                    var landingLegs = LegReach(c.CrowView);
+                    landingLegsSeen |= landingLegs.front > standingLegs.front + 0.02f;
+                }
             }
+            for (var i = 0; i < 20; i++) c.CrowView.Apply(1f / 60f, now);
+            Check("crow landing 3D: the legs reach forward for the touchdown, then stand again",
+                landingLegsSeen && Mathf.Approximately(c.CrowView.CurrentLegPitchDegrees, 0f),
+                $"landing legs seen {landingLegsSeen}, pitch now {c.CrowView.CurrentLegPitchDegrees:0}");
             Check("crow landing: approaches, touches down inside its wander range, takes its cell again",
                 sawLanding && crow.Activity == CrowActivity.GroundIdle && !c.Session.CanPlayerEnter(crow.Cell) &&
                 crow.Cell.x >= crow.RangeMin.x && crow.Cell.x <= crow.RangeMax.x &&
