@@ -26,6 +26,9 @@ namespace Halka.Poc2D3D
         private Vector2Int latchedRaw;
         private Vector2Int latchedDirection;
         private bool requireRelease;
+        // Phase 5: a held key may resume at this input time (RequireRelease with a delay).
+        private float resumeHeldAt = float.PositiveInfinity;
+        private float clock;
         private bool mouseDown;
         private bool mouseStartedOnControls;
         private Vector2 mouseStart;
@@ -103,15 +106,21 @@ namespace Halka.Poc2D3D
         // Also used by checks to simulate the keyboard or the D-pad.
         public void SetRaw(Vector2Int raw, float now)
         {
+            clock = now;
             if (raw == Vector2Int.zero && RawDirection != Vector2Int.zero) LastReleaseAt = now;
             RawDirection = raw;
         }
 
         // After a view switch a key that is still held is ignored until it is released, so the
         // switch can never turn an old key press into a step in a new direction.
-        public void RequireRelease()
+        public void RequireRelease() => RequireRelease(float.PositiveInfinity);
+
+        // Phase 5: the same, but a key still held after resumeAfterSeconds counts again (a new
+        // press, latched with the camera heading of that moment). Infinity: wait for a release.
+        public void RequireRelease(float resumeAfterSeconds)
         {
             requireRelease = RawDirection != Vector2Int.zero;
+            resumeHeldAt = clock + resumeAfterSeconds;
             latchedRaw = latchedDirection = Vector2Int.zero;
         }
 
@@ -127,7 +136,8 @@ namespace Halka.Poc2D3D
             if (requireRelease)
             {
                 if (raw == Vector2Int.zero) requireRelease = false;
-                return Vector2Int.zero;
+                if (raw == Vector2Int.zero || clock < resumeHeldAt) return Vector2Int.zero;
+                requireRelease = false;
             }
             if (raw == Vector2Int.zero)
             {

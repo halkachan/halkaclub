@@ -18,6 +18,7 @@ Shader "HALKA/POC/PixelSprite"
         _MarkerStrength ("Strength of marker-tagged meshes (grass)", Float) = 0
         _DepthEpsilon ("Depth epsilon (0..1 of far)", Float) = 0.0005
         _GroundLayerId ("Object ID drawn under the player besides the ground (grass tufts)", Float) = 250
+        _GroundOnly ("Phase 5: draw only where the world shows ground (the 2D game's grass layer)", Float) = 0
     }
     SubShader
     {
@@ -39,6 +40,7 @@ Shader "HALKA/POC/PixelSprite"
             float _MarkerStrength;
             float _DepthEpsilon;
             float _GroundLayerId;
+            float _GroundOnly;
 
             struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; float3 mask : TEXCOORD1; };
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float3 mask : TEXCOORD1; };
@@ -74,6 +76,13 @@ Shader "HALKA/POC/PixelSprite"
             {
                 float4 color = tex2D(_MainTex, i.uv);
                 clip(color.a - 0.5);
+                if (_GroundOnly > 0.5)
+                {
+                    // Under every object, like a ground decoration: only on ground texels.
+                    float2 g = (floor(i.mask.xy * _MaskTex_TexelSize.zw) + 0.5) * _MaskTex_TexelSize.xy;
+                    float gid = floor(tex2D(_MaskTex, g).r * 255.0 + 0.5);
+                    clip((gid == 0.0 || gid == _GroundLayerId) ? 1.0 : -1.0);
+                }
                 if (_UseMask > 0.5)
                 {
                     // The low-resolution texel under this screen pixel.

@@ -56,6 +56,36 @@ namespace Halka.Poc2D3D
         // The bench seat anchor height (Phase 3 Blender bench), the reference for 10/64.
         public const float BenchSeatHeight = 0.22f;
         public const float SitLegDegrees = 90f;
+
+        // Phase 5 seat display metadata: presentation only. The seat cell, the action point and the
+        // furniture's SeatAnchor_L / SeatAnchor_R / SitAnchor stay as authored; the model is drawn
+        // HipLift above the anchor with its legs at LegDegrees. Phase 5 measured the placeholder:
+        // its thighs (0.132 thick, centred on the hips) went 0.026 into the bench seat (surface
+        // 0.18) and 0.068 into the cushion (surface 0.102). An official model replaces these rows.
+        // TowardCenter moves the drawn model along the seat's length toward the furniture's middle:
+        // each bench seat anchor is on its Grid cell centre, 0.22 from the bench end, which put the
+        // 0.4 wide placeholder flush with the end (Phase 4 images). Two seats stay two seats.
+        public readonly struct SeatDisplay
+        {
+            public readonly float HipLift;
+            public readonly float LegDegrees;
+            public readonly float TowardCenter;
+            public SeatDisplay(float hipLift, float legDegrees, float towardCenter = 0f)
+            {
+                HipLift = hipLift;
+                LegDegrees = legDegrees;
+                TowardCenter = towardCenter;
+            }
+        }
+
+        public static readonly SeatDisplay BenchSitDisplay = new SeatDisplay(0.03f, SitLegDegrees, 0.08f);
+        // On the floor cushion the legs slope down to the floor in front of it.
+        public static readonly SeatDisplay CushionSitDisplay = new SeatDisplay(0.07f, 62f);
+        // The display shift applied (world), for checks and reports.
+        public Vector3 SeatDisplayShift { get; private set; }
+
+        public static SeatDisplay SeatDisplayFor(string pose) => pose == "cushion_sit" ? CushionSitDisplay : BenchSitDisplay;
+        public SeatDisplay CurrentSeatDisplay { get; private set; }
         public const float SitArmDegrees = 28f;
 
         public void ConfigureSeats(PocWorldPresenter worldPresenter) => presenter = worldPresenter;
@@ -142,6 +172,7 @@ namespace Halka.Poc2D3D
                 position.z = Mathf.Round(position.z / PixelSnap.y) * PixelSnap.y;
             }
             Seated = session.IsSeated;
+            SeatDisplayShift = Vector3.zero;
             SpriteRoot = position;
             SpriteOffsetNorth = Sprites != null ? Sprites.offsetY : 0.25f;
             if (Seated)
@@ -156,8 +187,10 @@ namespace Halka.Poc2D3D
                 SpriteRoot = seat;
                 SpriteOffsetNorth = PlayerSeatController.ArtworkAboveSeatCenter *
                     Mathf.Clamp(SeatPoint.y / BenchSeatHeight, 0.2f, 1.5f);
-                // 3D: the model sits on the seat anchor, facing the seat's front (South).
-                position = new Vector3(SeatPoint.x, 0f, SeatPoint.z);
+                // 3D: the model sits on the seat anchor, facing the seat's front (South), moved
+                // TowardCenter along the seat's length (presentation only).
+                SeatDisplayShift = SeatShift(SeatDisplayFor(session.SeatPose).TowardCenter);
+                position = new Vector3(SeatPoint.x, 0f, SeatPoint.z) + SeatDisplayShift;
             }
             transform.position = position;
             SetModelVisible(!pixelView || !HasSprites);
@@ -175,11 +208,12 @@ namespace Halka.Poc2D3D
             if (Seated)
             {
                 // Hips on the seat, thighs forward, hands resting forward: a plain sitting pose.
-                model.localPosition = Vector3.up * (SeatPoint.y - HipHeight);
+                var display = CurrentSeatDisplay = SeatDisplayFor(session.SeatPose);
+                model.localPosition = Vector3.up * (SeatPoint.y + display.HipLift - HipHeight);
                 if (HasLimbs)
                 {
-                    legLeft.localRotation = legLeftBase * Quaternion.Euler(SitLegDegrees, 0f, 0f);
-                    legRight.localRotation = legRightBase * Quaternion.Euler(SitLegDegrees, 0f, 0f);
+                    legLeft.localRotation = legLeftBase * Quaternion.Euler(display.LegDegrees, 0f, 0f);
+                    legRight.localRotation = legRightBase * Quaternion.Euler(display.LegDegrees, 0f, 0f);
                     armLeft.localRotation = armLeftBase * Quaternion.Euler(SitArmDegrees, 0f, 0f);
                     armRight.localRotation = armRightBase * Quaternion.Euler(SitArmDegrees, 0f, 0f);
                     CurrentSwingDegrees = 0f;
@@ -191,6 +225,29 @@ namespace Halka.Poc2D3D
             model.localPosition = Vector3.up * (Mathf.Abs(Mathf.Sin(step * Mathf.PI * 2f)) * bobHeight);
             var presentation = catalog != null ? catalog.Player : null;
             Swing(deltaTime, presentation);
+        }
+
+        // Along the furniture's own right axis toward the middle of its drawn bounds, at most amount.
+        private Vector3 SeatShift(float amount)
+        {
+            if (amount <= 0f || presenter == null || session.SeatObject == null) return Vector3.zero;
+            var view = presenter.FindView(session.SeatObject.InstanceId);
+            if (view == null) return Vector3.zero;
+            var found = false;
+            var bounds = new Bounds();
+            foreach (var item in view.GetComponentsInChildren<Renderer>())
+            {
+                if (!found) bounds = item.bounds;
+                else bounds.Encapsulate(item.bounds);
+                found = true;
+            }
+            if (!found) return Vector3.zero;
+            var axis = view.transform.right;
+            axis.y = 0f;
+            if (axis.sqrMagnitude < 0.0001f) return Vector3.zero;
+            axis.Normalize();
+            var along = Vector3.Dot(bounds.center - SeatPoint, axis);
+            return axis * Mathf.Clamp(along, -amount, amount);
         }
 
         // The seat anchor (Phase 3 Blender: SeatAnchor_L / SeatAnchor_R on the bench, SitAnchor on
@@ -227,10 +284,11 @@ namespace Halka.Poc2D3D
                 CurrentSprite = null;
                 return;
             }
-            // CharacterVisual: the seated artwork replaces every frame while seated.
-            if (session.IsSeated && Sprites.benchSit != null)
+            // CharacterVisual: the seated artwork replaces every frame while seated (Phase 5: the
+            // cushion has its own provisional floor-sitting artwork).
+            if (session.IsSeated && Sprites.SeatSprite(session.SeatPose) != null)
             {
-                CurrentSprite = Sprites.benchSit;
+                CurrentSprite = Sprites.SeatSprite(session.SeatPose);
                 return;
             }
             var selected = Sprites.Select(session.Facing, session.IsMoving);

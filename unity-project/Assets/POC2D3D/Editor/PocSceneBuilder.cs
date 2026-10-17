@@ -19,6 +19,9 @@ namespace Halka.Poc2D3D.EditorTools
     {
         public const string Root = "Assets/POC2D3D";
         public const string ScenePath = Root + "/Scenes/HALKA_WORLD_2D3D_POC.unity";
+        // Phase 5: the Release Candidate scene, built from the same content as the POC scene (the
+        // POC scene stays the technical verification scene with its options shown).
+        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.0_RC1.unity";
         public const string CatalogPath = Root + "/Data/POC_PresentationCatalog.asset";
         public const string ToonMaterialPath = Root + "/Materials/POC_ToonVertexColor.mat";
         public const string GridMaterialPath = Root + "/Materials/POC_GridOverlay.mat";
@@ -65,7 +68,12 @@ namespace Halka.Poc2D3D.EditorTools
         public const string CrowModelPath = Phase4Models + "crow_basic.fbx";
         public const string CrowSprites = "Assets/Content/World/crow_";
         public const string CrowVoicePath = "Assets/Content/Audio/crow_voice.mp3";
+        // Phase 5: the 2D game's footstep and grass (same files, same settings).
+        public const string FootstepPath = "Assets/Content/Audio/footstep_one_step.wav";
+        public const string GrassPath = "Assets/Content/World/grass.png";
+        public const string GrassRustlePath = "Assets/Content/World/grass_rustle/";
         public const string BenchSitPath = "Assets/Content/Character/bench_sit.png";
+        public const string CushionSitPath = "Assets/POC2D3D/Provisional/cushion_sit_provisional.png";
         public const string TreeFadeMaterialPath = Root + "/Materials/POC_ToonVertexColorFade.mat";
         public const string OutdoorMapPath = "Assets/Content/Maps/first_field.asset";
         public const string InteriorMapPath = "Assets/Content/Maps/halka_house.asset";
@@ -89,7 +97,23 @@ namespace Halka.Poc2D3D.EditorTools
             }
         }
 
-        public static void Build()
+        public static void BuildReleaseCandidateBatch()
+        {
+            try
+            {
+                Build(RcScenePath, true);
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        public static void Build() => Build(ScenePath, false);
+
+        public static void Build(string scenePath, bool releaseCandidate)
         {
             foreach (var folder in new[] { "Scenes", "Data", "Materials" })
                 if (!AssetDatabase.IsValidFolder(Root + "/" + folder)) AssetDatabase.CreateFolder(Root, folder);
@@ -152,6 +176,8 @@ namespace Halka.Poc2D3D.EditorTools
             var sprites = LoadCharacterSprites();
             sprites.benchSit = AssetDatabase.LoadAssetAtPath<Sprite>(BenchSitPath);
             if (sprites.benchSit == null) throw new InvalidOperationException("Sprite missing: " + BenchSitPath);
+            sprites.cushionSit = AssetDatabase.LoadAssetAtPath<Sprite>(CushionSitPath);
+            if (sprites.cushionSit == null) throw new InvalidOperationException("Sprite missing: " + CushionSitPath);
             catalog.ConfigurePlayer(new PocActorPresentation
             {
                 model = LoadModel(PlaceholderPlayerPath),
@@ -170,13 +196,29 @@ namespace Halka.Poc2D3D.EditorTools
             AssetDatabase.SaveAssets();
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            BuildSceneContent(catalog, screen);
+            var root = BuildSceneContent(catalog, screen);
+            if (releaseCandidate) ConfigureReleaseCandidate(root);
             RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = PocTimeOfDay.DayAmbient;
             RenderSettings.skybox = null;
-            EditorSceneManager.SaveScene(scene, ScenePath);
+            EditorSceneManager.SaveScene(scene, scenePath);
             AssetDatabase.SaveAssets();
-            Debug.Log("HALKA POC scene built: " + ScenePath);
+            Debug.Log("HALKA POC scene built: " + scenePath + (releaseCandidate ? " (Release Candidate)" : ""));
+        }
+
+        // Phase 5: the same world and game; only the launch differs. 2D at start, the debug panel
+        // off unless ?debug=1, the HUD reads "ver3.0 RC1".
+        private static void ConfigureReleaseCandidate(GameObject root)
+        {
+            root.name = "HARUKA WORLD ver3.0 RC1";
+            var panel = root.GetComponent<PocDebugPanel>();
+            var hud = root.GetComponentInChildren<GameHud>(true);
+            var switcher = root.GetComponent<PocViewSwitcher>();
+            if (panel == null || hud == null || switcher == null) throw new InvalidOperationException("RC scene parts are missing");
+            panel.ConfigureReleaseCandidate(true);
+            hud.SetVersionLabel(PocDebugPanel.ReleaseCandidateVersionLabel);
+            EditorUtility.SetDirty(panel);
+            EditorUtility.SetDirty(hud);
         }
 
         public static GameObject BuildSceneContent(PocPresentationCatalog catalog, Material screenOverlay)
@@ -307,6 +349,39 @@ namespace Halka.Poc2D3D.EditorTools
             actor.ConfigureSeats(presenter);
             thirdPerson.ConfigureTreeFade(AssetDatabase.LoadAssetAtPath<Material>(TreeFadeMaterialPath));
             panel.ConfigureGame(gameplay, guard);
+            BuildPhase5Content(root, gameplay, pixelView);
+        }
+
+        // Phase 5: footsteps (PlayerFootstepAudio driven by SharedWorldSession.StepStarted, the 2D
+        // game's AudioSource settings) and the 2D game's grass sprites for the 2D view.
+        private static void BuildPhase5Content(GameObject root, PocGameplay gameplay, PocPixelView2D pixelView)
+        {
+            var footstepObject = new GameObject("Footsteps (PlayerFootstepAudio)");
+            footstepObject.transform.SetParent(root.transform, false);
+            var source = footstepObject.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.spatialBlend = 0f;
+            source.volume = 0.45f; // ProjectBuilder's value for the 2D game
+            var footsteps = footstepObject.AddComponent<Halka.Game.Player.PlayerFootstepAudio>();
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(FootstepPath);
+            if (clip == null) throw new InvalidOperationException("Footstep missing: " + FootstepPath);
+            SetReference(footsteps, "source", source);
+            SetReference(footsteps, "footstep", clip);
+            var serialized = new SerializedObject(footsteps);
+            serialized.FindProperty("externallyDriven").boolValue = true;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            gameplay.ConfigureFootsteps(footsteps);
+
+            var idle = AssetDatabase.LoadAssetAtPath<Sprite>(GrassPath);
+            if (idle == null) throw new InvalidOperationException("Grass missing: " + GrassPath);
+            var rustle = new Sprite[5];
+            for (var i = 0; i < rustle.Length; i++)
+            {
+                var path = GrassRustlePath + i.ToString("00") + ".png";
+                rustle[i] = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                if (rustle[i] == null) throw new InvalidOperationException("Grass rustle missing: " + path);
+            }
+            pixelView.ConfigureGrass(idle, rustle, new[] { 0.09f, 0.09f, 0.09f, 0.09f, 0.42f });
         }
 
         private static Sprite CrowSprite(string suffix)

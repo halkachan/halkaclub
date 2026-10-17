@@ -1,0 +1,25 @@
+/* はるかわーるど ver3.0 RC1: a proposal for the game page on phones (local staging only;
+   the public game-page.css is unchanged). The game is played in landscape on phones. */
+
+/* Landscape phone: the frame fills the visible height, so the whole game fits on screen
+   (the public page gives it clamp(420px, 54vw, 640px), taller than a 390 px high phone). */
+@media (pointer: coarse) and (orientation: landscape) {
+  .unity-frame {
+    height: calc(100svh - 40px);
+    min-height: 0;
+  }
+}
+
+/* Upright phone: the frame stays on the page; the game inside shows its rotation guide. */
+@media (pointer: coarse) and (orientation: portrait) {
+  .unity-frame {
+    height: min(68svh, 620px);
+    min-height: 360px;
+  }
+}
+
+/* A drag that starts on the game never scrolls or zooms the page behind it. */
+.unity-frame {
+  touch-action: none;
+  overscroll-behavior: contain;
+}

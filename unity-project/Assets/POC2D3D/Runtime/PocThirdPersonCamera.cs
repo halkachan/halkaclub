@@ -88,6 +88,15 @@ namespace Halka.Poc2D3D
         // player and the building together) until the next movement input; then the normal
         // camera takes over with the same heading, so no key changes meaning and nothing turns.
         public bool ExitComposition { get; set; } = true;
+        // Phase 5: a key still held from walking out (for example S through the door) walks on
+        // after the house has been shown this long, when the keys mean the same as before the
+        // exit (the North-fixed camera and a composition looking North). Otherwise, or with 0 /
+        // infinity, the Phase 4 rule: the key is ignored until released.
+        public const float StandardExitHeldKeyResumeSeconds = 0.6f;
+        public float ExitHeldKeyResumeSeconds { get; set; } = StandardExitHeldKeyResumeSeconds;
+        public bool ExitHeldKeyResumes(PocCameraPose pose) =>
+            ExitHeldKeyResumeSeconds > 0f && !float.IsInfinity(ExitHeldKeyResumeSeconds) &&
+            Follow == PocCameraFollow.NorthFixed && pose.Heading == Halka.Game.Player.FacingDirection.Up;
         public bool CompositionHeld { get; private set; }
         public PocCameraPose HeldPose { get; private set; }
         public int CompositionsShown { get; private set; }
@@ -155,8 +164,13 @@ namespace Halka.Poc2D3D
             snapHeading = pose.Heading;
             CompositionsShown++;
             // A key still held from walking out is ignored until released, so the composition
-            // waits for the next movement input (and that input uses this heading).
-            if (input != null) input.RequireRelease();
+            // waits for the next movement input (and that input uses this heading). Phase 5: with
+            // unchanged key meaning it resumes after ExitHeldKeyResumeSeconds instead.
+            if (input != null)
+            {
+                if (ExitHeldKeyResumes(pose)) input.RequireRelease(ExitHeldKeyResumeSeconds);
+                else input.RequireRelease();
+            }
         }
 
         public void ReleaseComposition(float now)

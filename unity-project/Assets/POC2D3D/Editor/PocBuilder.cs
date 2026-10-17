@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
@@ -11,6 +13,13 @@ namespace Halka.Poc2D3D.EditorTools
     public static class PocBuilder
     {
         public const string OutputFolderName = "HARUKA_WORLD_ver3.0_PHASE4_PREVIEW";
+        // Phase 5: はるかわーるど ver3.0 Release Candidate 1, outside the repository. The game sits
+        // at halkaworld/webgl/ (the public site's path) below a staging copy of the game page.
+        public const string ReleaseCandidateFolderName = "HARUKA_WORLD_ver3.0_RC1";
+        public const string ReleaseCandidateGamePath = "halkaworld/webgl";
+
+        public static string ReleaseCandidatePath =>
+            Path.GetFullPath(Path.Combine(PocSceneBuilder.RepositoryRoot, "..", ReleaseCandidateFolderName));
 
         public static string OutputPath => Path.GetFullPath(Path.Combine(PocSceneBuilder.RepositoryRoot, "..", OutputFolderName));
 
@@ -31,9 +40,67 @@ namespace Halka.Poc2D3D.EditorTools
             }
         }
 
-        public static void Build()
+        public static void BuildReleaseCandidateBatch()
         {
-            var output = OutputPath;
+            try
+            {
+                BuildReleaseCandidate();
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        // The RC1 folder: halkaworld/webgl (the game, RC scene only), the staging page beside it,
+        // the start script, README and test documents (tools/poc2d3d/rc1).
+        public static void BuildReleaseCandidate()
+        {
+            var root = ReleaseCandidatePath;
+            var output = Path.Combine(root, ReleaseCandidateGamePath.Replace('/', Path.DirectorySeparatorChar));
+            var report = BuildScene(PocSceneBuilder.RcScenePath, output);
+            var page = Path.Combine(output, "index.html");
+            File.WriteAllText(page, PreviewPage(File.ReadAllText(page), PocDebugPanel.ReleaseCandidateTitle));
+            var kit = Path.Combine(PocSceneBuilder.RepositoryRoot, "tools", "poc2d3d", "rc1");
+            foreach (var file in Directory.GetFiles(kit, "*", SearchOption.AllDirectories))
+            {
+                var relative = file.Substring(kit.Length + 1);
+                if (relative == "make_staging_pages.py") continue;
+                if (relative.StartsWith("staging" + Path.DirectorySeparatorChar)) relative = relative.Substring("staging".Length + 1);
+                var target = Path.Combine(root, relative);
+                Directory.CreateDirectory(Path.GetDirectoryName(target));
+                File.Copy(file, target, true);
+            }
+            var build = BuildId(output);
+            foreach (var name in new[] { "index.html", "index-mobilefix.html" })
+            {
+                var staging = Path.Combine(root, "halkaworld", name);
+                File.WriteAllText(staging, File.ReadAllText(staging).Replace("__BUILD__", build));
+            }
+            File.WriteAllText(Path.Combine(root, "BUILD_INFO.txt"),
+                PocDebugPanel.ReleaseCandidateName + "\n" +
+                "scene: " + PocSceneBuilder.RcScenePath + "\n" +
+                "build: " + build + "\n" +
+                "built: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "\n" +
+                "size: " + report.summary.totalSize + " bytes (Unity report)\n");
+            Debug.Log($"HALKA RC1 WebGL: {output} build {build} ({report.summary.totalSize} bytes, {report.summary.totalTime})");
+        }
+
+        // Like the public page's build= value: changes whenever the code or data files change.
+        private static string BuildId(string output)
+        {
+            using (var sha = SHA256.Create())
+            {
+                var files = Directory.GetFiles(Path.Combine(output, "Build")).OrderBy(f => f, StringComparer.Ordinal);
+                var all = files.SelectMany(f => sha.ComputeHash(File.ReadAllBytes(f))).ToArray();
+                return BitConverter.ToString(sha.ComputeHash(all)).Replace("-", "").Substring(0, 32).ToLowerInvariant();
+            }
+        }
+
+        private static BuildReport BuildScene(string scene, string output)
+        {
             var publicWebGl = Path.GetFullPath(Path.Combine(PocSceneBuilder.RepositoryRoot, "halkaworld"));
             if (output.StartsWith(publicWebGl, StringComparison.OrdinalIgnoreCase) ||
                 output.StartsWith(PocSceneBuilder.RepositoryRoot, StringComparison.OrdinalIgnoreCase))
@@ -43,13 +110,20 @@ namespace Halka.Poc2D3D.EditorTools
             Directory.CreateDirectory(output);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
-                scenes = new[] { PocSceneBuilder.ScenePath },
+                scenes = new[] { scene },
                 locationPathName = output,
                 target = BuildTarget.WebGL,
                 options = BuildOptions.None
             });
             if (report.summary.result != BuildResult.Succeeded)
                 throw new InvalidOperationException("POC WebGL build failed: " + report.summary.result);
+            return report;
+        }
+
+        public static void Build()
+        {
+            var output = OutputPath;
+            var report = BuildScene(PocSceneBuilder.ScenePath, output);
             var tools = Path.Combine(PocSceneBuilder.RepositoryRoot, "tools", "poc2d3d");
             File.Copy(Path.Combine(tools, "serve_poc.py"), Path.Combine(output, "serve_poc.py"), true);
             File.Copy(Path.Combine(tools, "README_POC.txt"), Path.Combine(output, "README_POC.txt"), true);
@@ -65,10 +139,12 @@ namespace Halka.Poc2D3D.EditorTools
         // pauses, see PocOrientationGuard; the guide uses the same touch rule as HalkaTouchUiMode);
         // the canvas kept inside the safe area (notch, home indicator); one try of the Screen
         // Orientation API on the first touch where a browser allows it. Desktop layout unchanged.
-        public static string PreviewPage(string html)
+        public static string PreviewPage(string html) => PreviewPage(html, PocDebugPanel.PreviewTitle);
+
+        public static string PreviewPage(string html, string title)
         {
             html = html.Replace("\r\n", "\n");
-            html = ReplaceOnce(html, "<title>HALKA WORLD</title>", "<title>" + PocDebugPanel.PreviewTitle + "</title>");
+            html = ReplaceOnce(html, "<title>HALKA WORLD</title>", "<title>" + title + "</title>");
             html = ReplaceOnce(html, "    </style>", GuideStyle + "    </style>");
             html = ReplaceOnce(html, "    <div id=\"loading\">", GuideMarkup + "    <div id=\"loading\">");
             html = ReplaceOnce(html, TemplateLayout, PreviewLayout);

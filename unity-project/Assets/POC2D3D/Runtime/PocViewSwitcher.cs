@@ -68,6 +68,7 @@ namespace Halka.Poc2D3D
             var pixel = mode == PocViewMode.PixelView2D;
             pixelView.enabled = pixel;
             pixelView.WorldCamera.enabled = pixel;
+            pixelView.ApplyTuftVisibility(pixel); // Phase 5: the 3D tufts are the 3D view's grass
             presenterCamera.enabled = pixel;
             thirdPerson.enabled = !pixel;
             thirdPerson.ViewCamera.enabled = !pixel;

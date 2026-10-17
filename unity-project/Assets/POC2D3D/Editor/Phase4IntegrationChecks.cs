@@ -996,8 +996,10 @@ namespace Halka.Poc2D3D.EditorTools
                         Mathf.Abs(c.Actor.SpriteOffsetNorth - PlayerSeatController.ArtworkAboveSeatCenter) < 0.001f &&
                         c.Pixel.LastSpriteRect.width > 0);
                 else
+                    // Phase 5: the drawn model is moved SeatDisplayShift (0.08) toward the bench middle.
                     Check("bench 3D: the model sits on SeatAnchor_L (hips on the seat, facing the bench's front)",
-                        Vector2.Distance(new Vector2(c.Actor.transform.position.x, c.Actor.transform.position.z),
+                        Vector2.Distance(new Vector2(c.Actor.transform.position.x - c.Actor.SeatDisplayShift.x,
+                                c.Actor.transform.position.z - c.Actor.SeatDisplayShift.z),
                             new Vector2(c.Actor.SeatPoint.x, c.Actor.SeatPoint.z)) < 0.001f &&
                         Mathf.Abs(c.Actor.SeatPoint.y - 0.22f) < 0.01f && Mathf.Abs(Mathf.DeltaAngle(c.Actor.Yaw, 180f)) < 1f,
                         $"seat {c.Actor.SeatPoint} actor {c.Actor.transform.position} yaw {c.Actor.Yaw:0}");
@@ -1036,8 +1038,10 @@ namespace Halka.Poc2D3D.EditorTools
                     c.Session.IsSeated && c.Session.SeatPose == "cushion_sit" && c.Session.SeatCell == new Vector2Int(0, 0) &&
                     c.Session.Cell == new Vector2Int(0, 0));
                 if (mode == PocViewMode.PixelView2D)
-                    Check("cushion 2D: the seated artwork (bench_sit.png) on the cushion, lower than on the bench",
-                        c.Actor.CurrentSprite == benchSit && c.Actor.SpriteOffsetNorth < PlayerSeatController.ArtworkAboveSeatCenter &&
+                    // Phase 5: the cushion has its own provisional artwork (cushionSit); bench_sit before.
+                    Check("cushion 2D: the seated artwork (Phase 5: cushion_sit_provisional.png) on the cushion, lower than on the bench",
+                        c.Actor.CurrentSprite == c.Actor.Sprites.SeatSprite("cushion_sit") && c.Actor.CurrentSprite != null &&
+                        c.Actor.SpriteOffsetNorth < PlayerSeatController.ArtworkAboveSeatCenter &&
                         Vector3.Distance(c.Actor.SpriteRoot, GridSpace3D.ToWorld(new Vector2Int(0, 0))) < 0.04f);
                 else
                     Check("cushion 3D: the model sits on SitAnchor (0.1 high)",

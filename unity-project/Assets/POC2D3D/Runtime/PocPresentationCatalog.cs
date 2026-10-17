@@ -102,6 +102,12 @@ namespace Halka.Poc2D3D
         public float offsetY = 0.25f;
         [Tooltip("Phase 4: the seated artwork (bench_sit.png, CharacterVisual.benchSit).")]
         public Sprite benchSit;
+        [Tooltip("Phase 5 (provisional): the cushion's floor-sitting artwork, derived from bench_sit.png. " +
+            "The 2D game has no cushion; without this sprite the cushion shows bench_sit.")]
+        public Sprite cushionSit;
+
+        // The seated artwork for a seat pose (CharacterVisual.benchSit for the bench).
+        public Sprite SeatSprite(string pose) => pose == "cushion_sit" && cushionSit != null ? cushionSit : benchSit;
 
         public bool IsComplete => Has(frontIdle) && Has(backIdle) && Has(leftIdle) && Has(rightIdle) &&
             Has(frontWalk) && Has(backWalk) && Has(leftWalk) && Has(rightWalk);

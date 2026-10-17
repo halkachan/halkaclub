@@ -14,6 +14,15 @@ namespace Halka.Poc2D3D
     public sealed class PocDebugPanel : MonoBehaviour
     {
         public const string PreviewTitle = "はるかわーるど ver3.0 Phase 4 Preview";
+        // Phase 5: the Release Candidate scene. Its page shows only the game; ?debug=1 brings the
+        // panel back (with this title). Hidden, the component is disabled: no OnGUI, no recorders.
+        public const string ReleaseCandidateName = "はるかわーるど ver3.0 Release Candidate 1";
+        public const string ReleaseCandidateTitle = "はるかわーるど ver3.0 RC1";
+        public const string ReleaseCandidateVersionLabel = "ver3.0 RC1";
+        [SerializeField] private bool releaseCandidate;
+        public bool ReleaseCandidate => releaseCandidate;
+        public void ConfigureReleaseCandidate(bool value) => releaseCandidate = value;
+        public string Title => releaseCandidate ? ReleaseCandidateTitle + " (debug)" : PreviewTitle;
         private static readonly int[] PixelOptions = { 16, 24, 32 };
         private static readonly float[] PitchOptions = { 50f, 60f, 90f, 40f };
         private static readonly Color[] OutlineColors =
@@ -78,6 +87,7 @@ namespace Halka.Poc2D3D
         {
             var url = Application.absoluteURL ?? "";
             PanelVisible = url.Contains("debug=1");
+            if (releaseCandidate && !PanelVisible) enabled = false;
         }
 
         private void OnEnable()
@@ -152,7 +162,7 @@ namespace Halka.Poc2D3D
             var x = 8f;
             // Below the game's Menu button (GameMenuController: 12 px from the top, 48 px tall).
             var y = gameplay != null && gameplay.Menu != null ? 68f : 8f;
-            var rows = expanded ? 20 : 2;
+            var rows = expanded ? 22 : 2;
             var statsLines = showStats ? expanded ? 13 : 8 : 6;
             panelRect = new Rect(x - 4f, y - 4f, width + 8f, rows * (row + 3f) + statsLines * row * 0.78f + 12f);
             GUI.DrawTexture(panelRect, panelBackground);
@@ -211,6 +221,12 @@ namespace Halka.Poc2D3D
                     third.ExitComposition = !third.ExitComposition;
                 if (Button(ref y, x, width, row, "3D cam distance: " + DistanceLabel(third)))
                     NextDistance(third);
+                // Phase 5 (last rows, so the rows above keep their places).
+                if (Button(ref y, x, width, row, "3D exit held key: " + (third.ExitHeldKeyResumeSeconds > 0f
+                        ? $"walks on after {third.ExitHeldKeyResumeSeconds:0.0}s" : "waits for release (Phase 4)")))
+                    third.ExitHeldKeyResumeSeconds = third.ExitHeldKeyResumeSeconds > 0f ? 0f : PocThirdPersonCamera.StandardExitHeldKeyResumeSeconds;
+                if (Button(ref y, x, width, row, "2D grass: " + (pixel.OriginalGrass2D ? "2D game sprites" : "3D tufts (Phase 4)")))
+                    pixel.OriginalGrass2D = !pixel.OriginalGrass2D;
             }
             GUI.Label(new Rect(x, y, width, statsLines * row * 0.78f + 8f), BuildText(), textStyle);
             DrawTitle(s);
@@ -227,7 +243,7 @@ namespace Halka.Poc2D3D
             GUI.color = new Color(1f, 1f, 1f, 0.82f);
             GUI.DrawTexture(rect, Texture2D.whiteTexture);
             GUI.color = Color.white;
-            GameBitmapFont.Draw(rect, PreviewTitle, Mathf.RoundToInt(18 * scale), new Color(0.13f, 0.15f, 0.11f),
+            GameBitmapFont.Draw(rect, Title, Mathf.RoundToInt(18 * scale), new Color(0.13f, 0.15f, 0.11f),
                 TextAnchor.MiddleCenter, fallbackFont);
         }
 

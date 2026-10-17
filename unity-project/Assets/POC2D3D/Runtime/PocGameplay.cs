@@ -19,6 +19,8 @@ namespace Halka.Poc2D3D
         [SerializeField] private GameHud hud;
         [SerializeField] private GameMenuController menu;
         [SerializeField] private PocCrow crow;
+        [Header("Phase 5")]
+        [SerializeField] private PlayerFootstepAudio footsteps;
 
         private PocAutoWorld autoWorld;
         private ViewMenuItem viewItem;
@@ -29,6 +31,9 @@ namespace Halka.Poc2D3D
         public GameHud Hud => hud;
         public GameMenuController Menu => menu;
         public PocCrow Crow => crow;
+        public PlayerFootstepAudio Footsteps => footsteps;
+
+        public void ConfigureFootsteps(PlayerFootstepAudio footstepAudio) => footsteps = footstepAudio;
         public PocAutoWorld AutoWorld => autoWorld;
 
         // Phone rotation guide: no input, no AUTO, no play time (the world clock keeps running).
@@ -77,6 +82,7 @@ namespace Halka.Poc2D3D
             if (menu != null) menu.SetExtraItem(viewItem);
             session.MapChanged += OnMapChanged;
             session.StepCompleted += OnStepCompleted;
+            session.StepStarted += OnStepStarted;
             session.MessageShown += OnMessageShown;
             ActivateCrowFor(session.World);
         }
@@ -86,11 +92,14 @@ namespace Halka.Poc2D3D
             if (!connected || session == null) return;
             session.MapChanged -= OnMapChanged;
             session.StepCompleted -= OnStepCompleted;
+            session.StepStarted -= OnStepStarted;
             session.MessageShown -= OnMessageShown;
         }
 
         private void OnMapChanged(SharedWorldModel world) => ActivateCrowFor(world);
         private void OnStepCompleted(Vector2Int cell) { if (lifeLog != null) lifeLog.RecordCompletedStep(); }
+        // Manual and AUTO steps both start here (one step, one footstep; blocked steps never start).
+        private void OnStepStarted(Vector2Int cell) { if (footsteps != null && footsteps.isActiveAndEnabled) footsteps.PlayStep(); }
         private void OnMessageShown(string text) { if (hud != null) hud.ShowMessage(text); }
 
         // Indoors the outdoor crow is switched off (and frees its cell); back outdoors it is

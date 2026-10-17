@@ -110,7 +110,14 @@ namespace Halka.Poc2D3D
             return perches;
         }
 
-        protected override void RustleAt(Vector2Int cell) => LastRustleCell = cell;
+        // Phase 5: the 2D view rustles the grass it hops into (as the 2D game's grass field).
+        public event System.Action<Vector2Int> Rustled;
+
+        protected override void RustleAt(Vector2Int cell)
+        {
+            LastRustleCell = cell;
+            Rustled?.Invoke(cell);
+        }
         protected override bool HasVisual => true;
 
         protected override void ShowFrame(Sprite sprite, bool flipX)

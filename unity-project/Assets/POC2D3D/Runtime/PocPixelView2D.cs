@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Halka.Game.World;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -29,6 +30,10 @@ namespace Halka.Poc2D3D
         [SerializeField] private Material fadeMaterial;
         [Header("Phase 4: the crow's original sprites")]
         [SerializeField] private PocCrow crow;
+        [Header("Phase 5: the 2D game's grass (GrassField2D sprites and timing)")]
+        [SerializeField] private Sprite grassIdle;
+        [SerializeField] private Sprite[] grassRustle;
+        [SerializeField] private float[] grassFrameSeconds = { 0.09f, 0.09f, 0.09f, 0.09f, 0.42f };
 
         private RenderTexture target;
         private RenderTexture outlineMask;
@@ -93,6 +98,184 @@ namespace Halka.Poc2D3D
         public void ConfigureSprite(Material material) => spriteMaterial = material;
         public void ConfigureCrow(PocCrow sharedCrow) => crow = sharedCrow;
 
+        public void ConfigureGrass(Sprite idle, Sprite[] rustle, float[] frameSeconds)
+        {
+            grassIdle = idle;
+            grassRustle = rustle;
+            grassFrameSeconds = frameSeconds;
+        }
+
+        // ------------------------------------------------------------ Phase 5: grass and feet
+        // The 2D game draws its grass sprite on every cell where MapPlacementRules.HasGrass says
+        // grass grows (a ground decoration under every object), rustles it when a step starts or
+        // the crow hops in, and hides the bottom of the player (10 px of 64) and of the crow on the
+        // ground (4 px of 32) on such cells. The 2D view does the same with the same sprites and
+        // rules; the 3D grass tufts are left out of the 2D render so grass is never doubled.
+        public bool OriginalGrass2D { get; set; } = true;
+        public const int PlayerGrassHiddenPixels = Halka.Game.Player.PlayerGrassOcclusion.GrassPlayerOcclusionPixels;
+        public const int CrowGrassHiddenPixels = CrowGrassOcclusion.HiddenPixels;
+        public bool GrassReady => grassIdle != null;
+        public int GrassCount { get { EnsureGrass(); return grassCells.Count; } }
+        public int RustlingCount => grassRustles.Count;
+        public int LastPlayerCropPixels { get; private set; }
+        public int LastCrowCropPixels { get; private set; }
+        public int LastGrassDrawn { get; private set; }
+
+        private readonly List<Vector2Int> grassCells = new List<Vector2Int>();
+        private readonly HashSet<Vector2Int> grassSet = new HashSet<Vector2Int>();
+        private readonly Dictionary<Vector2Int, Vector2> grassRustles = new Dictionary<Vector2Int, Vector2>(); // (frame, elapsed)
+        private readonly List<Vector2Int> grassDone = new List<Vector2Int>();
+        private SharedWorldModel grassWorld;
+        private bool grassHooked;
+        private PocCrow hookedCrow;
+
+        public bool HasGrass(Vector2Int cell)
+        {
+            EnsureGrass();
+            return grassSet.Contains(cell);
+        }
+
+        private void EnsureGrass()
+        {
+            HookGrass();
+            if (session == null || session.World == grassWorld) return;
+            grassWorld = session.World;
+            grassCells.Clear();
+            grassSet.Clear();
+            grassRustles.Clear();
+            var map = grassWorld.Map;
+            for (var y = map.MaxCell.y; y >= map.MinCell.y; y--) // North first: the South rows overlap them
+            for (var x = map.MinCell.x; x <= map.MaxCell.x; x++)
+            {
+                var cell = new Vector2Int(x, y);
+                if (!MapPlacementRules.HasGrass(map, cell)) continue;
+                grassCells.Add(cell);
+                grassSet.Add(cell);
+            }
+        }
+
+        private void HookGrass()
+        {
+            if (!grassHooked && session != null)
+            {
+                session.StepStarted += RustleGrassAt;
+                grassHooked = true;
+            }
+            if (crow != hookedCrow)
+            {
+                if (hookedCrow != null) hookedCrow.Rustled -= OnCrowRustled;
+                hookedCrow = crow;
+                if (crow != null) crow.Rustled += OnCrowRustled;
+            }
+        }
+
+        private void OnCrowRustled(Vector2Int cell) => RustleGrassAt(cell);
+
+        // GrassField2D.RustleAt: the cell's grass plays the rustle frames once.
+        public void RustleGrassAt(Vector2Int cell)
+        {
+            if (grassRustle == null || grassRustle.Length == 0 || !HasGrass(cell)) return;
+            grassRustles[cell] = Vector2.zero;
+        }
+
+        private void AdvanceGrass(float deltaTime)
+        {
+            if (grassRustles.Count == 0 || grassFrameSeconds == null) return;
+            grassDone.Clear();
+            var keys = new List<Vector2Int>(grassRustles.Keys);
+            foreach (var cell in keys)
+            {
+                var state = grassRustles[cell];
+                var frame = (int)state.x;
+                var elapsed = state.y + Mathf.Max(0f, deltaTime);
+                while (frame < grassFrameSeconds.Length && elapsed >= grassFrameSeconds[frame])
+                {
+                    elapsed -= grassFrameSeconds[frame];
+                    frame++;
+                }
+                if (frame >= Mathf.Min(grassFrameSeconds.Length, grassRustle.Length)) grassDone.Add(cell);
+                else grassRustles[cell] = new Vector2(frame, elapsed);
+            }
+            foreach (var cell in grassDone) grassRustles.Remove(cell);
+        }
+
+        public Sprite GrassSpriteAt(Vector2Int cell) =>
+            grassRustles.TryGetValue(cell, out var state) && grassRustle != null && (int)state.x < grassRustle.Length
+                ? grassRustle[(int)state.x] : grassIdle;
+
+        // The cell the 2D game uses for the mask: the destination once a step is half done.
+        public static Vector2Int VisualCell(Vector2Int from, Vector2Int to, bool moving, float progress) =>
+            moving && progress >= 0.5f ? to : from;
+
+        public int PlayerCropPixels()
+        {
+            if (!OriginalGrass2D || session == null || session.IsSeated) return 0;
+            var cell = VisualCell(session.StepFromCell, session.StepToCell, session.IsMoving, session.StepProgressNormalized);
+            return HasGrass(cell) ? PlayerGrassHiddenPixels : 0;
+        }
+
+        public int CrowCropPixels()
+        {
+            if (!OriginalGrass2D || crow == null || !crow.isActiveAndEnabled || crow.Airborne) return 0;
+            var cell = VisualCell(crow.StepFromCell, crow.StepToCell, crow.IsMoving, crow.StepProgressNormalized);
+            return HasGrass(cell) ? CrowGrassHiddenPixels : 0;
+        }
+
+        // The 3D grass tufts belong to the 3D view; with the original grass the 2D view leaves them out.
+        public void ApplyTuftVisibility(bool pixelViewActive)
+        {
+            var tufts = worldPresenter != null ? worldPresenter.TuftObject : null;
+            var renderer = tufts != null ? tufts.GetComponent<Renderer>() : null;
+            if (renderer != null) renderer.enabled = !(pixelViewActive && OriginalGrass2D && GrassReady);
+        }
+
+        private void DrawGrass(int screenWidth, int screenHeight)
+        {
+            LastGrassDrawn = 0;
+            if (!OriginalGrass2D || !GrassReady || target == null) return;
+            EnsureGrass();
+            Texture batchTexture = null;
+            var open = false;
+            foreach (var cell in grassCells)
+            {
+                var sprite = GrassSpriteAt(cell);
+                if (sprite == null) continue;
+                if (!PlaceCard(new SpriteCard { Sprite = sprite, Root = GridSpace3D.ToWorld(cell) }, out var rect, out _, out _, out _))
+                    continue;
+                if (rect.xMax < 0 || rect.yMax < 0 || rect.x > screenWidth || rect.y > screenHeight) continue;
+                if (sprite.texture != batchTexture)
+                {
+                    if (open) EndBatch();
+                    batchTexture = sprite.texture;
+                    BeginGroundBatch(batchTexture, screenWidth, screenHeight);
+                    open = true;
+                }
+                AddQuad(sprite, rect, 0f, 0f, 0, false);
+                LastGrassDrawn++;
+            }
+            if (open) EndBatch();
+        }
+
+        private void BeginGroundBatch(Texture texture, int screenWidth, int screenHeight)
+        {
+            spriteMaterial.mainTexture = texture;
+            spriteMaterial.SetTexture("_MaskTex", outlineMask);
+            spriteMaterial.SetFloat("_UseMask", 0f);
+            spriteMaterial.SetFloat("_GroundOnly", outlineMask != null ? 1f : 0f);
+            spriteMaterial.SetFloat("_Thickness", 0f);
+            spriteMaterial.SetFloat("_GroundLayerId", PocOutlineTag.DecorationId);
+            GL.PushMatrix();
+            GL.LoadPixelMatrix(0f, screenWidth, 0f, screenHeight);
+            spriteMaterial.SetPass(0);
+            GL.Begin(GL.QUADS);
+        }
+
+        private static void EndBatch()
+        {
+            GL.End();
+            GL.PopMatrix();
+        }
+
         // Where the crow sprite was last drawn (destination pixels), and whether it was drawn on top.
         public RectInt LastCrowRect { get; private set; }
         public bool LastCrowOnTop { get; private set; }
@@ -120,6 +303,7 @@ namespace Halka.Poc2D3D
 
         private void OnDisable()
         {
+            ApplyTuftVisibility(false);
             if (worldCamera != null) worldCamera.enabled = false;
             if (session != null) session.MapChanged -= OnMapChanged;
             if (actor != null) actor.PixelSnap = Vector2.zero;
@@ -171,6 +355,9 @@ namespace Halka.Poc2D3D
                 -height * 0.5f, height * 0.5f, NearPlane, FarPlane);
             UpdateWallCutaway();
             UpdateFades(deltaTime);
+            EnsureGrass();
+            AdvanceGrass(deltaTime);
+            ApplyTuftVisibility(true);
             // The mask also orders the player sprite against the world (and the faded trees are
             // depth-tested against it), so it is needed even with the outline off.
             if ((OutlinePixels > 0 || SpriteReady || fades.Count > 0) && outlineMaskShader != null) RenderOutlineMask();
@@ -376,6 +563,7 @@ namespace Halka.Poc2D3D
         {
             LastCrowRect = default;
             LastCrowSprite = null;
+            DrawGrass(screenWidth, screenHeight);
             var crowCard = CrowCard(out var crowOnTop);
             var crowFirst = crowCard.HasValue && !crowOnTop && crowCard.Value.Root.z > actor.transform.position.z;
             if (crowFirst) DrawCrow(crowCard.Value, false, screenWidth, screenHeight);
@@ -416,7 +604,8 @@ namespace Halka.Poc2D3D
             LastCrowRect = rect;
             LastCrowOnTop = onTop;
             LastCrowSprite = card.Sprite;
-            DrawCard(card, rect, depthBottom, depthTop, !onTop, screenWidth, screenHeight);
+            LastCrowCropPixels = onTop ? 0 : CrowCropPixels();
+            DrawCard(card, rect, depthBottom, depthTop, !onTop, screenWidth, screenHeight, LastCrowCropPixels);
         }
 
         // Same camera, same pixel-snapped matrices, so the mask lines up texel for texel.
@@ -476,33 +665,19 @@ namespace Halka.Poc2D3D
             LastSpritePixelSize = pixelSize;
             LastSpriteDepthBottom = depthBottom;
             LastSpriteDepthTop = depthTop;
-            DrawCard(new SpriteCard { Sprite = sprite }, placed, depthBottom, depthTop, true, screenWidth, screenHeight);
+            LastPlayerCropPixels = PlayerCropPixels();
+            DrawCard(new SpriteCard { Sprite = sprite }, placed, depthBottom, depthTop, true, screenWidth, screenHeight,
+                LastPlayerCropPixels);
         }
 
         private void DrawCard(SpriteCard card, RectInt placed, float depthBottom, float depthTop, bool depthTest,
-            int screenWidth, int screenHeight)
+            int screenWidth, int screenHeight, int cropBottomPixels = 0)
         {
-            var sprite = card.Sprite;
-            int x0 = placed.x, y0 = placed.y, width = placed.width, height = placed.height;
-
-            var texture = sprite.texture;
-            var tr = sprite.textureRect;
-            var u0 = tr.xMin / texture.width;
-            var u1 = tr.xMax / texture.width;
-            if (card.FlipX) (u0, u1) = (u1, u0);
-            var v0 = tr.yMin / texture.height;
-            var v1 = tr.yMax / texture.height;
-            var maskW = (float)target.width * Scale;
-            var maskH = (float)target.height * Scale;
-            var mx0 = (x0 + Offset.x) / maskW;
-            var mx1 = (x0 + width + Offset.x) / maskW;
-            var my0 = (y0 + Offset.y) / maskH;
-            var my1 = (y0 + height + Offset.y) / maskH;
-
             var useMask = depthTest && outlineMask != null && outlineMaskShader != null;
-            spriteMaterial.mainTexture = texture;
+            spriteMaterial.mainTexture = card.Sprite.texture;
             spriteMaterial.SetTexture("_MaskTex", outlineMask);
             spriteMaterial.SetFloat("_UseMask", useMask ? 1f : 0f);
+            spriteMaterial.SetFloat("_GroundOnly", 0f);
             spriteMaterial.SetColor("_OutlineColor", OutlineColor);
             spriteMaterial.SetFloat("_Thickness", OutlineReady ? OutlinePixels : 0);
             spriteMaterial.SetFloat("_MarkerStrength", GrassOutline);
@@ -512,12 +687,41 @@ namespace Halka.Poc2D3D
             GL.LoadPixelMatrix(0f, screenWidth, 0f, screenHeight);
             spriteMaterial.SetPass(0);
             GL.Begin(GL.QUADS);
+            AddQuad(card.Sprite, placed, depthBottom, depthTop, cropBottomPixels, card.FlipX);
+            GL.End();
+            GL.PopMatrix();
+        }
+
+        // One sprite quad; cropBottomPixels sprite rows are left out at the bottom (the 2D game's
+        // grass mask: the feet are hidden, the grass drawn earlier shows there).
+        private void AddQuad(Sprite sprite, RectInt placed, float depthBottom, float depthTop, int cropBottomPixels, bool flipX)
+        {
+            int x0 = placed.x, y0 = placed.y, width = placed.width, height = placed.height;
+            var texture = sprite.texture;
+            var tr = sprite.textureRect;
+            var u0 = tr.xMin / texture.width;
+            var u1 = tr.xMax / texture.width;
+            if (flipX) (u0, u1) = (u1, u0);
+            var v0 = tr.yMin / texture.height;
+            var v1 = tr.yMax / texture.height;
+            if (cropBottomPixels > 0 && tr.height > cropBottomPixels)
+            {
+                var cut = Mathf.RoundToInt(height * cropBottomPixels / tr.height);
+                v0 = (tr.yMin + cropBottomPixels) / texture.height;
+                depthBottom = Mathf.Lerp(depthBottom, depthTop, cut / (float)height);
+                y0 += cut;
+                height -= cut;
+            }
+            var maskW = (float)target.width * Scale;
+            var maskH = (float)target.height * Scale;
+            var mx0 = (x0 + Offset.x) / maskW;
+            var mx1 = (x0 + width + Offset.x) / maskW;
+            var my0 = (y0 + Offset.y) / maskH;
+            var my1 = (y0 + height + Offset.y) / maskH;
             Vertex(u0, v0, mx0, my0, depthBottom, x0, y0);
             Vertex(u0, v1, mx0, my1, depthTop, x0, y0 + height);
             Vertex(u1, v1, mx1, my1, depthTop, x0 + width, y0 + height);
             Vertex(u1, v0, mx1, my0, depthBottom, x0 + width, y0);
-            GL.End();
-            GL.PopMatrix();
         }
 
         // Where (destination pixels) and at what depth the current sprite frame goes.

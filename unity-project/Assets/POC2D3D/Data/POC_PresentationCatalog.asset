@@ -302,6 +302,7 @@ MonoBehaviour:
       - {fileID: 21300000, guid: e7298b4d37f83284e926343a7d8ff7c1, type: 3}
       offsetY: 0.25
       benchSit: {fileID: 21300000, guid: 606d90ddaa22ab041a9ee7dc47f7a76e, type: 3}
+      cushionSit: {fileID: 21300000, guid: 9c09f5969dd84507b987c893f666f60e, type: 3}
   interior:
     floorTiles:
     - {fileID: 919132149155446097, guid: 9e8a2d69601376d4b81eeeb4903a4f01, type: 3}

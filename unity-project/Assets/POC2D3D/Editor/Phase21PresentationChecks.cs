@@ -634,6 +634,9 @@ namespace Halka.Poc2D3D.EditorTools
             for (var x = 0; x < rect.width; x++)
             {
                 int sx = (int)(x / size), sy = (int)(y / size);
+                // Phase 5: on a grass cell the 2D game's grass hides the bottom sprite rows (the
+                // feet); those rows are left out here and checked in Phase5ReleaseCandidateChecks.
+                if (sy < c.Pixel.LastPlayerCropPixels) continue;
                 var original = source[((int)tr.y + sy) * tw + (int)tr.x + sx];
                 if (original.a < 128) continue;
                 int px = rect.x + x, py = rect.y + y;

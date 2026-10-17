@@ -79,8 +79,12 @@ namespace Halka.Poc2D3D
         public bool MovementLocked => IsSeated;
 
         public event Action<SharedWorldModel> MapChanged;
+        // Phase 5: a step has been accepted (Grid collision passed) and starts moving; the 0.18 s
+        // interpolation follows and StepCompleted ends it (Life Log). Footsteps and grass rustle.
+        public event Action<Vector2Int> StepStarted;
         public event Action<Vector2Int> StepCompleted;
         public event Action<SharedObjectInstance, string> Interacted;
+        public long StartedSteps { get; private set; }
         public event Action<string> MessageShown;
         public event Action SeatChanged;
 
@@ -151,7 +155,10 @@ namespace Halka.Poc2D3D
         {
             if (MovementLocked || motion.IsMoving || Mathf.Abs(direction.x) + Mathf.Abs(direction.y) != 1) return false;
             Facing = FacingDirectionExtensions.FromVector(direction);
-            return motion.TryBegin(direction, cell => World.CanEnter(cell) && CanPlayerEnter(cell), stepSeconds);
+            if (!motion.TryBegin(direction, cell => World.CanEnter(cell) && CanPlayerEnter(cell), stepSeconds)) return false;
+            StartedSteps++;
+            StepStarted?.Invoke(motion.StepToCell);
+            return true;
         }
 
         // DynamicGridOccupancy2D.CanPlayerEnter: the crow's ground cell(s) are taken.
