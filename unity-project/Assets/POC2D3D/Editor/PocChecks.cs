@@ -374,6 +374,8 @@ namespace Halka.Poc2D3D.EditorTools
             }
             Check("switch: 40 toggles keep cell, facing, steps, map and loads", ok, "switches " + c.Switcher.SwitchCount);
             Check("switch: player drawn at the shared cell in both views (2D within one pixel)", actorPositionOk);
+            // Phase 4 made the 3D camera north-fixed by default; these checks keep testing the turn-behind mode (still selectable).
+            c.Third.Follow = PocCameraFollow.TurnBehindWhenIdle;
             c.Switcher.SetMode(PocViewMode.ThirdPerson3D);
             s.PlaceForCheck(new Vector2Int(3, -2), FacingDirection.Up);
             c.Third.SnapToTarget();
@@ -387,6 +389,7 @@ namespace Halka.Poc2D3D.EditorTools
             cam = c.Third.ViewCamera.transform.position;
             Check("3D camera: turns behind an East-facing player within 2 s", cam.x < player.x - 1f && Mathf.Abs(cam.z - player.z) < 0.05f,
                 cam.ToString("F2"));
+            c.Third.Follow = PocCameraFollow.NorthFixed; // the Phase 4 default
             // Smooth follow: the camera never moves more than one step distance per frame.
             var lane = FindClearLane(s.World, 6);
             s.PlaceForCheck(lane, FacingDirection.Right);

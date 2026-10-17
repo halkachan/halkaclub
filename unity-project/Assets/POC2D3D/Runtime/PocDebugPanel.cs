@@ -187,9 +187,8 @@ namespace Halka.Poc2D3D
                 if (Button(ref y, x, width, row, "Stats: " + (showStats ? "ON" : "OFF")))
                     showStats = !showStats;
                 var third = views.ThirdPerson;
-                if (Button(ref y, x, width, row, "3D cam follow: " + (third.Follow == PocCameraFollow.TurnBehindWhenIdle
-                        ? "turn when idle" : third.Follow == PocCameraFollow.Fixed ? "fixed" : "facing (Phase 1)")))
-                    third.Follow = (PocCameraFollow)(((int)third.Follow + 1) % 3);
+                if (Button(ref y, x, width, row, "3D cam follow: " + FollowLabel(third.Follow)))
+                    third.Follow = Next(FollowOrder, third.Follow);
                 if (Button(ref y, x, width, row, "2D outline: " + (pixel.OutlinePixels == 0 ? "OFF" : pixel.OutlinePixels + " px")))
                     pixel.OutlinePixels = (pixel.OutlinePixels + 1) % 3;
                 var colorIndex = Mathf.Max(0, System.Array.IndexOf(OutlineColors, pixel.OutlineColor));
@@ -262,6 +261,16 @@ namespace Halka.Poc2D3D
             camera.OutdoorDistance = next.outdoor;
             camera.IndoorDistance = next.indoor;
         }
+
+        private static readonly PocCameraFollow[] FollowOrder =
+        {
+            PocCameraFollow.NorthFixed, PocCameraFollow.TurnBehindWhenIdle, PocCameraFollow.Fixed, PocCameraFollow.FollowFacing
+        };
+
+        private static string FollowLabel(PocCameraFollow follow) =>
+            follow == PocCameraFollow.NorthFixed ? "north fixed" :
+            follow == PocCameraFollow.TurnBehindWhenIdle ? "turn when idle (2.1)" :
+            follow == PocCameraFollow.Fixed ? "fixed at switch" : "facing (Phase 1)";
 
         private static T Next<T>(T[] options, T current)
         {

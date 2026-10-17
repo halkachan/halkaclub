@@ -10,7 +10,9 @@ namespace Halka.Poc2D3D
     {
         TurnBehindWhenIdle, // After a sideways turn, once the keys are released and the player stops.
         Fixed,              // Never turns on its own (only when entering 3D or another map).
-        FollowFacing        // Phase 1 behaviour: always behind the facing (S reverses the view).
+        FollowFacing,       // Phase 1 behaviour: always behind the facing (S reverses the view).
+        NorthFixed          // Phase 4 (user feedback, default): always from the South looking North, as
+                            // in 2D; turning or walking never changes the view, W is always North.
     }
 
     // Phase 4: a temporary camera composition (focus, yaw, pitch, distance) and the cardinal
@@ -63,7 +65,7 @@ namespace Halka.Poc2D3D
         private bool snapNext = true;
 
         public Halka.Game.Player.FacingDirection Heading { get; private set; } = Halka.Game.Player.FacingDirection.Up;
-        public PocCameraFollow Follow { get; set; } = PocCameraFollow.TurnBehindWhenIdle;
+        public PocCameraFollow Follow { get; set; } = PocCameraFollow.NorthFixed;
         public float IdleTurnDelay { get => idleTurnDelay; set => idleTurnDelay = value; }
         public float TargetYaw => targetYaw;
         public float CurrentYaw => yaw;
@@ -230,6 +232,7 @@ namespace Halka.Poc2D3D
         {
             var facing = session.Facing;
             if (CompositionHeld) return;
+            if (Follow == PocCameraFollow.NorthFixed) { Heading = Halka.Game.Player.FacingDirection.Up; return; }
             if (snapNext && snapHeading.HasValue) { Heading = snapHeading.Value; return; }
             if (snapNext || Follow == PocCameraFollow.FollowFacing) { Heading = facing; return; }
             if (Follow == PocCameraFollow.Fixed || session.IsMoving) return;

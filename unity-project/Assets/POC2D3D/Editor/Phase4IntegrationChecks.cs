@@ -54,6 +54,7 @@ namespace Halka.Poc2D3D.EditorTools
                 LandscapeChecks(c);
                 AutoChecks(c);
                 CameraDistanceChecks(c);
+                NorthFixedCameraChecks(c);
                 CrowChecks(c);
                 SeatChecks(c);
                 LifeLogTimeMenuChecks(c);
@@ -712,6 +713,51 @@ namespace Halka.Poc2D3D.EditorTools
                 front = Mathf.Max(front, along);
             }
             return (low, back, front);
+        }
+
+        // Phase 4 feedback: in 3D the view does not depend on her facing. The camera always stands
+        // South of her and looks North (as the 2D view), so W/A/S/D are North/West/South/East.
+        private static void NorthFixedCameraChecks(Ctx c)
+        {
+            Check("3D camera: north-fixed is the default (the view never follows her facing)",
+                c.Third.Follow == PocCameraFollow.NorthFixed);
+            ToMap(c, false, new Vector2Int(0, 0), FacingDirection.Up);
+            c.Switcher.SetMode(PocViewMode.ThirdPerson3D);
+            c.Third.SnapToTarget();
+            Release(c);
+            Settle(c, 0.3f);
+            var log = new List<string>();
+            var ok = true;
+            foreach (var raw in new[] { Vector2Int.left, Vector2Int.down, Vector2Int.right, Vector2Int.up })
+            {
+                var start = c.Session.Cell;
+                HoldUntil(c, raw, () => c.Session.Cell != start, 0.6f);
+                Release(c);
+                Settle(c, 2f);
+                var cam = c.Third.ViewCamera.transform.position;
+                var player = GridSpace3D.ToWorld(c.Session.Position);
+                var moved = c.Session.Cell - start; // one or two cells, in the key's world direction
+                var stepOk = moved != Vector2Int.zero && moved.x * raw.y == moved.y * raw.x &&
+                    moved.x * raw.x + moved.y * raw.y > 0 && c.Session.Facing == FacingDirectionExtensions.FromVector(raw);
+                var viewOk = c.Third.Heading == FacingDirection.Up && Mathf.Abs(Mathf.DeltaAngle(c.Third.CurrentYaw, 0f)) < 0.5f &&
+                    cam.z < player.z - 1f && Mathf.Abs(cam.x - player.x) < 0.05f;
+                ok &= stepOk && viewOk;
+                log.Add($"{raw}->{c.Session.Cell} facing {c.Session.Facing} heading {c.Third.Heading} yaw {c.Third.CurrentYaw:0}");
+            }
+            Check("3D camera north-fixed: A/S/D/W walk West/South/East/North and the view stays South of her looking North (2 s after each)",
+                ok, string.Join("; ", log));
+            ToMap(c, true, new Vector2Int(0, -2), FacingDirection.Up);
+            c.Third.SnapToTarget();
+            var indoorOk = true;
+            foreach (var facing in new[] { FacingDirection.Left, FacingDirection.Down, FacingDirection.Right, FacingDirection.Up })
+            {
+                c.Session.PlaceForCheck(new Vector2Int(0, -2), facing);
+                Settle(c, 2f);
+                indoorOk &= c.Third.Heading == FacingDirection.Up && Mathf.Abs(Mathf.DeltaAngle(c.Third.CurrentYaw, 0f)) < 0.5f;
+            }
+            Check("3D camera north-fixed indoors: facing any way keeps the view looking North", indoorOk);
+            ToMap(c, false, new Vector2Int(0, 0), FacingDirection.Down);
+            c.Switcher.SetMode(PocViewMode.PixelView2D);
         }
 
         // Phase 4 feedback: the 3D camera stands farther back than in Phase 3 (same angles).

@@ -511,6 +511,8 @@ namespace Halka.Poc2D3D.EditorTools
 
         private static void InteriorCameraChecks(Ctx c)
         {
+            // Phase 4 made the 3D camera north-fixed by default; these checks keep testing the turn-behind mode (still selectable).
+            c.Third.Follow = PocCameraFollow.TurnBehindWhenIdle;
             Enter(c, true, new Vector2Int(0, -3), FacingDirection.Up);
             var results = new List<string>();
             var allClear = true;
@@ -573,6 +575,7 @@ namespace Halka.Poc2D3D.EditorTools
             Check("interior controls: holding A walks straight left (no circling)",
                 sideways.Count >= 2 && sideways.All(p => p.y == -3), string.Join(" ", sideways));
             Enter(c, false, new Vector2Int(0, 0), FacingDirection.Down);
+            c.Third.Follow = PocCameraFollow.NorthFixed; // the Phase 4 default
         }
 
         // Chest ray from the camera: no visible (not cut, not ShadowsOnly) renderer in the way.

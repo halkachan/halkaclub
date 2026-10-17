@@ -255,6 +255,8 @@ namespace Halka.Poc2D3D.EditorTools
 
         private static void InputChecks(Ctx c)
         {
+            // Phase 4 made the 3D camera north-fixed by default; these checks keep testing the turn-behind mode (still selectable).
+            c.Third.Follow = PocCameraFollow.TurnBehindWhenIdle;
             var s = c.Session;
             var center = OpenArea(s.World, 2);
             Check("3D keys: camera-relative is the default scheme in 3D", c.Input.Scheme == Poc3DControlScheme.CameraRelative);
@@ -320,6 +322,7 @@ namespace Halka.Poc2D3D.EditorTools
             Check("3D key changed mid-step: the step in progress keeps its target cell",
                 s.IsMoving && s.StepToCell == target && target == center + Vector2Int.up);
             Release(c, 0.4f);
+            c.Third.Follow = PocCameraFollow.NorthFixed; // the Phase 4 default
         }
 
         // ---------------------------------------------------------------- facing / interaction

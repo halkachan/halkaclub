@@ -25,6 +25,8 @@ What is new in Phase 4 (one shared world: 2D and 3D show the same game state):
     once).
   - 3D: a tree between the camera and ﾊﾙｶﾁｬﾝ turns 40% see-through (0.25 s), like 2D.
   - 3D: the camera stands a little farther back than in Phase 3 (outdoor 3.4, indoor 3.6).
+  - 3D: the view no longer turns with her. It always looks North from the South, as in 2D,
+    so W/A/S/D are always North/West/South/East.
   - 3D crow: in flight its legs are drawn up under the body; for a landing they reach forward.
   - Phones are played in landscape. Held upright, the page shows
     「スマホを横向きにしてください」 and the game pauses (no walking, no A, no AUTO, the play
@@ -33,7 +35,7 @@ What is new in Phase 4 (one shared world: 2D and 3D show the same game state):
   The 3D ﾊﾙｶﾁｬﾝ is still the TEMPORARY blocky model; 2D uses her original sprites.
 
 Controls (same as the game):
-  WASD / arrow keys : move one cell (hold to keep walking; in 3D relative to the camera)
+  WASD / arrow keys : move one cell (hold to keep walking); W is North in 2D and 3D
   Left click        : examine the clicked object or the crow (only when standing in front)
   Menu button       : AUTO / Life Log / ひょうじ (2D / 3D)
   Touch D-pad / A   : shown on touch devices or with ?touchControls=1
@@ -50,7 +52,8 @@ POC-only panel (?debug=1, below the Menu button; will NOT go into the real game)
   Grid/blocked      : show the shared Grid and blocked cells (red X)
   Stats             : FPS, frame time, render texture size, draw calls when available,
                       AUTO, crow state, seat, 3D tree fades, exit camera
-  3D cam follow     : turn when idle (default) / fixed / facing (Phase 1 behaviour)
+  3D cam follow     : north fixed (default) / turn when idle (Phase 2.1-3) / fixed at switch /
+                      facing (Phase 1 behaviour)
   2D outline        : 1 px (default) / 2 px / OFF
   Outline color     : #252B39 blue-grey / #3A2A22 brown / #000000 black
   Grass outline     : OFF (default) / soft
