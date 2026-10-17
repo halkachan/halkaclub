@@ -54,9 +54,9 @@
       var buildUrl = "Build";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/0f71365ac95f73b87852e24d4c44d311.data.unityweb",
-        frameworkUrl: buildUrl + "/36dfcae9ba3654c52e0966e1e9e78118.framework.js.unityweb",
-        codeUrl: buildUrl + "/2180e9f7b5bb51e734301bf2bbce9db1.wasm.unityweb",
+        dataUrl: buildUrl + "/a15890bae31a35df7068ada3198fded9.data.unityweb",
+        frameworkUrl: buildUrl + "/8c19d8ed10378e307275feeff7fc3c56.framework.js.unityweb",
+        codeUrl: buildUrl + "/e094286b387a6e373f7e0c52a085f973.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "HALKA",
         productName: "みねはうす",
@@ -65,7 +65,7 @@
       };
 
       var script = document.createElement("script");
-      script.src = buildUrl + "/a460d14a3d53b072215c37eba148b94f.loader.js";
+      script.src = buildUrl + "/e92c754d04e95970ee490a6452198bf5.loader.js";
       script.onload = function () {
         createUnityInstance(canvas, config, function (progress) {
           document.getElementById("loading-fill").style.width = Math.round(100 * progress) + "%";
