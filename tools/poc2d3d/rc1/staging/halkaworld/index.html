@@ -28,7 +28,12 @@
     <style>.rc1-staging-note { position: sticky; top: 0; z-index: 5; padding: 6px 10px; background: #f6d55c; color: #2b2b2b; font: 700 12px/1.5 sans-serif; text-align: center; }
       .game-fullscreen { margin: 10px 0 0; text-align: right; }
       .game-fullscreen button { font: inherit; font-size: 14px; font-weight: 700; color: var(--ink); padding: 6px 14px; border: 2px solid var(--ink); border-radius: 4px; background: #fffdf4; cursor: pointer; transform: rotate(-0.6deg); }
-      .game-fullscreen button:hover { background: #f6d55c; }</style>
+      .game-fullscreen button:hover, .game-fill-bar button:hover { background: #f6d55c; }
+      .game-fill-bar { display: none; }
+      body.game-filled { overflow: hidden; }
+      body.game-filled .unity-frame { position: fixed; left: 0; top: 0; width: 100vw; z-index: 1000; border: 0; }
+      body.game-filled .game-fill-bar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001; justify-content: flex-end; align-items: center; margin: 0; min-height: 40px; box-sizing: border-box; padding: 4px 12px calc(4px + env(safe-area-inset-bottom, 0px)); background: #fffdf4; border-top: 2px solid var(--ink); }
+      .game-fill-bar button { font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); padding: 4px 14px; border: 2px solid var(--ink); border-radius: 4px; background: #fffdf4; cursor: pointer; }</style>
   </head>
   <body>
     <div class="rc1-staging-note" role="note">ローカル検証用ステージング（はるかわーるど ver3.0 RC1）・公開ページと同じレイアウト。公開HPではありません。</div>
@@ -52,6 +57,7 @@
             <iframe src="webgl/?v=3.0-rc1&build=__BUILD__" title="はるかわーるど" allow="fullscreen" loading="eager"></iframe>
           </div>
           <p class="game-fullscreen"><button type="button" id="game-fullscreen-button" hidden>全画面にする</button></p>
+          <p class="game-fill-bar" id="game-fill-bar"><button type="button" id="game-fill-back">もどす</button></p>
           <p class="game-controls">WASD・矢印キーで1マスずつ移動 / 対象をクリック。スマホは十字キーで移動、Aボタンで正面を調べます。</p>
           <section class="update-history" aria-labelledby="update-history-title">
             <h2 id="update-history-title">更新履歴</h2>
@@ -189,14 +195,36 @@
     <script>
       (() => {
         const button = document.getElementById("game-fullscreen-button");
-        const frame = document.querySelector(".unity-frame iframe");
-        const request = frame && (frame.requestFullscreen || frame.webkitRequestFullscreen);
-        if (!request || !(document.fullscreenEnabled || document.webkitFullscreenEnabled)) return;
+        const box = document.querySelector(".unity-frame");
+        const frame = box && box.querySelector("iframe");
+        const bar = document.getElementById("game-fill-bar");
+        if (!frame) return;
+        const request = frame.requestFullscreen || frame.webkitRequestFullscreen;
+        const real = !!request && !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+        const focusGame = () => { if (frame.contentWindow) frame.contentWindow.focus(); };
+        const fit = () => { box.style.height = `${window.innerHeight - bar.offsetHeight}px`; };
+        function fill(on, fromHistory) {
+          if (document.body.classList.contains("game-filled") === on) return;
+          document.body.classList.toggle("game-filled", on);
+          if (on) {
+            fit();
+            window.addEventListener("resize", fit);
+            if (!fromHistory) history.pushState({ halkaGameFilled: true }, "");
+          } else {
+            box.style.height = "";
+            window.removeEventListener("resize", fit);
+            if (!fromHistory && history.state && history.state.halkaGameFilled) history.back();
+          }
+          focusGame();
+        }
+        window.addEventListener("popstate", () => fill(false, true));
+        document.getElementById("game-fill-back").addEventListener("click", () => fill(false, false));
         button.hidden = false;
         button.addEventListener("click", () => {
+          if (!real) { fill(true, false); return; }
           const asked = request.call(frame);
-          if (asked && asked.catch) asked.catch(() => {});
-          if (frame.contentWindow) frame.contentWindow.focus();
+          if (asked && asked.catch) asked.catch(() => fill(true, false));
+          focusGame();
         });
       })();
     </script>

@@ -188,10 +188,12 @@ namespace Halka.Poc2D3D.EditorTools
             Check("staging page: the name is はるかわーるど everywhere it is shown (no HALKA WORLD left)",
                 staging.Contains("<title>はるかわーるど | HALKA</title>") && staging.Contains("<h1 id=\"game-title\">はるかわーるど</h1>") &&
                 !staging.Contains("HALKA WORLD") && !File.Exists(Path.Combine(kit, "staging", "halkaworld", "index-mobilefix.html")));
-            Check("staging page: 全画面にする is a button on the page under the game frame (not in the game); it puts the frame in full screen, hidden where the browser cannot",
+            Check("staging page: 全画面にする is a button on the page under the game frame (not in the game); full screen for the frame, or where a browser cannot (iPhone Safari) the frame fills the page with a もどす bar outside the game and the back gesture",
                 staging.Contains("id=\"game-fullscreen-button\" hidden>全画面にする</button>") &&
                 staging.IndexOf("game-fullscreen-button", StringComparison.Ordinal) > staging.IndexOf("<iframe", StringComparison.Ordinal) &&
                 staging.Contains("frame.requestFullscreen || frame.webkitRequestFullscreen") && staging.Contains("document.fullscreenEnabled") &&
+                staging.Contains("if (!real) { fill(true, false); return; }") && staging.Contains("id=\"game-fill-back\">もどす</button>") &&
+                staging.Contains("body.game-filled .unity-frame { position: fixed;") && staging.Contains("halkaGameFilled") &&
                 !File.Exists(Path.Combine(Application.dataPath, "POC2D3D", "Plugins", "WebGL", "HalkaFullscreen.jslib")));
         }
 
