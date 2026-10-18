@@ -50,7 +50,18 @@
                     1歩（歩き始め）につき1回。手動と AUTO の両方。ぶつかった・座る・切り替え・カメラでは鳴らない
   カラスの声        crow_voice.mp3、話しかけ1回につき1回
 
-保存
-  せいかつきろく    HALKA_WORLD_life_log_v1（形式 v1|歩数|秒、変更なし）
-  時間              HALKA_WORLD_time_cycle_anchor_v1（変更なし）
-  AUTO の ON/OFF    保存しない（2D ゲームと同じ）
+保存（Phase 6: 自動セーブ・自動ロード。詳しくは HARUKA_WORLD_SAVE_SYSTEM_SPEC.md）
+  形式              harukaworld-save、Schema 1、UTF-8 JSON、CRC-32 の checksum
+  場所              persistentDataPath/harukaworld_save/（snapshot_1〜3.json、head.json、import_recovery.json）
+  保存するもの      歩数、プレイ時間、朝夜の基準時刻、AUTO の ON/OFF、2D/3D、Map ID、Grid X/Y、向き
+  保存しないもの    座っている姿勢、歩行中の位置、カラスの飛行、カメラ、メッセージ、メニュー
+  いつ              1歩の完了後（3秒に1回まで）、マップ・設定の変更（1秒）、プレイ時間（25秒ごと）、
+                    ページが隠れたとき（すぐ）。歩いている途中には書かない
+  世代              3 世代。最新の正常なものは上書きしない。壊れたものは damaged_N.json へ
+  旧キー            HALKA_WORLD_life_log_v1（v1|歩数|秒）、HALKA_WORLD_time_cycle_anchor_v1 にも毎回同じ値を書く
+  再開              最後のマップ・セル・向き・2D/3D・AUTO。立てないセルは近い安全なマスへ。扉の上には置かない
+  AUTO              ON/OFF だけ引き継ぐ。60 秒は起動してから数え直す
+  メニュー          AUTO・ひょうじ・せいかつきろく・セーブデータ・やめる・版（ver3.0 RC2）
+  セーブデータ      エクスポート（harukaworld_save_YYYYMMDD_HHMMSS.json）・インポート（確認してから置き換え）・もどる
+  ファイルの上限    64 KB
+  複数タブ          あとから保存したタブが続き、ほかのタブは保存を止める

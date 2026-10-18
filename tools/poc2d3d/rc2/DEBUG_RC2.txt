@@ -9,6 +9,20 @@ URL の最後に ?debug=1 を付けると表示されます。
 
 右上に「はるかわーるど ver3.0 RC2 (debug)」と出ていれば検証モードです。
 
+セーブの開発用ログ（ブラウザの開発者ツールのコンソール。?debug=1 でなくても出ます）
+  HARUKA save: start from <読み込み元>: <マップ> (<x>,<y>) <向き> <2D/3D> AUTO <on/off> steps <歩数> play <秒>s anchor <基準時刻> rev <番号> place: <場所の決め方>
+      読み込み元: new（新規）/ ver2.9 keys（旧キーから移行）/ snapshot（最新）/ backup snapshot（前の世代から復旧）
+                  / ver2.9 keys after damaged snapshots / unreadable / newer schema present
+      場所の決め方: saved cell / nearest safe cell / the map's start / unknown map ...
+  HARUKA save: imported: ...           インポートした内容
+  HARUKA save: saving stopped: ...     保存を止めた理由（別のタブ、新しい形式、全部壊れていた）
+  HARUKA import rejected: ...          インポートを断った理由
+  ゲームの画面には、短い日本語のお知らせだけが出ます。
+
+セーブのファイルを見る（開発者ツール → Application → IndexedDB → /idbfs → FILE_DATA）
+  /idbfs/<値>/harukaworld_save/snapshot_1.json など。編集すると、そのファイルは壊れたものとして扱われます。
+  テスト用のブラウザ・テスト用のアドレスだけで行ってください。
+
 パネルの項目（上から）
   VIEW                     2D / 3D の切り替え（メニューの「ひょうじ」と同じ）
   POC options: show/hide   以下の項目の表示
