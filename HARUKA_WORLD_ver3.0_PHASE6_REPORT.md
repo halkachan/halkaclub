@@ -58,7 +58,7 @@
 | 作業ブランチ | `claude/ver3.0-2d3d-phase6`（`ea70345` から） |
 | main | `d039acf`（変更なし） |
 | origin/main | `c8ba605`（みねはうす v0.4 の別作業。Phase 6 では触れていない） |
-| 元の作業ツリー `HALKA HP` \| `codex/ver3.0-preview` `d3f81ac`。` M GrassDecoration.prefab`、`?? backup-v05-20261006-174557/`（そのまま） |
+| 元の作業ツリー `HALKA HP` | `codex/ver3.0-preview` `d3f81ac`。` M GrassDecoration.prefab`、`?? backup-v05-20261006-174557/`（そのまま） |
 | ほかの作業ツリー | `HALKA-HP-minehouse`（別のセッションが作業中。Phase 6 の途中で `1f43405` に進んだ）、Phase 1〜5 |
 
 ## 2. Backup
@@ -86,11 +86,11 @@
 | | `HarukaSaveJson.cs` | 厳しい JSON 読み取り（データだけを読む） |
 | | `HarukaSaveBrowser.cs` | ブラウザとのつなぎ（WebGL 用・Editor の検査用） |
 | | `POC2D3D/Plugins/WebGL/HarukaSave.jslib` | ダウンロード、ファイル選択、ページが隠れたとき、複数タブの印、IndexedDB への同期、時差 |
-| 共有世界 | `SharedWorldSession.cs` \| 再開の場所（`SetStartLocation`）、マップ一覧、`FindWorld`、インポート時の置き直し（`RestoreLocationNow`） |
-| 表示 | `PocViewSwitcher.cs` \| 最初の表示を外から決める（`SetInitialMode`） |
+| 共有世界 | `SharedWorldSession.cs` | 再開の場所（`SetStartLocation`）、マップ一覧、`FindWorld`、インポート時の置き直し（`RestoreLocationNow`） |
+| 表示 | `PocViewSwitcher.cs` | 最初の表示を外から決める（`SetInitialMode`） |
 | 2D本編と共通 | `Scripts/UI/GameMenuController.cs` | 全幅の行（セーブデータ）、「やめる」、メニューの中のページ（タイトル・文・ボタン）。**どれも設定したときだけ出る**（2D本編のメニューは変わらない） |
-| 2D本編と共通 | `LifeLogController.cs`、`WorldTimeController.cs`、`AutoModeController.cs` \| 読み込んだ値・インポートした値を入れる関数（`ReplaceTotals`、`SetAnchor`）、AUTO の初期値を読む関数。2D本編は呼ばない |
-| Scene・Build | `PocSceneBuilder.cs`、`PocBuilder.cs`、`PocDebugPanel.cs` \| セーブシステムの組み込み、RC2 の名前（Scene `HARUKA_WORLD_ver3.0_RC2.unity`、フォルダ `HARUKA_WORLD_ver3.0_RC2`、版 `ver3.0 RC2`） |
+| 2D本編と共通 | `LifeLogController.cs`、`WorldTimeController.cs`、`AutoModeController.cs` | 読み込んだ値・インポートした値を入れる関数（`ReplaceTotals`、`SetAnchor`）、AUTO の初期値を読む関数。2D本編は呼ばない |
+| Scene・Build | `PocSceneBuilder.cs`、`PocBuilder.cs`、`PocDebugPanel.cs` | セーブシステムの組み込み、RC2 の名前（Scene `HARUKA_WORLD_ver3.0_RC2.unity`、フォルダ `HARUKA_WORLD_ver3.0_RC2`、版 `ver3.0 RC2`） |
 | 検査 | `Phase6SaveChecks.cs`（新規）、`Phase5ReleaseCandidateChecks.cs` | 110件。Phase 5 の版の検査は RC の名前に合わせた（38章） |
 | RC2 一式 | `tools/poc2d3d/rc2/` | ステージングページ、起動、サーバー（ポート 8897）、README、デバッグ、設定、実機手順、エクスポート・インポートの説明、公開手順、ロールバック手順 |
 | 仕様書 | `HARUKA_WORLD_SAVE_SYSTEM_SPEC.md` | セーブの仕様（23章） |
@@ -643,7 +643,7 @@ RC2 フォルダ全体は 29 MB です。
 | `30a`〜`30h` | 最終の回帰検査 |
 | `30i` | Phase 5 の検査（137件） |
 | `30j` | Phase 6 の検査（110件） |
-| `31-build-rc2-webgl.log` \| 最終の RC2 Build（`45c5cb99…`） |
+| `31-build-rc2-webgl.log` | 最終の RC2 Build（`45c5cb99…`） |
 | `32-browser-all.txt` | 最終 Build での実機ブラウザ試験（再開、エクスポート・インポート、移行、ロールバック、スマホ、タブ、性能） |
 | `03`〜`22` | 作る途中の検査・Build（問題の発見と修正） |
 
