@@ -86,9 +86,17 @@ mergeInto(LibraryManager.library, {
       document.body.appendChild(input);
       try { input.click(); } catch (e) { s.importState = 4; done(); }
     };
+    // Only a press that began on the armed button counts (the tap that opened the save page
+    // must not start a download or the chooser when it is released over a button).
+    document.addEventListener("pointerdown", function (event) {
+      s.downExport = !!(s.exportJson && inside(s.exportRect, event));
+      s.downImport = inside(s.importRect, event);
+    }, true);
     document.addEventListener("pointerup", function (event) {
-      if (s.exportJson && inside(s.exportRect, event)) exportNow();
-      else if (inside(s.importRect, event)) importNow();
+      var downExport = s.downExport, downImport = s.downImport;
+      s.downExport = s.downImport = false;
+      if (downExport && s.exportJson && inside(s.exportRect, event)) exportNow();
+      else if (downImport && inside(s.importRect, event)) importNow();
     }, true);
   },
 

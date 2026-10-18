@@ -48,6 +48,9 @@ namespace Halka.Game.UI
             new System.Collections.Generic.List<System.Action<float>>();
         private string closeLabel = "";
         private IGameMenuPage page;
+        // Touches that began on an open page: only these press its buttons when released (the
+        // touch that opened the page must not press the button that appears under it).
+        private readonly System.Collections.Generic.HashSet<int> pageTouches = new System.Collections.Generic.HashSet<int>();
 
         public bool IsOpen { get; private set; }
         public bool IsLifeLogOpen { get; private set; }
@@ -72,6 +75,7 @@ namespace Halka.Game.UI
             if (!IsOpen) SetOpen(true, now);
             if (!IsOpen) return;
             page = menuPage;
+            pageTouches.Clear();
             IsLifeLogOpen = false;
             pointerCaptureUntil = now + 0.25f;
         }
@@ -187,6 +191,7 @@ namespace Halka.Game.UI
                 var now = Time.unscaledTime;
                 if (IsPageOpen && !ButtonRect().Contains(point))
                 {
+                    pageTouches.Add(touch.fingerId);
                     // Page buttons act on release (the page's file and download actions need the
                     // browser's gesture, which ends with the release); a touch outside closes.
                     if (!PanelRect().Contains(point)) SetOpen(false, now);
@@ -213,7 +218,8 @@ namespace Halka.Game.UI
             for (var i = 0; i < UnityEngine.Input.touchCount; i++)
             {
                 var touch = UnityEngine.Input.GetTouch(i);
-                if (touch.phase != TouchPhase.Ended) continue;
+                if (touch.phase != TouchPhase.Ended && touch.phase != TouchPhase.Canceled) continue;
+                if (!pageTouches.Remove(touch.fingerId) || touch.phase == TouchPhase.Canceled) continue;
                 var index = PageButtonAt(ToGui(touch.position));
                 if (index >= 0) { PressPageButton(index, Time.unscaledTime); touchUiUntil = Time.unscaledTime + 0.3f; }
             }

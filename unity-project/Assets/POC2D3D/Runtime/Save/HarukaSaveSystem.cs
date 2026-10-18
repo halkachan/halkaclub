@@ -73,6 +73,8 @@ namespace Halka.Poc2D3D.Save
         private string savedSettings = "";
         private long savedPlaySeconds = -1;
         private bool flushRequested;
+        private float startedAt;
+        private int messageShows;
         private SaveMenu menuPages;
         private SaveMenu saveMenu => menuPages ??= new SaveMenu(this);
 
@@ -156,7 +158,14 @@ namespace Halka.Poc2D3D.Save
             Loaded = data;
             KnownRevision = Math.Max(scan.HighestRevision, Browser.ReadRevisionMarker());
             ApplyEarly(data);
+            // The developer log (browser console): what was resumed, never shown in the game.
+            Debug.Log("HARUKA save: start from " + LoadSource + ": " + Describe(data) + " rev " + KnownRevision +
+                " place: " + LocationNote + (SavingStopped ? " (not saving: " + StopReason + ")" : ""));
         }
+
+        public static string Describe(HarukaSaveData d) =>
+            d.MapId + " (" + d.CellX + "," + d.CellY + ") " + d.Facing + " " + d.ViewMode + " AUTO " + (d.AutoEnabled ? "on" : "off") +
+            " steps " + d.TotalSteps + " play " + d.TotalPlaySeconds + "s anchor " + d.TimeAnchorUnixMs;
 
         private HarukaSaveData FromLegacy(LifeLogData legacyLife)
         {
@@ -197,6 +206,7 @@ namespace Halka.Poc2D3D.Save
         {
             if (started) return;
             started = true;
+            startedAt = now;
             if (autoMode != null && Loaded != null && autoMode.AutoEnabled != Loaded.AutoEnabled)
                 autoMode.SetAutoEnabled(Loaded.AutoEnabled, now);
             if (menu != null)
@@ -326,10 +336,11 @@ namespace Halka.Poc2D3D.Save
         {
             saveMenu.Update(now);
             if (!started) return;
-            if (PendingMessage != null && hud != null && !hud.HasActiveMessage)
+            // A save notice stays about 6 s (three 2 s messages), from half a second after start.
+            if (PendingMessage != null && hud != null && !hud.HasActiveMessage && now - startedAt >= 0.5f)
             {
                 hud.ShowMessage(PendingMessage);
-                PendingMessage = null;
+                if (++messageShows >= 3) { PendingMessage = null; messageShows = 0; }
             }
             if (SavingStopped) return;
             var since = now - lastWriteAt;
@@ -379,6 +390,7 @@ namespace Halka.Poc2D3D.Save
             {
                 Stop(MessageOtherTab, "another tab saved revision " + marker);
                 PendingMessage = MessageOtherTab;
+                messageShows = 0;
                 return null;
             }
             var written = Store.Write(data, KnownRevision + 1);
@@ -499,6 +511,7 @@ namespace Halka.Poc2D3D.Save
             }
             LocationNote = place.Note;
             Loaded = written;
+            Debug.Log("HARUKA save: imported: " + Describe(written) + " rev " + written.Revision + " place: " + place.Note);
             var after = Capture();
             savedSignature = Signature();
             savedSettings = Settings();

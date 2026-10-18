@@ -366,6 +366,10 @@ namespace Halka.Poc2D3D.EditorTools
             return c.Session.Cell;
         }
 
+        // The message GameHud shows now (its own timer reads real time).
+        private static string Shown(Ctx c) =>
+            ((TimedMessage)typeof(GameHud).GetField("message", Hidden).GetValue(c.Hud)).TextAt(UnityEngine.Time.unscaledTime);
+
         private static string LegacyLife() => PlayerPrefs.GetString(LifeLogController.SaveKey, "");
 
         // ---------------------------------------------------------------- migration
@@ -419,7 +423,7 @@ namespace Halka.Poc2D3D.EditorTools
             Settle(c, 1.5f);
             Check("every snapshot damaged, old keys there: their values are used (800 steps), saving goes on, the player is told",
                 c.LifeLog.TotalSteps == 800 && !c.Save.SavingStopped && Latest(c) != null && Latest(c).TotalSteps == 800 &&
-                c.Save.LoadSource.Contains("damaged"));
+                c.Save.LoadSource.Contains("damaged") && Shown(c) == HarukaSaveSystem.MessageRecovered, Shown(c));
             Check("the damaged snapshots are copied aside, not deleted", damaged.Read("damaged_1.json") == damagedCopy);
 
             // Damaged with nothing to fall back on.
@@ -431,7 +435,7 @@ namespace Halka.Poc2D3D.EditorTools
             Settle(c, 4f);
             Check("every snapshot damaged and no Life Log key: no empty save is written over them (saving stopped, files unchanged)",
                 c.Save.SavingStopped && HarukaSnapshotStore.SlotNames.All(n => lost.Files[n] == "{ broken") &&
-                c.Save.PendingMessage == null, c.Save.StopReason);
+                Shown(c) == HarukaSaveSystem.MessageUnreadable, c.Save.StopReason + " / " + Shown(c));
 
             // Migration cut off: the first snapshot write is interrupted.
             var cut = new HarukaMemoryStorage { TruncateNextWriteTo = 30 };
