@@ -257,6 +257,7 @@ namespace Halka.Poc2D3D.EditorTools
             var switcher = root.AddComponent<PocViewSwitcher>();
             var time = root.AddComponent<PocTimeOfDay>();
             var panel = root.AddComponent<PocDebugPanel>();
+            panel.ConfigureLineBoil(root.AddComponent<PocLineBoil>());
 
             var controls = new GameObject("Existing touch controls (D-pad, A)");
             controls.transform.SetParent(root.transform, false);

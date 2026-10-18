@@ -65,6 +65,7 @@ namespace Halka.Poc2D3D.EditorTools
                     SeatChecks(c);
                     RoomChecks(c);
                     Outline3DChecks(c);
+                    LineBoilChecks(c);
                     MenuChecks(c);
                     CrowChecks(c);
                     CameraChecks(c);
@@ -118,6 +119,10 @@ namespace Halka.Poc2D3D.EditorTools
             var actor = UnityEngine.Object.FindAnyObjectByType<PocActorView>(FindObjectsInactive.Include);
             var third = UnityEngine.Object.FindAnyObjectByType<PocThirdPersonCamera>(FindObjectsInactive.Include);
             Check("RC scene: the debug panel is in release mode", panel != null && panel.ReleaseCandidate);
+            var rcBoil = UnityEngine.Object.FindAnyObjectByType<PocLineBoil>(FindObjectsInactive.Include);
+            Check("RC scene: the outlines twitch a little (line boil \"lines\", 12 steps a second), switchable in ?debug=1",
+                rcBoil != null && rcBoil.enabled && rcBoil.Mode == PocLineBoilMode.Lines &&
+                Mathf.Approximately(rcBoil.StepsPerSecond, 12f) && panel != null && panel.LineBoil == rcBoil);
             Check("RC scene: starts in 2D (the game's first view)",
                 switcher != null && (PocViewMode)typeof(PocViewSwitcher).GetField("initialMode", Hidden).GetValue(switcher) ==
                 PocViewMode.PixelView2D);
@@ -727,6 +732,179 @@ namespace Halka.Poc2D3D.EditorTools
         }
 
         private static int CoutlineCountOn(Ctx c) => CountOutline(c, true);
+
+        // ---------------------------------------------------------------- line boil (after RC1)
+
+        private static void LineBoilChecks(Ctx c)
+        {
+            Category("line boil");
+            try
+            {
+                Check("line boil: a new random field 12 times a second (one field per step); OFF = still",
+                    PocLineBoil.StepAt(1.00f, 12f) == 12 && PocLineBoil.StepAt(1.08f, 12f) == 12 &&
+                    PocLineBoil.StepAt(1.09f, 12f) == 13 && PocLineBoil.AmountFor(PocLineBoilMode.Off) == 0f &&
+                    PocLineBoil.AmountFor(PocLineBoilMode.Lines) == 1f);
+                // A line color found nowhere else in the picture (the room's walls are near #252B39),
+                // so every line pixel is seen; restored below.
+                var line = new Color32(255, 0, 255, 255);
+                c.Pixel.OutlineColor = line;
+                c.Third.Outline.OutlineColor = line;
+                foreach (var interior in new[] { false, true })
+                {
+                    var cell = interior ? new Vector2Int(2, 0) : new Vector2Int(-1, 0);
+                    ToMap(c, interior, cell, FacingDirection.Up);
+                    foreach (var view in new[] { PocViewMode.PixelView2D, PocViewMode.ThirdPerson3D })
+                    {
+                        Place(c, cell, FacingDirection.Up, view);
+                        var is2D = view == PocViewMode.PixelView2D;
+                        var name = (is2D ? "2D " : "3D ") + (interior ? "indoors" : "outdoors");
+                        // 2D: one texel; 3D: 3/4 of the line width (2 px at 720 px high), rounded.
+                        var reach = is2D ? 1 : Mathf.RoundToInt(PocOutline3D.RadiusFor(ScreenH) * 0.75f);
+                        int width;
+                        Color32[] Shot(PocLineBoilMode mode, int step, bool lines, out int w)
+                        {
+                            PocLineBoil.Apply(mode, step);
+                            return is2D ? Picture2D(c, lines, out w) : Picture3D(c, lines, out w);
+                        }
+                        var none = Shot(PocLineBoilMode.Off, 0, false, out width);
+                        var still = Shot(PocLineBoilMode.Off, 0, true, out _);
+                        var s1 = Shot(PocLineBoilMode.Lines, 1, true, out _);
+                        var s2 = Shot(PocLineBoilMode.Lines, 2, true, out _);
+                        var again = Shot(PocLineBoilMode.Off, 0, true, out _);
+                        var picture = Shot(PocLineBoilMode.LinesAndPicture, 1, true, out _);
+                        var a = CompareBoil(none, still, s1, width, reach, line);
+                        var b = CompareBoil(none, still, s2, width, reach, line);
+                        var p = CompareBoil(none, still, picture, width, reach, line);
+                        var steps = Enumerable.Range(0, s1.Length).Count(i => !SamePixel(s1[i], s2[i]));
+                        Check($"line boil {name}: the lines twitch (different at each step)",
+                            a.Changed > 0 && b.Changed > 0 && steps > 0,
+                            $"still line px {a.StillInk}, changed px step1 {a.Changed} step2 {b.Changed}, step1 vs step2 {steps}");
+                        int stray = 0, gaps = 0, most = 0;
+                        for (var step = 1; step <= 8; step++)
+                        {
+                            var e = step == 1 ? a : step == 2 ? b : CompareBoil(none, still, Shot(PocLineBoilMode.Lines, step, true, out _), width, reach, line);
+                            stray += e.Stray;
+                            gaps += e.Gaps;
+                            most = Mathf.Max(most, e.BoiledInk);
+                        }
+                        Check($"line boil {name}: only a little - within {reach} px of the still line, never leaving a gap (8 steps)",
+                            stray == 0 && gaps == 0, $"stray {stray}, gaps {gaps}, line px still {a.StillInk} / boiled at most {most}");
+                        Check($"line boil {name}: only the lines move (the fills stay); \"lines + picture\" (?debug=1) moves the fills too",
+                            a.NotLine == 0 && b.NotLine == 0 && p.NotLine > 0, $"fill px moved {a.NotLine}/{b.NotLine}, picture mode {p.NotLine}");
+                        Check($"line boil {name}: OFF gives exactly the still lines",
+                            Enumerable.Range(0, still.Length).All(i => SamePixel(still[i], again[i])));
+                    }
+                }
+            }
+            finally
+            {
+                PocLineBoil.Apply(PocLineBoilMode.Off, 0);
+                c.Pixel.OutlineColor = new Color32(0x25, 0x2b, 0x39, 0xff);
+                c.Third.Outline.OutlineColor = new Color32(0x25, 0x2b, 0x39, 0xff);
+                // One more pass of each, so the shared materials hold the real color again.
+                Picture2D(c, true, out _);
+                Picture3D(c, true, out _);
+                c.Switcher.SetMode(PocViewMode.PixelView2D);
+            }
+        }
+
+        private struct BoilStats
+        {
+            public int StillInk, BoiledInk, Changed, Stray, Gaps, NotLine;
+        }
+
+        // none: the picture without lines; still: with the still lines; boiled: one step of the boil.
+        // Stray: a boiled line pixel further than 'reach' from every still line pixel; Gaps: a still
+        // line pixel with no boiled line pixel within 'reach'; NotLine: a pixel that changed to a
+        // color that is not on the way from the picture to the line color (a moved fill).
+        private static BoilStats CompareBoil(Color32[] none, Color32[] still, Color32[] boiled, int width, int reach, Color32 line)
+        {
+            var height = none.Length / width;
+            var stillInk = new bool[none.Length];
+            var boiledInk = new bool[none.Length];
+            var stats = new BoilStats();
+            for (var i = 0; i < none.Length; i++)
+            {
+                stillInk[i] = !SamePixel(still[i], none[i]);
+                boiledInk[i] = !SamePixel(boiled[i], none[i]);
+                if (stillInk[i]) stats.StillInk++;
+                if (boiledInk[i]) stats.BoiledInk++;
+                if (!SamePixel(still[i], boiled[i])) stats.Changed++;
+                if (boiledInk[i] && !Between(boiled[i], none[i], line)) stats.NotLine++;
+            }
+            bool Near(bool[] ink, int x, int y)
+            {
+                for (var dy = -reach; dy <= reach; dy++)
+                for (var dx = -reach; dx <= reach; dx++)
+                {
+                    int qx = x + dx, qy = y + dy;
+                    if (qx >= 0 && qy >= 0 && qx < width && qy < height && ink[qy * width + qx]) return true;
+                }
+                return false;
+            }
+            for (var y = 0; y < height; y++)
+            for (var x = 0; x < width; x++)
+            {
+                var i = y * width + x;
+                if (boiledInk[i] && !stillInk[i] && !Near(stillInk, x, y)) stats.Stray++;
+                if (stillInk[i] && !boiledInk[i] && !Near(boiledInk, x, y)) stats.Gaps++;
+            }
+            return stats;
+        }
+
+        private static bool SamePixel(Color32 a, Color32 b) =>
+            Mathf.Abs(a.r - b.r) <= 1 && Mathf.Abs(a.g - b.g) <= 1 && Mathf.Abs(a.b - b.b) <= 1;
+
+        private static bool Between(Color32 p, Color32 from, Color32 to) =>
+            p.r >= Mathf.Min(from.r, to.r) - 2 && p.r <= Mathf.Max(from.r, to.r) + 2 &&
+            p.g >= Mathf.Min(from.g, to.g) - 2 && p.g <= Mathf.Max(from.g, to.g) + 2 &&
+            p.b >= Mathf.Min(from.b, to.b) - 2 && p.b <= Mathf.Max(from.b, to.b) + 2;
+
+        // The 2D low-resolution picture after the outline pass (before the upscale and the sprite).
+        private static Color32[] Picture2D(Ctx c, bool lines, out int width)
+        {
+            var pixels = c.Pixel.OutlinePixels;
+            if (!lines) c.Pixel.OutlinePixels = 0;
+            c.Pixel.UpdateView(0f, ScreenW, ScreenH);
+            c.Pixel.WorldCamera.Render();
+            var result = ReadAll(c.Pixel.ComposeOutline());
+            c.Pixel.OutlinePixels = pixels;
+            width = c.Pixel.Target.width;
+            return result;
+        }
+
+        private static Color32[] Picture3D(Ctx c, bool lines, out int width)
+        {
+            var camera = c.Third.ViewCamera;
+            var src = new RenderTexture(ScreenW, ScreenH, 24, RenderTextureFormat.ARGB32);
+            var dst = new RenderTexture(ScreenW, ScreenH, 0, RenderTextureFormat.ARGB32);
+            camera.aspect = ScreenW / (float)ScreenH;
+            camera.targetTexture = src;
+            camera.Render();
+            camera.targetTexture = null;
+            if (lines) c.Third.Outline.Render(src, dst);
+            else Graphics.Blit(src, dst);
+            var result = ReadAll(dst);
+            src.Release();
+            dst.Release();
+            UnityEngine.Object.DestroyImmediate(src);
+            UnityEngine.Object.DestroyImmediate(dst);
+            width = ScreenW;
+            return result;
+        }
+
+        private static Color32[] ReadAll(RenderTexture rt)
+        {
+            var previous = RenderTexture.active;
+            RenderTexture.active = rt;
+            var read = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false);
+            read.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+            read.Apply();
+            RenderTexture.active = previous;
+            var pixels = read.GetPixels32();
+            UnityEngine.Object.DestroyImmediate(read);
+            return pixels;
+        }
 
         // ---------------------------------------------------------------- the menu
 

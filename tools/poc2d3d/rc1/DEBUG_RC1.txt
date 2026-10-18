@@ -32,5 +32,10 @@ URL の最後に ?debug=1 を付けると表示されます。
                              waits for release (Phase 4) … 一度キーを離すまで止まる（比較用）
   2D grass                 2D の草（3D tufts (Phase 4) が標準 / 2D game sprites は比較用）
   3D outline               3D の輪郭線（ON が標準）
+  Line boil                輪郭線のゆらぎ（ピクピク）
+                             lines (standard) … 線だけが少しゆらぐ（標準）
+                             lines, stronger  … ゆらぎを強く（比較用）
+                             lines + picture  … 線と一緒に絵（塗り）もゆらぐ（比較用）
+                             OFF (still)      … ゆらがない（フィードバック2までの見た目）
 
 パネルの設定は保存されません（再読み込みで標準に戻ります）。

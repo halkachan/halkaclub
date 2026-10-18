@@ -44,6 +44,87 @@ namespace Halka.Poc2D3D.EditorTools
             }
         }
 
+        // After RC1: the line boil, a few steps of it in 2D and 3D, outdoors and indoors.
+        // Batch: -executeMethod Halka.Poc2D3D.EditorTools.Phase5Capture.CaptureLineBoilBatch
+        public static void CaptureLineBoilBatch()
+        {
+            try
+            {
+                output = Path.GetFullPath(Environment.GetEnvironmentVariable("HARUKA_PHASE5_CAPTURE_DIR") ??
+                    Path.Combine(PocSceneBuilder.RepositoryRoot, "..", "HARUKA_WORLD_ver3.0_PHASE5_CAPTURES", "unity", "line_boil"));
+                Directory.CreateDirectory(output);
+                var randomState = UnityEngine.Random.state;
+                UnityEngine.Random.InitState(4);
+                var root = Setup();
+                try
+                {
+                    time.Override = PocPhaseOverride.Morning;
+                    const int w = 1280, h = 720;
+                    foreach (var interior in new[] { false, true })
+                    {
+                        var cell = interior ? new Vector2Int(2, 0) : new Vector2Int(-1, 0);
+                        if (interior) ToInterior(cell);
+                        else ToOutdoor(cell, FacingDirection.Up);
+                        var place = interior ? "in" : "out";
+                        foreach (var view in new[] { PocViewMode.PixelView2D, PocViewMode.ThirdPerson3D })
+                        {
+                            var tag = (view == PocViewMode.PixelView2D ? "2d_" : "3d_") + place;
+                            if (view == PocViewMode.ThirdPerson3D)
+                            {
+                                switcher.SetMode(PocViewMode.ThirdPerson3D);
+                                third.SnapToTarget();
+                                Settle3D(w, h, 0.5f);
+                            }
+                            BoilShot(tag + "_still", view, PocLineBoilMode.Off, 0, w, h);
+                            for (var step = 1; step <= 8; step++)
+                                BoilShot($"{tag}_s{step}", view, PocLineBoilMode.Lines, step, w, h);
+                            BoilShot(tag + "_strong_s1", view, PocLineBoilMode.LinesStrong, 1, w, h);
+                            BoilShot(tag + "_strong_s2", view, PocLineBoilMode.LinesStrong, 2, w, h);
+                            BoilShot(tag + "_picture_s1", view, PocLineBoilMode.LinesAndPicture, 1, w, h);
+                            BoilShot(tag + "_picture_s2", view, PocLineBoilMode.LinesAndPicture, 2, w, h);
+                        }
+                    }
+                    Debug.Log("HARUKA line boil captures written to " + output);
+                }
+                finally
+                {
+                    PocLineBoil.Apply(PocLineBoilMode.Off, 0);
+                    UnityEngine.Random.state = randomState;
+                    UnityEngine.Object.DestroyImmediate(root);
+                }
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        private static void BoilShot(string name, PocViewMode view, PocLineBoilMode mode, int step, int width, int height)
+        {
+            PocLineBoil.Apply(mode, step);
+            if (view == PocViewMode.PixelView2D)
+            {
+                Shot2D(name, width, height);
+                return;
+            }
+            var camera = third.ViewCamera;
+            var src = RenderTexture.GetTemporary(width, height, 24, RenderTextureFormat.ARGB32);
+            var dst = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32);
+            camera.targetTexture = src;
+            camera.aspect = width / (float)height;
+            camera.Render();
+            camera.targetTexture = null;
+            third.Outline.Render(src, dst);
+            var image = Read(dst);
+            RenderTexture.ReleaseTemporary(src);
+            RenderTexture.ReleaseTemporary(dst);
+            camera.ResetAspect();
+            File.WriteAllBytes(Path.Combine(output, name + ".png"), image.EncodeToPNG());
+            UnityEngine.Object.DestroyImmediate(image);
+        }
+
         public static void Capture(string folder)
         {
             output = Path.GetFullPath(folder);

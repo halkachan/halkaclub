@@ -8,6 +8,8 @@ namespace Halka.Poc2D3D
     // composite (HALKA/POC/Outline3D) draws #252B39 around each object where it stands in front
     // of something else. The line is as thick as the 2D view's (its 1 low-resolution pixel after
     // the integer upscale: 2 px on a 576-720 px high screen, up to 3 px). Presentation only.
+    // Line boil (PocLineBoil): the lines are found once into a screen-size texture (pass 0), then
+    // laid over the picture reading that texture at the displaced points (pass 1).
     [RequireComponent(typeof(Camera))]
     public sealed class PocOutline3D : MonoBehaviour
     {
@@ -17,6 +19,7 @@ namespace Halka.Poc2D3D
         private Camera source;
         private Camera maskCamera;
         private RenderTexture mask;
+        private RenderTexture lines;
 
         public bool Enabled { get; set; } = true;
         public Color OutlineColor { get; set; } = new Color32(0x25, 0x2b, 0x39, 0xff);
@@ -61,6 +64,12 @@ namespace Halka.Poc2D3D
                     name = "3D outline mask", filterMode = FilterMode.Point, useMipMap = false
                 };
                 mask.Create();
+                if (lines != null) lines.Release();
+                lines = new RenderTexture(src.width, src.height, 0, RenderTextureFormat.ARGB32)
+                {
+                    name = "3D outline lines", filterMode = FilterMode.Point, useMipMap = false
+                };
+                lines.Create();
             }
             maskCamera.CopyFrom(source);
             maskCamera.clearFlags = CameraClearFlags.SolidColor;
@@ -72,13 +81,16 @@ namespace Halka.Poc2D3D
             composite.SetTexture("_MaskTex", mask);
             composite.SetColor("_OutlineColor", OutlineColor);
             composite.SetFloat("_Radius", LastRadius);
-            Graphics.Blit(src, dst, composite);
+            Graphics.Blit(src, lines, composite, 0);
+            composite.SetTexture("_LineTex", lines);
+            Graphics.Blit(src, dst, composite, 1);
             RenderedFrames++;
         }
 
         private void OnDestroy()
         {
             if (mask != null) mask.Release();
+            if (lines != null) lines.Release();
             if (maskCamera == null) return;
             if (Application.isPlaying) Destroy(maskCamera.gameObject);
             else DestroyImmediate(maskCamera.gameObject);

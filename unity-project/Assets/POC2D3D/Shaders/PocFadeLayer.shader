@@ -2,6 +2,7 @@
 // on their own into a low-resolution texture (depth-tested against the rest of the world, alpha
 // = how far each has faded), then laid over the upscaled view and the player sprite. Pixels
 // next to a faded tree get its outline at the same strength, so the silhouette stays readable.
+// Line boil (PocLineBoil.cginc): that outline twitches with the same field as OutlineComposite's.
 Shader "HALKA/POC/FadeLayer"
 {
     Properties
@@ -21,6 +22,7 @@ Shader "HALKA/POC/FadeLayer"
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
+            #include "PocLineBoil.cginc"
 
             sampler2D _MainTex;
             float4 _MainTex_TexelSize;
@@ -43,11 +45,8 @@ Shader "HALKA/POC/FadeLayer"
                 return tex2D(_MainTex, uv + offset * _MainTex_TexelSize.xy).a;
             }
 
-            float4 frag(v2f i) : SV_Target
+            float Ring(float2 uv)
             {
-                float2 uv = (floor(i.uv * _MainTex_TexelSize.zw) + 0.5) * _MainTex_TexelSize.xy;
-                float4 color = tex2D(_MainTex, uv);
-                if (color.a > 0.002) return color;
                 float a = 0.0;
                 if (_Thickness > 0.5)
                 {
@@ -67,6 +66,29 @@ Shader "HALKA/POC/FadeLayer"
                         a = max(a, Alpha(uv, float2(-1, -1)));
                     }
                 }
+                return a;
+            }
+
+            float4 frag(v2f i) : SV_Target
+            {
+                float2 uv = (floor(i.uv * _MainTex_TexelSize.zw) + 0.5) * _MainTex_TexelSize.xy;
+                float4 color = tex2D(_MainTex, uv);
+                float2 shift = BoilShift(uv * _MainTex_TexelSize.zw, 1.0, 1.0);
+                float2 uvd = uv + shift * _MainTex_TexelSize.xy;
+                if (any(saturate(uvd) != uvd)) shift = 0.0;
+                if (any(shift != 0.0) && _HalkaLineBoilPicture < 0.5)
+                {
+                    // Tested at the displaced texel: on the faded object there, the line stays where
+                    // it was (joined to it); otherwise the line around that texel, over this pixel.
+                    float here = color.a > 0.002 ? 0.0 : Ring(uv);
+                    float edge = tex2D(_MainTex, uvd).a > 0.002 ? here :
+                        max(Ring(uvd), BoilStays(uv * _MainTex_TexelSize.zw, shift, 1.0, 1.0) ? here : 0.0);
+                    if (edge > 0.002) return float4(_OutlineColor.rgb, edge);
+                    clip(color.a - 0.002);
+                    return color;
+                }
+                if (color.a > 0.002) return color;
+                float a = Ring(uv);
                 clip(a - 0.002);
                 return float4(_OutlineColor.rgb, a);
             }
