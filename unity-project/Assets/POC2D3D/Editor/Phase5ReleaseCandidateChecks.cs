@@ -64,6 +64,7 @@ namespace Halka.Poc2D3D.EditorTools
                     Grass2DChecks(c);
                     SeatChecks(c);
                     RoomChecks(c);
+                    Outline3DChecks(c);
                     MenuChecks(c);
                     CrowChecks(c);
                     CameraChecks(c);
@@ -614,8 +615,29 @@ namespace Halka.Poc2D3D.EditorTools
             }
             var easel = c.Presenter.Views.First(v => v.DefinitionId == "art_easel_basic");
             var mic = c.Presenter.Views.First(v => v.DefinitionId == "recording_mic_basic");
-            Check("easel and mic: never hidden as camera occluders; they fade in front of her like the trees",
-                !easel.CameraOccluder && easel.FadeInFront3D && !mic.CameraOccluder && mic.FadeInFront3D);
+            Check("easel and mic: never hidden as camera occluders; the easel fades in front of her, the mic stand does not",
+                !easel.CameraOccluder && easel.FadeInFront3D && !mic.CameraOccluder && !mic.FadeInFront3D);
+            // Second feedback: standing on (4,0) above the mic in 3D, the mic stays fully drawn.
+            ToMap(c, true, new Vector2Int(4, 0), FacingDirection.Down);
+            Place(c, new Vector2Int(4, 0), FacingDirection.Down, PocViewMode.ThirdPerson3D);
+            Settle(c, 0.6f);
+            Check("mic: standing above it in 3D, it is not made see-through",
+                c.Third.TreeFade.AlphaOf(mic) > 0.99f && !c.Third.TreeFade.IsSwapped(mic) &&
+                mic.Renderers.All(r => r.enabled && r.shadowCastingMode != ShadowCastingMode.ShadowsOnly));
+            // Second feedback: in 2D the feet on the bottom row stay behind the cut-down South wall.
+            foreach (var (cell, expectCrop) in new[] { (new Vector2Int(2, -3), true), (new Vector2Int(-3, -3), true),
+                                                       (new Vector2Int(0, -3), false), (new Vector2Int(2, -2), false) })
+            {
+                ToMap(c, true, cell, FacingDirection.Down);
+                Place(c, cell, FacingDirection.Down, PocViewMode.PixelView2D);
+                Draw2D(c);
+                var cropped = c.Pixel.LastWallCropPixels;
+                var bottom = c.Pixel.LastSpriteRect.y + cropped * c.Pixel.LastSpritePixelSize;
+                Check($"2D room {cell}: " + (expectCrop ? "the feet stop at the South wall's top edge (rows behind the wall left out)"
+                        : "nothing hidden (doorway / not the bottom row)"),
+                    expectCrop ? cropped > 0 && cropped <= 20 && c.Pixel.LastPlayerCropPixels == cropped : cropped == 0,
+                    $"crop {cropped} px, sprite bottom {c.Pixel.LastSpriteRect.y} -> {bottom:0}");
+            }
             // Walk West behind the easel ((-3,0)..(-2,0) are North of it) in 3D: it stays drawn.
             ToMap(c, true, new Vector2Int(-1, 0), FacingDirection.Left);
             Place(c, new Vector2Int(-1, 0), FacingDirection.Left, PocViewMode.ThirdPerson3D);
@@ -644,6 +666,67 @@ namespace Halka.Poc2D3D.EditorTools
             Check("easel: walking behind it in 3D it is never hidden; where it stands in front of her it fades",
                 !hidden && (inFront == 0 || fadedInFront > 0), $"hidden {hidden} in front {inFront} faded {fadedInFront}");
         }
+
+        // ---------------------------------------------------------------- 3D outline
+
+        private static int CountOutline(Ctx c, bool outlineOn)
+        {
+            var outline = c.Third.Outline;
+            var camera = c.Third.ViewCamera;
+            var src = new RenderTexture(ScreenW, ScreenH, 24, RenderTextureFormat.ARGB32);
+            var dst = new RenderTexture(ScreenW, ScreenH, 0, RenderTextureFormat.ARGB32);
+            camera.aspect = ScreenW / (float)ScreenH;
+            camera.targetTexture = src;
+            camera.Render();
+            camera.targetTexture = null;
+            if (outlineOn) outline.Render(src, dst);
+            else Graphics.Blit(src, dst);
+            var previous = RenderTexture.active;
+            RenderTexture.active = dst;
+            var read = new Texture2D(ScreenW, ScreenH, TextureFormat.RGBA32, false);
+            read.ReadPixels(new Rect(0, 0, ScreenW, ScreenH), 0, 0);
+            read.Apply();
+            RenderTexture.active = previous;
+            var line = (Color32)outline.OutlineColor;
+            var count = read.GetPixels32().Count(p => Mathf.Abs(p.r - line.r) <= 2 && Mathf.Abs(p.g - line.g) <= 2 && Mathf.Abs(p.b - line.b) <= 2);
+            UnityEngine.Object.DestroyImmediate(read);
+            src.Release();
+            dst.Release();
+            return count;
+        }
+
+        private static void Outline3DChecks(Ctx c)
+        {
+            Category("3D outline");
+            var outline = c.Third.Outline;
+            Check("3D outline: on the 3D camera, configured with the 2D view's mask shader, #252B39, ON by default",
+                outline != null && outline.Ready && outline.Enabled && ColorUtility.ToHtmlStringRGB(outline.OutlineColor) == "252B39");
+            Check("3D outline: as thick as the 2D outline after its upscale (2 px at 576-720 px high, at most 3 px)",
+                PocOutline3D.RadiusFor(576) == PocPixelView2D.ChooseScale(576, 16) && PocOutline3D.RadiusFor(576) == 2 &&
+                PocOutline3D.RadiusFor(720) == 2 && PocOutline3D.RadiusFor(1152) == 3 && PocOutline3D.RadiusFor(1688) == 3);
+            var playerTagged = c.Actor.GetComponentsInChildren<MeshFilter>().All(f => f.sharedMesh.uv2.Length > 0 &&
+                Mathf.RoundToInt(f.sharedMesh.uv2[0].x) == PocOutlineTag.PlayerId);
+            var crowTagged = c.CrowView.ModelInstance.GetComponentsInChildren<MeshFilter>().All(f => f.sharedMesh.uv2.Length > 0 &&
+                Mathf.RoundToInt(f.sharedMesh.uv2[0].x) == PocOutlineTag.CrowId);
+            Check("3D outline: the 3D models of ﾊﾙｶﾁｬﾝ and the crow carry their own IDs", playerTagged && crowTagged);
+            foreach (var interior in new[] { false, true })
+            {
+                var cell = interior ? new Vector2Int(0, -1) : new Vector2Int(-1, 0);
+                ToMap(c, interior, cell, FacingDirection.Up);
+                Place(c, cell, FacingDirection.Up, PocViewMode.ThirdPerson3D);
+                Settle(c, 0.5f);
+                var off = CountOutline(c, false);
+                var on = CoutlineCountOn(c);
+                Check($"3D outline {(interior ? "indoors" : "outdoors")}: lines drawn around the objects and ﾊﾙｶﾁｬﾝ (outline-colored pixels {off} -> {on})",
+                    on > off + 1500, $"{off} -> {on}");
+            }
+            outline.Enabled = false;
+            Check("3D outline: can be switched off (?debug=1 \"3D outline\")", !outline.Enabled);
+            outline.Enabled = true;
+            c.Switcher.SetMode(PocViewMode.PixelView2D);
+        }
+
+        private static int CoutlineCountOn(Ctx c) => CountOutline(c, true);
 
         // ---------------------------------------------------------------- the menu
 

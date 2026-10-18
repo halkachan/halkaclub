@@ -32,6 +32,8 @@ namespace Halka.Poc2D3D.EditorTools
         public const string Phase2Models = Root + "/Models/Phase2/";
         public const string OutlineMaterialPath = Root + "/Materials/POC_OutlineComposite.mat";
         public const string OutlineMaskShader = "HALKA/POC/OutlineMask";
+        // Feedback after RC1: the 3D view's outline (same mask, composite at screen size).
+        public const string Outline3DMaterialPath = Root + "/Materials/POC_Outline3D.mat";
         // Phase 2.1: TEMPORARY ﾊﾙｶﾁｬﾝ stand-in for the 3D view until the user's official model
         // arrives: Minecraft-like blocks painted after the 2D sprites (the first, rounded
         // low-poly stand-in haruka_placeholder.fbx is kept for comparison only).
@@ -130,6 +132,7 @@ namespace Halka.Poc2D3D.EditorTools
             RemapModelMaterial(SofaModelPath, toon);
             EnsureMaterial(TreeFadeMaterialPath, "HALKA/POC/ToonVertexColorFade", null);
             EnsureMaterial(OutlineMaterialPath, "HALKA/POC/OutlineComposite", null);
+            EnsureMaterial(Outline3DMaterialPath, "HALKA/POC/Outline3D", null);
             EnsureMaterial(SpriteMaterialPath, "HALKA/POC/PixelSprite", null);
             EnsureMaterial(FadeMaterialPath, "HALKA/POC/FadeLayer", null);
 
@@ -164,10 +167,11 @@ namespace Halka.Poc2D3D.EditorTools
                 new PocPresentationBinding { definitionId = "desk_basic", model = Phase3("desk_basic"), cameraOccluder = false },
                 new PocPresentationBinding { definitionId = "cushion_basic", model = Phase3("cushion_basic"),
                     cameraOccluder = false, minPickSize = SmallPickSize },
-                // Feedback after RC1: the easel and the mic stay drawn; in front of her they fade like
-                // the trees (40%, 0.25 s) instead of being hidden as camera occluders.
+                // Feedback after RC1: the easel and the mic stay drawn (never hidden as camera
+                // occluders); the easel fades like the trees in front of her, the thin mic stand
+                // does not fade either (second feedback).
                 new PocPresentationBinding { definitionId = "recording_mic_basic", model = Phase3("recording_mic_basic"),
-                    cameraOccluder = false, fadeInFront3D = true, fadeOpacity = 0.4f, fadeSeconds = 0.25f },
+                    cameraOccluder = false },
                 new PocPresentationBinding { definitionId = "art_easel_basic", model = Phase3("art_easel_basic"),
                     cameraOccluder = false, fadeInFront3D = true, fadeOpacity = 0.4f, fadeSeconds = 0.25f },
                 new PocPresentationBinding { definitionId = "sofa_basic", model = LoadModel(SofaModelPath), cameraOccluder = false },
@@ -289,6 +293,8 @@ namespace Halka.Poc2D3D.EditorTools
             thirdCamera.nearClipPlane = 0.05f;
             thirdCamera.farClipPlane = 60f;
             var thirdPerson = thirdCamera.gameObject.AddComponent<PocThirdPersonCamera>();
+            thirdCamera.gameObject.AddComponent<PocOutline3D>().Configure(Shader.Find(OutlineMaskShader),
+                AssetDatabase.LoadAssetAtPath<Material>(Outline3DMaterialPath));
             thirdCamera.enabled = false;
             thirdPerson.enabled = false;
 

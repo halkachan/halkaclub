@@ -83,6 +83,7 @@ namespace Halka.Poc2D3D
         public float IndoorDistance { get => indoorDistance; set => indoorDistance = value; }
         public int HiddenOccluders { get; private set; }
         public Camera ViewCamera => viewCamera;
+        public PocOutline3D Outline => viewCamera != null ? viewCamera.GetComponent<PocOutline3D>() : null;
 
         // Phase 4: right after leaving a building in 3D, the camera looks at its front (the
         // player and the building together) until the next movement input; then the normal

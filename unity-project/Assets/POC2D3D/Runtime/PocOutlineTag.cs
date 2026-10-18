@@ -9,6 +9,8 @@ namespace Halka.Poc2D3D
     {
         public const int PlayerId = 251;
         public const int DecorationId = 250;
+        // Feedback after RC1 (3D outline): the 3D models of ﾊﾙｶﾁｬﾝ and the crow carry IDs too.
+        public const int CrowId = 252;
         // A tiny strength that the composite shader replaces by the global grass setting.
         public const float MarkerStrength = 3f / 255f;
 

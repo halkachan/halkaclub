@@ -163,7 +163,7 @@ namespace Halka.Poc2D3D
             var x = 8f;
             // Below the game's Menu button (GameMenuController: 12 px from the top, 48 px tall).
             var y = gameplay != null && gameplay.Menu != null ? 68f : 8f;
-            var rows = expanded ? 22 : 2;
+            var rows = expanded ? 23 : 2;
             var statsLines = showStats ? expanded ? 13 : 8 : 6;
             panelRect = new Rect(x - 4f, y - 4f, width + 8f, rows * (row + 3f) + statsLines * row * 0.78f + 12f);
             GUI.DrawTexture(panelRect, panelBackground);
@@ -228,6 +228,9 @@ namespace Halka.Poc2D3D
                     third.ExitHeldKeyResumeSeconds = third.ExitHeldKeyResumeSeconds > 0f ? 0f : PocThirdPersonCamera.StandardExitHeldKeyResumeSeconds;
                 if (Button(ref y, x, width, row, "2D grass: " + (pixel.OriginalGrass2D ? "2D game sprites" : "3D tufts (Phase 4)")))
                     pixel.OriginalGrass2D = !pixel.OriginalGrass2D;
+                var outline3D = third.Outline;
+                if (Button(ref y, x, width, row, "3D outline: " + (outline3D != null && outline3D.Enabled ? "ON" : "OFF")))
+                    if (outline3D != null) outline3D.Enabled = !outline3D.Enabled;
             }
             GUI.Label(new Rect(x, y, width, statsLines * row * 0.78f + 8f), BuildText(), textStyle);
             DrawTitle(s);

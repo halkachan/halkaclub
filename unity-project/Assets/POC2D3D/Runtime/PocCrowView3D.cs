@@ -73,6 +73,7 @@ namespace Halka.Poc2D3D
             for (var i = transform.childCount - 1; i >= 0; i--) DestroyImmediate(transform.GetChild(i).gameObject);
             instance = Instantiate(modelPrefab, transform, false);
             instance.name = modelPrefab.name;
+            PocOutlineTag.Apply(instance, PocOutlineTag.CrowId, 1f); // the 3D view's outline
             // Blender fronts face South; turn the model so it looks along this transform's forward.
             instance.transform.localRotation = Quaternion.Euler(0f, GridSpace3D.ModelFrontYawOffset, 0f);
             head = Find("Head");

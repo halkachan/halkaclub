@@ -120,6 +120,8 @@ namespace Halka.Poc2D3D
         public int GrassCount { get { EnsureGrass(); return grassCells.Count; } }
         public int RustlingCount => grassRustles.Count;
         public int LastPlayerCropPixels { get; private set; }
+        // Feedback after RC1: sprite rows hidden behind the cut-down South wall (0 elsewhere).
+        public int LastWallCropPixels { get; private set; }
         public int LastCrowCropPixels { get; private set; }
         public int LastGrassDrawn { get; private set; }
 
@@ -221,6 +223,51 @@ namespace Halka.Poc2D3D
             if (!OriginalGrass2D || crow == null || !crow.isActiveAndEnabled || crow.Airborne) return 0;
             var cell = VisualCell(crow.StepFromCell, crow.StepToCell, crow.IsMoving, crow.StepProgressNormalized);
             return HasGrass(cell) ? CrowGrassHiddenPixels : 0;
+        }
+
+        // Feedback after RC1: in the room the South wall is cut down to its base for the 2D view,
+        // and the sprite stands right behind it on the bottom row: the rows of the sprite below the
+        // base's top edge (seen from the camera) are behind the wall and are left out, as the wall
+        // in front of her feet would hide them. Only where a cut wall is under the sprite (not at
+        // the doorway), and never while seated.
+        public int WallCropPixels(Sprite sprite, RectInt placed, float pixelSize)
+        {
+            if (session == null || session.IsSeated || worldPresenter == null || !session.World.IsInterior ||
+                sprite == null || pixelSize <= 0f) return 0;
+            var world = session.World;
+            // The wall cell South of her column on the room's bottom wall row (the doorway is floor).
+            var column = Mathf.RoundToInt(session.Position.x);
+            if (!world.IsBlocked(new Vector2Int(column, world.MinCell.y))) return 0;
+            var baseTop = WallBaseTop();
+            if (float.IsNaN(baseTop)) return 0;
+            var x = GridSpace3D.ToWorld(new Vector2Int(column, world.MinCell.y)).x;
+            var northFace = GridSpace3D.ToWorld(new Vector2Int(column, world.MinCell.y)).z + GridSpace3D.CellSize * 0.5f;
+            var line = ScreenPoint(new Vector3(x, baseTop, northFace)).y;
+            if (line <= placed.y) return 0;
+            return Mathf.Clamp(Mathf.CeilToInt((line - placed.y) / pixelSize), 0, Mathf.RoundToInt(sprite.rect.height));
+        }
+
+        private Renderer wallBase;
+
+        // The room's always-drawn wall base (PocInteriorBuilder), its top height; NaN outside.
+        private float WallBaseTop()
+        {
+            if (wallBase == null || !wallBase.gameObject.activeInHierarchy)
+            {
+                wallBase = null;
+                foreach (var item in worldPresenter.GetComponentsInChildren<MeshRenderer>())
+                    if (item.name == "Interior wall base (always shown)") { wallBase = item; break; }
+            }
+            return wallBase != null ? wallBase.bounds.max.y : float.NaN;
+        }
+
+        // A world point in screen pixels (origin bottom-left), with the same whole-pixel rounding as the cards.
+        private Vector2 ScreenPoint(Vector3 world)
+        {
+            var viewport = worldCamera.WorldToViewportPoint(world);
+            var lowX = Mathf.Round(viewport.x * target.width + 0.25f);
+            var lowY = Mathf.Round(viewport.y * target.height + 0.25f);
+            return new Vector2(lowX * Scale - Offset.x, lowY * Scale - Offset.y);
         }
 
         // The 3D grass tufts belong to the 3D view; with the original grass the 2D view leaves them out.
@@ -667,7 +714,8 @@ namespace Halka.Poc2D3D
             LastSpritePixelSize = pixelSize;
             LastSpriteDepthBottom = depthBottom;
             LastSpriteDepthTop = depthTop;
-            LastPlayerCropPixels = PlayerCropPixels();
+            LastWallCropPixels = WallCropPixels(sprite, placed, pixelSize);
+            LastPlayerCropPixels = Mathf.Max(PlayerCropPixels(), LastWallCropPixels);
             DrawCard(new SpriteCard { Sprite = sprite }, placed, depthBottom, depthTop, true, screenWidth, screenHeight,
                 LastPlayerCropPixels);
         }

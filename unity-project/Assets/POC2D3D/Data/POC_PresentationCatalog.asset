@@ -201,7 +201,7 @@ MonoBehaviour:
     placeholder: 0
     outlineStrength: 1
     fadeInFront2D: 0
-    fadeInFront3D: 1
+    fadeInFront3D: 0
     fadeOpacity: 0.4
     fadeSeconds: 0.25
     partialOcclusion: 0
