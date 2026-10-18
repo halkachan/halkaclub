@@ -111,7 +111,9 @@ namespace Halka.Poc2D3D
         // the crow hops in, and hides the bottom of the player (10 px of 64) and of the crow on the
         // ground (4 px of 32) on such cells. The 2D view does the same with the same sprites and
         // rules; the 3D grass tufts are left out of the 2D render so grass is never doubled.
-        public bool OriginalGrass2D { get; set; } = true;
+        // Feedback after RC1: the 2D view keeps the Phase 4 look (3D grass tufts) by default; the
+        // 2D game's grass sprites stay available as an option (?debug=1, "2D grass").
+        public bool OriginalGrass2D { get; set; }
         public const int PlayerGrassHiddenPixels = Halka.Game.Player.PlayerGrassOcclusion.GrassPlayerOcclusionPixels;
         public const int CrowGrassHiddenPixels = CrowGrassOcclusion.HiddenPixels;
         public bool GrassReady => grassIdle != null;

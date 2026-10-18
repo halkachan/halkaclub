@@ -81,10 +81,19 @@ namespace Halka.Poc2D3D
         public static readonly SeatDisplay BenchSitDisplay = new SeatDisplay(0.03f, SitLegDegrees, 0.08f);
         // On the floor cushion the legs slope down to the floor in front of it.
         public static readonly SeatDisplay CushionSitDisplay = new SeatDisplay(0.07f, 62f);
+        // The sofa (feedback after RC1): seat surface 0.22 at the anchors, thighs on the seat.
+        public static readonly SeatDisplay SofaSitDisplay = new SeatDisplay(0.07f, SitLegDegrees, 0.06f);
         // The display shift applied (world), for checks and reports.
         public Vector3 SeatDisplayShift { get; private set; }
 
-        public static SeatDisplay SeatDisplayFor(string pose) => pose == "cushion_sit" ? CushionSitDisplay : BenchSitDisplay;
+        public static SeatDisplay SeatDisplayFor(string pose) => SeatDisplayFor(null, pose);
+
+        // Per piece of furniture first (the sofa uses the bench's pose), then per pose.
+        public static SeatDisplay SeatDisplayFor(string definitionId, string pose) =>
+            definitionId == "sofa_basic" ? SofaSitDisplay : pose == "cushion_sit" ? CushionSitDisplay : BenchSitDisplay;
+
+        private SeatDisplay CurrentSeatDisplayFor() =>
+            SeatDisplayFor(session.SeatObject != null ? session.SeatObject.DefinitionId : null, session.SeatPose);
         public SeatDisplay CurrentSeatDisplay { get; private set; }
         public const float SitArmDegrees = 28f;
 
@@ -189,7 +198,7 @@ namespace Halka.Poc2D3D
                     Mathf.Clamp(SeatPoint.y / BenchSeatHeight, 0.2f, 1.5f);
                 // 3D: the model sits on the seat anchor, facing the seat's front (South), moved
                 // TowardCenter along the seat's length (presentation only).
-                SeatDisplayShift = SeatShift(SeatDisplayFor(session.SeatPose).TowardCenter);
+                SeatDisplayShift = SeatShift(CurrentSeatDisplayFor().TowardCenter);
                 position = new Vector3(SeatPoint.x, 0f, SeatPoint.z) + SeatDisplayShift;
             }
             transform.position = position;
@@ -208,7 +217,7 @@ namespace Halka.Poc2D3D
             if (Seated)
             {
                 // Hips on the seat, thighs forward, hands resting forward: a plain sitting pose.
-                var display = CurrentSeatDisplay = SeatDisplayFor(session.SeatPose);
+                var display = CurrentSeatDisplay = CurrentSeatDisplayFor();
                 model.localPosition = Vector3.up * (SeatPoint.y + display.HipLift - HipHeight);
                 if (HasLimbs)
                 {

@@ -8,28 +8,32 @@
   シーン            Assets/POC2D3D/Scenes/HARUKA_WORLD_ver3.0_RC1.unity（技術検証用の POC シーンとは別）
   最初の表示        2D
   検証パネル        非表示・停止（?debug=1 のときだけ表示）
-  右上の表示        ver3.0 RC1
-  ページのタイトル  はるかわーるど ver3.0 RC1
+  版の表示          メニューのいちばん下に「ver3.0 RC1」（画面の右上には出さない）
+  ページのタイトル  はるかわーるど
+  スマホ            縦長でも横向きでも遊べる（回転案内なし、縦でも止まらない）
+  全画面            メニューの「ぜんがめん」（ON / OFF）
   Unity             6000.3.10f1 / WebGL / 非 Development
 
 2D
   1マス             16 px（整数倍のみ）
   輪郭線            1 px、#252B39、Object ID Outline
   スプライト        Point sampling、元の画像を変更せずに使用
-  草                2D ゲームの grass.png を草のマスすべてに（MapPlacementRules.HasGrass）
-                    揺れ: grass_rustle 00〜04（0.09秒×4、0.42秒）、歩き始め（StepStarted）で
-  足元              草のマスで ﾊﾙｶﾁｬﾝ 64px 中の下 10px、カラス 32px 中の下 4px を隠す
-                    （2D ゲームの PlayerGrassOcclusion / CrowGrassOcclusion と同じ。座っている間・飛行中・木の上は隠さない）
-  座る              ベンチ: bench_sit.png / クッション: cushion_sit_provisional.png（仮）
+  草                Phase 4 の見た目（3Dの草の房）。2Dゲームの草Spriteは ?debug=1 の比較用
+  座る              ベンチ・ソファー: bench_sit.png
 
 3D
   カメラ            北固定（North fixed）、距離 屋外 3.4 / 屋内 3.6
-  家から出た直後    家の正面の構図。押したままのキーは 0.6 秒後にそのまま歩き続ける
+  家から出た直後    家の正面の構図。押したままのキーは 0.6 秒後にそのまま歩き続ける（正式）
                     （キーの意味が変わらない北固定のときだけ。それ以外は離すまで待つ）
-  木の透け          40%、0.25 秒
-  ベンチ            SeatAnchor_L / SeatAnchor_R、表示だけ腰を 0.03 上げる（太ももが座面 0.18 に乗る）
-  クッション        SitAnchor、表示だけ腰を 0.07 上げ、脚を 62° にして床へ
+  透け              木・イーゼル・マイクスタンド: 40%、0.25 秒（消えない）
+  ベンチ            SeatAnchor_L / SeatAnchor_R、表示だけ腰を 0.03 上げ、中央へ 0.08 寄せる
+  ソファー          (4,2)-(5,2)、SeatAnchor_L / R（座面 0.22）、表示だけ腰を 0.07 上げ、中央へ 0.06 寄せる
   カラス            飛行中は脚をたたむ（-85°、0.65 倍）
+
+家の中（マップデータ）
+  ソファー          sofa_basic、2×1、(4,2)-(5,2)、前の (4,1)・(5,1) から上向きでAボタン（bench_sit）
+  クッション        ソファーの上（ソファーのモデル・画像の一部）。部屋の真ん中 (0,0) からは無くなった
+  マイクスタンド    通れないのは台の (4,-1) だけ。真上の (4,0) は歩ける
 
 音
   足音              footstep_one_step.wav、PlayerFootstepAudio、音量 0.45、2D 音、ピッチ 1

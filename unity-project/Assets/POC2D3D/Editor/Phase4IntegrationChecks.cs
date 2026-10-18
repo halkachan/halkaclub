@@ -1027,34 +1027,35 @@ namespace Halka.Poc2D3D.EditorTools
                 Mathf.Abs(c.Actor.SeatPoint.x - GridSpace3D.ToWorld(new Vector2Int(-1, 2)).x) < 0.01f);
             c.Session.Stand();
 
+            // RC1 feedback: the cushion moved onto a sofa (sofa_basic at (4,2)); the room's seat is the
+            // sofa, sat on from (4,1) facing North with the bench_sit pose (was: the cushion at (0,0)).
             foreach (var mode in new[] { PocViewMode.PixelView2D, PocViewMode.ThirdPerson3D })
             {
                 var name = mode == PocViewMode.PixelView2D ? "2D" : "3D";
-                ToMap(c, true, new Vector2Int(0, 0), FacingDirection.Up);
-                Place(c, new Vector2Int(0, 0), FacingDirection.Up, mode);
+                ToMap(c, true, new Vector2Int(4, 1), FacingDirection.Up);
+                Place(c, new Vector2Int(4, 1), FacingDirection.Up, mode);
                 c.Session.InteractAhead();
                 Settle(c, 0.2f);
-                Check($"cushion {name}: A on the cushion sits down there (cushion_sit), same cell",
-                    c.Session.IsSeated && c.Session.SeatPose == "cushion_sit" && c.Session.SeatCell == new Vector2Int(0, 0) &&
-                    c.Session.Cell == new Vector2Int(0, 0));
+                Check($"sofa {name}: A in front of the sofa sits down on it (bench_sit), the player keeps her cell",
+                    c.Session.IsSeated && c.Session.SeatPose == "bench_sit" && c.Session.SeatCell == new Vector2Int(4, 2) &&
+                    c.Session.Cell == new Vector2Int(4, 1) && c.Session.SeatObject.DefinitionId == "sofa_basic");
                 if (mode == PocViewMode.PixelView2D)
-                    // Phase 5: the cushion has its own provisional artwork (cushionSit); bench_sit before.
-                    Check("cushion 2D: the seated artwork (Phase 5: cushion_sit_provisional.png) on the cushion, lower than on the bench",
-                        c.Actor.CurrentSprite == c.Actor.Sprites.SeatSprite("cushion_sit") && c.Actor.CurrentSprite != null &&
-                        c.Actor.SpriteOffsetNorth < PlayerSeatController.ArtworkAboveSeatCenter &&
-                        Vector3.Distance(c.Actor.SpriteRoot, GridSpace3D.ToWorld(new Vector2Int(0, 0))) < 0.04f);
+                    Check("sofa 2D: the seated artwork (bench_sit.png) on the sofa cell",
+                        c.Actor.CurrentSprite == c.Actor.Sprites.benchSit &&
+                        Vector3.Distance(c.Actor.SpriteRoot, GridSpace3D.ToWorld(new Vector2Int(4, 2))) < 0.04f);
                 else
-                    Check("cushion 3D: the model sits on SitAnchor (0.1 high)",
-                        Mathf.Abs(c.Actor.SeatPoint.y - 0.1f) < 0.01f &&
-                        Vector2.Distance(new Vector2(c.Actor.transform.position.x, c.Actor.transform.position.z),
+                    Check("sofa 3D: the model sits on SeatAnchor_L (0.22 high), drawn toward the middle",
+                        Mathf.Abs(c.Actor.SeatPoint.y - 0.22f) < 0.01f &&
+                        Vector2.Distance(new Vector2(c.Actor.transform.position.x - c.Actor.SeatDisplayShift.x,
+                                c.Actor.transform.position.z - c.Actor.SeatDisplayShift.z),
                             new Vector2(c.Actor.SeatPoint.x, c.Actor.SeatPoint.z)) < 0.001f);
                 c.Switcher.Toggle();
                 Settle(c, 0.2f);
-                Check($"cushion {name}: still seated after a view switch", c.Session.IsSeated);
+                Check($"sofa {name}: still seated after a view switch", c.Session.IsSeated);
                 c.Switcher.Toggle();
                 c.Session.InteractAhead();
                 Settle(c, 0.1f);
-                Check($"cushion {name}: A stands up", !c.Session.IsSeated && c.Session.Cell == new Vector2Int(0, 0));
+                Check($"sofa {name}: A stands up", !c.Session.IsSeated && c.Session.Cell == new Vector2Int(4, 1));
             }
             // Other furniture keeps its message.
             Place(c, new Vector2Int(2, 0), FacingDirection.Up, PocViewMode.ThirdPerson3D);
@@ -1063,7 +1064,7 @@ namespace Halka.Poc2D3D.EditorTools
             Check("furniture: the bed still answers \"ベッド。\" (no new sleep system)",
                 c.Session.InteractAhead() && c.Session.LastMessage == "ベッド。" && !c.Session.IsSeated);
             // A click while seated: only the seat answers (InteractionRouter).
-            Place(c, new Vector2Int(0, 0), FacingDirection.Up, PocViewMode.PixelView2D);
+            Place(c, new Vector2Int(4, 1), FacingDirection.Up, PocViewMode.PixelView2D);
             c.Session.InteractAhead();
             var desk = c.Session.World.Objects.First(o => o.DefinitionId == "desk_basic");
             Check("seated click: another object does not answer; the seat itself stands her up",

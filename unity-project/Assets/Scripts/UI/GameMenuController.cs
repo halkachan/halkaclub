@@ -27,15 +27,36 @@ namespace Halka.Game.UI
         private float pointerCaptureUntil;
         private float touchUiUntil;
         private bool suppressTouchUntilRelease;
-        private IGameMenuItem extraItem;
+        private readonly System.Collections.Generic.List<IGameMenuItem> extraItems =
+            new System.Collections.Generic.List<IGameMenuItem>();
+        // ver3.0: the version shown at the bottom of the menu (empty: none, as in the 2D game).
+        [SerializeField] private string versionText;
 
         public bool IsOpen { get; private set; }
         public bool IsLifeLogOpen { get; private set; }
         public bool BlocksGameplayInput => IsOpen || suppressTouchUntilRelease ||
             Time.unscaledTime < pointerCaptureUntil;
-        public IGameMenuItem ExtraItem => extraItem;
+        public IGameMenuItem ExtraItem => extraItems.Count > 0 ? extraItems[0] : null;
+        public System.Collections.Generic.IReadOnlyList<IGameMenuItem> ExtraItems => extraItems;
+        public string VersionText => versionText;
 
-        public void SetExtraItem(IGameMenuItem item) => extraItem = item;
+        public void SetExtraItem(IGameMenuItem item)
+        {
+            extraItems.Clear();
+            if (item != null) extraItems.Add(item);
+        }
+
+        public void AddExtraItem(IGameMenuItem item) { if (item != null) extraItems.Add(item); }
+
+        // The value button of an extra row while the menu shows it (GUI pixels, origin top-left).
+        public bool TryGetExtraItemRect(int index, out Rect guiRect)
+        {
+            guiRect = default;
+            if (!IsOpen || IsLifeLogOpen || index < 0 || index >= extraItems.Count) return false;
+            guiRect = ExtraRect(index);
+            return true;
+        }
+        public void SetVersionText(string text) => versionText = text;
 
         public void SetOpen(bool open, float now)
         {
@@ -54,10 +75,12 @@ namespace Halka.Game.UI
             pointerCaptureUntil = now + 0.25f;
         }
 
-        public void ActivateExtraItem(float now)
+        public void ActivateExtraItem(float now) => ActivateExtraItem(0, now);
+
+        public void ActivateExtraItem(int index, float now)
         {
-            if (!IsOpen || IsLifeLogOpen || extraItem == null) return;
-            extraItem.Activate(now);
+            if (!IsOpen || IsLifeLogOpen || index < 0 || index >= extraItems.Count) return;
+            extraItems[index].Activate(now);
             pointerCaptureUntil = now + 0.25f;
         }
 
@@ -93,8 +116,8 @@ namespace Halka.Game.UI
                 if (ButtonRect().Contains(point)) SetOpen(!IsOpen, now);
                 else if (IsOpen && IsLifeLogOpen && BackRect().Contains(point)) BackFromLifeLog(now);
                 else if (IsOpen && !IsLifeLogOpen && AutoRect().Contains(point)) ToggleAuto(now);
-                else if (IsOpen && !IsLifeLogOpen && extraItem != null && ExtraRect().Contains(point))
-                    ActivateExtraItem(now);
+                else if (IsOpen && !IsLifeLogOpen && ExtraIndexAt(point) >= 0)
+                    ActivateExtraItem(ExtraIndexAt(point), now);
                 else if (IsOpen && !IsLifeLogOpen && LifeLogRect().Contains(point)) OpenLifeLog(now);
                 else if (IsOpen && !PanelRect().Contains(point)) SetOpen(false, now);
                 else if (!IsOpen) continue;
@@ -146,18 +169,22 @@ namespace Halka.Game.UI
                     20, valueStyle.normal.textColor, TextAnchor.MiddleCenter, font);
                 if (useMouse && GUI.Button(autoButton, GUIContent.none, GUIStyle.none))
                     ToggleAuto(Time.unscaledTime);
-                if (extraItem != null)
+                for (var index = 0; index < extraItems.Count; index++)
                 {
-                    Label(new Rect(panel.x + 12f, panel.y + 101f, 96f, 32f), extraItem.Label, 20);
-                    var extraButton = ExtraRect();
-                    DrawTextButton(extraButton, extraItem.Value, Color.white);
+                    var item = extraItems[index];
+                    Label(new Rect(panel.x + 12f, panel.y + 101f + index * 48f, 96f, 32f), item.Label, 20);
+                    var extraButton = ExtraRect(index);
+                    DrawTextButton(extraButton, item.Value, Color.white);
                     if (useMouse && GUI.Button(extraButton, GUIContent.none, GUIStyle.none))
-                        ActivateExtraItem(Time.unscaledTime);
+                        ActivateExtraItem(index, Time.unscaledTime);
                 }
                 var lifeButton = LifeLogRect();
                 DrawTextButton(lifeButton, "せいかつきろく", Color.white);
                 if (useMouse && GUI.Button(lifeButton, GUIContent.none, GUIStyle.none))
                     OpenLifeLog(Time.unscaledTime);
+                if (!string.IsNullOrEmpty(versionText))
+                    GameBitmapFont.Draw(new Rect(panel.x + 12f, lifeButton.yMax + 6f, panel.width - 24f, 22f),
+                        versionText, 16, new Color(0.18f, 0.19f, 0.15f), TextAnchor.MiddleRight, font);
             }
 
             var current = Event.current;
@@ -180,7 +207,8 @@ namespace Halka.Game.UI
             var safe = Screen.safeArea;
             var button = ButtonRect();
             var width = Mathf.Min(IsLifeLogOpen ? 240f : 200f, Mathf.Max(120f, safe.width - 24f));
-            var height = IsLifeLogOpen ? 208f : extraItem != null ? 198f : 150f;
+            var height = IsLifeLogOpen ? 208f : 150f + extraItems.Count * 48f +
+                (string.IsNullOrEmpty(versionText) ? 0f : 26f);
             var y = Mathf.Min(button.yMax + 6f, Screen.height - safe.yMin - height - 4f);
             return new Rect(button.x, y, width, height);
         }
@@ -191,16 +219,23 @@ namespace Halka.Game.UI
             return new Rect(panel.xMax - 80f, panel.y + 48f, 66f, 38f);
         }
 
-        private Rect ExtraRect()
+        private Rect ExtraRect(int index)
         {
             var panel = PanelRect();
-            return new Rect(panel.xMax - 80f, panel.y + 96f, 66f, 38f);
+            return new Rect(panel.xMax - 80f, panel.y + 96f + index * 48f, 66f, 38f);
+        }
+
+        private int ExtraIndexAt(Vector2 point)
+        {
+            for (var index = 0; index < extraItems.Count; index++)
+                if (ExtraRect(index).Contains(point)) return index;
+            return -1;
         }
 
         private Rect LifeLogRect()
         {
             var panel = PanelRect();
-            return new Rect(panel.x + 12f, panel.y + (extraItem != null ? 146f : 98f), panel.width - 24f, 38f);
+            return new Rect(panel.x + 12f, panel.y + 98f + extraItems.Count * 48f, panel.width - 24f, 38f);
         }
 
         private Rect BackRect()

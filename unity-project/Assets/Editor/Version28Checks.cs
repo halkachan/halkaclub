@@ -53,12 +53,14 @@ namespace Halka.Game.Editor
                 room, entry, null, canEnter);
             var bed = room.Objects.Single(item => item.Definition.StableId == "bed_basic");
             var desk = room.Objects.Single(item => item.Definition.StableId == "desk_basic");
-            var cushion = room.Objects.Single(item => item.Definition.StableId == "cushion_basic");
+            // ver3.0 RC1 feedback: the cushion moved onto a sofa; its seat cell replaces the cushion cell.
+            var sofa = room.Objects.Single(item => item.Definition.StableId == "sofa_basic");
+            var sofaSeat = sofa.RootCell + sofa.Definition.ActionPoints[0].PlayerCellOffset;
             Check(firstChoices.Count > 1 && firstChoices.All(cell =>
                 canEnter(cell) && cell != entry && cell != exit) &&
                 !firstChoices.Contains(bed.RootCell) && !firstChoices.Contains(desk.RootCell) &&
-                firstChoices.Contains(cushion.RootCell),
-                "indoor destinations are reachable, avoid blocked furniture and include cushion");
+                !firstChoices.Contains(sofa.RootCell) && firstChoices.Contains(sofaSeat),
+                "indoor destinations are reachable, avoid blocked furniture and include the sofa seat");
             var lastGoal = firstChoices[0];
             var nextChoices = IndoorAutoRoutePlanner2D.CollectDestinations(
                 room, entry, lastGoal, canEnter);
@@ -94,7 +96,7 @@ namespace Halka.Game.Editor
             auto.Tick(now + 183f);
             Check(auto.Active && !auto.CanAutoEnter(exit) &&
                 !auto.CanAutoEnter(bed.RootCell) && !auto.CanAutoEnter(desk.RootCell) &&
-                auto.CanAutoEnter(cushion.RootCell),
+                !auto.CanAutoEnter(sofa.RootCell) && auto.CanAutoEnter(sofaSeat),
                 "indoor AUTO starts at 60 seconds and respects the formal furniture and exit");
 
             var completed = 0;

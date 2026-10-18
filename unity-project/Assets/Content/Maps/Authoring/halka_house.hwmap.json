@@ -375,14 +375,6 @@
       }
     },
     {
-      "instanceId": "obj_cushion_basic_v25_halka_house",
-      "definitionId": "cushion_basic",
-      "rootCell": {
-        "x": 0,
-        "y": 0
-      }
-    },
-    {
       "instanceId": "obj_desk_basic_v25_halka_house",
       "definitionId": "desk_basic",
       "rootCell": {
@@ -411,6 +403,14 @@
       "definitionId": "studio_shelf_basic",
       "rootCell": {
         "x": -1,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_sofa_basic_v30_rc1",
+      "definitionId": "sofa_basic",
+      "rootCell": {
+        "x": 4,
         "y": 2
       }
     }

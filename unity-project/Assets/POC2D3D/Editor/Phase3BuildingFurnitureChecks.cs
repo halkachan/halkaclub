@@ -28,7 +28,7 @@ namespace Halka.Poc2D3D.EditorTools
         };
         private static readonly Dictionary<string, string> SeatPoses = new Dictionary<string, string>
         {
-            ["bench_basic"] = "bench_sit", ["cushion_basic"] = "cushion_sit"
+            ["bench_basic"] = "bench_sit", ["cushion_basic"] = "cushion_sit", ["sofa_basic"] = "bench_sit"
         };
 
         [MenuItem("HALKA/POC 2D3D/Run Phase 3 Building and Furniture Checks")]
@@ -501,9 +501,12 @@ namespace Halka.Poc2D3D.EditorTools
             Check("interior: furniture stands on the floor (no floating, nothing under the floor)",
                 furniture.All(b => Mathf.Abs(b.min.y) < 0.01f));
             var blocked = world.Objects.SelectMany(o => o.BlockedCells()).ToList();
-            Check("interior: collision unchanged (walls + furniture footprints, the cushion stays walkable)",
-                blocked.All(world.IsBlocked) && walls.All(world.IsBlocked) &&
-                world.CanEnter(world.Objects.Single(o => o.DefinitionId == "cushion_basic").RootCell));
+            // RC1 feedback: the cushion moved onto the sofa (2 blocked cells); the room's middle (0,0)
+            // stays walkable, and only the mic stand's own cell blocks (its North cell is free).
+            Check("interior: collision = walls + furniture footprints (sofa 2 cells, mic 1 cell); the middle stays walkable",
+                blocked.All(world.IsBlocked) && walls.All(world.IsBlocked) && world.CanEnter(new Vector2Int(0, 0)) &&
+                world.IsBlocked(new Vector2Int(4, 2)) && world.IsBlocked(new Vector2Int(5, 2)) &&
+                world.IsBlocked(new Vector2Int(4, -1)) && world.CanEnter(new Vector2Int(4, 0)));
             Enter(c, false, new Vector2Int(0, 0), FacingDirection.Down);
         }
 
@@ -651,7 +654,7 @@ namespace Halka.Poc2D3D.EditorTools
             var onCushion = SpriteCovered(c, new Vector2Int(0, 0));
             Check("2D order: the original sprite is covered behind the house and the easel, and drawn in front of them otherwise",
                 behindHouse > 200 && frontOfHouse < 20 && behindEasel > 60 && frontOfEasel < 20 && frontOfDesk < 20 && onCushion < 20,
-                $"house behind {behindHouse} / front {frontOfHouse}, easel behind {behindEasel} / front {frontOfEasel}, desk {frontOfDesk}, cushion {onCushion}");
+                $"house behind {behindHouse} / front {frontOfHouse}, easel behind {behindEasel} / front {frontOfEasel}, desk {frontOfDesk}, room middle {onCushion}");
             Check("2D: the original sprite is drawn in the room (not the 3D model)",
                 c.Pixel.LastSpriteRect.width > 0 && !c.Actor.ModelVisible && c.Actor.HasSprites);
             Check("2D: the South wall side is cut down to its base, the others stand (flat dark rows like the 2D room)",

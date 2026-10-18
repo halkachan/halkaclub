@@ -81,7 +81,7 @@ namespace Halka.Poc2D3D.EditorTools
             foreach (var original in new[] { false, true })
             {
                 pixel.OriginalGrass2D = original;
-                var tag = original ? "phase5" : "phase4";
+                var tag = original ? "orig2d_option" : "rc_default";
                 PlaceCrow(new Vector2Int(3, -1));
                 session.PlaceForCheck(new Vector2Int(0, 0), FacingDirection.Down);
                 Shot2D($"grass2d_{tag}_start{suffix}", 1280, 720);
@@ -92,7 +92,7 @@ namespace Halka.Poc2D3D.EditorTools
                 Crop($"grass2d_{tag}_feet_on_grass{suffix}", 640 - 40, 360 - 120, 260, 180);
                 session.PlaceForCheck(new Vector2Int(0, 0), FacingDirection.Down);
             }
-            pixel.OriginalGrass2D = true;
+            pixel.OriginalGrass2D = false; // RC default (Phase 4 look)
         }
 
         // The nearest walkable grass cell (to the start) whose right neighbour is walkable grass too.
@@ -147,13 +147,14 @@ namespace Halka.Poc2D3D.EditorTools
                 }
                 session.Stand();
             }
-            ToInterior(new Vector2Int(0, 0));
+            // RC1 feedback: the sofa (with the cushion on it) at (4,2), sat on from (4,1).
+            ToInterior(new Vector2Int(4, 1));
             foreach (var mode in new[] { PocViewMode.PixelView2D, PocViewMode.ThirdPerson3D })
             {
                 switcher.SetMode(mode);
-                session.PlaceForCheck(new Vector2Int(0, 0), FacingDirection.Up);
+                session.PlaceForCheck(new Vector2Int(4, 1), FacingDirection.Up);
                 session.InteractAhead();
-                var name = $"cushion_{(mode == PocViewMode.PixelView2D ? "2d" : "3d")}{suffix}";
+                var name = $"sofa_{(mode == PocViewMode.PixelView2D ? "2d" : "3d")}{suffix}";
                 if (mode == PocViewMode.PixelView2D) Shot2D(name, 1280, 720);
                 else
                 {

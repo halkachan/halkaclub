@@ -1,0 +1,41 @@
+{
+  "generator": "blender/scripts/build_phase5_sofa.py",
+  "blenderVersion": "5.2.0 LTS",
+  "units": "1 Blender unit = 1 Unity unit, 1 cell = 0.5, origin = ground centre of the root cell",
+  "models": [
+    {
+      "name": "sofa_basic",
+      "blend": "blender/sources/phase5/sofa_basic.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase5/sofa_basic.fbx",
+      "triangles": 212,
+      "vertices": 132,
+      "materials": 1,
+      "boundsMin": [
+        -0.23,
+        -0.2,
+        0.0
+      ],
+      "boundsMax": [
+        0.73,
+        0.2,
+        0.48
+      ],
+      "anchors": {
+        "SeatAnchor_L": [
+          0.0,
+          -0.04,
+          0.22
+        ],
+        "SeatAnchor_R": [
+          0.5,
+          -0.04,
+          0.22
+        ]
+      },
+      "supplemented": [
+        "underside",
+        "back of the backrest"
+      ]
+    }
+  ]
+}

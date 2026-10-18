@@ -73,7 +73,9 @@ namespace Halka.Poc2D3D.EditorTools
         public const string GrassPath = "Assets/Content/World/grass.png";
         public const string GrassRustlePath = "Assets/Content/World/grass_rustle/";
         public const string BenchSitPath = "Assets/Content/Character/bench_sit.png";
-        public const string CushionSitPath = "Assets/POC2D3D/Provisional/cushion_sit_provisional.png";
+        // Feedback after RC1: the sofa (blender/scripts/build_phase5_sofa.py) with the cushion on it.
+        public const string Phase5Models = Root + "/Models/Phase5/";
+        public const string SofaModelPath = Phase5Models + "sofa_basic.fbx";
         public const string TreeFadeMaterialPath = Root + "/Materials/POC_ToonVertexColorFade.mat";
         public const string OutdoorMapPath = "Assets/Content/Maps/first_field.asset";
         public const string InteriorMapPath = "Assets/Content/Maps/halka_house.asset";
@@ -125,6 +127,7 @@ namespace Halka.Poc2D3D.EditorTools
             RemapModelMaterial(PlaceholderPlayerPath, toon);
             foreach (var name in Phase3ModelNames) RemapModelMaterial(Phase3Models + name + ".fbx", toon);
             RemapModelMaterial(CrowModelPath, toon);
+            RemapModelMaterial(SofaModelPath, toon);
             EnsureMaterial(TreeFadeMaterialPath, "HALKA/POC/ToonVertexColorFade", null);
             EnsureMaterial(OutlineMaterialPath, "HALKA/POC/OutlineComposite", null);
             EnsureMaterial(SpriteMaterialPath, "HALKA/POC/PixelSprite", null);
@@ -161,8 +164,13 @@ namespace Halka.Poc2D3D.EditorTools
                 new PocPresentationBinding { definitionId = "desk_basic", model = Phase3("desk_basic"), cameraOccluder = false },
                 new PocPresentationBinding { definitionId = "cushion_basic", model = Phase3("cushion_basic"),
                     cameraOccluder = false, minPickSize = SmallPickSize },
-                new PocPresentationBinding { definitionId = "recording_mic_basic", model = Phase3("recording_mic_basic") },
-                new PocPresentationBinding { definitionId = "art_easel_basic", model = Phase3("art_easel_basic") },
+                // Feedback after RC1: the easel and the mic stay drawn; in front of her they fade like
+                // the trees (40%, 0.25 s) instead of being hidden as camera occluders.
+                new PocPresentationBinding { definitionId = "recording_mic_basic", model = Phase3("recording_mic_basic"),
+                    cameraOccluder = false, fadeInFront3D = true, fadeOpacity = 0.4f, fadeSeconds = 0.25f },
+                new PocPresentationBinding { definitionId = "art_easel_basic", model = Phase3("art_easel_basic"),
+                    cameraOccluder = false, fadeInFront3D = true, fadeOpacity = 0.4f, fadeSeconds = 0.25f },
+                new PocPresentationBinding { definitionId = "sofa_basic", model = LoadModel(SofaModelPath), cameraOccluder = false },
                 new PocPresentationBinding { definitionId = "studio_shelf_basic", model = Phase3("studio_shelf_basic"),
                     cameraOccluder = false }
             }, new PocEnvironmentPresentation
@@ -176,8 +184,6 @@ namespace Halka.Poc2D3D.EditorTools
             var sprites = LoadCharacterSprites();
             sprites.benchSit = AssetDatabase.LoadAssetAtPath<Sprite>(BenchSitPath);
             if (sprites.benchSit == null) throw new InvalidOperationException("Sprite missing: " + BenchSitPath);
-            sprites.cushionSit = AssetDatabase.LoadAssetAtPath<Sprite>(CushionSitPath);
-            if (sprites.cushionSit == null) throw new InvalidOperationException("Sprite missing: " + CushionSitPath);
             catalog.ConfigurePlayer(new PocActorPresentation
             {
                 model = LoadModel(PlaceholderPlayerPath),
@@ -217,8 +223,17 @@ namespace Halka.Poc2D3D.EditorTools
             if (panel == null || hud == null || switcher == null) throw new InvalidOperationException("RC scene parts are missing");
             panel.ConfigureReleaseCandidate(true);
             hud.SetVersionLabel(PocDebugPanel.ReleaseCandidateVersionLabel);
+            // RC1 feedback: the version is shown in the menu, phones are played upright again.
+            hud.SetVersionLabelShown(false);
+            var menu = root.GetComponentInChildren<GameMenuController>(true);
+            var guard = root.GetComponentInChildren<PocOrientationGuard>(true);
+            if (menu == null || guard == null) throw new InvalidOperationException("RC scene menu / guard missing");
+            menu.SetVersionText(PocDebugPanel.ReleaseCandidateVersionLabel);
+            guard.LandscapeOnly = false;
             EditorUtility.SetDirty(panel);
             EditorUtility.SetDirty(hud);
+            EditorUtility.SetDirty(menu);
+            EditorUtility.SetDirty(guard);
         }
 
         public static GameObject BuildSceneContent(PocPresentationCatalog catalog, Material screenOverlay)

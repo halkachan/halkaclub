@@ -37,7 +37,8 @@ namespace Halka.Game.Editor
             var sign = field.Objects.Single(item =>
                 item.InstanceId == "obj_sign_basic_v25_first_field" &&
                 item.Definition != null && item.Definition.StableId == "sign_basic");
-            var cushion = ExactlyOne(room, "cushion_basic");
+            // ver3.0 RC1 feedback: the cushion moved onto a sofa; the room's seat is sofa_basic.
+            var sofa = ExactlyOne(room, "sofa_basic");
             var desk = ExactlyOne(room, "desk_basic");
             Check(!string.IsNullOrWhiteSpace(sign.SignText) &&
                 sign.Definition.Footprint == Vector2Int.one &&
@@ -47,13 +48,14 @@ namespace Halka.Game.Editor
                 sign.Definition.ActionPoints[0].ActionType == WorldActionType.Examine &&
                 sign.Definition.ActionPoints[0].PlayerFacing == WorldFacing.Up,
                 "one-cell sign and instance text");
-            Check(!cushion.Definition.BlocksMovement &&
-                !MapPlacementRules.BlocksMovement(room, cushion.RootCell) &&
+            Check(sofa.Definition.BlocksMovement &&
+                MapPlacementRules.BlocksMovement(room, sofa.RootCell) &&
+                !MapPlacementRules.BlocksMovement(room, sofa.RootCell + sofa.Definition.ActionPoints[0].PlayerCellOffset) &&
                 desk.Definition.BlocksMovement &&
                 MapPlacementRules.BlocksMovement(room, desk.RootCell) &&
                 MapPlacementRules.BlocksMovement(room, desk.RootCell + Vector2Int.right) &&
                 desk.Definition.ActionPoints[0].InteractionText == "つくえ。",
-                "cushion passage and desk examine metadata");
+                "sofa seat and desk examine metadata");
             var fieldReachable = Reachable(field, field.PlayerSpawnCell);
             var roomReachable = Reachable(room, Marker(room, "interior_entry"));
             Check(fieldReachable.Contains(field.OutsideEntryCell) &&
@@ -63,7 +65,8 @@ namespace Halka.Game.Editor
                 fieldReachable.Contains(field.SouthRoadEnd) &&
                 fieldReachable.Contains(field.WestRoadEnd), "outdoor routes and house entry remain reachable");
             Check(roomReachable.Contains(Marker(room, "interior_exit")) &&
-                roomReachable.Contains(cushion.RootCell), "interior exit and cushion reachable");
+                sofa.Definition.ActionPoints.All(point => roomReachable.Contains(sofa.RootCell + point.PlayerCellOffset)),
+                "interior exit and both sofa seats reachable");
             foreach (var point in bench.Definition.ActionPoints)
                 Check(fieldReachable.Contains(bench.RootCell + point.PlayerCellOffset) &&
                     !MapPlacementRules.BlocksMovement(field, bench.RootCell + point.PlayerCellOffset),

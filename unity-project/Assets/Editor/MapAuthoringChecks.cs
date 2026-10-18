@@ -183,7 +183,8 @@ namespace Halka.Game.Editor
                     interior.MaxCell == new Vector2Int(6, 4) &&
                     interior.Surfaces.Count == 50 && interior.Objects.Count >= 3 &&
                     interior.Objects.Any(item => item.Definition.StableId == "bed_basic") &&
-                    interior.Objects.Any(item => item.Definition.StableId == "cushion_basic") &&
+                    // ver3.0 RC1 feedback: the cushion moved onto a sofa.
+                    interior.Objects.Any(item => item.Definition.StableId == "sofa_basic") &&
                     interior.Objects.Any(item => item.Definition.StableId == "desk_basic") &&
                     interior.TryGetMarker("interior_entry", out var entry) && entry == new Vector2Int(0, -3) &&
                     interior.TryGetMarker("interior_exit", out var exit) && exit == new Vector2Int(0, -4) &&

@@ -12,6 +12,8 @@ namespace Halka.Game.UI
         [SerializeField, Min(0.1f)] private float messageSeconds = 2f;
         // ver3.0 Release Candidate: the label shown instead of GameVersion.Label (empty: unchanged).
         [SerializeField] private string versionLabelOverride;
+        // ver3.0: the version moves into the menu (GameMenuController.versionText); the 2D game keeps it here.
+        [SerializeField] private bool hideVersionLabel;
 
         private readonly TimedMessage message = new TimedMessage();
         private GUIStyle versionStyle;
@@ -19,6 +21,8 @@ namespace Halka.Game.UI
 
         public string VersionLabel => string.IsNullOrEmpty(versionLabelOverride) ? GameVersion.Label : versionLabelOverride;
         public void SetVersionLabel(string label) => versionLabelOverride = label;
+        public bool VersionLabelShown => !hideVersionLabel;
+        public void SetVersionLabelShown(bool shown) => hideVersionLabel = !shown;
 
         public bool HasActiveMessage => !string.IsNullOrEmpty(message.TextAt(Time.unscaledTime));
 
@@ -42,9 +46,10 @@ namespace Halka.Game.UI
                     normal = { textColor = Color.black }
                 };
             }
-            GameBitmapFont.Draw(new Rect(Screen.width - 110f, 10f, 100f, 28f),
-                VersionLabel, 18, versionStyle.normal.textColor,
-                TextAnchor.MiddleRight, messageFont);
+            if (!hideVersionLabel)
+                GameBitmapFont.Draw(new Rect(Screen.width - 110f, 10f, 100f, 28f),
+                    VersionLabel, 18, versionStyle.normal.textColor,
+                    TextAnchor.MiddleRight, messageFont);
 
             var text = message.TextAt(Time.unscaledTime);
             if (string.IsNullOrEmpty(text)) return;

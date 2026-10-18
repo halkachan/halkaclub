@@ -62,7 +62,8 @@ namespace Halka.Poc2D3D.EditorTools
             var output = Path.Combine(root, ReleaseCandidateGamePath.Replace('/', Path.DirectorySeparatorChar));
             var report = BuildScene(PocSceneBuilder.RcScenePath, output);
             var page = Path.Combine(output, "index.html");
-            File.WriteAllText(page, PreviewPage(File.ReadAllText(page), PocDebugPanel.ReleaseCandidateTitle));
+            // RC1 feedback: phones play upright again (no rotation guide), the title is はるかわーるど.
+            File.WriteAllText(page, PreviewPage(File.ReadAllText(page), PocDebugPanel.ReleaseCandidateTitle, false));
             var kit = Path.Combine(PocSceneBuilder.RepositoryRoot, "tools", "poc2d3d", "rc1");
             foreach (var file in Directory.GetFiles(kit, "*", SearchOption.AllDirectories))
             {
@@ -74,7 +75,7 @@ namespace Halka.Poc2D3D.EditorTools
                 File.Copy(file, target, true);
             }
             var build = BuildId(output);
-            foreach (var name in new[] { "index.html", "index-mobilefix.html" })
+            foreach (var name in new[] { "index.html" })
             {
                 var staging = Path.Combine(root, "halkaworld", name);
                 File.WriteAllText(staging, File.ReadAllText(staging).Replace("__BUILD__", build));
@@ -141,15 +142,63 @@ namespace Halka.Poc2D3D.EditorTools
         // Orientation API on the first touch where a browser allows it. Desktop layout unchanged.
         public static string PreviewPage(string html) => PreviewPage(html, PocDebugPanel.PreviewTitle);
 
-        public static string PreviewPage(string html, string title)
+        public static string PreviewPage(string html, string title) => PreviewPage(html, title, true);
+
+        // landscapeGuide false (the RC): any orientation is played, the canvas still keeps inside
+        // the safe area and follows turns and full screen (resize events).
+        public static string PreviewPage(string html, string title, bool landscapeGuide)
         {
             html = html.Replace("\r\n", "\n");
             html = ReplaceOnce(html, "<title>HALKA WORLD</title>", "<title>" + title + "</title>");
-            html = ReplaceOnce(html, "    </style>", GuideStyle + "    </style>");
-            html = ReplaceOnce(html, "    <div id=\"loading\">", GuideMarkup + "    <div id=\"loading\">");
-            html = ReplaceOnce(html, TemplateLayout, PreviewLayout);
+            html = ReplaceOnce(html, "    </style>", (landscapeGuide ? GuideStyle : ProbeStyle) + "    </style>");
+            html = ReplaceOnce(html, "    <div id=\"loading\">", (landscapeGuide ? GuideMarkup : ProbeMarkup) + "    <div id=\"loading\">");
+            html = ReplaceOnce(html, TemplateLayout, landscapeGuide ? PreviewLayout : AnyOrientationLayout);
             return html;
         }
+
+        private const string ProbeStyle =
+@"      #safe-area-probe { position: fixed; inset: 0; box-sizing: border-box; visibility: hidden; pointer-events: none;
+        padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+";
+
+        private const string ProbeMarkup =
+@"    <div id=""safe-area-probe"" aria-hidden=""true""></div>
+";
+
+        private const string AnyOrientationLayout =
+@"      // はるかわーるど: phones are played upright (as in the 2D game) or sideways; the canvas
+      // stays inside the safe area (notch, home indicator) and follows turns and full screen.
+      // On a large landscape screen, keep the 576-pixel world projection at exactly one CSS
+      // pixel per authored sprite pixel, centred with integer offsets.
+      const safeProbe = document.getElementById(""safe-area-probe"");
+      function safeInsets() {
+        const style = getComputedStyle(safeProbe);
+        const px = (value) => Math.max(0, parseFloat(value) || 0);
+        return { top: px(style.paddingTop), right: px(style.paddingRight), bottom: px(style.paddingBottom), left: px(style.paddingLeft) };
+      }
+      function layoutCanvas() {
+        const inset = safeInsets();
+        const width = window.innerWidth - inset.left - inset.right;
+        const height = window.innerHeight - inset.top - inset.bottom;
+        const desktop = width >= 800 && height >= 576 && width >= height;
+        if (!desktop || document.fullscreenElement) {
+          canvas.style.left = `${inset.left}px`;
+          canvas.style.top = `${inset.top}px`;
+          canvas.style.width = `calc(100% - ${inset.left + inset.right}px)`;
+          canvas.style.height = `calc(100% - ${inset.top + inset.bottom}px)`;
+          return;
+        }
+        const scale = Math.min(1, 576 / height);
+        const canvasWidth = Math.floor(width * scale);
+        const canvasHeight = Math.floor(height * scale);
+        canvas.style.width = `${canvasWidth}px`;
+        canvas.style.height = `${canvasHeight}px`;
+        canvas.style.left = `${Math.floor(inset.left + (width - canvasWidth) / 2)}px`;
+        canvas.style.top = `${Math.floor(inset.top + (height - canvasHeight) / 2)}px`;
+      }
+      window.addEventListener(""resize"", layoutCanvas);
+      window.addEventListener(""orientationchange"", layoutCanvas);
+      document.addEventListener(""fullscreenchange"", layoutCanvas);";
 
         // Line endings follow the checkout; both sides are compared with LF.
         private static string ReplaceOnce(string text, string find, string replacement)

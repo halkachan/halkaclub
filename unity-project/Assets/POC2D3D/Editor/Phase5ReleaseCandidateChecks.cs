@@ -63,6 +63,8 @@ namespace Halka.Poc2D3D.EditorTools
                     FootstepChecks(c);
                     Grass2DChecks(c);
                     SeatChecks(c);
+                    RoomChecks(c);
+                    MenuChecks(c);
                     CrowChecks(c);
                     CameraChecks(c);
                     MobileChecks(c);
@@ -118,15 +120,20 @@ namespace Halka.Poc2D3D.EditorTools
             Check("RC scene: starts in 2D (the game's first view)",
                 switcher != null && (PocViewMode)typeof(PocViewSwitcher).GetField("initialMode", Hidden).GetValue(switcher) ==
                 PocViewMode.PixelView2D);
-            Check("RC scene: the HUD reads ver3.0 RC1; the 2D game's own label is unchanged (ver3.0 Preview)",
-                hud != null && hud.VersionLabel == "ver3.0 RC1" && GameVersion.Label == "ver3.0 Preview");
+            var rcMenu = UnityEngine.Object.FindAnyObjectByType<GameMenuController>(FindObjectsInactive.Include);
+            var rcGuard = UnityEngine.Object.FindAnyObjectByType<PocOrientationGuard>(FindObjectsInactive.Include);
+            Check("RC scene: the version ver3.0 RC1 is in the menu, not at the top right; the 2D game's own label is unchanged",
+                hud != null && !hud.VersionLabelShown && hud.VersionLabel == "ver3.0 RC1" && rcMenu != null &&
+                rcMenu.VersionText == "ver3.0 RC1" && GameVersion.Label == "ver3.0 Preview");
+            Check("RC scene: phones are played upright too (no landscape-only rule, no pause when upright)",
+                rcGuard != null && !rcGuard.LandscapeOnly);
             // Awake reads ?debug=1 from the page URL; without it (Edit Mode: no URL) the panel is off.
             panel.enabled = true;
             typeof(PocDebugPanel).GetMethod("Awake", Hidden).Invoke(panel, null);
             Check("RC scene: without ?debug=1 the panel is hidden and disabled (no OnGUI, no profiler recorders)",
                 !panel.PanelVisible && !panel.enabled);
-            Check("RC scene: the user-facing names say はるかわーるど (title, RC name); IDs keep HALKA",
-                PocDebugPanel.ReleaseCandidateTitle.StartsWith("はるかわーるど") &&
+            Check("RC scene: the name is fixed as はるかわーるど (page title exactly はるかわーるど); IDs keep HALKA",
+                PocDebugPanel.ReleaseCandidateTitle == "はるかわーるど" &&
                 PocDebugPanel.ReleaseCandidateName.StartsWith("はるかわーるど") &&
                 panel.Title.StartsWith("はるかわーるど ver3.0 RC1") && LifeLogController.SaveKey.StartsWith("HALKA_WORLD"));
             var footsteps = gameplay != null ? gameplay.Footsteps : null;
@@ -137,30 +144,31 @@ namespace Halka.Poc2D3D.EditorTools
                 AssetDatabase.GetAssetPath(clip) == PocSceneBuilder.FootstepPath && Mathf.Approximately(source.volume, 0.45f) &&
                 source.spatialBlend == 0f && Mathf.Approximately(source.pitch, 1f) && !source.playOnAwake &&
                 (bool)typeof(PlayerFootstepAudio).GetField("externallyDriven", Hidden).GetValue(footsteps));
-            Check("RC scene: the 2D view has the 2D game's grass sprites (grass.png and 5 rustle frames)",
-                pixel != null && pixel.GrassReady);
-            Check("RC scene: the cushion has its own provisional 2D artwork; the bench keeps bench_sit.png",
-                actor != null && actor.Sprites != null && actor.Sprites.cushionSit != null &&
-                AssetDatabase.GetAssetPath(actor.Sprites.cushionSit) == PocSceneBuilder.CushionSitPath &&
-                AssetDatabase.GetAssetPath(actor.Sprites.benchSit) == PocSceneBuilder.BenchSitPath);
+            Check("RC scene: the 2D grass is the Phase 4 look by default; the 2D game's sprites stay an option",
+                pixel != null && !pixel.OriginalGrass2D && pixel.GrassReady);
+            Check("RC scene: seated artwork is bench_sit.png (bench and sofa); no provisional cushion artwork",
+                actor != null && actor.Sprites != null && actor.Sprites.SeatSprite("bench_sit") == actor.Sprites.benchSit &&
+                AssetDatabase.GetAssetPath(actor.Sprites.benchSit) == PocSceneBuilder.BenchSitPath &&
+                !AssetDatabase.IsValidFolder("Assets/POC2D3D/Provisional"));
             Check("RC scene: the 3D camera defaults are kept (North-fixed, 3.4 outdoors, 3.6 indoors)",
                 third != null && third.Follow == PocCameraFollow.NorthFixed &&
                 Mathf.Approximately(third.OutdoorDistance, 3.4f) && Mathf.Approximately(third.IndoorDistance, 3.6f));
-            Check("RC scene: the menu's ひょうじ row (2D / 3D) is the only view control; no new buttons",
+            Check("RC scene: the menu has ひょうじ (2D / 3D) and ぜんがめん rows; no new on-screen buttons",
                 gameplay != null && gameplay.Menu != null &&
                 UnityEngine.Object.FindObjectsByType<TouchActionButton>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 1 &&
                 UnityEngine.Object.FindObjectsByType<TouchDpad>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 1);
             EditorSceneManager.OpenScene(PocSceneBuilder.ScenePath, OpenSceneMode.Single);
             var pocPanel = UnityEngine.Object.FindAnyObjectByType<PocDebugPanel>(FindObjectsInactive.Include);
-            Check("POC scene: stays the technical verification scene (not in release mode)",
-                pocPanel != null && !pocPanel.ReleaseCandidate);
+            Check("POC scene: stays the technical verification scene (not in release mode, Phase 4 landscape rule)",
+                pocPanel != null && !pocPanel.ReleaseCandidate &&
+                UnityEngine.Object.FindAnyObjectByType<PocOrientationGuard>(FindObjectsInactive.Include).LandscapeOnly);
 
             // The RC page: the template page plus the phone layer, with the RC title.
             var template = File.ReadAllText(Path.Combine(Application.dataPath, "WebGLTemplates", "MinimalNoBrand", "index.html"));
-            var page = PocBuilder.PreviewPage(template, PocDebugPanel.ReleaseCandidateTitle);
-            Check("RC page: title はるかわーるど ver3.0 RC1, rotation guide, safe-area probe, landscape layout",
-                page.Contains("<title>はるかわーるど ver3.0 RC1</title>") && page.Contains("スマホを横向きにしてください") &&
-                page.Contains("safe-area-probe") && page.Contains("updateRotateGuide"));
+            var page = PocBuilder.PreviewPage(template, PocDebugPanel.ReleaseCandidateTitle, false);
+            Check("RC page: title はるかわーるど, any orientation (no rotation guide), safe area, follows full screen",
+                page.Contains("<title>はるかわーるど</title>") && !page.Contains("スマホを横向きにしてください") &&
+                !page.Contains("updateRotateGuide") && page.Contains("safe-area-probe") && page.Contains("fullscreenchange"));
             Check("RC folder: the game sits at halkaworld/webgl like on halkaclub.com, outside the repository",
                 PocBuilder.ReleaseCandidateGamePath == "halkaworld/webgl" &&
                 !PocBuilder.ReleaseCandidatePath.StartsWith(PocSceneBuilder.RepositoryRoot, StringComparison.OrdinalIgnoreCase));
@@ -170,6 +178,9 @@ namespace Halka.Poc2D3D.EditorTools
             Check("staging page: the public page's layout with the RC1 game in webgl/, no analytics, not indexed",
                 staging.Contains("src=\"webgl/?v=3.0-rc1&build=__BUILD__\"") && staging.Contains("allow=\"fullscreen\"") &&
                 !staging.Contains("cloudflareinsights") && staging.Contains("noindex") && staging.Contains("unity-frame"));
+            Check("staging page: the name is はるかわーるど everywhere it is shown (no HALKA WORLD left)",
+                staging.Contains("<title>はるかわーるど | HALKA</title>") && staging.Contains("<h1 id=\"game-title\">はるかわーるど</h1>") &&
+                !staging.Contains("HALKA WORLD") && !File.Exists(Path.Combine(kit, "staging", "halkaworld", "index-mobilefix.html")));
         }
 
         // ---------------------------------------------------------------- save keys and old data
@@ -311,9 +322,18 @@ namespace Halka.Poc2D3D.EditorTools
             Category("2D presentation");
             ToMap(c, false, new Vector2Int(0, 0), FacingDirection.Down);
             Place(c, new Vector2Int(0, 0), FacingDirection.Down, PocViewMode.PixelView2D);
+            // Feedback after RC1: the default 2D grass is Phase 4's (3D tufts, feet drawn).
+            Draw2D(c);
+            var defaultTufts = c.Presenter.TuftObject != null ? c.Presenter.TuftObject.GetComponent<Renderer>() : null;
+            Check("2D grass default: the Phase 4 look (3D tufts drawn, no grass sprites, feet not hidden)",
+                !c.Pixel.OriginalGrass2D && defaultTufts != null && defaultTufts.enabled && c.Pixel.LastGrassDrawn == 0 &&
+                c.Pixel.PlayerCropPixels() == 0 && c.Pixel.CrowCropPixels() == 0);
+            // The 2D game's grass stays as an option (?debug=1 "2D grass"); its rules are checked below.
+            c.Pixel.OriginalGrass2D = true;
+            c.Pixel.ApplyTuftVisibility(true);
             var map = c.Session.OutdoorWorld.Map;
             var expected = ExpectedGrass(map);
-            Check("2D grass: one grass sprite on every cell where the 2D game grows grass (MapPlacementRules.HasGrass)",
+            Check("2D grass option: one grass sprite on every cell where the 2D game grows grass (MapPlacementRules.HasGrass)",
                 c.Pixel.GrassReady && expected.Count > 50 && c.Pixel.GrassCount == expected.Count &&
                 expected.All(c.Pixel.HasGrass), $"{c.Pixel.GrassCount} / {expected.Count}");
             var onDirt = 0;
@@ -423,10 +443,8 @@ namespace Halka.Poc2D3D.EditorTools
             c.Pixel.ApplyTuftVisibility(true);
             tufts = c.Presenter.TuftObject.GetComponent<Renderer>(); // rebuilt with each map
             Draw2D(c);
-            Check("2D grass option: 3D tufts (Phase 4) for comparison; no foot mask then",
+            Check("2D grass: back to the default (3D tufts) after the option; no foot mask then",
                 tufts.enabled && c.Pixel.LastGrassDrawn == 0 && c.Pixel.PlayerCropPixels() == 0);
-            c.Pixel.OriginalGrass2D = true;
-            c.Pixel.ApplyTuftVisibility(true);
         }
 
         private static Vector2Int FindCell(Ctx c, Func<Vector2Int, bool> ok)
@@ -528,33 +546,123 @@ namespace Halka.Poc2D3D.EditorTools
                 Check($"bench {(left ? "left" : "right")}: A stands up on the same cell, no step counted",
                     !c.Session.IsSeated && c.Session.Cell == cell && c.Session.CompletedSteps == steps);
             }
+            // Feedback after RC1: the cushion moved onto a new sofa (sofa_basic, 2 x 1 at (4,2),
+            // seats from (4,1) and (5,1) facing North, the bench_sit pose).
             ToMap(c, true, new Vector2Int(0, 0), FacingDirection.Up);
-            Place(c, new Vector2Int(0, 0), FacingDirection.Up, PocViewMode.ThirdPerson3D);
-            c.Session.InteractAhead();
-            Settle(c, 0.3f);
-            var cushionSurface = SeatSurface(c);
-            var cushionLegs = PartBounds(c, "LegL");
-            var body = PartBounds(c, "haruka_blocky_placeholder");
-            Check("cushion 3D: SitAnchor unchanged (0.1); hips above the cushion top, not sunk into it",
-                c.Session.SeatPose == "cushion_sit" && Mathf.Abs(c.Actor.SeatPoint.y - 0.1f) < 0.01f && body.min.y >= cushionSurface - 0.005f,
-                $"cushion {cushionSurface:0.000} body {body.min.y:0.000}");
-            Check("cushion 3D: the legs slope down to the floor in front (not floating, not under the floor)",
-                cushionLegs.min.y >= -0.005f && cushionLegs.min.y <= 0.05f && c.Actor.CurrentSeatDisplay.LegDegrees < 90f,
-                $"legs {cushionLegs.min.y:0.000}");
-            c.Switcher.SetMode(PocViewMode.PixelView2D);
-            Settle(c, 0.2f);
-            Draw2D(c);
-            Check("cushion 2D: the provisional floor-sitting artwork (not bench_sit.png), lower than on the bench",
-                c.Actor.CurrentSprite == c.Actor.Sprites.cushionSit && c.Actor.CurrentSprite != c.Actor.Sprites.benchSit &&
-                c.Actor.SpriteOffsetNorth < PlayerSeatController.ArtworkAboveSeatCenter);
-            c.Session.InteractAhead();
-            Settle(c, 0.2f);
-            Check("cushion: A stands up; the cushion action is unchanged", !c.Session.IsSeated && c.Session.Cell == new Vector2Int(0, 0));
-            var src = File.ReadAllBytes(PocSceneBuilder.BenchSitPath);
-            var provisional = File.ReadAllBytes(PocSceneBuilder.CushionSitPath);
-            Check("cushion 2D artwork: a separate file marked provisional; bench_sit.png is not changed by it",
-                !src.SequenceEqual(provisional) && PocSceneBuilder.CushionSitPath.Contains("provisional") &&
-                File.Exists(Path.Combine(Path.GetDirectoryName(PocSceneBuilder.CushionSitPath), "README.txt")));
+            var room = c.Session.InteriorWorld.Map;
+            Check("room: the cushion is no longer in the middle; a sofa stands at (4,2)-(5,2) (cushion_basic stays in the catalog)",
+                room.Objects.All(o => o.Definition.StableId != "cushion_basic") &&
+                room.Objects.Count(o => o.Definition.StableId == "sofa_basic") == 1 &&
+                room.Objects.Single(o => o.Definition.StableId == "sofa_basic").RootCell == new Vector2Int(4, 2) &&
+                MapPlacementRules.BlocksMovement(room, new Vector2Int(4, 2)) && MapPlacementRules.BlocksMovement(room, new Vector2Int(5, 2)) &&
+                AssetDatabase.LoadAssetAtPath<WorldObjectDefinition>("Assets/Content/Maps/cushion_basic.asset") != null);
+            foreach (var left in new[] { true, false })
+            {
+                var cell = new Vector2Int(left ? 4 : 5, 1);
+                ToMap(c, true, cell, FacingDirection.Up);
+                Place(c, cell, FacingDirection.Up, PocViewMode.ThirdPerson3D);
+                var steps = c.Session.CompletedSteps;
+                c.Session.InteractAhead();
+                Settle(c, 0.3f);
+                var name = left ? "left" : "right";
+                var view = c.Presenter.FindView(c.Session.SeatObject != null ? c.Session.SeatObject.InstanceId : "");
+                var anchorName = left ? "SeatAnchor_L" : "SeatAnchor_R";
+                var anchorPoint = view != null ? view.GetComponentsInChildren<Transform>(true).First(t => t.name == anchorName).position : Vector3.zero;
+                Check($"sofa {name} 3D: A sits on the sofa (bench_sit pose) at {anchorName}, the player keeps her cell",
+                    c.Session.IsSeated && c.Session.SeatPose == "bench_sit" && c.Session.SeatObject.DefinitionId == "sofa_basic" &&
+                    c.Session.Cell == cell && c.Session.SeatCell == cell + Vector2Int.up && Vector3.Distance(c.Actor.SeatPoint, anchorPoint) < 0.001f);
+                var legs = PartBounds(c, "LegL");
+                Check($"sofa {name} 3D: thighs on the seat cushion (surface 0.22), sofa display metadata",
+                    legs.min.y >= 0.215f && legs.min.y <= 0.25f &&
+                    Mathf.Approximately(c.Actor.CurrentSeatDisplay.HipLift, PocActorView.SofaSitDisplay.HipLift), $"thighs {legs.min.y:0.000}");
+                c.Switcher.Toggle();
+                Settle(c, 0.2f);
+                Draw2D(c);
+                Check($"sofa {name} 2D: bench_sit.png, still seated after the switch", c.Session.IsSeated &&
+                    c.Actor.CurrentSprite == c.Actor.Sprites.benchSit);
+                c.Switcher.Toggle();
+                c.Session.InteractAhead();
+                Settle(c, 0.2f);
+                Check($"sofa {name}: A stands up on the same cell, no step counted",
+                    !c.Session.IsSeated && c.Session.Cell == cell && c.Session.CompletedSteps == steps);
+            }
+            var sofaSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/World/sofa.png");
+            Check("sofa: a 64 x 48 sprite for the 2D game and the map editor (point-sampled, 64 px per unit)",
+                sofaSprite != null && sofaSprite.texture.width == 64 && sofaSprite.texture.height == 48 &&
+                sofaSprite.texture.filterMode == FilterMode.Point && Mathf.Approximately(sofaSprite.pixelsPerUnit, 64f));
+        }
+
+        // ---------------------------------------------------------------- the room: mic, easel
+
+        private static void RoomChecks(Ctx c)
+        {
+            Category("room");
+            var room = c.Session.InteriorWorld.Map;
+            Check("mic: only the stand's cell (4,-1) blocks; the cell North of it (4,0) is free",
+                MapPlacementRules.BlocksMovement(room, new Vector2Int(4, -1)) && !MapPlacementRules.BlocksMovement(room, new Vector2Int(4, 0)));
+            foreach (var (from, key) in new[] { (new Vector2Int(3, 0), Vector2Int.right), (new Vector2Int(4, 1), Vector2Int.down),
+                                                 (new Vector2Int(5, 0), Vector2Int.left) })
+            {
+                ToMap(c, true, from, FacingDirection.Up);
+                Place(c, from, FacingDirection.Up, PocViewMode.PixelView2D);
+                Release(c);
+                Frame(c, 1f / 60f, key); // one press: one step
+                Release(c);
+                Settle(c, 0.4f);
+                Check($"mic: from {from} the player walks onto (4,0) above the mic", c.Session.Cell == new Vector2Int(4, 0),
+                    $"cell {c.Session.Cell}");
+            }
+            var easel = c.Presenter.Views.First(v => v.DefinitionId == "art_easel_basic");
+            var mic = c.Presenter.Views.First(v => v.DefinitionId == "recording_mic_basic");
+            Check("easel and mic: never hidden as camera occluders; they fade in front of her like the trees",
+                !easel.CameraOccluder && easel.FadeInFront3D && !mic.CameraOccluder && mic.FadeInFront3D);
+            // Walk West behind the easel ((-3,0)..(-2,0) are North of it) in 3D: it stays drawn.
+            ToMap(c, true, new Vector2Int(-1, 0), FacingDirection.Left);
+            Place(c, new Vector2Int(-1, 0), FacingDirection.Left, PocViewMode.ThirdPerson3D);
+            var hidden = false;
+            var inFront = 0;
+            var fadedInFront = 0;
+            Release(c);
+            foreach (var (start, dir) in new[] { (new Vector2Int(-1, 0), Vector2Int.left), (new Vector2Int(-1, 1), Vector2Int.left) })
+            {
+                Place(c, start, FacingDirection.Left, PocViewMode.ThirdPerson3D);
+                Release(c);
+                for (var t = 0f; t < 1.6f; t += 1f / 60f)
+                {
+                    Frame(c, 1f / 60f, dir);
+                    hidden |= easel.Renderers.Any(r => r.shadowCastingMode == ShadowCastingMode.ShadowsOnly || r.forceRenderingOff || !r.enabled);
+                    if (PocTreeFade3D.HidesPlayer(easel, c.Third.ViewCamera.transform.position, GridSpace3D.ToWorld(c.Session.Position),
+                            Quaternion.Euler(0f, c.Third.CurrentYaw, 0f)))
+                    {
+                        inFront++;
+                        if (c.Third.TreeFade.AlphaOf(easel) < 0.99f) fadedInFront++;
+                    }
+                }
+                Release(c);
+                Settle(c, 0.3f);
+            }
+            Check("easel: walking behind it in 3D it is never hidden; where it stands in front of her it fades",
+                !hidden && (inFront == 0 || fadedInFront > 0), $"hidden {hidden} in front {inFront} faded {fadedInFront}");
+        }
+
+        // ---------------------------------------------------------------- the menu
+
+        private static void MenuChecks(Ctx c)
+        {
+            Category("menu");
+            var menu = c.Menu;
+            Check("menu: ひょうじ then ぜんがめん rows (the font has every glyph)",
+                menu.ExtraItems.Count == 2 && menu.ExtraItems[0].Label == "ひょうじ" && menu.ExtraItems[1].Label == "ぜんがめん" &&
+                GameBitmapFont.HasAllGlyphs("ぜんがめん") && GameBitmapFont.HasAllGlyphs("ver3.0 RC1"));
+            ClearMessage(c);
+            menu.SetOpen(true, clock);
+            var fullscreen = (PocGameplay.FullscreenMenuItem)menu.ExtraItems[1];
+            var requests = fullscreen.Requests;
+            menu.ActivateExtraItem(1, clock + 1f);
+            Check("menu: ぜんがめん asks for full screen (Screen.fullScreen; the browser enters it on the tap)",
+                fullscreen.Requests == requests + 1 && (fullscreen.Value == "ON" || fullscreen.Value == "OFF"));
+            menu.SetOpen(false, clock + 2f);
+            Check("menu: the ひょうじ row still switches the view", menu.ExtraItem.Label == "ひょうじ");
         }
 
         // ---------------------------------------------------------------- crow
@@ -700,15 +808,19 @@ namespace Halka.Poc2D3D.EditorTools
         private static void MobileChecks(Ctx c)
         {
             Category("mobile");
-            Check("phone: the orientation guard is in the scene (portrait pauses, landscape plays)", c.Guard != null);
-            var kit = Path.Combine(PocSceneBuilder.RepositoryRoot, "tools", "poc2d3d", "rc1");
-            var proposal = Path.Combine(kit, "staging", "halkaworld", "game-page-rc1-proposal.css");
-            var css = File.Exists(proposal) ? File.ReadAllText(proposal) : "";
-            Check("staging proposal: landscape phones get a frame as tall as the screen; drags never scroll the page",
-                css.Contains("orientation: landscape") && css.Contains("100svh") && css.Contains("touch-action: none"));
+            Check("phone: the orientation guard exists; upright play is allowed when it is off (the RC)", c.Guard != null);
+            var landscapeOnly = c.Guard.LandscapeOnly;
+            c.Guard.LandscapeOnly = false;
+            c.Guard.TouchDevice = true;
+            c.Guard.Evaluate(390, 844);
+            Check("phone upright (RC rule): no guide, the game is not paused", !c.Guard.GuideVisible && !c.Gameplay.Suspended);
+            c.Guard.Evaluate(844, 390);
+            c.Guard.LandscapeOnly = landscapeOnly;
+            c.Guard.TouchDevice = false;
+            c.Guard.Evaluate(1280, 720);
             var publicCss = File.ReadAllText(Path.Combine(PocSceneBuilder.RepositoryRoot, "halkaworld", "game-page.css"));
-            Check("public game-page.css: not changed by Phase 5 (the proposal is a separate file)",
-                publicCss.Contains("clamp(420px, 54vw, 640px)") && !publicCss.Contains("rc1"));
+            Check("public game-page.css: not changed (an upright phone keeps the public page's frame)",
+                publicCss.Contains("clamp(420px, 54vw, 640px)") && publicCss.Contains("min(68svh, 620px)"));
         }
 
         // ---------------------------------------------------------------- save / time in the session

@@ -23,6 +23,11 @@ namespace Halka.Poc2D3D
         private static extern int HalkaTouchUiMode();
 #endif
 
+        // RC1 feedback: phones are played upright again, as in the 2D game. The RC turns this off;
+        // the technical POC scene keeps the Phase 4 landscape-only rule for comparison.
+        [SerializeField] private bool landscapeOnly = true;
+        public bool LandscapeOnly { get => landscapeOnly; set => landscapeOnly = value; }
+
         // A phone or tablet (or ?touchControls=1): the same rule as the touch D-pad.
         public bool TouchDevice { get; set; }
         public bool GuideVisible { get; private set; }
@@ -51,7 +56,7 @@ namespace Halka.Poc2D3D
         // Portrait = taller than wide (the canvas fills the window on phones).
         public void Evaluate(int width, int height)
         {
-            var portrait = TouchDevice && height > width;
+            var portrait = landscapeOnly && TouchDevice && height > width;
             if (portrait != GuideVisible) SetGuide(portrait);
         }
 
