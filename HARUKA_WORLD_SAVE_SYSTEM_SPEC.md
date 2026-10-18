@@ -32,21 +32,21 @@ UTF-8 の JSON です（BOM なし）。下は Schema 1 の例です。
 
 | 項目 | 型・範囲 | 意味 |
 |---|---|---|
-| `format` | `"harukaworld-save"` | はるかわーるどのセーブであることを示す |
+| `format` \| `"harukaworld-save"` | はるかわーるどのセーブであることを示す |
 | `schemaVersion` | 整数 1 以上 | 形式の版（今は 1） |
-| `gameVersion` | 文字列（64文字まで） | 書いたゲームの版（例 `ver3.0 RC2`） |
-| `savedAtUtc` | `yyyy-MM-ddTHH:mm:ssZ` | 最後に保存した時刻（UTC） |
+| `gameVersion` \| 文字列（64文字まで） \| 書いたゲームの版（例 `ver3.0 RC2`） |
+| `savedAtUtc` \| `yyyy-MM-ddTHH:mm:ssZ` | 最後に保存した時刻（UTC） |
 | `revision` | 整数 0 以上 | 保存のたびに 1 以上増える通し番号（Save Revision） |
 | `lifeLog.totalSteps` | 整数 0 以上（64 ビット） | 累計歩数 |
 | `lifeLog.totalPlaySeconds` | 整数 0 以上 | 累計プレイ時間（秒） |
 | `worldTime.anchorUnixMs` | 1 〜 253402300799999 | 朝夜の基準時刻（UTC、ミリ秒） |
 | `settings.autoEnabled` | true / false | AUTO の ON / OFF |
-| `settings.viewMode` | `"2D"` / `"3D"` | 表示 |
-| `player.mapId` | `a-z 0-9 _ -`、64文字まで | 今いるマップ（例 `first_field`、`halka_house`）。マップを固定の一覧にはしない |
+| `settings.viewMode` \| `"2D"` / `"3D"` | 表示 |
+| `player.mapId` \| `a-z 0-9 _ -`、64文字まで \| 今いるマップ（例 `first_field`、`halka_house`）。マップを固定の一覧にはしない |
 | `player.cell.x` / `y` | 整数、絶対値 10000 まで | 論理 Grid Cell |
-| `player.facing` | `up` / `down` / `left` / `right` | 向き（北・南・西・東） |
+| `player.facing` \| `up` / `down` / `left` / `right` | 向き（北・南・西・東） |
 | `extensions` | オブジェクト（今は空） | 将来の追加データの置き場（家具・アイテム・実績など） |
-| `checksum` | `crc32:` ＋ 16進8桁 | 値の偶発的な破損を見つけるため（署名ではない） |
+| `checksum` \| `crc32:` ＋ 16進8桁 | 値の偶発的な破損を見つけるため（署名ではない） |
 
 - **checksum の計算**: 次の値を `|` でつないだ文字列を UTF-8 にし、その CRC-32 を取ります。
   - format、schemaVersion、gameVersion、savedAtUtc、revision、歩数、秒、基準時刻、AUTO（1/0）、表示、mapId、x、y、facing
@@ -234,7 +234,7 @@ UTF-8 の JSON です（BOM なし）。下は Schema 1 の例です。
 
 | 旧キー | 取り込み |
 |---|---|
-| `HALKA_WORLD_life_log_v1`（`v1|歩数|秒`） | 歩数・プレイ時間 |
+| `HALKA_WORLD_life_log_v1`（`v1\|歩数\|秒`） | 歩数・プレイ時間 |
 | `HALKA_WORLD_time_cycle_anchor_v1` | 朝夜の基準時刻（ない場合は、World Time が初回に作った値） |
 
 - **旧キーしかない場合**: 新しい設定は初期値（20章）にし、場所は最初のマップの Player Start にして、すぐに新しい形式で保存します。
