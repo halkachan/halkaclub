@@ -40,12 +40,39 @@ def page():
     html = once(html,
                 '<iframe src="webgl/?v=2.9&build=a5659b8e00cce110aca787eb15db1973-78a3b34151f63557cac46ba2bf930488" title="HALKA WORLD" allow="fullscreen" loading="eager"></iframe>',
                 '<iframe src="webgl/?v=3.0-rc1&build=__BUILD__" title="はるかわーるど" allow="fullscreen" loading="eager"></iframe>')
+    # Feedback after RC1: full screen from a button on the page (not inside the game). It puts
+    # the game's frame in full screen; Esc (PC) or the back gesture (Android) leaves it. Browsers
+    # without full screen for page elements (iPhone Safari) do not show the button.
+    html = once(html, '          <p class="game-controls">',
+                '          <p class="game-fullscreen"><button type="button" id="game-fullscreen-button" hidden>'
+                '全画面にする</button></p>\n          <p class="game-controls">')
+    script = '''    <script>
+      (() => {
+        const button = document.getElementById("game-fullscreen-button");
+        const frame = document.querySelector(".unity-frame iframe");
+        const request = frame && (frame.requestFullscreen || frame.webkitRequestFullscreen);
+        if (!request || !(document.fullscreenEnabled || document.webkitFullscreenEnabled)) return;
+        button.hidden = false;
+        button.addEventListener("click", () => {
+          const asked = request.call(frame);
+          if (asked && asked.catch) asked.catch(() => {});
+          if (frame.contentWindow) frame.contentWindow.focus();
+        });
+      })();
+    </script>
+'''
+    html = once(html, "  </body>", script + "  </body>")
     # No analytics from a local page.
     start = html.index("    <!-- アクセス解析")
     end = html.index("</script>", start) + len("</script>\n")
     html = html[:start] + html[end:]
     style = ('    <style>.rc1-staging-note { position: sticky; top: 0; z-index: 5; padding: 6px 10px; '
-             'background: #f6d55c; color: #2b2b2b; font: 700 12px/1.5 sans-serif; text-align: center; }</style>\n')
+             'background: #f6d55c; color: #2b2b2b; font: 700 12px/1.5 sans-serif; text-align: center; }\n'
+             '      .game-fullscreen { margin: 10px 0 0; text-align: right; }\n'
+             '      .game-fullscreen button { font: inherit; font-size: 14px; font-weight: 700; color: var(--ink); '
+             'padding: 6px 14px; border: 2px solid var(--ink); border-radius: 4px; background: #fffdf4; cursor: pointer; '
+             'transform: rotate(-0.6deg); }\n'
+             '      .game-fullscreen button:hover { background: #f6d55c; }</style>\n')
     html = once(html, "  </head>", style + "  </head>")
     assert "HALKA WORLD" not in html, "a user-facing HALKA WORLD is left"
     return html

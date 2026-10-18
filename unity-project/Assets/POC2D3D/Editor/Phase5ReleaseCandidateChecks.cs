@@ -159,7 +159,7 @@ namespace Halka.Poc2D3D.EditorTools
             Check("RC scene: the 3D camera defaults are kept (North-fixed, 3.4 outdoors, 3.6 indoors)",
                 third != null && third.Follow == PocCameraFollow.NorthFixed &&
                 Mathf.Approximately(third.OutdoorDistance, 3.4f) && Mathf.Approximately(third.IndoorDistance, 3.6f));
-            Check("RC scene: the menu has ひょうじ (2D / 3D) and ぜんがめん rows; no new on-screen buttons",
+            Check("RC scene: the menu has the ひょうじ (2D / 3D) row; no new on-screen buttons",
                 gameplay != null && gameplay.Menu != null &&
                 UnityEngine.Object.FindObjectsByType<TouchActionButton>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 1 &&
                 UnityEngine.Object.FindObjectsByType<TouchDpad>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 1);
@@ -172,9 +172,10 @@ namespace Halka.Poc2D3D.EditorTools
             // The RC page: the template page plus the phone layer, with the RC title.
             var template = File.ReadAllText(Path.Combine(Application.dataPath, "WebGLTemplates", "MinimalNoBrand", "index.html"));
             var page = PocBuilder.PreviewPage(template, PocDebugPanel.ReleaseCandidateTitle, false);
-            Check("RC page: title はるかわーるど, any orientation (no rotation guide), safe area, follows full screen",
+            Check("RC page: title はるかわーるど, any orientation (no rotation guide), safe area, follows full screen (its own or its frame's)",
                 page.Contains("<title>はるかわーるど</title>") && !page.Contains("スマホを横向きにしてください") &&
-                !page.Contains("updateRotateGuide") && page.Contains("safe-area-probe") && page.Contains("fullscreenchange"));
+                !page.Contains("updateRotateGuide") && page.Contains("safe-area-probe") && page.Contains("fullscreenchange") &&
+                page.Contains("window.innerWidth >= screen.width - 1"));
             Check("RC folder: the game sits at halkaworld/webgl like on halkaclub.com, outside the repository",
                 PocBuilder.ReleaseCandidateGamePath == "halkaworld/webgl" &&
                 !PocBuilder.ReleaseCandidatePath.StartsWith(PocSceneBuilder.RepositoryRoot, StringComparison.OrdinalIgnoreCase));
@@ -187,6 +188,11 @@ namespace Halka.Poc2D3D.EditorTools
             Check("staging page: the name is はるかわーるど everywhere it is shown (no HALKA WORLD left)",
                 staging.Contains("<title>はるかわーるど | HALKA</title>") && staging.Contains("<h1 id=\"game-title\">はるかわーるど</h1>") &&
                 !staging.Contains("HALKA WORLD") && !File.Exists(Path.Combine(kit, "staging", "halkaworld", "index-mobilefix.html")));
+            Check("staging page: 全画面にする is a button on the page under the game frame (not in the game); it puts the frame in full screen, hidden where the browser cannot",
+                staging.Contains("id=\"game-fullscreen-button\" hidden>全画面にする</button>") &&
+                staging.IndexOf("game-fullscreen-button", StringComparison.Ordinal) > staging.IndexOf("<iframe", StringComparison.Ordinal) &&
+                staging.Contains("frame.requestFullscreen || frame.webkitRequestFullscreen") && staging.Contains("document.fullscreenEnabled") &&
+                !File.Exists(Path.Combine(Application.dataPath, "POC2D3D", "Plugins", "WebGL", "HalkaFullscreen.jslib")));
         }
 
         // ---------------------------------------------------------------- save keys and old data
@@ -921,16 +927,15 @@ namespace Halka.Poc2D3D.EditorTools
         {
             Category("menu");
             var menu = c.Menu;
-            Check("menu: ひょうじ then ぜんがめん rows (the font has every glyph)",
-                menu.ExtraItems.Count == 2 && menu.ExtraItems[0].Label == "ひょうじ" && menu.ExtraItems[1].Label == "ぜんがめん" &&
-                GameBitmapFont.HasAllGlyphs("ぜんがめん") && GameBitmapFont.HasAllGlyphs("ver3.0 RC1"));
+            Check("menu: one extra row, ひょうじ (full screen moved to a button on the page); the font has every glyph",
+                menu.ExtraItems.Count == 1 && menu.ExtraItems[0].Label == "ひょうじ" &&
+                menu.ExtraItems.All(item => item.Label != "ぜんがめん") && GameBitmapFont.HasAllGlyphs("ver3.0 RC1"));
             ClearMessage(c);
             menu.SetOpen(true, clock);
-            var fullscreen = (PocGameplay.FullscreenMenuItem)menu.ExtraItems[1];
-            var requests = fullscreen.Requests;
-            menu.ActivateExtraItem(1, clock + 1f);
-            Check("menu: ぜんがめん asks for full screen (Screen.fullScreen; the browser enters it on the tap)",
-                fullscreen.Requests == requests + 1 && (fullscreen.Value == "ON" || fullscreen.Value == "OFF"));
+            var before = c.Switcher.Mode;
+            menu.ActivateExtraItem(0, clock + 1f);
+            Check("menu: ひょうじ switches 2D / 3D", c.Switcher.Mode != before);
+            menu.ActivateExtraItem(0, clock + 1.5f);
             menu.SetOpen(false, clock + 2f);
             Check("menu: the ひょうじ row still switches the view", menu.ExtraItem.Label == "ひょうじ");
         }

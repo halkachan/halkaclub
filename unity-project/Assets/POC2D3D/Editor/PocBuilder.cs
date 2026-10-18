@@ -181,7 +181,9 @@ namespace Halka.Poc2D3D.EditorTools
         const width = window.innerWidth - inset.left - inset.right;
         const height = window.innerHeight - inset.top - inset.bottom;
         const desktop = width >= 800 && height >= 576 && width >= height;
-        if (!desktop || document.fullscreenElement) {
+        // Full screen: this page's own, or the game page's frame made full screen by its button.
+        const filling = document.fullscreenElement || (window.innerWidth >= screen.width - 1 && window.innerHeight >= screen.height - 1);
+        if (!desktop || filling) {
           canvas.style.left = `${inset.left}px`;
           canvas.style.top = `${inset.top}px`;
           canvas.style.width = `calc(100% - ${inset.left + inset.right}px)`;

@@ -25,7 +25,10 @@
     <link rel="icon" href="/favicon.png?v=2" type="image/png" />
     <link rel="stylesheet" href="../style.css?v=1" />
     <link rel="stylesheet" href="game-page.css" />
-    <style>.rc1-staging-note { position: sticky; top: 0; z-index: 5; padding: 6px 10px; background: #f6d55c; color: #2b2b2b; font: 700 12px/1.5 sans-serif; text-align: center; }</style>
+    <style>.rc1-staging-note { position: sticky; top: 0; z-index: 5; padding: 6px 10px; background: #f6d55c; color: #2b2b2b; font: 700 12px/1.5 sans-serif; text-align: center; }
+      .game-fullscreen { margin: 10px 0 0; text-align: right; }
+      .game-fullscreen button { font: inherit; font-size: 14px; font-weight: 700; color: var(--ink); padding: 6px 14px; border: 2px solid var(--ink); border-radius: 4px; background: #fffdf4; cursor: pointer; transform: rotate(-0.6deg); }
+      .game-fullscreen button:hover { background: #f6d55c; }</style>
   </head>
   <body>
     <div class="rc1-staging-note" role="note">ローカル検証用ステージング（はるかわーるど ver3.0 RC1）・公開ページと同じレイアウト。公開HPではありません。</div>
@@ -48,6 +51,7 @@
           <div class="unity-frame">
             <iframe src="webgl/?v=3.0-rc1&build=__BUILD__" title="はるかわーるど" allow="fullscreen" loading="eager"></iframe>
           </div>
+          <p class="game-fullscreen"><button type="button" id="game-fullscreen-button" hidden>全画面にする</button></p>
           <p class="game-controls">WASD・矢印キーで1マスずつ移動 / 対象をクリック。スマホは十字キーで移動、Aボタンで正面を調べます。</p>
           <section class="update-history" aria-labelledby="update-history-title">
             <h2 id="update-history-title">更新履歴</h2>
@@ -182,5 +186,19 @@
         </section>
       </div>
     </main>
+    <script>
+      (() => {
+        const button = document.getElementById("game-fullscreen-button");
+        const frame = document.querySelector(".unity-frame iframe");
+        const request = frame && (frame.requestFullscreen || frame.webkitRequestFullscreen);
+        if (!request || !(document.fullscreenEnabled || document.webkitFullscreenEnabled)) return;
+        button.hidden = false;
+        button.addEventListener("click", () => {
+          const asked = request.call(frame);
+          if (asked && asked.catch) asked.catch(() => {});
+          if (frame.contentWindow) frame.contentWindow.focus();
+        });
+      })();
+    </script>
   </body>
 </html>

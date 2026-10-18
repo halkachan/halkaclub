@@ -81,9 +81,8 @@ namespace Halka.Poc2D3D
             viewItem = new ViewMenuItem(views);
             if (menu != null)
             {
+                // Full screen is a button on the game's page, not a menu row (feedback after RC1).
                 menu.SetExtraItem(viewItem);
-                menu.AddExtraItem(new FullscreenMenuItem());
-                fullscreenRow = menu.ExtraItems.Count - 1;
             }
             session.MapChanged += OnMapChanged;
             session.StepCompleted += OnStepCompleted;
@@ -130,66 +129,6 @@ namespace Halka.Poc2D3D
             public string Label => "ひょうじ";
             public string Value => views != null && views.Mode == PocViewMode.ThirdPerson3D ? "3D" : "2D";
             public void Activate(float now) { if (views != null) views.Toggle(); }
-        }
-
-        // RC1 feedback: full screen on PC and phones from the menu. A browser allows it only during
-        // the tap itself, so in WebGL the page toggles it (HalkaFullscreen.jslib) on the tap that
-        // lands on this row's button; the game keeps the page told where the button is while the
-        // menu shows it. Inside a page's iframe the frame needs allow="fullscreen" (the game page
-        // has it). Browsers without the Fullscreen API for pages (iPhone Safari) stay as they are
-        // and the value stays OFF. Elsewhere (Editor, desktop players) Screen.fullScreen toggles.
-        public sealed class FullscreenMenuItem : IGameMenuItem
-        {
-#if UNITY_WEBGL && !UNITY_EDITOR
-            [System.Runtime.InteropServices.DllImport("__Internal")]
-            private static extern int HalkaIsFullscreen();
-            [System.Runtime.InteropServices.DllImport("__Internal")]
-            private static extern void HalkaFullscreenSetButton(float x, float y, float width, float height);
-#endif
-            public string Label => "ぜんがめん";
-            public string Value => IsFullscreen ? "ON" : "OFF";
-            public int Requests { get; private set; }
-
-            public static bool IsFullscreen
-            {
-                get
-                {
-#if UNITY_WEBGL && !UNITY_EDITOR
-                    return HalkaIsFullscreen() != 0;
-#else
-                    return Screen.fullScreen;
-#endif
-                }
-            }
-
-            public void Activate(float now)
-            {
-                Requests++;
-#if !(UNITY_WEBGL && !UNITY_EDITOR)
-                Screen.fullScreen = !Screen.fullScreen; // WebGL: the page already toggled it on the tap
-#endif
-            }
-
-            // The button's place for the page (none while the menu does not show it).
-            public static void PublishButton(Rect guiRect, bool shown)
-            {
-#if UNITY_WEBGL && !UNITY_EDITOR
-                if (shown) HalkaFullscreenSetButton(guiRect.x, guiRect.y, guiRect.width, guiRect.height);
-                else HalkaFullscreenSetButton(0f, 0f, 0f, 0f);
-#endif
-            }
-        }
-
-        private int fullscreenRow = -1;
-        private bool fullscreenPublished;
-
-        private void LateUpdate()
-        {
-            if (menu == null || fullscreenRow < 0) return;
-            var shown = menu.TryGetExtraItemRect(fullscreenRow, out var rect);
-            if (!shown && !fullscreenPublished) return;
-            FullscreenMenuItem.PublishButton(rect, shown);
-            fullscreenPublished = shown;
         }
     }
 
