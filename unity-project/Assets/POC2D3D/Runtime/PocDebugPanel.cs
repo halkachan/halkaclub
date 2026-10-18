@@ -237,7 +237,7 @@ namespace Halka.Poc2D3D
                 var outline3D = third.Outline;
                 if (Button(ref y, x, width, row, "3D outline: " + (outline3D != null && outline3D.Enabled ? "ON" : "OFF")))
                     if (outline3D != null) outline3D.Enabled = !outline3D.Enabled;
-                if (lineBoil != null && Button(ref y, x, width, row, "Line boil: " + BoilLabel(lineBoil.Mode)))
+                if (lineBoil != null && Button(ref y, x, width, row, "3D line boil: " + BoilLabel(lineBoil.Mode)))
                     lineBoil.Mode = (PocLineBoilMode)(((int)lineBoil.Mode + 1) % 4);
             }
             GUI.Label(new Rect(x, y, width, statsLines * row * 0.78f + 8f), BuildText(), textStyle);

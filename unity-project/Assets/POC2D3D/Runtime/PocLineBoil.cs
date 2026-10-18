@@ -10,15 +10,15 @@ namespace Halka.Poc2D3D
         LinesAndPicture,
     }
 
-    // Feedback after RC1 ("a mysterious world"): every outline, in 2D and in 3D, twitches a little
-    // all the time, like a turbulent displace on the line layer (a hand-drawn line boil). The line
-    // shaders (OutlineComposite, PixelSprite, FadeLayer, Outline3D; PocLineBoil.cginc) read three
-    // globals set here: a new random displacement field 12 times a second, at most one line width.
-    // The fills, the player's and the crow's own drawings stay put. Presentation only. Without
-    // this driver (the editor checks) the globals stay 0 and every line is still, as before.
+    // Feedback after RC1 ("a mysterious world"): the 3D outlines twitch a little all the time, like
+    // a turbulent displace on the line layer (a hand-drawn line boil). Outline3D (PocLineBoil.cginc)
+    // reads three globals set here: a new random displacement field 6 times a second (slowed down
+    // after feedback, was 12), at most 3/4 of a line width. The fills stay put. Not in 2D (feedback:
+    // not needed there). Presentation only. Without this driver (the editor checks) the globals
+    // stay 0 and every line is still, as before.
     public sealed class PocLineBoil : MonoBehaviour
     {
-        public const float StandardStepsPerSecond = 12f;
+        public const float StandardStepsPerSecond = 6f;
         public const float StandardAmount = 1f;
         public const float StrongAmount = 1.8f;
         public static readonly int AmountId = Shader.PropertyToID("_HalkaLineBoil");

@@ -120,9 +120,9 @@ namespace Halka.Poc2D3D.EditorTools
             var third = UnityEngine.Object.FindAnyObjectByType<PocThirdPersonCamera>(FindObjectsInactive.Include);
             Check("RC scene: the debug panel is in release mode", panel != null && panel.ReleaseCandidate);
             var rcBoil = UnityEngine.Object.FindAnyObjectByType<PocLineBoil>(FindObjectsInactive.Include);
-            Check("RC scene: the outlines twitch a little (line boil \"lines\", 12 steps a second), switchable in ?debug=1",
+            Check("RC scene: the 3D outlines twitch a little (line boil \"lines\", 6 steps a second), switchable in ?debug=1",
                 rcBoil != null && rcBoil.enabled && rcBoil.Mode == PocLineBoilMode.Lines &&
-                Mathf.Approximately(rcBoil.StepsPerSecond, 12f) && panel != null && panel.LineBoil == rcBoil);
+                Mathf.Approximately(rcBoil.StepsPerSecond, 6f) && panel != null && panel.LineBoil == rcBoil);
             Check("RC scene: starts in 2D (the game's first view)",
                 switcher != null && (PocViewMode)typeof(PocViewSwitcher).GetField("initialMode", Hidden).GetValue(switcher) ==
                 PocViewMode.PixelView2D);
@@ -740,9 +740,9 @@ namespace Halka.Poc2D3D.EditorTools
             Category("line boil");
             try
             {
-                Check("line boil: a new random field 12 times a second (one field per step); OFF = still",
-                    PocLineBoil.StepAt(1.00f, 12f) == 12 && PocLineBoil.StepAt(1.08f, 12f) == 12 &&
-                    PocLineBoil.StepAt(1.09f, 12f) == 13 && PocLineBoil.AmountFor(PocLineBoilMode.Off) == 0f &&
+                Check("line boil: a new random field 6 times a second (one field per step, slower after feedback); OFF = still",
+                    PocLineBoil.StandardStepsPerSecond == 6f && PocLineBoil.StepAt(1.00f, 6f) == 6 &&
+                    PocLineBoil.StepAt(1.16f, 6f) == 6 && PocLineBoil.StepAt(1.17f, 6f) == 7 && PocLineBoil.AmountFor(PocLineBoilMode.Off) == 0f &&
                     PocLineBoil.AmountFor(PocLineBoilMode.Lines) == 1f);
                 // A line color found nowhere else in the picture (the room's walls are near #252B39),
                 // so every line pixel is seen; restored below.
@@ -768,6 +768,15 @@ namespace Halka.Poc2D3D.EditorTools
                         }
                         var none = Shot(PocLineBoilMode.Off, 0, false, out width);
                         var still = Shot(PocLineBoilMode.Off, 0, true, out _);
+                        if (is2D)
+                        {
+                            // Feedback: no boil in 2D. Every mode and step gives the still 2D picture.
+                            var same = new[] { PocLineBoilMode.Lines, PocLineBoilMode.LinesStrong, PocLineBoilMode.LinesAndPicture }
+                                .SelectMany(m => new[] { 1, 2, 3 }.Select(k => Shot(m, k, true, out _)))
+                                .All(px => Enumerable.Range(0, still.Length).All(i => SamePixel(still[i], px[i])));
+                            Check($"line boil {name}: none in 2D - every mode and step gives exactly the still lines", same);
+                            continue;
+                        }
                         var s1 = Shot(PocLineBoilMode.Lines, 1, true, out _);
                         var s2 = Shot(PocLineBoilMode.Lines, 2, true, out _);
                         var again = Shot(PocLineBoilMode.Off, 0, true, out _);

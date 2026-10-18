@@ -6,8 +6,6 @@
 // The ground (ID 0) and grass tufts (_GroundLayerId) are under the player as in the 2D game
 // and never cover it. Where a covering object's silhouette meets the sprite, its outline is
 // drawn on the sprite.
-// Line boil (PocLineBoil.cginc): those lines twitch with the same field as OutlineComposite's
-// (same low-resolution texels); the sprite's own drawing is never displaced.
 Shader "HALKA/POC/PixelSprite"
 {
     Properties
@@ -32,7 +30,6 @@ Shader "HALKA/POC/PixelSprite"
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
-            #include "PocLineBoil.cginc"
 
             sampler2D _MainTex;
             sampler2D _MaskTex;
@@ -75,27 +72,6 @@ Shader "HALKA/POC/PixelSprite"
                 return (strength > 0.0 && depth < depth0 - _DepthEpsilon) ? strength : 0.0;
             }
 
-            float Covers(float2 uv, float depth0)
-            {
-                float ink = 0.0;
-                ink = max(ink, Cover(uv, float2(1, 0), depth0));
-                ink = max(ink, Cover(uv, float2(-1, 0), depth0));
-                ink = max(ink, Cover(uv, float2(0, 1), depth0));
-                ink = max(ink, Cover(uv, float2(0, -1), depth0));
-                if (_Thickness > 1.5)
-                {
-                    ink = max(ink, Cover(uv, float2(2, 0), depth0));
-                    ink = max(ink, Cover(uv, float2(-2, 0), depth0));
-                    ink = max(ink, Cover(uv, float2(0, 2), depth0));
-                    ink = max(ink, Cover(uv, float2(0, -2), depth0));
-                    ink = max(ink, Cover(uv, float2(1, 1), depth0));
-                    ink = max(ink, Cover(uv, float2(-1, 1), depth0));
-                    ink = max(ink, Cover(uv, float2(1, -1), depth0));
-                    ink = max(ink, Cover(uv, float2(-1, -1), depth0));
-                }
-                return ink;
-            }
-
             float4 frag(v2f i) : SV_Target
             {
                 float4 color = tex2D(_MainTex, i.uv);
@@ -116,19 +92,21 @@ Shader "HALKA/POC/PixelSprite"
                     clip(depth0 + _DepthEpsilon - i.mask.z);
                     if (_Thickness > 0.5)
                     {
-                        float ink = Covers(uv, i.mask.z);
-                        float2 shift = BoilShift(uv * _MaskTex_TexelSize.zw, 1.0, 1.0);
-                        float2 uvd = uv + shift * _MaskTex_TexelSize.xy;
-                        if (any(saturate(uvd) != uvd)) shift = 0.0;
-                        if (any(shift != 0.0) && _HalkaLineBoilPicture < 0.5)
+                        float ink = 0.0;
+                        ink = max(ink, Cover(uv, float2(1, 0), i.mask.z));
+                        ink = max(ink, Cover(uv, float2(-1, 0), i.mask.z));
+                        ink = max(ink, Cover(uv, float2(0, 1), i.mask.z));
+                        ink = max(ink, Cover(uv, float2(0, -1), i.mask.z));
+                        if (_Thickness > 1.5)
                         {
-                            // Tested at the displaced texel; where that is on the covering object,
-                            // the line stays joined to it (as in OutlineComposite).
-                            float strengthd, depthd;
-                            Read(uvd, strengthd, depthd);
-                            bool onObject = strengthd > 0.0 && depthd < i.mask.z - _DepthEpsilon;
-                            ink = onObject ? ink : max(Covers(uvd, i.mask.z),
-                                BoilStays(uv * _MaskTex_TexelSize.zw, shift, 1.0, 1.0) ? ink : 0.0);
+                            ink = max(ink, Cover(uv, float2(2, 0), i.mask.z));
+                            ink = max(ink, Cover(uv, float2(-2, 0), i.mask.z));
+                            ink = max(ink, Cover(uv, float2(0, 2), i.mask.z));
+                            ink = max(ink, Cover(uv, float2(0, -2), i.mask.z));
+                            ink = max(ink, Cover(uv, float2(1, 1), i.mask.z));
+                            ink = max(ink, Cover(uv, float2(-1, 1), i.mask.z));
+                            ink = max(ink, Cover(uv, float2(1, -1), i.mask.z));
+                            ink = max(ink, Cover(uv, float2(-1, -1), i.mask.z));
                         }
                         color.rgb = lerp(color.rgb, _OutlineColor.rgb, saturate(ink));
                     }

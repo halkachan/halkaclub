@@ -1,7 +1,8 @@
-// Line boil (feedback after RC1: "a mysterious world"): every outline twitches a little all the
+// Line boil (feedback after RC1: "a mysterious world"): the 3D outline twitches a little all the
 // time, like a turbulent displace on the line layer. Each line pixel is tested at a displaced
 // point instead of its own; the displacement is a two-octave noise field, rounded to whole pixels
-// (at most one line width) and replaced by a new random field 12 times a second (PocLineBoil).
+// (at most one line width) and replaced by a new random field 6 times a second (PocLineBoil).
+// 2D has no boil (feedback); the 2D outline shaders do not include this file.
 // The fills stay where they are. Globals set by PocLineBoil; unset (the editor checks) they are
 // 0 and every line is still, exactly as before.
 #ifndef HALKA_POC_LINE_BOIL
