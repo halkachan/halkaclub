@@ -69,8 +69,7 @@ namespace Halka.Poc2D3D.Save
         private bool started;
         private bool firstSaveDue;
         private float lastWriteAt = -100f;
-        private string savedSignature = "";
-        private string savedSettings = "";
+        private State saved;
         private long savedPlaySeconds = -1;
         private bool flushRequested;
         private float startedAt;
@@ -214,8 +213,7 @@ namespace Halka.Poc2D3D.Save
                 menu.AddLinkItem(MenuLabel, saveMenu.Open);
                 menu.SetCloseLabel(CloseLabel);
             }
-            savedSignature = Signature();
-            savedSettings = Settings();
+            saved = Now();
             savedPlaySeconds = lifeLog != null ? lifeLog.TotalPlaySeconds : 0;
             lastWriteAt = now - StepSaveSeconds;
         }
@@ -303,12 +301,30 @@ namespace Halka.Poc2D3D.Save
 
         // ---------------------------------------------------------------- saving
 
-        private string Settings() =>
-            (views != null ? views.Mode.ToString() : "") + "|" + (autoMode != null && autoMode.AutoEnabled);
+        // What a save holds, compared field by field every frame (nothing allocated per frame).
+        private struct State
+        {
+            public string Map;
+            public Vector2Int Cell;
+            public FacingDirection Facing;
+            public long Steps;
+            public PocViewMode View;
+            public bool Auto;
 
-        private string Signature() =>
-            session.World.MapId + "|" + session.Cell.x + "," + session.Cell.y + "|" + session.Facing + "|" +
-            (lifeLog != null ? lifeLog.TotalSteps : 0) + "|" + Settings();
+            public bool SameSettings(State other) => View == other.View && Auto == other.Auto;
+            public bool Same(State other) => SameSettings(other) && Map == other.Map && Cell == other.Cell &&
+                Facing == other.Facing && Steps == other.Steps;
+        }
+
+        private State Now() => new State
+        {
+            Map = session.World.MapId,
+            Cell = session.Cell,
+            Facing = session.Facing,
+            Steps = lifeLog != null ? lifeLog.TotalSteps : 0,
+            View = views != null ? views.Mode : PocViewMode.PixelView2D,
+            Auto = autoMode != null && autoMode.AutoEnabled,
+        };
 
         public HarukaSaveData Capture()
         {
@@ -344,27 +360,20 @@ namespace Halka.Poc2D3D.Save
             }
             if (SavingStopped) return;
             var since = now - lastWriteAt;
-            var settings = Settings();
-            var signature = Signature();
+            var state = Now();
             var playSeconds = lifeLog != null ? lifeLog.TotalPlaySeconds : 0;
-            if (flushRequested && (signature != savedSignature || playSeconds != savedPlaySeconds || firstSaveDue))
+            if (flushRequested && (!state.Same(saved) || playSeconds != savedPlaySeconds || firstSaveDue))
                 Write("page hidden or paused", now);
             // During a step the place is not final yet (its facing already changed): wait for
             // the step to complete (0.18 s), unless the page is going away.
             else if (session.IsMoving) { }
-            else if ((firstSaveDue || settings != savedSettings || MapOf(signature) != MapOf(savedSignature)) && since >= ImportantSaveSeconds)
+            else if ((firstSaveDue || !state.SameSettings(saved) || state.Map != saved.Map) && since >= ImportantSaveSeconds)
                 Write(firstSaveDue ? "first save" : "map or setting changed", now);
-            else if (signature != savedSignature && since >= StepSaveSeconds)
+            else if (!state.Same(saved) && since >= StepSaveSeconds)
                 Write("moved", now);
             else if (playSeconds != savedPlaySeconds && since >= PeriodicSaveSeconds)
                 Write("play time", now);
             flushRequested = false;
-        }
-
-        private static string MapOf(string signature)
-        {
-            var bar = signature.IndexOf('|');
-            return bar < 0 ? signature : signature.Substring(0, bar);
         }
 
         // From the page (HarukaSave.jslib: tab hidden, page closing) and from Unity (paused,
@@ -417,8 +426,7 @@ namespace Halka.Poc2D3D.Save
             LastWriteReason = reason;
             lastWriteAt = now;
             firstSaveDue = false;
-            savedSignature = Signature();
-            savedSettings = Settings();
+            saved = Now();
             savedPlaySeconds = written.TotalPlaySeconds;
             return written;
         }
@@ -459,7 +467,7 @@ namespace Halka.Poc2D3D.Save
         // The newest good snapshot as a file (written first, so it holds the current state).
         public string ExportText()
         {
-            if (!SavingStopped && (firstSaveDue || Signature() != savedSignature ||
+            if (!SavingStopped && (firstSaveDue || !Now().Same(saved) ||
                 (lifeLog != null ? lifeLog.TotalPlaySeconds : 0) != savedPlaySeconds))
                 Write("export", Time.unscaledTime);
             var latest = Store.Scan().Latest;
@@ -513,8 +521,7 @@ namespace Halka.Poc2D3D.Save
             Loaded = written;
             Debug.Log("HARUKA save: imported: " + Describe(written) + " rev " + written.Revision + " place: " + place.Note);
             var after = Capture();
-            savedSignature = Signature();
-            savedSettings = Settings();
+            saved = Now();
             if (after.MapId != written.MapId || after.CellX != written.CellX || after.CellY != written.CellY ||
                 after.Facing != written.Facing || after.ViewMode != written.ViewMode || after.AutoEnabled != written.AutoEnabled ||
                 after.TotalSteps != written.TotalSteps || after.TimeAnchorUnixMs != written.TimeAnchorUnixMs)
