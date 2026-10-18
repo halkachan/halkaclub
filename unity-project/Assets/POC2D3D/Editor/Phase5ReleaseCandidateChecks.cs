@@ -128,9 +128,10 @@ namespace Halka.Poc2D3D.EditorTools
                 PocViewMode.PixelView2D);
             var rcMenu = UnityEngine.Object.FindAnyObjectByType<GameMenuController>(FindObjectsInactive.Include);
             var rcGuard = UnityEngine.Object.FindAnyObjectByType<PocOrientationGuard>(FindObjectsInactive.Include);
-            Check("RC scene: the version ver3.0 RC1 is in the menu, not at the top right; the 2D game's own label is unchanged",
-                hud != null && !hud.VersionLabelShown && hud.VersionLabel == "ver3.0 RC1" && rcMenu != null &&
-                rcMenu.VersionText == "ver3.0 RC1" && GameVersion.Label == "ver3.0 Preview");
+            // Phase 6: the release candidate is RC2; the version shown follows its label.
+            Check("RC scene: the version (" + PocDebugPanel.ReleaseCandidateVersionLabel + ") is in the menu, not at the top right; the 2D game's own label is unchanged",
+                hud != null && !hud.VersionLabelShown && hud.VersionLabel == PocDebugPanel.ReleaseCandidateVersionLabel && rcMenu != null &&
+                rcMenu.VersionText == PocDebugPanel.ReleaseCandidateVersionLabel && GameVersion.Label == "ver3.0 Preview");
             Check("RC scene: phones are played upright too (no landscape-only rule, no pause when upright)",
                 rcGuard != null && !rcGuard.LandscapeOnly);
             // Awake reads ?debug=1 from the page URL; without it (Edit Mode: no URL) the panel is off.
@@ -141,7 +142,7 @@ namespace Halka.Poc2D3D.EditorTools
             Check("RC scene: the name is fixed as はるかわーるど (page title exactly はるかわーるど); IDs keep HALKA",
                 PocDebugPanel.ReleaseCandidateTitle == "はるかわーるど" &&
                 PocDebugPanel.ReleaseCandidateName.StartsWith("はるかわーるど") &&
-                panel.Title.StartsWith("はるかわーるど ver3.0 RC1") && LifeLogController.SaveKey.StartsWith("HALKA_WORLD"));
+                panel.Title.StartsWith("はるかわーるど " + PocDebugPanel.ReleaseCandidateVersionLabel) && LifeLogController.SaveKey.StartsWith("HALKA_WORLD"));
             var footsteps = gameplay != null ? gameplay.Footsteps : null;
             var source = footsteps != null ? footsteps.GetComponent<AudioSource>() : null;
             var clip = footsteps != null ? (AudioClip)typeof(PlayerFootstepAudio).GetField("footstep", Hidden).GetValue(footsteps) : null;
@@ -931,7 +932,7 @@ namespace Halka.Poc2D3D.EditorTools
             var menu = c.Menu;
             Check("menu: one extra row, ひょうじ (full screen moved to a button on the page); the font has every glyph",
                 menu.ExtraItems.Count == 1 && menu.ExtraItems[0].Label == "ひょうじ" &&
-                menu.ExtraItems.All(item => item.Label != "ぜんがめん") && GameBitmapFont.HasAllGlyphs("ver3.0 RC1"));
+                menu.ExtraItems.All(item => item.Label != "ぜんがめん") && GameBitmapFont.HasAllGlyphs(PocDebugPanel.ReleaseCandidateVersionLabel));
             ClearMessage(c);
             menu.SetOpen(true, clock);
             var before = c.Switcher.Mode;

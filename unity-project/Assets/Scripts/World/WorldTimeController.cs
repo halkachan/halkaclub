@@ -86,6 +86,25 @@ namespace Halka.Game.World
             initialized = true;
         }
 
+        // ver3.0 Phase 6: the save system sets the anchor it loaded or imported (the 2D game never
+        // calls this). Kept under the same key right away; the phase follows at once.
+        public void SetAnchor(long anchor, long nowMilliseconds)
+        {
+            if (anchor <= 0L) return;
+            anchorMilliseconds = anchor;
+            initialized = true;
+            try
+            {
+                PlayerPrefs.SetString(SaveKey, anchorMilliseconds.ToString(CultureInfo.InvariantCulture));
+                PlayerPrefs.Save();
+            }
+            catch (Exception) { /* Keep the in-memory clock running. */ }
+            var next = WorldTimeCycle.PhaseAt(anchorMilliseconds, nowMilliseconds);
+            if (next == currentPhase) return;
+            currentPhase = next;
+            PhaseChanged?.Invoke(next);
+        }
+
         public void RefreshAt(long nowMilliseconds)
         {
             if (!initialized) { LoadOrStart(nowMilliseconds); return; }

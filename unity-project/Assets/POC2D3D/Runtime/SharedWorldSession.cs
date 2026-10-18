@@ -97,6 +97,33 @@ namespace Halka.Poc2D3D
 
         private void Awake() => Initialize();
 
+        // Phase 6: where the game resumes (the save system checks the place first). Set before
+        // the first Initialize; without it the player starts at the map's Player Start.
+        private bool hasStart;
+        private string startMapId;
+        private Vector2Int startCell;
+        private FacingDirection startFacing;
+
+        public void SetStartLocation(string mapId, Vector2Int cell, FacingDirection facing)
+        {
+            hasStart = true;
+            startMapId = mapId;
+            startCell = cell;
+            startFacing = facing;
+        }
+
+        // The maps this session plays (configured before Initialize; the save system reads them).
+        public System.Collections.Generic.IEnumerable<MapDefinition> Maps
+        {
+            get
+            {
+                if (outdoorMap != null) yield return outdoorMap;
+                if (interiorMap != null) yield return interiorMap;
+            }
+        }
+
+        public MapDefinition StartMap => outdoorMap;
+
         public void Initialize()
         {
             if (World != null) return;
@@ -108,6 +135,28 @@ namespace Halka.Poc2D3D
             motion = new GridStepMotion(spawn.Cell);
             Facing = EntityRuntimeFactory2D.ParseFacing(spawn.Facing);
             MapLoads = 1;
+            var start = hasStart ? FindWorld(startMapId) : null;
+            if (start == null) return;
+            World = start;
+            motion = new GridStepMotion(startCell);
+            Facing = startFacing;
+        }
+
+        public SharedWorldModel FindWorld(string mapId)
+        {
+            if (outdoor != null && outdoor.MapId == mapId) return outdoor;
+            if (interior != null && interior.MapId == mapId) return interior;
+            return null;
+        }
+
+        // Phase 6 import: move to a checked place now, like a door does (MapChanged), without a
+        // step, a transition or an interaction.
+        public bool RestoreLocationNow(string mapId, Vector2Int cell, FacingDirection facing)
+        {
+            var target = FindWorld(mapId);
+            if (target == null) return false;
+            LoadMap(target, cell, facing, SharedTransitionKind.None, default);
+            return true;
         }
 
         // A test map (for example a MAP EDITOR fixture) replaces the outdoor map before Awake.

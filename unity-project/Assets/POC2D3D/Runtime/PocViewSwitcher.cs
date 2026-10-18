@@ -57,6 +57,10 @@ namespace Halka.Poc2D3D
             if (!applied) SetMode(initialMode);
         }
 
+        // Phase 6: the saved view, applied on the first frame instead of the scene's default.
+        public void SetInitialMode(PocViewMode mode) => initialMode = mode;
+        public PocViewMode InitialMode => initialMode;
+
         public void Toggle() => SetMode(Mode == PocViewMode.PixelView2D ? PocViewMode.ThirdPerson3D : PocViewMode.PixelView2D);
 
         public void SetMode(PocViewMode mode)

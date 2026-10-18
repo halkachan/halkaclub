@@ -74,6 +74,17 @@ namespace Halka.Game.Player
 
         private void OnPlayerStepCompleted(Vector2Int _) => RecordCompletedStep();
 
+        // ver3.0 Phase 6: the save system sets the totals it loaded or imported (the 2D game
+        // never calls this). Saved under the same key and format right away.
+        public void ReplaceTotals(long steps, long playSeconds)
+        {
+            data = LifeLogData.Deserialize("v1|" + System.Math.Max(0L, steps).ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                "|" + System.Math.Max(0L, playSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            lastSampleAt = Time.realtimeSinceStartupAsDouble;
+            dirty = true;
+            Save();
+        }
+
         // A completed Grid step of the player from a world without PlayerMover (ver3.0 shared world).
         public void RecordCompletedStep()
         {

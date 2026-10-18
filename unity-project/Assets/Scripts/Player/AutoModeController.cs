@@ -36,6 +36,8 @@ namespace Halka.Game.Player
         private IAutoModeWorld defaultWorld;
 
         public bool AutoEnabled { get; private set; }
+        // ver3.0 Phase 6: the setting a new save starts with (the scene's default).
+        public bool EnabledByDefault => enabledByDefault;
         public bool Active { get; private set; }
         public bool MenuSuspended => menuSuspended;
         public float LastUserAt => lastUserAt;

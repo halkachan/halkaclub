@@ -15,7 +15,8 @@ namespace Halka.Poc2D3D.EditorTools
         public const string OutputFolderName = "HARUKA_WORLD_ver3.0_PHASE4_PREVIEW";
         // Phase 5: はるかわーるど ver3.0 Release Candidate 1, outside the repository. The game sits
         // at halkaworld/webgl/ (the public site's path) below a staging copy of the game page.
-        public const string ReleaseCandidateFolderName = "HARUKA_WORLD_ver3.0_RC1";
+        // Phase 6: RC2 in its own folder (RC1 is kept as it is).
+        public const string ReleaseCandidateFolderName = "HARUKA_WORLD_ver3.0_RC2";
         public const string ReleaseCandidateGamePath = "halkaworld/webgl";
 
         public static string ReleaseCandidatePath =>
@@ -54,8 +55,8 @@ namespace Halka.Poc2D3D.EditorTools
             }
         }
 
-        // The RC1 folder: halkaworld/webgl (the game, RC scene only), the staging page beside it,
-        // the start script, README and test documents (tools/poc2d3d/rc1).
+        // The RC folder: halkaworld/webgl (the game, RC scene only), the staging page beside it,
+        // the start script, README and test documents (tools/poc2d3d/rc2 since Phase 6).
         public static void BuildReleaseCandidate()
         {
             var root = ReleaseCandidatePath;
@@ -64,7 +65,7 @@ namespace Halka.Poc2D3D.EditorTools
             var page = Path.Combine(output, "index.html");
             // RC1 feedback: phones play upright again (no rotation guide), the title is はるかわーるど.
             File.WriteAllText(page, PreviewPage(File.ReadAllText(page), PocDebugPanel.ReleaseCandidateTitle, false));
-            var kit = Path.Combine(PocSceneBuilder.RepositoryRoot, "tools", "poc2d3d", "rc1");
+            var kit = Path.Combine(PocSceneBuilder.RepositoryRoot, "tools", "poc2d3d", "rc2");
             foreach (var file in Directory.GetFiles(kit, "*", SearchOption.AllDirectories))
             {
                 var relative = file.Substring(kit.Length + 1);
@@ -86,7 +87,7 @@ namespace Halka.Poc2D3D.EditorTools
                 "build: " + build + "\n" +
                 "built: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "\n" +
                 "size: " + report.summary.totalSize + " bytes (Unity report)\n");
-            Debug.Log($"HALKA RC1 WebGL: {output} build {build} ({report.summary.totalSize} bytes, {report.summary.totalTime})");
+            Debug.Log($"HALKA RC2 WebGL: {output} build {build} ({report.summary.totalSize} bytes, {report.summary.totalTime})");
         }
 
         // Like the public page's build= value: changes whenever the code or data files change.

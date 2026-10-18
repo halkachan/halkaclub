@@ -21,7 +21,7 @@ namespace Halka.Poc2D3D.EditorTools
         public const string ScenePath = Root + "/Scenes/HALKA_WORLD_2D3D_POC.unity";
         // Phase 5: the Release Candidate scene, built from the same content as the POC scene (the
         // POC scene stays the technical verification scene with its options shown).
-        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.0_RC1.unity";
+        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.0_RC2.unity";
         public const string CatalogPath = Root + "/Data/POC_PresentationCatalog.asset";
         public const string ToonMaterialPath = Root + "/Materials/POC_ToonVertexColor.mat";
         public const string GridMaterialPath = Root + "/Materials/POC_GridOverlay.mat";
@@ -220,7 +220,7 @@ namespace Halka.Poc2D3D.EditorTools
         // off unless ?debug=1, the HUD reads "ver3.0 RC1".
         private static void ConfigureReleaseCandidate(GameObject root)
         {
-            root.name = "HARUKA WORLD ver3.0 RC1";
+            root.name = "HARUKA WORLD ver3.0 RC2";
             var panel = root.GetComponent<PocDebugPanel>();
             var hud = root.GetComponentInChildren<GameHud>(true);
             var switcher = root.GetComponent<PocViewSwitcher>();
@@ -234,6 +234,11 @@ namespace Halka.Poc2D3D.EditorTools
             if (menu == null || guard == null) throw new InvalidOperationException("RC scene menu / guard missing");
             menu.SetVersionText(PocDebugPanel.ReleaseCandidateVersionLabel);
             guard.LandscapeOnly = false;
+            var save = root.GetComponentInChildren<Halka.Poc2D3D.Save.HarukaSaveSystem>(true);
+            if (save == null) throw new InvalidOperationException("RC scene save system missing");
+            var saveSettings = new SerializedObject(save);
+            saveSettings.FindProperty("gameVersion").stringValue = PocDebugPanel.ReleaseCandidateVersionLabel;
+            saveSettings.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(panel);
             EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(menu);
@@ -372,6 +377,20 @@ namespace Halka.Poc2D3D.EditorTools
             thirdPerson.ConfigureTreeFade(AssetDatabase.LoadAssetAtPath<Material>(TreeFadeMaterialPath));
             panel.ConfigureGame(gameplay, guard);
             BuildPhase5Content(root, gameplay, pixelView);
+            BuildPhase6Content(root, session, switcher, autoMode, lifeLog, menu, hud);
+        }
+
+        // Phase 6: the save system (automatic save and load, backups, export / import). Its
+        // object's name is what the page calls when it is hidden (HarukaSave.jslib).
+        private static void BuildPhase6Content(GameObject root, SharedWorldSession session, PocViewSwitcher switcher,
+            AutoModeController autoMode, LifeLogController lifeLog, GameMenuController menu, GameHud hud)
+        {
+            var saveObject = new GameObject(Halka.Poc2D3D.Save.HarukaSaveSystem.ObjectName);
+            saveObject.transform.SetParent(root.transform, false);
+            var save = saveObject.AddComponent<Halka.Poc2D3D.Save.HarukaSaveSystem>();
+            var worldTime = root.GetComponent<WorldTimeController>();
+            if (worldTime == null) throw new InvalidOperationException("World time missing");
+            save.Configure(session, switcher, autoMode, lifeLog, worldTime, menu, hud, "ver3.0 POC");
         }
 
         // Phase 5: footsteps (PlayerFootstepAudio driven by SharedWorldSession.StepStarted, the 2D
