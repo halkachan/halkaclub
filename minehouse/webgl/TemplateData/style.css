@@ -99,6 +99,13 @@ html, body {
   max-width: 90vw;
   font-family: sans-serif;
   font-size: 14px;
+  /* v0.5: messages never take a touch meant for the game (the furniture button is at the top right) */
+  pointer-events: none;
+}
+
+#message.bottom {
+  top: auto;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
 }
 
 #message div {
@@ -164,4 +171,43 @@ html, body {
   padding: 4px 6px;
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+/* v0.5: the browser took the game's drawing away (WebGL context lost: memory pressure, a GPU reset...). The game
+   cannot draw again by itself, so the page says so and offers to load it again. */
+#lost {
+  display: none;
+  position: fixed;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  background: rgba(231, 222, 214, 0.92);
+  color: var(--ink);
+  font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  z-index: 10;
+}
+
+#lost.shown { display: flex; }
+
+#lost-card {
+  max-width: min(420px, 86vw);
+  padding: 18px 20px;
+  background: #fff8ee;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+#lost-card button {
+  margin-top: 12px;
+  min-width: 160px;
+  min-height: 44px;
+  font: inherit;
+  font-weight: bold;
+  color: var(--ink);
+  background: var(--accent);
+  border: 2px solid var(--ink);
+  border-radius: 6px;
 }

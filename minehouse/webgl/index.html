@@ -25,20 +25,35 @@
 
     <div id="rotate-hint" aria-hidden="true">スマホを横向きにすると、大きく表示されます</div>
     <div id="message" role="alert"></div>
+    <div id="lost" role="alertdialog" aria-labelledby="lost-text">
+      <div id="lost-card">
+        <div id="lost-text">ブラウザが画面の表示を止めました（メモリ不足などで起きることがあります）。<br>
+          ページを読み込み直すと続きから遊べます。確定した模様替えは、保存できる環境なら残っています。</div>
+        <button type="button" id="lost-reload">読み込み直す</button>
+      </div>
+    </div>
 
     <script>
       var canvas = document.getElementById("game-canvas");
       var messageBox = document.getElementById("message");
 
-      function showMessage(text, isError) {
+      // atBottom (v0.5): over the band below the house, which is empty while the save menu is open (the menu's sheet
+      // and its close key stay in view); a new message replaces the previous one (errors stay)
+      function showMessage(text, isError, atBottom) {
         if (isError && window.mineHouseDiag) window.mineHouseDiag.error(text);
+        Array.prototype.slice.call(messageBox.children).forEach(function (old) {
+          if (old.className !== "error") messageBox.removeChild(old);
+        });
+        messageBox.className = atBottom ? "bottom" : "";
         var div = document.createElement("div");
         div.textContent = text;
         if (isError) div.className = "error";
         messageBox.appendChild(div);
         messageBox.style.display = "block";
+        // v0.5: removed only if it is still there - an error in the page's own script would stop the game
+        // (Unity's loader treats any uncaught error on the page as the game failing)
         if (!isError) setTimeout(function () {
-          messageBox.removeChild(div);
+          if (div.parentNode) div.parentNode.removeChild(div);
           if (!messageBox.children.length) messageBox.style.display = "none";
         }, 5000);
       }
@@ -51,12 +66,19 @@
         canvas.addEventListener(type, function (e) { if (e.cancelable) e.preventDefault(); }, { passive: false });
       });
 
+      // v0.5: the drawing was taken away (WebGL context lost) - the game cannot draw again by itself
+      canvas.addEventListener("webglcontextlost", function () {
+        document.getElementById("lost").className = "shown";
+        if (window.mineHouseDiag) window.mineHouseDiag.error("WebGL context lost");
+      });
+      document.getElementById("lost-reload").addEventListener("click", function () { location.reload(); });
+
       var buildUrl = "Build";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/4e3dd4e8a72b84bfd382340b98c3d2fb.data.unityweb",
-        frameworkUrl: buildUrl + "/651ae60fde5bbc889dd3d33293228d05.framework.js.unityweb",
-        codeUrl: buildUrl + "/8dedf524378b7f66075abff1020361f7.wasm.unityweb",
+        dataUrl: buildUrl + "/4deb8585cb1706c45e61e2969ee17cff.data.unityweb",
+        frameworkUrl: buildUrl + "/3e990268ad18cd3745bb1846af989aad.framework.js.unityweb",
+        codeUrl: buildUrl + "/d61b324c70d99e6d4d4bac3c8c6b9d87.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "HALKA",
         productName: "みねはうす",
@@ -65,7 +87,7 @@
       };
 
       var script = document.createElement("script");
-      script.src = buildUrl + "/92f8fb9b549edc7c747f85d966119e6d.loader.js";
+      script.src = buildUrl + "/f08fc5276fa0f7edf530606a716a7d44.loader.js";
       script.onload = function () {
         createUnityInstance(canvas, config, function (progress) {
           document.getElementById("loading-fill").style.width = Math.round(100 * progress) + "%";

@@ -37,11 +37,11 @@
 
         <section class="game-page" aria-labelledby="game-title">
           <h1 id="game-title">みねはうす</h1>
-          <p class="game-current-version">v0.4（試験公開）</p>
+          <p class="game-current-version">v0.5（試験公開）</p>
 
           <!-- ゲーム本体は webgl/（Unity の Web ビルド）。?debug=1 を付けて開くと診断表示が出ます。 -->
           <div class="minehouse-frame" id="minehouse-frame">
-            <iframe id="minehouse-game" src="webgl/?v=0.4.0" title="みねはうす（ゲーム画面）" allow="fullscreen; clipboard-write" loading="eager"></iframe>
+            <iframe id="minehouse-game" src="webgl/?v=0.5.0" title="みねはうす（ゲーム画面）" allow="fullscreen; clipboard-write" loading="eager"></iframe>
           </div>
 
           <div class="game-tools">
@@ -52,6 +52,8 @@
           <p class="game-controls">リンとレンが暮らす小さな家です。時間帯は現実の時計に合わせて、朝・昼・夕・夜・深夜と変わります。マウスや指でつまむと持ち上げられます。</p>
 
           <p class="game-controls">ゲーム右上の家具ボタンで模様替えができます。配置はこのブラウザに保存されます（プライベートウィンドウやデータの消去では残りません）。</p>
+
+          <p class="game-controls">模様替え中は ↶ ↷ で元に戻す・やり直すができます（パソコンは Ctrl+Z / Ctrl+Y も）。保存ボタンから、配置をファイルに書き出す・ファイルから読み込む・バックアップから戻すができます。バックアップもこのブラウザの中だけにあるので、大事な配置はファイルに書き出しておいてください。</p>
 
           <p class="game-credit">
             この作品は、<a href="https://piapro.jp/license/pcl/summary" target="_blank" rel="noopener">ピアプロ・キャラクター・ライセンス</a>に基づいてクリプトン・フューチャー・メディア株式会社のキャラクター「鏡音リン」「鏡音レン」を描いたものです。<br />
@@ -71,7 +73,7 @@
         var button = document.getElementById("minehouse-fullscreen");
 
         // the browser check panel of the game (development use): /minehouse/?debug=1
-        if (/(?:^|[?&])debug=1(?:&|$)/.test(location.search)) game.src = "webgl/?v=0.4.0&debug=1";
+        if (/(?:^|[?&])debug=1(?:&|$)/.test(location.search)) game.src = "webgl/?v=0.5.0&debug=1";
 
         // full screen: the game frame fills the screen; where a page element cannot go full screen
         // (iPhone Safari), the game opens on its own page, which already fills the window
