@@ -726,7 +726,8 @@ RC1 フォルダ全体: 29 MB。
 ## 50. 最終Git状態
 
 - `claude/ver3.0-2d3d-phase5`: Phase 4 の `90b7383` の上に、Phase 5 のコミットがあります。作業ツリーに変更は残っていません（Unity が書いた改行の違いだけの `.mat` を除く）。
-- `main`: `d039acf`（変更なし）。`origin/main`: `3d6ea8c`（変更なし）。
+- `main`: `d039acf`（変更なし）。
+- `origin/main`: 作業の開始時は `3d6ea8c`。2026-10-18 14:35 に、別の作業（みねはうす v0.4 の家具）の Push で `c8ba605` に進みました。Phase 5 の Push ではありません。Phase 5 のブランチは、どのリモートにもありません（`git branch -r --contains` で確認）。
 - Phase 1〜4 のブランチと Preview は、上書きしていません。
 
 ## 51. 公開版の保護状況
