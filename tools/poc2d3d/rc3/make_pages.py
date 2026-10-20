@@ -226,7 +226,7 @@ def release_page(date):
                 '<meta property="og:image:alt" content="はるかわーるど" />')
     # The card with the new name has its own file, so SNS caches of the old card are not reused.
     html = once(html, '<meta property="og:image" content="https://halkaclub.com/assets/ogp/halkaworld.png?v=1" />',
-                '<meta property="og:image" content="https://halkaclub.com/assets/ogp/harukaworld_v3.png" />')
+                '<meta property="og:image" content="https://halkaclub.com/assets/ogp/harukaworld_v3.png?v=1" />')
     html = once(html, "<span>HALKA WORLD</span>", "<span>はるかわーるど</span>")
     html = once(html, "<p>HALKA WORLD</p>", "<p>はるかわーるど</p>")
     html = once(html, '<h1 id="game-title">HALKA WORLD</h1>', '<h1 id="game-title">はるかわーるど</h1>')
