@@ -165,7 +165,7 @@ namespace Halka.Poc2D3D.EditorTools
                     File.Exists(Repo($"blender/exports/previews/phase2_1/haruka_blocky_placeholder_{v}.png"))));
             var sprites = Regex.Matches(manifest, "\"(Assets/Content/Character/[^\"]+\\.png)\": \"([0-9a-f]{64})\"").Cast<Match>().ToList();
             var spriteChanged = sprites.Where(m => Sha256("unity-project/" + m.Groups[1].Value) != m.Groups[2].Value).ToList();
-            Check("2D: the 50 original Player sprites are unchanged (SHA-256)", sprites.Count == 50 && spriteChanged.Count == 0,
+            Check("2D: the 50 Player sprites match the recorded set (SHA-256; the user's redrawn set since 2026-10-20)", sprites.Count == 50 && spriteChanged.Count == 0,
                 string.Join(", ", spriteChanged.Select(m => m.Groups[1].Value)));
 
             var catalog = AssetDatabase.LoadAssetAtPath<PocPresentationCatalog>(PocSceneBuilder.CatalogPath);
@@ -527,8 +527,10 @@ namespace Halka.Poc2D3D.EditorTools
             Check("no other page of the site is changed in this branch (top page, みねはうす, shared CSS, sitemap, assets)",
                 ChangedSince(PublicBase, "index.html style.css script.js sitemap.xml robots.txt CNAME favicon.png youtube-thumbnail.js " +
                     "assets club commission game harukaijiri request utamaze works") == "");
-            Check("maps, map JSON, catalogs and sprites unchanged since Phase 6 (Content/Maps, Character, World)",
-                ChangedSince(Phase6Final, "unity-project/Assets/Content") == "");
+            // 2026-10-20: the Player sprites (Content/Character) were redrawn by the user on purpose;
+            // they are pinned by the SHA-256 check in the model category instead.
+            Check("maps, map JSON, catalogs and world sprites unchanged since Phase 6 (Content/Maps, World, Audio, Fonts)",
+                ChangedSince(Phase6Final, "unity-project/Assets/Content/Maps unity-project/Assets/Content/World unity-project/Assets/Content/Audio unity-project/Assets/Content/Fonts") == "");
             var catalogBefore = Git("show " + Phase6Final + ":unity-project/Assets/POC2D3D/Data/POC_PresentationCatalog.asset").output.Replace("\r\n", "\n");
             var catalogNow = ReadRepo("unity-project/Assets/POC2D3D/Data/POC_PresentationCatalog.asset");
             var bindingsBefore = Regex.Matches(catalogBefore, "definitionId: (\\w+)").Cast<Match>().Select(m => m.Value).ToList();

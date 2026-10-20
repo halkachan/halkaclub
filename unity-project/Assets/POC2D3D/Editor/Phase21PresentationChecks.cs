@@ -574,7 +574,9 @@ namespace Halka.Poc2D3D.EditorTools
                 return File.Exists(path) && BitConverter.ToString(sha.ComputeHash(File.ReadAllBytes(path))).Replace("-", "")
                     .Equals(expected, StringComparison.OrdinalIgnoreCase);
             });
-            Check("original Player sprites unchanged (all 50 PNG SHA-256 match the Phase 2.1 start)", same && hashes.Length == 50);
+            // 2026-10-20: the user redrew the four base pictures; every frame was rebuilt from them and
+            // the recorded hashes follow the new set. Still guaranteed: no Player sprite changes unnoticed.
+            Check("Player sprites match the recorded set (all 50 PNG SHA-256; the user's redrawn sprites since 2026-10-20)", same && hashes.Length == 50);
             c.Switcher.SetMode(PocViewMode.PixelView2D);
         }
 

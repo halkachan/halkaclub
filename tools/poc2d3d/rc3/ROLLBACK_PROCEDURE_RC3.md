@@ -43,6 +43,7 @@ ver3.0 の公開後に重大な問題が見つかったとき、公開中のゲ�
    - 履歴を消す `reset` や force push はしない。
    - 公開のときに一緒に merge した ver3.0 のソース（`unity-project/` など）は、戻さなくても公開ページに影響しない。戻すのは公開されるファイルだけでよい。
    - 別件の更新（みねはうす、トップページ など）は戻さない。revert の差分に、`halkaworld/` 以外が入っていないことを確かめる。
+   - トップページのﾊﾙｶﾁｬﾝの GIF を新しい絵に替えていても（別のコミット）、ゲームとは関係しないので、ここでは戻さない。
 3. 戻した結果、次の状態になっていることを確かめる。
    - `halkaworld/index.html` が ver2.9（`ver2.9`、iframe の `?v=2.9&build=a5659b8e…`）
    - `halkaworld/webgl/index.html` が ver2.9 のもの、`halkaworld/webgl/Build/` に ver2.9 の4ファイル（と、残した ver3.0 の4ファイル）
