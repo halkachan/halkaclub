@@ -76,7 +76,7 @@ public sealed class ImageSlot : INotifyPropertyChanged
             sourcePath = value;
             Source = value == null ? null : ImageInfo.Read(value);
             foreach (var name in new[] { nameof(SourcePath), nameof(Source), nameof(Changed),
-                         nameof(Error), nameof(HasError), nameof(Summary) })
+                         nameof(Error), nameof(HasError), nameof(Summary), nameof(Preview) })
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
@@ -93,7 +93,8 @@ public sealed class ImageSlot : INotifyPropertyChanged
     {
         Regenerated = true;
         Current = ImageInfo.Read(Path);
-        foreach (var name in new[] { nameof(Regenerated), nameof(Current), nameof(Changed), nameof(Summary) })
+        foreach (var name in new[] { nameof(Regenerated), nameof(Current), nameof(Changed),
+                     nameof(Summary), nameof(Preview) })
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 
@@ -113,6 +114,9 @@ public sealed class ImageSlot : INotifyPropertyChanged
     }
 
     public bool HasError => Error != null;
+
+    /// <summary>画面に出す絵の場所（選び直している間は、そちらを出します）。</summary>
+    public string Preview => SourcePath ?? Path;
 
     /// <summary>画面に出す1行。</summary>
     public string Summary => SourcePath != null

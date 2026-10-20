@@ -34,7 +34,7 @@ public static class SiteCheck
     /// <summary>よく中身が変わるので、`?v=` が付いていてほしいもの。</summary>
     private static readonly string[] Versioned =
     {
-        "style.css", "script.js", "works/works-data.js", "assets/profile/halgif1.gif",
+        "style.css", "script.js", "works/works-data.js",
     };
 
     public static IReadOnlyList<CheckIssue> Run(SiteSession session)
@@ -154,14 +154,12 @@ public static class SiteCheck
 
     private static void CheckVersions(string root, List<CheckIssue> issues)
     {
-        var ogp = Directory.Exists(Path.Combine(root, "assets", "ogp"))
-            ? Directory.GetFiles(Path.Combine(root, "assets", "ogp"), "*.png")
-                .Select(path => "assets/ogp/" + Path.GetFileName(path))
-            : Array.Empty<string>();
+        // 画像はフォルダを数えます（ﾊﾙｶﾁｬﾝもカードも、増えたぶんだけ見ます）。
+        var images = Folder(root, "assets/ogp", "*.png").Concat(Folder(root, "assets/profile", "*.gif"));
 
         // 見張るものを、実際のファイルの場所で覚えます
         // （`./style.css` のように、名前は同じでも別のファイルを指すことがあるため）。
-        var watched = Versioned.Concat(ogp)
+        var watched = Versioned.Concat(images)
             .Select(resource => (Resource: resource,
                 Full: Path.GetFullPath(Path.Combine(root, resource.Replace('/', Path.DirectorySeparatorChar)))))
             .Where(item => File.Exists(item.Full))
@@ -243,6 +241,15 @@ public static class SiteCheck
     {
         try { return File.ReadAllText(path); }
         catch (Exception) { return ""; }
+    }
+
+    /// <summary>そのフォルダにあるファイルを、サイトからの相対パスで。</summary>
+    private static IEnumerable<string> Folder(string root, string relative, string pattern)
+    {
+        var folder = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+        return Directory.Exists(folder)
+            ? Directory.GetFiles(folder, pattern).Select(path => relative + "/" + Path.GetFileName(path))
+            : Array.Empty<string>();
     }
 
     private static IEnumerable<string> Scripts(string root) =>
