@@ -435,6 +435,10 @@ namespace Halka.Poc2D3D.Save
         {
             SavingStopped = true;
             StopReason = reason;
+            // Phase 7: the Life Log's own writes of the old key stop too. Otherwise its totals would
+            // appear under the old key, and the next start would take them for ver2.9 data and begin
+            // an almost empty save over the damaged ones.
+            if (lifeLog != null) lifeLog.PersistenceSuspended = true;
             Debug.LogWarning("HARUKA save: saving stopped: " + reason);
         }
 
@@ -498,11 +502,21 @@ namespace Halka.Poc2D3D.Save
             data.Facing = HarukaSaveData.FacingName(place.Facing);
             // An import also ends a stop caused by unreadable data (the person chose this file).
             var wasStopped = SavingStopped;
-            if (StopReason == "every snapshot is damaged") { SavingStopped = false; StopReason = ""; }
+            if (StopReason == "every snapshot is damaged")
+            {
+                SavingStopped = false;
+                StopReason = "";
+                if (lifeLog != null) lifeLog.PersistenceSuspended = false;
+            }
             var written = SavingStopped ? null : WriteData(data, "import", now);
             if (written == null)
             {
-                if (wasStopped && !SavingStopped) { SavingStopped = true; StopReason = "every snapshot is damaged"; }
+                if (wasStopped && !SavingStopped)
+                {
+                    SavingStopped = true;
+                    StopReason = "every snapshot is damaged";
+                    if (lifeLog != null) lifeLog.PersistenceSuspended = true;
+                }
                 problem = "not written: " + Store.LastProblem;
                 return false;
             }

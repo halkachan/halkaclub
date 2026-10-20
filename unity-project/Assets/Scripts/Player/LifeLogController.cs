@@ -27,6 +27,9 @@ namespace Halka.Game.Player
         // ver3.0 shared 2D/3D world: true while play is suspended outside the browser's own
         // focus rules (the phone rotation guide); that time is not play time.
         public bool ForegroundBlocked { get; set; }
+        // ver3.0 Phase 7: while the save system has stopped saving (unreadable or newer save data,
+        // another tab), the totals are not written under the old key either; the 2D game never sets it.
+        public bool PersistenceSuspended { get; set; }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
@@ -108,7 +111,7 @@ namespace Halka.Game.Player
 
         public void Save()
         {
-            if (data == null || !dirty) return;
+            if (data == null || !dirty || PersistenceSuspended) return;
             PlayerPrefs.SetString(SaveKey, data.Serialize());
             PlayerPrefs.Save();
             dirty = false;

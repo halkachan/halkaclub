@@ -59,9 +59,10 @@ namespace Halka.Poc2D3D
 
         // Phase 5 seat display metadata: presentation only. The seat cell, the action point and the
         // furniture's SeatAnchor_L / SeatAnchor_R / SitAnchor stay as authored; the model is drawn
-        // HipLift above the anchor with its legs at LegDegrees. Phase 5 measured the placeholder:
+        // HipLift above the anchor with its legs at LegDegrees. Phase 5 measured the model (the
+        // official one since Phase 7):
         // its thighs (0.132 thick, centred on the hips) went 0.026 into the bench seat (surface
-        // 0.18) and 0.068 into the cushion (surface 0.102). An official model replaces these rows.
+        // 0.18) and 0.068 into the cushion (surface 0.102). Another model would need its own rows.
         // TowardCenter moves the drawn model along the seat's length toward the furniture's middle:
         // each bench seat anchor is on its Grid cell centre, 0.22 from the bench end, which put the
         // 0.4 wide placeholder flush with the end (Phase 4 images). Two seats stay two seats.

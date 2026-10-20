@@ -15,8 +15,9 @@ namespace Halka.Poc2D3D.EditorTools
         public const string OutputFolderName = "HARUKA_WORLD_ver3.0_PHASE4_PREVIEW";
         // Phase 5: はるかわーるど ver3.0 Release Candidate 1, outside the repository. The game sits
         // at halkaworld/webgl/ (the public site's path) below a staging copy of the game page.
-        // Phase 6: RC2 in its own folder (RC1 is kept as it is).
-        public const string ReleaseCandidateFolderName = "HARUKA_WORLD_ver3.0_RC2";
+        // Phase 6: RC2 in its own folder (RC1 is kept as it is). Phase 7: RC3 (RC1 and RC2 kept).
+        public const string ReleaseCandidateFolderName = "HARUKA_WORLD_ver3.0_RC3";
+        public const string ReleaseCandidateKit = "rc3";
         public const string ReleaseCandidateGamePath = "halkaworld/webgl";
 
         public static string ReleaseCandidatePath =>
@@ -56,7 +57,8 @@ namespace Halka.Poc2D3D.EditorTools
         }
 
         // The RC folder: halkaworld/webgl (the game, RC scene only), the staging page beside it,
-        // the start script, README and test documents (tools/poc2d3d/rc2 since Phase 6).
+        // the start script, README and test documents (tools/poc2d3d/rc3 since Phase 7), and the
+        // ver3.0 public page prepared for the release (release/halkaworld, not published).
         public static void BuildReleaseCandidate()
         {
             var root = ReleaseCandidatePath;
@@ -65,29 +67,33 @@ namespace Halka.Poc2D3D.EditorTools
             var page = Path.Combine(output, "index.html");
             // RC1 feedback: phones play upright again (no rotation guide), the title is はるかわーるど.
             File.WriteAllText(page, PreviewPage(File.ReadAllText(page), PocDebugPanel.ReleaseCandidateTitle, false));
-            var kit = Path.Combine(PocSceneBuilder.RepositoryRoot, "tools", "poc2d3d", "rc2");
+            var kit = Path.Combine(PocSceneBuilder.RepositoryRoot, "tools", "poc2d3d", ReleaseCandidateKit);
             foreach (var file in Directory.GetFiles(kit, "*", SearchOption.AllDirectories))
             {
                 var relative = file.Substring(kit.Length + 1);
-                if (relative == "make_staging_pages.py") continue;
+                if (relative == "make_pages.py") continue;
                 if (relative.StartsWith("staging" + Path.DirectorySeparatorChar)) relative = relative.Substring("staging".Length + 1);
                 var target = Path.Combine(root, relative);
                 Directory.CreateDirectory(Path.GetDirectoryName(target));
                 File.Copy(file, target, true);
             }
             var build = BuildId(output);
-            foreach (var name in new[] { "index.html" })
-            {
-                var staging = Path.Combine(root, "halkaworld", name);
-                File.WriteAllText(staging, File.ReadAllText(staging).Replace("__BUILD__", build));
-            }
+            foreach (var built in new[] { Path.Combine(root, "halkaworld", "index.html"), Path.Combine(root, "release", "halkaworld", "index.html") })
+                if (File.Exists(built)) File.WriteAllText(built, File.ReadAllText(built).Replace("__BUILD__", build));
             File.WriteAllText(Path.Combine(root, "BUILD_INFO.txt"),
                 PocDebugPanel.ReleaseCandidateName + "\n" +
+                "shown version: " + PocDebugPanel.ReleaseCandidateVersionLabel + " (menu, save files)\n" +
                 "scene: " + PocSceneBuilder.RcScenePath + "\n" +
                 "build: " + build + "\n" +
                 "built: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "\n" +
-                "size: " + report.summary.totalSize + " bytes (Unity report)\n");
-            Debug.Log($"HALKA RC2 WebGL: {output} build {build} ({report.summary.totalSize} bytes, {report.summary.totalTime})");
+                "size: " + report.summary.totalSize + " bytes (Unity report)\n" +
+                "development build: " + EditorUserBuildSettings.development + ", script debugging: " + EditorUserBuildSettings.allowDebugging +
+                ", options: " + report.summary.options + "\n" +
+                "webgl: compression " + PlayerSettings.WebGL.compressionFormat + ", decompression fallback " + PlayerSettings.WebGL.decompressionFallback +
+                ", exceptions " + PlayerSettings.WebGL.exceptionSupport + ", data caching " + PlayerSettings.WebGL.dataCaching +
+                ", hashed file names " + PlayerSettings.WebGL.nameFilesAsHashes + ", template " + PlayerSettings.WebGL.template +
+                ", splash " + PlayerSettings.SplashScreen.show + "\n");
+            Debug.Log($"HALKA RC3 WebGL: {output} build {build} ({report.summary.totalSize} bytes, {report.summary.totalTime})");
         }
 
         // Like the public page's build= value: changes whenever the code or data files change.
@@ -107,8 +113,8 @@ namespace Halka.Poc2D3D.EditorTools
             if (output.StartsWith(publicWebGl, StringComparison.OrdinalIgnoreCase) ||
                 output.StartsWith(PocSceneBuilder.RepositoryRoot, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("POC builds must stay outside the repository: " + output);
-            if (EditorUserBuildSettings.development)
-                throw new InvalidOperationException("Expected a non-development configuration");
+            if (EditorUserBuildSettings.development || EditorUserBuildSettings.allowDebugging)
+                throw new InvalidOperationException("Expected a non-development configuration (no script debugging)");
             Directory.CreateDirectory(output);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {

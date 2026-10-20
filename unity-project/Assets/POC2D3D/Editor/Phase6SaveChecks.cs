@@ -30,6 +30,13 @@ namespace Halka.Poc2D3D.EditorTools
         private static string category = "";
         private static float clock;
         private static GameObject holder;
+        // Phase 7: the release checks start the game with this harness too.
+        internal static float Clock => clock;
+        internal static void DisposeHarness()
+        {
+            if (holder != null) UnityEngine.Object.DestroyImmediate(holder);
+            holder = null;
+        }
 
         public static void RunBatch()
         {
@@ -91,14 +98,14 @@ namespace Halka.Poc2D3D.EditorTools
 
         // ---------------------------------------------------------------- data helpers
 
-        private static HarukaSaveData Sample(long revision = 0) => new HarukaSaveData
+        internal static HarukaSaveData Sample(long revision = 0) => new HarukaSaveData
         {
             GameVersion = "ver3.0 RC2", SavedAtUtc = "2026-10-18T03:04:05Z", Revision = revision,
             TotalSteps = 1234, TotalPlaySeconds = 5678, TimeAnchorUnixMs = 1760000000000L, AutoEnabled = false,
             ViewMode = HarukaSaveData.View3D, MapId = "halka_house", CellX = 2, CellY = 1, Facing = "up",
         };
 
-        private static string Sealed(HarukaSaveData data)
+        internal static string Sealed(HarukaSaveData data)
         {
             var copy = data.Copy();
             copy.Seal();
@@ -219,7 +226,7 @@ namespace Halka.Poc2D3D.EditorTools
 
         // ---------------------------------------------------------------- boot / play harness
 
-        private sealed class Ctx
+        internal sealed class Ctx
         {
             public SharedWorldSession Session;
             public PocWorldPresenter Presenter;
@@ -242,7 +249,7 @@ namespace Halka.Poc2D3D.EditorTools
             public HarukaEditorSaveBrowser Browser;
         }
 
-        private static void SetLegacy(string life, string anchor)
+        internal static void SetLegacy(string life, string anchor)
         {
             if (life == null) PlayerPrefs.DeleteKey(LifeLogController.SaveKey); else PlayerPrefs.SetString(LifeLogController.SaveKey, life);
             if (anchor == null) PlayerPrefs.DeleteKey(WorldTimeController.SaveKey); else PlayerPrefs.SetString(WorldTimeController.SaveKey, anchor);
@@ -251,7 +258,7 @@ namespace Halka.Poc2D3D.EditorTools
 
         // The game's start, in its own order (WorldTime -100, LifeLog -50, save -45, AUTO -40,
         // session -30, gameplay -25, then OnEnable / Start), over the given storage.
-        private static Ctx Start(HarukaMemoryStorage storage, HarukaEditorSaveBrowser browser = null)
+        internal static Ctx Start(HarukaMemoryStorage storage, HarukaEditorSaveBrowser browser = null)
         {
             if (holder != null) UnityEngine.Object.DestroyImmediate(holder);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -306,11 +313,11 @@ namespace Halka.Poc2D3D.EditorTools
             return c;
         }
 
-        private static void Invoke(object target, string method) =>
+        internal static void Invoke(object target, string method) =>
             target.GetType().GetMethod(method, Hidden)?.Invoke(target, null);
 
         // One frame of play: input, the session, AUTO (optional), play time, the views, the save.
-        private static void Frame(Ctx c, float dt, Vector2Int raw, bool auto = false)
+        internal static void Frame(Ctx c, float dt, Vector2Int raw, bool auto = false)
         {
             clock += dt;
             c.Input.SetRaw(raw, clock);
@@ -323,12 +330,12 @@ namespace Halka.Poc2D3D.EditorTools
             c.Save.Tick(clock);
         }
 
-        private static void Settle(Ctx c, float seconds, bool auto = false)
+        internal static void Settle(Ctx c, float seconds, bool auto = false)
         {
             for (var t = 0f; t < seconds; t += 1f / 60f) Frame(c, 1f / 60f, Vector2Int.zero, auto);
         }
 
-        private static void Release(Ctx c)
+        internal static void Release(Ctx c)
         {
             c.Input.SetRaw(Vector2Int.zero, clock);
             c.Input.Resolve(Vector2Int.zero, false, FacingDirection.Up);
@@ -343,7 +350,7 @@ namespace Halka.Poc2D3D.EditorTools
         }
 
         // One step in a world direction (a tap), then the given settle time.
-        private static void Step(Ctx c, Vector2Int world, float settle = 0.3f)
+        internal static void Step(Ctx c, Vector2Int world, float settle = 0.3f)
         {
             Release(c);
             var raw = RawFor(c, world);
@@ -352,9 +359,9 @@ namespace Halka.Poc2D3D.EditorTools
             Settle(c, settle);
         }
 
-        private static HarukaSaveData Latest(Ctx c) => c.Save.Store.Scan().Latest;
+        internal static HarukaSaveData Latest(Ctx c) => c.Save.Store.Scan().Latest;
 
-        private static Vector2Int FreeNeighbour(Ctx c, out Vector2Int direction)
+        internal static Vector2Int FreeNeighbour(Ctx c, out Vector2Int direction)
         {
             foreach (var d in new[] { Vector2Int.right, Vector2Int.left, Vector2Int.up, Vector2Int.down })
             {
@@ -367,10 +374,10 @@ namespace Halka.Poc2D3D.EditorTools
         }
 
         // The message GameHud shows now (its own timer reads real time).
-        private static string Shown(Ctx c) =>
+        internal static string Shown(Ctx c) =>
             ((TimedMessage)typeof(GameHud).GetField("message", Hidden).GetValue(c.Hud)).TextAt(UnityEngine.Time.unscaledTime);
 
-        private static string LegacyLife() => PlayerPrefs.GetString(LifeLogController.SaveKey, "");
+        internal static string LegacyLife() => PlayerPrefs.GetString(LifeLogController.SaveKey, "");
 
         // ---------------------------------------------------------------- migration
 
@@ -449,7 +456,7 @@ namespace Halka.Poc2D3D.EditorTools
             Check("…and that start writes the migration again", Latest(c) != null && Latest(c).TotalSteps == 222);
         }
 
-        private static Vector2Int FreeDirection(Ctx c)
+        internal static Vector2Int FreeDirection(Ctx c)
         {
             FreeNeighbour(c, out var d);
             return d;
@@ -567,7 +574,7 @@ namespace Halka.Poc2D3D.EditorTools
                 Latest(c).CellX == c.Session.Cell.x && Latest(c).CellY == c.Session.Cell.y);
         }
 
-        private static void ToOutdoor(Ctx c, Vector2Int cell)
+        internal static void ToOutdoor(Ctx c, Vector2Int cell)
         {
             if (c.Session.World != c.Session.OutdoorWorld) c.Session.LoadMapForCheck(false, cell, FacingDirection.Down);
             c.Session.PlaceForCheck(cell, FacingDirection.Down);

@@ -21,7 +21,7 @@ namespace Halka.Poc2D3D.EditorTools
         public const string ScenePath = Root + "/Scenes/HALKA_WORLD_2D3D_POC.unity";
         // Phase 5: the Release Candidate scene, built from the same content as the POC scene (the
         // POC scene stays the technical verification scene with its options shown).
-        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.0_RC2.unity";
+        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.0_RC3.unity";
         public const string CatalogPath = Root + "/Data/POC_PresentationCatalog.asset";
         public const string ToonMaterialPath = Root + "/Materials/POC_ToonVertexColor.mat";
         public const string GridMaterialPath = Root + "/Materials/POC_GridOverlay.mat";
@@ -34,10 +34,14 @@ namespace Halka.Poc2D3D.EditorTools
         public const string OutlineMaskShader = "HALKA/POC/OutlineMask";
         // Feedback after RC1: the 3D view's outline (same mask, composite at screen size).
         public const string Outline3DMaterialPath = Root + "/Materials/POC_Outline3D.mat";
-        // Phase 2.1: TEMPORARY ﾊﾙｶﾁｬﾝ stand-in for the 3D view until the user's official model
-        // arrives: Minecraft-like blocks painted after the 2D sprites (the first, rounded
-        // low-poly stand-in haruka_placeholder.fbx is kept for comparison only).
-        public const string PlaceholderPlayerPath = Root + "/Models/Phase2_1/haruka_blocky_placeholder.fbx";
+        // Phase 7: the official 3D ﾊﾙｶﾁｬﾝ (adopted by the user). Made in Phase 2.1 as a stand-in:
+        // Minecraft-like blocks painted after the 2D sprites. The file keeps its first name so no
+        // reference breaks (blender/scripts/build_haruka_blocky.py, HARUKA_WORLD_PLAYER_MODEL_SPEC.md).
+        // The first, rounded haruka_placeholder.fbx stays for comparison only; the 2D view keeps the
+        // original sprites.
+        public const string OfficialPlayerModelPath = Root + "/Models/Phase2_1/haruka_blocky_placeholder.fbx";
+        // The Phase 2.1 name of the same path (older checks and tools use it).
+        public const string PlaceholderPlayerPath = OfficialPlayerModelPath;
         // 2D Pixel View: the existing ﾊﾙｶﾁｬﾝ sprites, referenced read-only (same files as the
         // FirstDay CharacterVisual).
         public const string SpriteMaterialPath = Root + "/Materials/POC_PixelSprite.mat";
@@ -190,8 +194,8 @@ namespace Halka.Poc2D3D.EditorTools
             if (sprites.benchSit == null) throw new InvalidOperationException("Sprite missing: " + BenchSitPath);
             catalog.ConfigurePlayer(new PocActorPresentation
             {
-                model = LoadModel(PlaceholderPlayerPath),
-                placeholder = true,
+                model = LoadModel(OfficialPlayerModelPath),
+                placeholder = false, // Phase 7: the official model
                 sprites = sprites
             });
             catalog.ConfigureInterior(new PocInteriorPresentation
@@ -220,7 +224,7 @@ namespace Halka.Poc2D3D.EditorTools
         // off unless ?debug=1, the HUD reads "ver3.0 RC1".
         private static void ConfigureReleaseCandidate(GameObject root)
         {
-            root.name = "HARUKA WORLD ver3.0 RC2";
+            root.name = "HARUKA WORLD ver3.0 RC3";
             var panel = root.GetComponent<PocDebugPanel>();
             var hud = root.GetComponentInChildren<GameHud>(true);
             var switcher = root.GetComponent<PocViewSwitcher>();

@@ -1,6 +1,6 @@
 {
   "generator": "blender/scripts/build_haruka_blocky.py",
-  "status": "TEMPORARY placeholder (Minecraft-like blocks), not the official character model",
+  "status": "OFFICIAL 3D player model (adopted by the user in Phase 7); file names keep the Phase 2.1 'placeholder' name so references stay",
   "style": "boxes painted per pixel from the 2D sprites; head 8x8x8 + hair layer, body 8x6x4, arms 2x6x3, legs 3x5x3 (pixels)",
   "pixelMetres": 0.044,
   "blenderVersion": "5.2.0 LTS",

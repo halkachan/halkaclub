@@ -100,7 +100,9 @@ namespace Halka.Poc2D3D.EditorTools
                 new[] { "south_front", "east", "north_back", "west" }.All(v =>
                     File.Exists(Path.Combine(root, $"blender/exports/previews/phase2_1/haruka_blocky_placeholder_{v}.png"))));
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(PocSceneBuilder.PlaceholderPlayerPath);
-            Check("placeholder: FBX imported and named as temporary (blocky)", model != null &&
+            // Phase 7 (user decision): this model is the official 3D ﾊﾙｶﾁｬﾝ. Its file keeps the
+            // Phase 2.1 name (references stay); the check still finds the same imported model.
+            Check("blocky model: FBX imported under its Phase 2.1 file name (haruka_blocky_placeholder, kept for references)", model != null &&
                 model.name.Contains("placeholder") && model.name.Contains("blocky"));
             if (model == null) return;
             // Minecraft-like: every face of every part is axis-aligned (boxes only).
@@ -525,8 +527,12 @@ namespace Halka.Poc2D3D.EditorTools
         private static void PlaceholderSceneChecks(Ctx c)
         {
             var s = c.Session;
-            Check("placeholder: the catalog marks the player model as temporary",
-                c.Catalog.Player.placeholder && c.Actor.ModelInstance != null && c.Actor.ModelInstance.name.Contains("placeholder"));
+            // Premise changed in Phase 7: the user adopted this model as the official one, so the
+            // catalog no longer marks it temporary. Still guaranteed: the catalog's player is this
+            // blocky model and it is what the 3D view draws.
+            Check("player model: the catalog's player is the blocky model, now marked official (Phase 7), and the 3D view draws it",
+                !c.Catalog.Player.placeholder && c.Actor.ModelInstance != null && c.Actor.ModelInstance.name == "haruka_blocky_placeholder" &&
+                c.Catalog.Player.model == AssetDatabase.LoadAssetAtPath<GameObject>(PocSceneBuilder.OfficialPlayerModelPath));
             c.Switcher.SetMode(PocViewMode.ThirdPerson3D);
             var facingOk = true;
             foreach (FacingDirection facing in Enum.GetValues(typeof(FacingDirection)))

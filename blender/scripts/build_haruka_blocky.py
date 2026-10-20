@@ -1,6 +1,9 @@
-"""はるかわーるど ver3.0 Phase 2.1: a TEMPORARY blocky (Minecraft-like) ﾊﾙｶﾁｬﾝ for the 3D view.
+"""はるかわーるど ver3.0: the OFFICIAL 3D ﾊﾙｶﾁｬﾝ, blocky (Minecraft-like), made in Phase 2.1.
 
-Not the official character model. Boxes like a Minecraft character, each face painted pixel by
+Adopted by the user as the official 3D player model in Phase 7 (it was a stand-in until then); its
+look, proportions and poses are the reference (HARUKA_WORLD_PLAYER_MODEL_SPEC.md). The file names
+keep the Phase 2.1 "placeholder" name so no reference breaks. The 2D view keeps the original
+sprites. Boxes like a Minecraft character, each face painted pixel by
 pixel (vertex colors, one shared material) after the shipped 2D sprites
 Assets/Content/Character/{front,back,left,right}_idle/00.png (read only). A second, slightly
 larger "hair layer" box around the head carries the bangs, side hair and the blue under-layer,
@@ -259,7 +262,7 @@ def main():
     xs, ys, zs = zip(*[tuple(c) for c in corners])
     manifest = {
         "generator": "blender/scripts/build_haruka_blocky.py",
-        "status": "TEMPORARY placeholder (Minecraft-like blocks), not the official character model",
+        "status": "OFFICIAL 3D player model (adopted by the user in Phase 7); file names keep the Phase 2.1 'placeholder' name so references stay",
         "style": "boxes painted per pixel from the 2D sprites; head 8x8x8 + hair layer, body 8x6x4, "
                  "arms 2x6x3, legs 3x5x3 (pixels)",
         "pixelMetres": PIXEL,

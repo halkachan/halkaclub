@@ -283,7 +283,7 @@ MonoBehaviour:
     legLeft: LegL
     legRight: LegR
     swingDegrees: 26
-    placeholder: 1
+    placeholder: 0
     sprites:
       frontIdle:
       - {fileID: 21300000, guid: 34a28a2f8d3190f4d9f97be041f41f9d, type: 3}

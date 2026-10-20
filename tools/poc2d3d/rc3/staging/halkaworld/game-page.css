@@ -1,0 +1,219 @@
+.game-notebook {
+  padding-bottom: 34px;
+}
+
+.game-page {
+  padding-top: 25px;
+}
+
+.game-page h1 {
+  margin: 0 0 4px;
+  font-size: clamp(24px, 4vw, 38px);
+}
+
+.game-current-version {
+  margin: 0 0 14px;
+  color: var(--pencil);
+  font-size: 13px;
+}
+
+.unity-frame {
+  width: 100%;
+  height: clamp(420px, 54vw, 640px);
+  overflow: hidden;
+  border: 2px solid var(--ink);
+  background: #e7eecf;
+}
+
+.unity-frame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.game-controls {
+  margin: 12px 0 0;
+  color: var(--pencil);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.update-history {
+  margin-top: 30px;
+  padding-top: 18px;
+  border-top: 1px solid var(--ink);
+  color: var(--ink);
+}
+
+.update-history h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.update-history-archive {
+  margin-top: 8px;
+}
+
+.update-history-archive summary {
+  cursor: pointer;
+  padding: 6px 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.update-history-archive summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+.update-history-entries {
+  padding-top: 14px;
+}
+
+.update-entry + .update-entry {
+  margin-top: 17px;
+}
+
+.update-entry h3 {
+  margin: 0 0 5px;
+  font-size: 15px;
+}
+
+.update-entry time {
+  margin-left: 0.5em;
+  color: var(--pencil);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.update-entry ul {
+  margin: 0;
+  padding-left: 1.5em;
+  line-height: 1.75;
+  font-size: 13px;
+}
+
+@media (max-width: 780px) {
+  .unity-frame {
+    height: min(68svh, 620px);
+    min-height: 400px;
+  }
+}
+
+/* ver3.0: the full screen button under the game, the page-filling view (iPhone Safari and other
+   browsers without full screen for a page element), the guide. */
+.game-fullscreen {
+  margin: 10px 0 0;
+  text-align: right;
+}
+
+.game-fullscreen button {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  padding: 6px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: #fffdf4;
+  cursor: pointer;
+  transform: rotate(-0.6deg);
+}
+
+.game-fullscreen button:hover,
+.game-fill-bar button:hover {
+  background: #f6d55c;
+}
+
+.game-fill-bar {
+  display: none;
+}
+
+body.game-filled {
+  overflow: hidden;
+}
+
+body.game-filled .unity-frame {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  z-index: 1000;
+  border: 0;
+}
+
+body.game-filled .game-fill-bar {
+  display: flex;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1001;
+  justify-content: flex-end;
+  align-items: center;
+  margin: 0;
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 4px 12px calc(4px + env(safe-area-inset-bottom, 0px));
+  background: #fffdf4;
+  border-top: 2px solid var(--ink);
+}
+
+.game-fill-bar button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  padding: 4px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: #fffdf4;
+  cursor: pointer;
+}
+
+.game-guide {
+  margin-top: 26px;
+  color: var(--ink);
+}
+
+.game-guide h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.game-guide-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.game-guide-list dt {
+  font-weight: 700;
+}
+
+.game-guide-list dd {
+  margin: 0;
+}
+
+.game-note {
+  margin: 12px 0 0;
+  color: var(--pencil);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+@media (max-width: 560px) {
+  .game-guide-list {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .game-guide-list dd {
+    margin-bottom: 8px;
+  }
+}
