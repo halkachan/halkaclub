@@ -74,10 +74,11 @@ CARDS = [
     Card("game", "GAMES", "ゲーム集",
          ["ブラウザでそのまま遊べる、", "ゲームとはいえないような物たち。"],
          art="assets/profile/halgif1.gif", tape_left="HALKA GAMES"),
-    Card("halkaworld", "HALKA WORLD", "HALKA WORLD",
+    # ver3.0 から正式名「はるかわーるど」。SNS のキャッシュを避けて別名で出す（halkaworld.png はそのまま残す）
+    Card("harukaworld_v3", "はるかわーるど", "はるかわーるど",
          ["ﾊﾙｶﾁｬﾝの小さな世界を歩く、", "ブラウザで遊べるゲームです。"],
          art="unity-project/Assets/Content/Character/front_idle/00.png",
-         tape_left="HALKA WORLD"),
+         tape_left="はるかわーるど"),
     Card("commission", "COMMISSION", "依頼について",
          ["歌ってみたMIX・サムネイラスト・インスト制作",
           "オリジナル曲制作・HALKAへの歌唱依頼"],
@@ -245,7 +246,13 @@ def draw_note_card(card: Card, fonts: "Yomogi") -> Image.Image:
     tape_draw = ImageDraw.Draw(tape)
     tape_draw.rectangle([0, 18, W + 160, 96], fill=YELLOW + (255,))
     tape_font = fonts.latin(26)
-    spaced(tape_draw, (116, 38), card.tape_left, tape_font, INK)
+    if card.tape_left.isascii():
+        spaced(tape_draw, (116, 38), card.tape_left, tape_font, INK)
+    else:   # かなは Yomogi の日本語サブセットで（latin には無い）
+        x = 116
+        for char in card.tape_left:
+            fonts.draw(tape_draw, (x, 36), char, 26, INK)
+            x += fonts.width(tape_draw, char, 26) + 4
     right_width = sum(tape_draw.textlength(c, font=tape_font) + 6 for c in card.tape_right)
     spaced(tape_draw, (W + 30 - right_width, 38), card.tape_right, tape_font, INK)
     tape = tape.rotate(0.9, resample=Image.BICUBIC, expand=False)
@@ -254,9 +261,14 @@ def draw_note_card(card: Card, fonts: "Yomogi") -> Image.Image:
     kicker_font = fonts.latin(28)
 
     kx, ky = 118, 196
-    kw = draw.textlength(card.kicker, font=kicker_font)
-    draw.rectangle([kx - 12, ky - 6, kx + kw + 12, ky + 40], fill=YELLOW)
-    draw.text((kx, ky), card.kicker, font=kicker_font, fill=INK)
+    if card.kicker.isascii():
+        kw = draw.textlength(card.kicker, font=kicker_font)
+        draw.rectangle([kx - 12, ky - 6, kx + kw + 12, ky + 40], fill=YELLOW)
+        draw.text((kx, ky), card.kicker, font=kicker_font, fill=INK)
+    else:
+        kw = fonts.width(draw, card.kicker, 28)
+        draw.rectangle([kx - 12, ky - 6, kx + kw + 12, ky + 40], fill=YELLOW)
+        fonts.draw(draw, (kx, ky - 2), card.kicker, 28, INK)
 
     title_size = 92
     while title_size > 40 and fonts.width(draw, card.title, title_size) > 700:
@@ -318,12 +330,16 @@ def draw_utamaze_card(card: Card) -> Image.Image:
 
 
 def main() -> None:
+    """引数でカードの名前を渡すと、そのカードだけを作ります（例: harukaworld_v3）。"""
     OUT.mkdir(parents=True, exist_ok=True)
-    needed = "".join(card.title + "".join(card.lines) + (card.badge or "")
+    needed = "".join(card.title + card.kicker + card.tape_left + "".join(card.lines) + (card.badge or "")
                      for card in CARDS if card.style != "utamaze")
+    only = set(sys.argv[1:])
     with tempfile.TemporaryDirectory() as temp:
         fonts = Yomogi(Path(temp), needed)
         for card in CARDS:
+            if only and card.name not in only:
+                continue
             image = draw_utamaze_card(card) if card.style == "utamaze" else draw_note_card(card, fonts)
             path = OUT / f"{card.name}.png"
             image.save(path, "PNG", optimize=True)
