@@ -101,3 +101,119 @@
     min-height: 400px;
   }
 }
+
+/* ver3.0: the full screen button under the game, the page-filling view (iPhone Safari and other
+   browsers without full screen for a page element), the guide. */
+.game-fullscreen {
+  margin: 10px 0 0;
+  text-align: right;
+}
+
+.game-fullscreen button {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  padding: 6px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: #fffdf4;
+  cursor: pointer;
+  transform: rotate(-0.6deg);
+}
+
+.game-fullscreen button:hover,
+.game-fill-bar button:hover {
+  background: #f6d55c;
+}
+
+.game-fill-bar {
+  display: none;
+}
+
+body.game-filled {
+  overflow: hidden;
+}
+
+body.game-filled .unity-frame {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  z-index: 1000;
+  border: 0;
+}
+
+body.game-filled .game-fill-bar {
+  display: flex;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1001;
+  justify-content: flex-end;
+  align-items: center;
+  margin: 0;
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 4px 12px calc(4px + env(safe-area-inset-bottom, 0px));
+  background: #fffdf4;
+  border-top: 2px solid var(--ink);
+}
+
+.game-fill-bar button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  padding: 4px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: #fffdf4;
+  cursor: pointer;
+}
+
+.game-guide {
+  margin-top: 26px;
+  color: var(--ink);
+}
+
+.game-guide h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.game-guide-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.game-guide-list dt {
+  font-weight: 700;
+}
+
+.game-guide-list dd {
+  margin: 0;
+}
+
+.game-note {
+  margin: 12px 0 0;
+  color: var(--pencil);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+@media (max-width: 560px) {
+  .game-guide-list {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .game-guide-list dd {
+    margin-bottom: 8px;
+  }
+}

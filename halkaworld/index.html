@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="ﾊﾙｶﾁｬﾝの小さな世界。" />
-    <title>HALKA WORLD | HALKA</title>
+    <title>はるかわーるど | HALKA</title>
     <link rel="canonical" href="https://halkaclub.com/halkaworld/" />
 
     <!-- X / Discord などでURLを貼ったときのカード表示 -->
@@ -12,46 +12,74 @@
     <meta property="og:site_name" content="HALKA" />
     <meta property="og:locale" content="ja_JP" />
     <meta property="og:url" content="https://halkaclub.com/halkaworld/" />
-    <meta property="og:title" content="HALKA WORLD | HALKA" />
+    <meta property="og:title" content="はるかわーるど | HALKA" />
     <meta property="og:description" content="ﾊﾙｶﾁｬﾝの小さな世界を歩く、ブラウザで遊べるゲームです。" />
-    <meta property="og:image" content="https://halkaclub.com/assets/ogp/halkaworld.png?v=1" />
+    <meta property="og:image" content="https://halkaclub.com/assets/ogp/harukaworld_v3.png?v=1" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="HALKA WORLD" />
+    <meta property="og:image:alt" content="はるかわーるど" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@halkamine" />
     <meta name="twitter:creator" content="@halkamine" />
     <link rel="icon" href="/favicon.png?v=2" type="image/png" />
     <link rel="stylesheet" href="../style.css?v=1" />
-    <link rel="stylesheet" href="game-page.css" />
+    <link rel="stylesheet" href="game-page.css?v=3.0" />
   </head>
   <body>
     <main id="top">
       <div class="yellow-tape" aria-hidden="true">
-        <span>HALKA WORLD</span>
+        <span>はるかわーるど</span>
         <span>small world, first day</span>
       </div>
 
       <div class="notebook game-notebook">
         <header class="site-header">
           <a class="small-sign" href="../index.html">HALKA</a>
-          <p>HALKA WORLD</p>
+          <p>はるかわーるど</p>
           <span class="header-doodle" aria-hidden="true">遊　〰</span>
         </header>
 
         <section class="game-page" aria-labelledby="game-title">
-          <h1 id="game-title">HALKA WORLD</h1>
-          <p class="game-current-version">ver2.9</p>
+          <h1 id="game-title">はるかわーるど</h1>
+          <p class="game-current-version">ver3.0</p>
           <div class="unity-frame">
-            <iframe src="webgl/?v=2.9&build=a5659b8e00cce110aca787eb15db1973-78a3b34151f63557cac46ba2bf930488" title="HALKA WORLD" allow="fullscreen" loading="eager"></iframe>
+            <iframe src="webgl/?v=3.0&build=f25e5c4240a2506294613536b7fdaa57" title="はるかわーるど" allow="fullscreen" loading="eager"></iframe>
           </div>
-          <p class="game-controls">WASD・矢印キーで1マスずつ移動 / 対象をクリック。スマホは十字キーで移動、Aボタンで正面を調べます。</p>
+          <p class="game-fullscreen"><button type="button" id="game-fullscreen-button" hidden>全画面にする</button></p>
+          <p class="game-fill-bar" id="game-fill-bar"><button type="button" id="game-fill-back">もどす</button></p>
+          <section class="game-guide" aria-labelledby="game-guide-title">
+            <h2 id="game-guide-title">あそびかた</h2>
+            <dl class="game-guide-list">
+              <dt>パソコン</dt>
+              <dd>WASD・矢印キーで1マスずつ歩きます。近くのものをクリックすると、調べたり座ったりできます。3D では、ﾊﾙｶﾁｬﾝをクリックすると正面のものを調べます。</dd>
+              <dt>スマホ</dt>
+              <dd>十字キーで歩き、A ボタンで正面を調べます。縦向きでも横向きでも遊べます。</dd>
+              <dt>2D と 3D</dt>
+              <dd>左上の ☰ メニューの「ひょうじ」で、ドット絵の 2D と、立体の 3D を切り替えられます。どちらも同じ世界です。</dd>
+              <dt>全画面</dt>
+              <dd>ゲームの下の「全画面にする」で大きく遊べます。iPhone などでは画面いっぱいに広がり、下の「もどす」で元に戻ります。</dd>
+              <dt>セーブ</dt>
+              <dd>セーブは自動です。次に開いたときは、前回いた場所から続きます。セーブは、このブラウザの中に保存されます。</dd>
+              <dt>バックアップ</dt>
+              <dd>☰ メニューの「セーブデータ」から、セーブをファイルに書き出す（エクスポート）・ファイルから戻す（インポート）ことができます。ブラウザのデータを消す前や、ほかの端末で続きを遊びたいときに使ってください。</dd>
+            </dl>
+            <p class="game-note">ブラウザのサイトデータを消したり、プライベートブラウズで遊んだりすると、セーブは残りません。同じゲームを2つのタブで開いたときは、あとからセーブしたタブのデータが残ります。</p>
+          </section>
           <section class="update-history" aria-labelledby="update-history-title">
             <h2 id="update-history-title">更新履歴</h2>
             <details class="update-history-archive">
               <summary>ver2.1 ～ ver3.0</summary>
               <div class="update-history-entries">
+            <article class="update-entry">
+              <h3>ver3.0 <time datetime="2026-10-21">2026-10-21</time></h3>
+              <ul>
+                <li>2Dと3Dを切り替えて遊べるようになりました。3Dでは、ローポリの世界をﾊﾙｶﾁｬﾝやカラスと歩けます。</li>
+                <li>朝と夜が切り替わるようになりました。</li>
+                <li>自動でセーブされ、次は前回の場所から続きを遊べるようになりました。セーブはファイルに書き出して、バックアップできます。</li>
+                <li>スマホの縦向き・横向きと、全画面表示に対応しました。</li>
+              </ul>
+            </article>
             <article class="update-entry">
               <h3>ver2.9 <time datetime="2026-10-12">2026-10-12</time></h3>
               <p>カラスが飛んで木に止まるようになりました。</p>
@@ -182,5 +210,41 @@
     </main>
     <!-- アクセス解析（Cloudflare Web Analytics）。Cookie は使いません。 -->
     <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "b477de71645a48dca466e57a6464c448"}'></script>
+    <script>
+      (() => {
+        const button = document.getElementById("game-fullscreen-button");
+        const box = document.querySelector(".unity-frame");
+        const frame = box && box.querySelector("iframe");
+        const bar = document.getElementById("game-fill-bar");
+        if (!frame) return;
+        const request = frame.requestFullscreen || frame.webkitRequestFullscreen;
+        const real = !!request && !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+        const focusGame = () => { if (frame.contentWindow) frame.contentWindow.focus(); };
+        const fit = () => { box.style.height = `${window.innerHeight - bar.offsetHeight}px`; };
+        function fill(on, fromHistory) {
+          if (document.body.classList.contains("game-filled") === on) return;
+          document.body.classList.toggle("game-filled", on);
+          if (on) {
+            fit();
+            window.addEventListener("resize", fit);
+            if (!fromHistory) history.pushState({ halkaGameFilled: true }, "");
+          } else {
+            box.style.height = "";
+            window.removeEventListener("resize", fit);
+            if (!fromHistory && history.state && history.state.halkaGameFilled) history.back();
+          }
+          focusGame();
+        }
+        window.addEventListener("popstate", () => fill(false, true));
+        document.getElementById("game-fill-back").addEventListener("click", () => fill(false, false));
+        button.hidden = false;
+        button.addEventListener("click", () => {
+          if (!real) { fill(true, false); return; }
+          const asked = request.call(frame);
+          if (asked && asked.catch) asked.catch(() => fill(true, false));
+          focusGame();
+        });
+      })();
+    </script>
   </body>
 </html>

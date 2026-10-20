@@ -3,38 +3,61 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>HALKA WORLD</title>
+    <title>はるかわーるど</title>
     <style>
       html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #e7eecf; }
       #unity-canvas { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; touch-action: none; outline: none; image-rendering: pixelated; }
       #loading { position: absolute; inset: 0; display: grid; place-items: center; color: #485038; font: 14px sans-serif; pointer-events: none; }
       #error { position: absolute; inset: 12px; color: #9c2828; font: 14px sans-serif; display: none; }
+      #safe-area-probe { position: fixed; inset: 0; box-sizing: border-box; visibility: hidden; pointer-events: none;
+        padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
     </style>
   </head>
   <body>
     <canvas id="unity-canvas" tabindex="0"></canvas>
+    <div id="safe-area-probe" aria-hidden="true"></div>
     <div id="loading">Loading...</div>
     <div id="error" role="alert"></div>
-    <script src="Build/6fe2163178aeaee414c317c067c2d325.loader.js"></script>
+    <script src="Build/855b77704c821dc1ce6f516697b1c4ff.loader.js"></script>
     <script>
       const canvas = document.getElementById("unity-canvas");
       const loading = document.getElementById("loading");
       const error = document.getElementById("error");
-      // On a large landscape screen, keep the 576-pixel world projection at
-      // exactly one CSS pixel per authored sprite pixel. Center with integer
-      // offsets, leaving the existing mobile layout untouched.
+      // はるかわーるど: phones are played upright (as in the 2D game) or sideways; the canvas
+      // stays inside the safe area (notch, home indicator) and follows turns and full screen.
+      // On a large landscape screen, keep the 576-pixel world projection at exactly one CSS
+      // pixel per authored sprite pixel, centred with integer offsets.
+      const safeProbe = document.getElementById("safe-area-probe");
+      function safeInsets() {
+        const style = getComputedStyle(safeProbe);
+        const px = (value) => Math.max(0, parseFloat(value) || 0);
+        return { top: px(style.paddingTop), right: px(style.paddingRight), bottom: px(style.paddingBottom), left: px(style.paddingLeft) };
+      }
       function layoutCanvas() {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const inset = safeInsets();
+        const width = window.innerWidth - inset.left - inset.right;
+        const height = window.innerHeight - inset.top - inset.bottom;
         const desktop = width >= 800 && height >= 576 && width >= height;
-        const scale = desktop ? Math.min(1, 576 / height) : 1;
+        // Full screen: this page's own, or the game page's frame made full screen by its button.
+        const filling = document.fullscreenElement || (window.innerWidth >= screen.width - 1 && window.innerHeight >= screen.height - 1);
+        if (!desktop || filling) {
+          canvas.style.left = `${inset.left}px`;
+          canvas.style.top = `${inset.top}px`;
+          canvas.style.width = `calc(100% - ${inset.left + inset.right}px)`;
+          canvas.style.height = `calc(100% - ${inset.top + inset.bottom}px)`;
+          return;
+        }
+        const scale = Math.min(1, 576 / height);
         const canvasWidth = Math.floor(width * scale);
         const canvasHeight = Math.floor(height * scale);
         canvas.style.width = `${canvasWidth}px`;
         canvas.style.height = `${canvasHeight}px`;
-        canvas.style.left = `${Math.floor((width - canvasWidth) / 2)}px`;
-        canvas.style.top = `${Math.floor((height - canvasHeight) / 2)}px`;
+        canvas.style.left = `${Math.floor(inset.left + (width - canvasWidth) / 2)}px`;
+        canvas.style.top = `${Math.floor(inset.top + (height - canvasHeight) / 2)}px`;
       }
+      window.addEventListener("resize", layoutCanvas);
+      window.addEventListener("orientationchange", layoutCanvas);
+      document.addEventListener("fullscreenchange", layoutCanvas);
       layoutCanvas();
       // Keep the world near whole multiples of its 576-pixel outdoor art height.
       function pixelRatio() {
@@ -49,13 +72,13 @@
         return renderHeight / cssHeight;
       }
       createUnityInstance(canvas, {
-        dataUrl: "Build/78a3b34151f63557cac46ba2bf930488.data",
-        frameworkUrl: "Build/7bd4f0edce62b5720c46f7921c358222.framework.js",
-        codeUrl: "Build/a5659b8e00cce110aca787eb15db1973.wasm",
+        dataUrl: "Build/69a4e9eaafbae6b8cabf3bff9af1cb78.data",
+        frameworkUrl: "Build/ab74f821c055e9009f1d5725c9fe714a.framework.js",
+        codeUrl: "Build/becfdbb59b2e1230ddacfd8b9adebc7d.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "HALKA",
         productName: "HALKA WORLD",
-        productVersion: "2.9",
+        productVersion: "3.0 Preview",
         devicePixelRatio: pixelRatio()
       }, (progress) => {
         loading.textContent = `Loading... ${Math.round(progress * 100)}%`;
