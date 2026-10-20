@@ -53,7 +53,7 @@ static void CopySite(string from, string to)
 
     // 画像も、差し替えの確認に使うので複写します。
     foreach (var image in Directory.GetFiles(Path.Combine(from, "assets", "ogp"), "*.png")
-                 .Append(Path.Combine(from, "assets", "profile", "halgif1.gif")))
+                 .Concat(Directory.GetFiles(Path.Combine(from, "assets", "profile"), "*.gif")))
     {
         var destination = Path.Combine(to, Path.GetRelativePath(from, image));
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
@@ -787,7 +787,11 @@ Check("説明が無いページは欄も出さない",
     metaClub.Rows.All(row => row.Label != "検索結果の説明"));
 Check("カード画像を見つける",
     metaHome.Card!.Relative == "assets/ogp/home.png" && metaHome.Card.Current!.Width == 1200);
-Check("ﾊﾙｶﾁｬﾝも差し替えられる", v10.Profile!.Relative == "assets/profile/halgif1.gif");
+var v10Profile = v10.Profiles[0];
+Check("ﾊﾙｶﾁｬﾝを何枚でも差し替えられる",
+    v10.Profiles.Count == 2 && v10Profile.Relative == "assets/profile/halgif1.gif" &&
+    v10.Profiles[1].Relative == "assets/profile/halgif2.gif" &&
+    v10.Profiles.All(gif => gif.Label.StartsWith("ﾊﾙｶﾁｬﾝ") && gif.Current is { Format: "gif" }));
 Check("画像も公開の対象に入る",
     v10.ManagedFiles.Contains("assets/ogp/home.png") &&
     v10.ManagedFiles.Contains("assets/profile/halgif1.gif"));
@@ -814,10 +818,10 @@ Check("大きさが違うカード画像は断る",
 metaHome.Card.Choose(Path.Combine(sandbox, "assets", "ogp", "game.png"));
 Check("形も大きさも合えば受け取る", !metaHome.Card.HasError && metaHome.Card.Changed && !v10.HasError);
 Check("ﾊﾙｶﾁｬﾝにPNGは入れられない",
-    !Throws(() => v10.Profile!.Choose(Path.Combine(sandbox, "assets", "ogp", "game.png"))) &&
-    v10.Profile!.HasError && v10.Profile.Error!.Contains("GIF"));
-v10.Profile.Clear();
-Check("選び直しは取り消せる", !v10.Profile.Changed && !v10.HasError);
+    !Throws(() => v10Profile.Choose(Path.Combine(sandbox, "assets", "ogp", "game.png"))) &&
+    v10Profile.HasError && v10Profile.Error!.Contains("GIF"));
+v10Profile.Clear();
+Check("選び直しは取り消せる", !v10Profile.Changed && !v10.HasError);
 
 var homeCardBefore = CacheBuster.Current(File.ReadAllText(Path.Combine(sandbox, "index.html")), "assets/ogp/home.png");
 v10.Save();
@@ -841,7 +845,7 @@ var gifCopy = Path.Combine(sandbox, "newgif.gif");
 File.Copy(Path.Combine(sandbox, "assets", "profile", "halgif1.gif"), gifCopy, overwrite: true);
 var indexGifBefore = CacheBuster.Current(File.ReadAllText(Path.Combine(sandbox, "index.html")), "assets/profile/halgif1.gif");
 var scriptGifBefore = CacheBuster.Current(File.ReadAllText(Path.Combine(sandbox, "script.js")), "assets/profile/halgif1.gif");
-gifSession.Profile!.Choose(gifCopy);
+gifSession.Profiles[0].Choose(gifCopy);
 gifSession.Save();
 Check("ﾊﾙｶﾁｬﾝは読んでいる2か所とも番号が上がる",
     CacheBuster.Current(File.ReadAllText(Path.Combine(sandbox, "index.html")), "assets/profile/halgif1.gif")

@@ -84,7 +84,13 @@ const HALKA_GIF_COMBO_WINDOW_MS = 3000;
 const HALKA_GIF_COMBO_COOLDOWN_MS = 5000;
 const HALKA_GIF_MULTIPLY_CHANCE = 0.2;
 const HALKA_GIF_MAX_CLONES = 10;
-const HALKA_GIF_SRC = "assets/profile/halgif1.gif?v=2";
+// ﾊﾙｶﾁｬﾝは2種類あり、ページを開くたびにどちらかが出ます。
+const HALKA_GIF_SOURCES = [
+  "assets/profile/halgif1.gif?v=3",
+  "assets/profile/halgif2.gif?v=1",
+];
+const HALKA_GIF_SRC =
+  HALKA_GIF_SOURCES[Math.floor(Math.random() * HALKA_GIF_SOURCES.length)];
 
 function halkaGifPrefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -101,6 +107,13 @@ function makeHalkaGifNoRepeatPicker(pool) {
     return pool[index];
   };
 }
+
+// 開いた瞬間に、選んだほうへ差し替えます（HTMLには1つ目が書いてあります）。
+function applyHalkaGifSource() {
+  const image = document.querySelector(".halka-gif");
+  if (image) image.src = HALKA_GIF_SRC;
+}
+applyHalkaGifSource();
 
 const pickHalkaGifPhrase = makeHalkaGifNoRepeatPicker(HALKA_GIF_PHRASES);
 const pickHalkaGifMultiplyPhrase = makeHalkaGifNoRepeatPicker(HALKA_GIF_MULTIPLY_PHRASES);

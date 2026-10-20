@@ -528,7 +528,9 @@ public partial class MainWindow : Window
             CardImagesButton.IsEnabled = CardImages.IsAvailable(session.Root);
         }
 
-        ProfileBox.Visibility = session?.Profile == null ? Visibility.Collapsed : Visibility.Visible;
+        var profiles = session?.Profiles ?? Array.Empty<ImageSlot>();
+        ProfileItems.ItemsSource = profiles;
+        ProfileBox.Visibility = profiles.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
         foreach (var image in session?.Images ?? Array.Empty<ImageSlot>())
             image.PropertyChanged += ImageChanged;
         RefreshImages();
@@ -567,14 +569,7 @@ public partial class MainWindow : Window
             CardPreview.Source = LoadImage(card?.SourcePath ?? card?.Path);
         }
 
-        var profile = session?.Profile;
-        if (ProfileSummary != null && profile != null)
-        {
-            ProfileSummary.Text = profile.Summary;
-            ProfileError.Text = profile.Error ?? "";
-            ProfileClearButton.IsEnabled = profile.SourcePath != null;
-            ProfilePreview.Source = LoadImage(profile.SourcePath ?? profile.Path);
-        }
+        // ﾊﾙｶﾁｬﾝのほうは、1枚ずつが自分で画面を直します（バインドしてあります）。
     }
 
     /// <summary>見本用。読み終わったら手を離すので、あとで差し替えられます。</summary>
@@ -597,8 +592,9 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>押されたボタンが、どの画像のものか。札が画像そのものならそれ、そうでなければカード画像です。</summary>
     private ImageSlot? SlotFor(object sender) =>
-        (((FrameworkElement)sender).Tag as string) == "profile" ? session?.Profile : SelectedMetaPage?.Card;
+        ((FrameworkElement)sender).Tag as ImageSlot ?? SelectedMetaPage?.Card;
 
     private void CardChooseClick(object sender, RoutedEventArgs e)
     {

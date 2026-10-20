@@ -83,13 +83,12 @@ public sealed class SiteSession
 
     /// <summary>保存の直前に取る控え。「保存を1つ前に戻す」で使います。</summary>
     public SaveBackups Backups { get; private set; } = new("");
-    /// <summary>トップページのﾊﾙｶﾁｬﾝ。</summary>
-    public ImageSlot? Profile { get; }
+    /// <summary>トップページのﾊﾙｶﾁｬﾝ（ページを開くたび、この中から1つが出ます）。</summary>
+    public IReadOnlyList<ImageSlot> Profiles { get; }
 
     /// <summary>差し替えられる画像をまとめて。</summary>
     public IEnumerable<ImageSlot> Images =>
-        (Meta?.Cards ?? Array.Empty<ImageSlot>()).Concat(
-            Profile == null ? Array.Empty<ImageSlot>() : new[] { Profile });
+        (Meta?.Cards ?? Array.Empty<ImageSlot>()).Concat(Profiles);
 
     /// <summary>このツールが書き換えるファイル（サイトのフォルダーからの相対パス）。公開もこれだけを対象にします。</summary>
     public IReadOnlyList<string> ManagedFiles => files
@@ -115,7 +114,7 @@ public sealed class SiteSession
         PageTextDocument? clubText, PageTextDocument? legalText, WorldHistory? world,
         UtamazeRelease? utamaze,
         SiteFile? worksPage, NewsDocument? news, ParagraphRun? clubUpdate, GameDocument? games,
-        PageMetaDocument? meta, ImageSlot? profile, LinkGrid? links)
+        PageMetaDocument? meta, IReadOnlyList<ImageSlot> profiles, LinkGrid? links)
     {
         Root = root;
         this.files = files;
@@ -132,7 +131,7 @@ public sealed class SiteSession
         ClubUpdate = clubUpdate;
         Games = games;
         Meta = meta;
-        Profile = profile;
+        Profiles = profiles;
         Links = links;
     }
 
@@ -227,10 +226,14 @@ public sealed class SiteSession
                 meta.AllFields.ToArray()));
         }
 
-        var profilePath = Path.Combine(root, "assets", "profile", "halgif1.gif");
-        var profile = File.Exists(profilePath)
-            ? new ImageSlot(root, "assets/profile/halgif1.gif", "ﾊﾙｶﾁｬﾝ", cardSize: false)
-            : null;
+        // ﾊﾙｶﾁｬﾝは何枚あってもよいので、フォルダを数えます。
+        var profileFolder = Path.Combine(root, "assets", "profile");
+        var profiles = (Directory.Exists(profileFolder)
+                ? Directory.GetFiles(profileFolder, "*.gif").OrderBy(path => path, StringComparer.Ordinal)
+                : Enumerable.Empty<string>())
+            .Select((path, at) => new ImageSlot(root, "assets/profile/" + Path.GetFileName(path),
+                $"ﾊﾙｶﾁｬﾝ{at + 1}", cardSize: false))
+            .ToArray();
 
         // トップページの「うれしいこと」と、くらぶの更新内容。
         var news = NewsDocument.Load(home, SitePaths.Relative(root, home.Path));
@@ -272,7 +275,7 @@ public sealed class SiteSession
             : null;
 
         var session = new SiteSession(root, files, groups, works, commissionText, utamazeText, clubText,
-            legalText, world, utamaze, worksPage, news, clubUpdate, games, meta, profile, links);
+            legalText, world, utamaze, worksPage, news, clubUpdate, games, meta, profiles, links);
         session.Backups = backups ?? SaveBackups.For(root);
         return session;
     }
