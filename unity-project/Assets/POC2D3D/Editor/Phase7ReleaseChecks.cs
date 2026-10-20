@@ -492,7 +492,8 @@ namespace Halka.Poc2D3D.EditorTools
                 page.Contains("id=\"game-fill-back\">もどす</button>") && css.Contains("body.game-filled .unity-frame {"));
             Check("release page: the guide (PC, phone, 2D / 3D, full screen, save, backup) in plain words, and the notes",
                 new[] { "<dt>パソコン</dt>", "<dt>スマホ</dt>", "<dt>2D と 3D</dt>", "<dt>全画面</dt>", "<dt>セーブ</dt>", "<dt>バックアップ</dt>",
-                    "WASD・矢印キー", "十字キー", "縦向きでも横向きでも", "前回いた場所から", "エクスポート", "インポート", "プライベートブラウズ" }.All(page.Contains));
+                    "WASD・矢印キー", "十字キー", "縦向きでも横向きでも", "前回いた場所から", "エクスポート", "インポート", "プライベートブラウズ" }.All(page.Contains) &&
+                page.Contains("クリックすると、調べたり座ったり") && !page.Contains("A キー")); // on a PC the A key walks left
             var oldEntries = Regex.Matches(current, "<h3>(ver[0-9.]+) <time datetime=\"([0-9-]+)\">").Cast<Match>().Select(m => m.Groups[1].Value + " " + m.Groups[2].Value).ToList();
             var newEntries = Regex.Matches(page, "<h3>(ver[0-9.]+) <time datetime=\"([0-9-]+|__RELEASE_DATE__)\">").Cast<Match>().Select(m => m.Groups[1].Value + " " + m.Groups[2].Value).ToList();
             Check("update history: every published entry kept in order (ver2.9 … ver1.0), each once; ver3.0 added once at the top",
@@ -552,6 +553,11 @@ namespace Halka.Poc2D3D.EditorTools
             Check("publish procedure: the user's approval first, the latest origin/main, a merge, the date on the day, cache, checks after",
                 publish.Contains("承認") && publish.Contains("origin/main") && publish.Contains("--release-date") &&
                 publish.Contains("キャッシュ") && publish.Contains("merge"));
+            // Found in the Phase 7 rehearsal: a page cached for up to 10 minutes loads the build it
+            // names; with its files gone the game stops at "Unknown data format".
+            Check("publish and rollback keep the other build's files while caches turn over (both sets side by side)",
+                publish.Contains("消さずに残す") && publish.Contains("Unknown data format") &&
+                rollback.Contains("ver3.0 の Build ファイル（4つ）は消さずに残す"));
         }
     }
 }
