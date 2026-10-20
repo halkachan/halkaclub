@@ -91,7 +91,7 @@ public static class SiteSearch
         if (session.World != null)
         {
             foreach (var field in new[] { session.World.CurrentVersion, session.World.Controls }
-                         .OfType<EditField>())
+                         .OfType<EditField>().Concat(session.World.Guide))
                 Add("ゲーム", $"HALKA WORLD：{field.Label}", field.Value, WorldTarget);
         }
 

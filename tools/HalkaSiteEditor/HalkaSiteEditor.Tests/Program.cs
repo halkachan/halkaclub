@@ -1443,8 +1443,16 @@ Check("HALKA WORLD も元に戻せる",
 var v18 = SiteSession.Load(sandbox, new SaveBackups(
     Path.Combine(Path.GetTempPath(), "halka-v18-" + Guid.NewGuid().ToString("N"))));
 
-Check("HALKA WORLD の遊びかたの説明を読める",
-    v18.World!.Controls!.Value.StartsWith("WASD・矢印キーで"));
+// ver3.0 から、1行のキーの案内は「あそびかた」（項目ごとの説明と注意書き）になりました。
+Check("HALKA WORLD のあそびかたを項目ごとに読める",
+    v18.World!.Controls == null &&
+    v18.World.Guide.Select(field => field.Label).SequenceEqual(new[]
+    {
+        "あそびかた（パソコン）", "あそびかた（スマホ）", "あそびかた（2D と 3D）", "あそびかた（全画面）",
+        "あそびかた（セーブ）", "あそびかた（バックアップ）", "あそびかたの注意書き",
+    }) &&
+    v18.World.Guide[0].Value.StartsWith("WASD・矢印キーで") &&
+    v18.World.Guide[^1].Value.StartsWith("ブラウザのサイトデータを消したり"));
 
 var v18Decor = v18.Groups.Single(group => group.Title == "見出しと飾り");
 Check("英語の小見出しを読める",
@@ -1467,15 +1475,16 @@ Check("タブをまたいで探せる",
     SiteSearch.Find(v18, "ゲーム置き場").Any(hit => hit.Tab == "リンク"));
 Check("どこにあるかが分かる",
     SiteSearch.Find(v18, "WASD").Single() is { Tab: "ゲーム" } wasd &&
-    wasd.Where.Contains("遊びかたの説明"));
+    wasd.Where.Contains("あそびかた（パソコン）"));
 Check("見つかったあたりを切り出す",
     SiteSearch.Find(v18, "せいかつきろく").Any(hit =>
         hit.Tab == "ゲーム" && hit.Where.Contains("HALKA WORLD") &&
         hit.Excerpt.Contains("せいかつきろく") &&
         (hit.Target as string) == SiteSearch.WorldTarget));
+// （ver3.0 からゲームのページは「はるかわーるど」なので、どこにでもある YouTube で確かめます）
 Check("大文字小文字は区別しない",
-    SiteSearch.Find(v18, "halka world").Count > 0 &&
-    SiteSearch.Find(v18, "HALKA WORLD").Count > 0);
+    SiteSearch.Find(v18, "youtube").Count > 0 &&
+    SiteSearch.Find(v18, "YOUTUBE").Count == SiteSearch.Find(v18, "YouTube").Count);
 Check("見つからなければ空", SiteSearch.Find(v18, "こんな文字はどこにもありません").Count == 0);
 // 作品の題名は前のテストで書き換わっているので、いまの中身から取ります。
 var someWork = v18.Works.Categories.First().Works.First().Title;
@@ -1484,11 +1493,37 @@ Check("移り先の目印が付いている",
     SiteSearch.Find(v18, someWork).First(hit => hit.Tab == "作品一覧").Target is WorkCategory);
 
 // 直したものも、そのまま探せること。
-v18.World.Controls.Value = "あたらしい操作の説明";
+v18.World.Guide[0].Value = "あたらしい操作の説明";
 Check("直した中身で探せる",
     SiteSearch.Find(v18, "あたらしい操作").Count == 1 &&
     SiteSearch.Find(v18, "WASD").Count == 0);
-v18.World.Controls.Revert();
+v18.World.Guide[0].Revert();
+
+// あそびかたの1項目を直して保存すると、その説明だけが変わること。
+var guideHtml = Path.Combine(sandbox, "halkaworld", "index.html");
+var guideBytes = File.ReadAllBytes(guideHtml);
+var guideBefore = File.ReadAllText(guideHtml);
+var guideSession = SiteSession.Load(sandbox, new SaveBackups(
+    Path.Combine(Path.GetTempPath(), "halka-guide-" + Guid.NewGuid().ToString("N"))));
+var phone = guideSession.World!.Guide.Single(field => field.Label == "あそびかた（スマホ）");
+var phoneBefore = phone.Value;
+phone.Value = "十字キーで歩き、A ボタンで調べます。";
+Check("あそびかたの直しが変更一覧に出る", guideSession.HasChanges);
+guideSession.Save();
+var phoneAt = guideBefore.IndexOf(phoneBefore, guideBefore.IndexOf("<dt>スマホ</dt>", StringComparison.Ordinal),
+    StringComparison.Ordinal);
+Check("あそびかたの直しは、その説明の1か所だけ",
+    File.ReadAllText(guideHtml) ==
+    guideBefore[..phoneAt] + "十字キーで歩き、A ボタンで調べます。" + guideBefore[(phoneAt + phoneBefore.Length)..]);
+var guideReloaded = SiteSession.Load(sandbox, guideSession.Backups);
+Check("直したあそびかたが読み直せる",
+    guideReloaded.World!.Guide.Single(field => field.Label == "あそびかた（スマホ）").Value == "十字キーで歩き、A ボタンで調べます。" &&
+    guideReloaded.World.Guide.Single(field => field.Label == "あそびかた（パソコン）").Value.StartsWith("WASD・矢印キーで"));
+var guideBad = guideReloaded.World.Guide.Single(field => field.Label == "あそびかた（全画面）");
+guideBad.Value = "<b>大きく</b>";
+Check("あそびかたに HTML の印は入れられない", guideBad.HasError);
+guideBad.Revert();
+File.WriteAllBytes(guideHtml, guideBytes);   // 後のテストのために元へ戻す
 
 // --- v1.9：新しいページを自分で見つける -------------------------------------
 

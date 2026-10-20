@@ -167,11 +167,13 @@ public sealed class WorldHistory
     public ObservableCollection<WorldArchive> Archives { get; }
     /// <summary>ページの上に出ている「いまの版」。</summary>
     public EditField? CurrentVersion { get; private set; }
-    /// <summary>遊びかたの説明（キーの案内）。</summary>
+    /// <summary>遊びかたの説明（キーの案内）。ver2.9 までの1行の形。</summary>
     public EditField? Controls { get; private set; }
+    /// <summary>ver3.0 からの「あそびかた」。項目（パソコン、スマホ…）ごとの説明と、下の注意書き。</summary>
+    public IReadOnlyList<EditField> Guide { get; private set; } = Array.Empty<EditField>();
 
     private IEnumerable<EditField> Fields =>
-        new[] { CurrentVersion, Controls }.OfType<EditField>();
+        new[] { CurrentVersion, Controls }.OfType<EditField>().Concat(Guide);
 
     private WorldHistory(SiteFile file, string fileRelative, IEnumerable<WorldArchive> archives,
         string archiveIndent, string entryIndent)
@@ -206,11 +208,41 @@ public sealed class WorldHistory
             history.Controls = new EditField(file, fileRelative, new ValueSlot(ControlsSlot),
                 "world.controls", "遊びかたの説明", FieldKind.HtmlText);
         }
+        history.Guide = LoadGuide(file, fileRelative);
         return history;
     }
 
     private const string VersionSlot = @"(<p class=""game-current-version"">)([^<]*)(</p>)";
     private const string ControlsSlot = @"(<p class=""game-controls"">)([^<]*)(</p>)";
+    private static readonly Regex GuideList =
+        new(@"<dl class=""game-guide-list"">([\s\S]*?)</dl>", RegexOptions.CultureInvariant);
+    private static readonly Regex GuideTerm = new(@"<dt>([^<]*)</dt>", RegexOptions.CultureInvariant);
+    private const string GuideNoteSlot = @"(<p class=""game-note"">)([^<]*)(</p>)";
+
+    /// <summary>
+    /// 「あそびかた」の項目ごとの説明（&lt;dd&gt;）を、見出し（&lt;dt&gt;）で場所を決めて読みます。
+    /// 並び順が変わっても、別の項目を書き換えないようにするためです。
+    /// </summary>
+    private static IReadOnlyList<EditField> LoadGuide(SiteFile file, string fileRelative)
+    {
+        var list = GuideList.Match(file.Text);
+        if (!list.Success) return Array.Empty<EditField>();
+        var fields = new List<EditField>();
+        foreach (Match term in GuideTerm.Matches(list.Groups[1].Value))
+        {
+            var name = term.Groups[1].Value;
+            var slot = new ValueSlot(@"(<dt>" + Regex.Escape(name) + @"</dt>\s*<dd>)([^<]*)(</dd>)");
+            if (slot.Count(file.Text) != 1) continue;   // 同じ見出しが2つ、または説明に印が入っているものは触らない
+            fields.Add(new EditField(file, fileRelative, slot, "world.guide." + name,
+                "あそびかた（" + name + "）", FieldKind.HtmlText));
+        }
+        if (new ValueSlot(GuideNoteSlot).Count(file.Text) == 1)
+        {
+            fields.Add(new EditField(file, fileRelative, new ValueSlot(GuideNoteSlot),
+                "world.guide.note", "あそびかたの注意書き", FieldKind.HtmlText));
+        }
+        return fields;
+    }
 
     private static IEnumerable<WorldArchive> Parse(string inner) =>
         Archive.Matches(inner).Select(archive => new WorldArchive(

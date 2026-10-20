@@ -781,6 +781,10 @@ public partial class MainWindow : Window
         }
         WorldControlsBox.Visibility = world.Controls == null ? Visibility.Collapsed : Visibility.Visible;
 
+        WorldGuideItems.ItemsSource = world.Guide;
+        foreach (var field in world.Guide) field.PropertyChanged += WorldChanged;
+        WorldGuideBox.Visibility = world.Guide.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+
         if (world.CurrentVersion != null)
         {
             WorldVersionBox.SetBinding(TextBox.TextProperty, new Binding(nameof(EditField.Value))
