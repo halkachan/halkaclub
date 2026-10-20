@@ -1,13 +1,13 @@
-はるかわーるど ver3.0 RC2 — 検証用パネル（デバッグ）
+はるかわーるど ver3.0 RC3 — 検証用パネル（デバッグ）
 ====================================================
 
 通常のページでは表示されません（パネルの部品ごと止めているので、描画の負担もありません）。
 URL の最後に ?debug=1 を付けると表示されます。
 
-  http://127.0.0.1:8897/halkaworld/webgl/?debug=1
+  http://127.0.0.1:8899/halkaworld/webgl/?debug=1
   スマホのタッチ表示をPCで見る: ?debug=1&touchControls=1
 
-右上に「はるかわーるど ver3.0 RC2 (debug)」と出ていれば検証モードです。
+右上に「はるかわーるど ver3.0 RC3 (debug)」と出ていれば検証モードです。
 
 セーブの開発用ログ（ブラウザの開発者ツールのコンソール。?debug=1 でなくても出ます）
   HARUKA save: start from <読み込み元>: <マップ> (<x>,<y>) <向き> <2D/3D> AUTO <on/off> steps <歩数> play <秒>s anchor <基準時刻> rev <番号> place: <場所の決め方>
@@ -26,7 +26,7 @@ URL の最後に ?debug=1 を付けると表示されます。
 パネルの項目（上から）
   VIEW                     2D / 3D の切り替え（メニューの「ひょうじ」と同じ）
   POC options: show/hide   以下の項目の表示
-  2D pixels/cell           2D の1マスの画素数（RC2 は 16）
+  2D pixels/cell           2D の1マスの画素数（RC3 は 16）
   2D camera pitch          2D の見下ろし角度
   2D square ground         地面を正方形にする補正
   3D keys                  3D のキーの意味（B camera-relative が標準）
