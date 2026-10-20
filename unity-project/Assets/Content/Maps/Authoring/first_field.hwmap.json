@@ -585,7 +585,7 @@
         "x": 3,
         "y": 1
       },
-      "signText": "ここは HALKA WORLD。"
+      "signText": "ここは はるかわーるど。"
     },
     {
       "instanceId": "obj_well_basic_v26_first_field",
@@ -650,6 +650,42 @@
         "x": -9,
         "y": 1
       }
+    },
+    {
+      "instanceId": "obj_sign_north_v30_preview",
+      "definitionId": "sign_basic",
+      "rootCell": {
+        "x": 2,
+        "y": 5
+      },
+      "signText": "こっちは北。"
+    },
+    {
+      "instanceId": "obj_sign_east_v30_preview",
+      "definitionId": "sign_basic",
+      "rootCell": {
+        "x": 10,
+        "y": 0
+      },
+      "signText": "こっちは東。"
+    },
+    {
+      "instanceId": "obj_sign_south_v30_preview",
+      "definitionId": "sign_basic",
+      "rootCell": {
+        "x": 5,
+        "y": -3
+      },
+      "signText": "こっちは南。"
+    },
+    {
+      "instanceId": "obj_sign_west_v30_preview",
+      "definitionId": "sign_basic",
+      "rootCell": {
+        "x": -8,
+        "y": 1
+      },
+      "signText": "こっちは西。"
     }
   ],
   "markers": [

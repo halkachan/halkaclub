@@ -24,6 +24,12 @@ namespace Halka.Game.Player
         public long TotalPlaySeconds => data?.TotalPlaySeconds ?? 0;
         public string StepsLabel => data?.StepsLabel ?? "0";
         public string TimeLabel => data?.TimeLabel ?? "0:00:00";
+        // ver3.0 shared 2D/3D world: true while play is suspended outside the browser's own
+        // focus rules (the phone rotation guide); that time is not play time.
+        public bool ForegroundBlocked { get; set; }
+        // ver3.0 Phase 7: while the save system has stopped saving (unreadable or newer save data,
+        // another tab), the totals are not written under the old key either; the 2D game never sets it.
+        public bool PersistenceSuspended { get; set; }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
@@ -52,7 +58,7 @@ namespace Halka.Game.Player
         private void Update()
         {
             var now = Time.realtimeSinceStartupAsDouble;
-            var foreground = ready && hasFocus && !paused && Application.isFocused;
+            var foreground = ready && hasFocus && !paused && Application.isFocused && !ForegroundBlocked;
 #if UNITY_WEBGL && !UNITY_EDITOR
             foreground = foreground && HalkaLifeLogTabVisible() != 0;
 #endif
@@ -69,7 +75,25 @@ namespace Halka.Game.Player
             dirty = true;
         }
 
-        private void OnPlayerStepCompleted(Vector2Int _) { data.CompleteStep(); dirty = true; }
+        private void OnPlayerStepCompleted(Vector2Int _) => RecordCompletedStep();
+
+        // ver3.0 Phase 6: the save system sets the totals it loaded or imported (the 2D game
+        // never calls this). Saved under the same key and format right away.
+        public void ReplaceTotals(long steps, long playSeconds)
+        {
+            data = LifeLogData.Deserialize("v1|" + System.Math.Max(0L, steps).ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                "|" + System.Math.Max(0L, playSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            lastSampleAt = Time.realtimeSinceStartupAsDouble;
+            dirty = true;
+            Save();
+        }
+
+        // A completed Grid step of the player from a world without PlayerMover (ver3.0 shared world).
+        public void RecordCompletedStep()
+        {
+            data.CompleteStep();
+            dirty = true;
+        }
 
         private void OnApplicationFocus(bool focused)
         {
@@ -87,7 +111,7 @@ namespace Halka.Game.Player
 
         public void Save()
         {
-            if (data == null || !dirty) return;
+            if (data == null || !dirty || PersistenceSuspended) return;
             PlayerPrefs.SetString(SaveKey, data.Serialize());
             PlayerPrefs.Save();
             dirty = false;

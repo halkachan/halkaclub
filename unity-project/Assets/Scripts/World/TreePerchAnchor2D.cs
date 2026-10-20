@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Halka.Game.World
 {
     // Built from each authored tree instance; no map coordinates are stored here.
-    public sealed class TreePerchAnchor2D : MonoBehaviour
+    public sealed class TreePerchAnchor2D : MonoBehaviour, ICrowPerch
     {
         [SerializeField] private SpriteRenderer artwork;
         [SerializeField, Range(-0.35f, 0.35f)] private float horizontalFraction = -0.12f;

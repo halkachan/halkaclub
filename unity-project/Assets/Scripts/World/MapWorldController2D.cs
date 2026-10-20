@@ -85,7 +85,7 @@ namespace Halka.Game.World
             if (cameraFollow != null)
             {
                 if (worldCamera != null)
-                    worldCamera.orthographicSize = destination.MapType == "interior" ? 3.4f : initialCameraSize;
+                    worldCamera.orthographicSize = initialCameraSize;
                 cameraFollow.SetBounds(new Vector2(destination.MinCell.x * GridWorld2D.TileWorldSize - 0.8f,
                     destination.MinCell.y * GridWorld2D.TileWorldSize - 0.8f),
                     new Vector2(destination.MaxCell.x * GridWorld2D.TileWorldSize + 0.8f,

@@ -15,7 +15,7 @@ namespace Halka.Game.Editor
         {
             MapAuthoringImporter.SyncAll();
             Version26Checks.Run();
-            Check((GameVersion.Value == "2.7" || GameVersion.Value == "2.8" || GameVersion.Value == "2.9"), "game version");
+            Check((GameVersion.Value == "2.7" || GameVersion.Value == "2.8" || (GameVersion.Value == "2.9" || GameVersion.Value == "3.0")), "game version");
 
             var field = AssetDatabase.LoadAssetAtPath<MapDefinition>(
                 "Assets/Content/Maps/first_field.asset");
@@ -80,10 +80,12 @@ namespace Halka.Game.Editor
                 "house entry remains reachable");
             foreach (var id in new[] { "bench_basic", "sign_basic", "well_basic" })
             {
-                var placement = field.Objects.Single(item => item.Definition.StableId == id);
-                foreach (var point in placement.Definition.ActionPoints)
-                    Check(accessible.Contains(placement.RootCell + point.PlayerCellOffset),
-                        id + " action point remains reachable");
+                var placements = field.Objects.Where(item => item.Definition.StableId == id).ToArray();
+                Check(placements.Length >= 1, id + " remains present");
+                foreach (var placement in placements)
+                    foreach (var point in placement.Definition.ActionPoints)
+                        Check(accessible.Contains(placement.RootCell + point.PlayerCellOffset),
+                            id + " action point remains reachable");
             }
             foreach (var asset in new[] { "tree", "flower", "stone" })
             {

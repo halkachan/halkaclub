@@ -1,0 +1,640 @@
+{
+  "generator": "blender/scripts/build_phase3_buildings.py",
+  "blenderVersion": "5.2.0 LTS",
+  "units": "1 Blender unit = 1 Unity unit, 1 cell = 0.5, origin = ground centre of the root cell",
+  "export": {
+    "format": "FBX 7.4 binary",
+    "axisForward": "-Z",
+    "axisUp": "Y",
+    "bakeSpaceTransform": true,
+    "colors": "SRGB face-corner attribute 'Col'",
+    "material": "HALKA_VertexColor (1 slot)"
+  },
+  "interiorWallHeight": 1.2,
+  "interiorWallBase": 0.14,
+  "models": [
+    {
+      "family": "house_main",
+      "name": "house_main",
+      "blend": "blender/sources/phase3/house_main.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/house_main.fbx",
+      "triangles": 1418,
+      "vertices": 1416,
+      "materials": 1,
+      "parts": {
+        "house_main": {
+          "triangles": 776,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "HouseRoof": {
+          "triangles": 510,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "HouseDoor": {
+          "triangles": 132,
+          "materials": 1,
+          "pivot": [
+            -0.21,
+            0.25,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -1.1953,
+        -0.36,
+        0.0
+      ],
+      "boundsMax": [
+        1.1953,
+        0.8425,
+        1.885
+      ],
+      "anchors": {
+        "DoorAnchor": [
+          0.0,
+          0.22,
+          0.0
+        ],
+        "EntranceAnchor": [
+          0.0,
+          0.0,
+          0.025
+        ]
+      },
+      "supplemented": [
+        "side and back walls",
+        "windows on the sides and the back",
+        "roof back and side slopes",
+        "door inside face",
+        "entrance step"
+      ]
+    },
+    {
+      "family": "bench_basic",
+      "name": "bench_basic",
+      "blend": "blender/sources/phase3/bench_basic.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/bench_basic.fbx",
+      "triangles": 132,
+      "vertices": 88,
+      "materials": 1,
+      "parts": {
+        "bench_basic": {
+          "triangles": 132,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.22,
+        -0.11,
+        0.0
+      ],
+      "boundsMax": [
+        0.72,
+        0.15,
+        0.5
+      ],
+      "anchors": {
+        "SeatAnchor_L": [
+          0.0,
+          0.0,
+          0.22
+        ],
+        "SeatAnchor_R": [
+          0.5,
+          0.0,
+          0.22
+        ]
+      },
+      "supplemented": [
+        "back of the backrest",
+        "seat underside"
+      ]
+    },
+    {
+      "family": "sign_basic",
+      "name": "sign_basic",
+      "blend": "blender/sources/phase3/sign_basic.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/sign_basic.fbx",
+      "triangles": 60,
+      "vertices": 40,
+      "materials": 1,
+      "parts": {
+        "sign_basic": {
+          "triangles": 60,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.22,
+        -0.07,
+        0.0
+      ],
+      "boundsMax": [
+        0.22,
+        0.03,
+        0.56
+      ],
+      "anchors": {},
+      "supplemented": [
+        "back of the board"
+      ]
+    },
+    {
+      "family": "well_basic",
+      "name": "well_basic",
+      "blend": "blender/sources/phase3/well_basic.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/well_basic.fbx",
+      "triangles": 284,
+      "vertices": 184,
+      "materials": 1,
+      "parts": {
+        "well_basic": {
+          "triangles": 284,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.22,
+        -0.22,
+        0.0
+      ],
+      "boundsMax": [
+        0.22,
+        0.22,
+        0.15
+      ],
+      "anchors": {},
+      "supplemented": [
+        "stone course split (the sprite shows one ring from above)"
+      ]
+    },
+    {
+      "family": "interior",
+      "name": "interior_floor_a",
+      "blend": "blender/sources/phase3/interior.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/interior_floor_a.fbx",
+      "triangles": 2,
+      "vertices": 4,
+      "materials": 1,
+      "parts": {
+        "interior_floor_a": {
+          "triangles": 2,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.25,
+        -0.25,
+        0.0
+      ],
+      "boundsMax": [
+        0.25,
+        0.25,
+        0.0
+      ],
+      "anchors": {},
+      "supplemented": [
+        "wall faces (the 2D room shows wall tops only)",
+        "doorway frame and door",
+        "baseboard"
+      ]
+    },
+    {
+      "family": "interior",
+      "name": "interior_floor_b",
+      "blend": "blender/sources/phase3/interior.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/interior_floor_b.fbx",
+      "triangles": 2,
+      "vertices": 4,
+      "materials": 1,
+      "parts": {
+        "interior_floor_b": {
+          "triangles": 2,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.25,
+        -0.25,
+        0.0
+      ],
+      "boundsMax": [
+        0.25,
+        0.25,
+        0.0
+      ],
+      "anchors": {},
+      "supplemented": [
+        "wall faces (the 2D room shows wall tops only)",
+        "doorway frame and door",
+        "baseboard"
+      ]
+    },
+    {
+      "family": "interior",
+      "name": "interior_wall_base",
+      "blend": "blender/sources/phase3/interior.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/interior_wall_base.fbx",
+      "triangles": 12,
+      "vertices": 8,
+      "materials": 1,
+      "parts": {
+        "interior_wall_base": {
+          "triangles": 12,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.25,
+        -0.25,
+        0.0
+      ],
+      "boundsMax": [
+        0.25,
+        0.25,
+        0.14
+      ],
+      "anchors": {},
+      "supplemented": [
+        "wall faces (the 2D room shows wall tops only)",
+        "doorway frame and door",
+        "baseboard"
+      ]
+    },
+    {
+      "family": "interior",
+      "name": "interior_wall_upper",
+      "blend": "blender/sources/phase3/interior.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/interior_wall_upper.fbx",
+      "triangles": 12,
+      "vertices": 8,
+      "materials": 1,
+      "parts": {
+        "interior_wall_upper": {
+          "triangles": 12,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.25,
+        -0.25,
+        0.14
+      ],
+      "boundsMax": [
+        0.25,
+        0.25,
+        1.2
+      ],
+      "anchors": {},
+      "supplemented": [
+        "wall faces (the 2D room shows wall tops only)",
+        "doorway frame and door",
+        "baseboard"
+      ]
+    },
+    {
+      "family": "interior",
+      "name": "interior_doorway_base",
+      "blend": "blender/sources/phase3/interior.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/interior_doorway_base.fbx",
+      "triangles": 38,
+      "vertices": 28,
+      "materials": 1,
+      "parts": {
+        "interior_doorway_base": {
+          "triangles": 38,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.25,
+        -0.25,
+        0.0
+      ],
+      "boundsMax": [
+        0.25,
+        0.25,
+        0.14
+      ],
+      "anchors": {},
+      "supplemented": [
+        "wall faces (the 2D room shows wall tops only)",
+        "doorway frame and door",
+        "baseboard"
+      ]
+    },
+    {
+      "family": "interior",
+      "name": "interior_doorway_upper",
+      "blend": "blender/sources/phase3/interior.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/interior_doorway_upper.fbx",
+      "triangles": 120,
+      "vertices": 80,
+      "materials": 1,
+      "parts": {
+        "interior_doorway_upper": {
+          "triangles": 120,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.25,
+        -0.25,
+        0.0
+      ],
+      "boundsMax": [
+        0.25,
+        0.25,
+        1.2
+      ],
+      "anchors": {},
+      "supplemented": [
+        "wall faces (the 2D room shows wall tops only)",
+        "doorway frame and door",
+        "baseboard"
+      ]
+    },
+    {
+      "family": "bed_basic",
+      "name": "bed_basic",
+      "blend": "blender/sources/phase3/bed_basic.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/bed_basic.fbx",
+      "triangles": 216,
+      "vertices": 144,
+      "materials": 1,
+      "parts": {
+        "bed_basic": {
+          "triangles": 216,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.245,
+        -0.245,
+        0.0
+      ],
+      "boundsMax": [
+        0.745,
+        1.245,
+        0.6
+      ],
+      "anchors": {
+        "SleepAnchor": [
+          0.25,
+          0.95,
+          0.33
+        ]
+      },
+      "supplemented": [
+        "under-bed rails",
+        "back of the headboard"
+      ]
+    },
+    {
+      "family": "desk_basic",
+      "name": "desk_basic",
+      "blend": "blender/sources/phase3/desk_basic.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/desk_basic.fbx",
+      "triangles": 252,
+      "vertices": 168,
+      "materials": 1,
+      "parts": {
+        "desk_basic": {
+          "triangles": 252,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.22,
+        -0.17,
+        0.0
+      ],
+      "boundsMax": [
+        0.72,
+        0.17,
+        0.68
+      ],
+      "anchors": {
+        "WorkAnchor": [
+          0.25,
+          -0.35,
+          0.0
+        ]
+      },
+      "supplemented": [
+        "back panel",
+        "monitor back"
+      ]
+    },
+    {
+      "family": "cushion_basic",
+      "name": "cushion_basic",
+      "blend": "blender/sources/phase3/cushion_basic.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/cushion_basic.fbx",
+      "triangles": 74,
+      "vertices": 48,
+      "materials": 1,
+      "parts": {
+        "cushion_basic": {
+          "triangles": 74,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.1744,
+        -0.1744,
+        0.0
+      ],
+      "boundsMax": [
+        0.1744,
+        0.1744,
+        0.102
+      ],
+      "anchors": {
+        "SitAnchor": [
+          0.0,
+          0.0,
+          0.1
+        ]
+      },
+      "supplemented": [
+        "underside"
+      ]
+    },
+    {
+      "family": "recording_mic_basic",
+      "name": "recording_mic_basic",
+      "blend": "blender/sources/phase3/recording_mic_basic.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/recording_mic_basic.fbx",
+      "triangles": 224,
+      "vertices": 132,
+      "materials": 1,
+      "parts": {
+        "recording_mic_basic": {
+          "triangles": 224,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.11,
+        -0.115,
+        0.0
+      ],
+      "boundsMax": [
+        0.11,
+        0.1046,
+        1.05
+      ],
+      "anchors": {},
+      "supplemented": [
+        "back of the capsule",
+        "shock-mount detail simplified"
+      ]
+    },
+    {
+      "family": "art_easel_basic",
+      "name": "art_easel_basic",
+      "blend": "blender/sources/phase3/art_easel_basic.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/art_easel_basic.fbx",
+      "triangles": 120,
+      "vertices": 96,
+      "materials": 1,
+      "parts": {
+        "art_easel_basic": {
+          "triangles": 120,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        0.03,
+        0.06,
+        -0.006
+      ],
+      "boundsMax": [
+        0.47,
+        0.5591,
+        1.0812
+      ],
+      "anchors": {},
+      "supplemented": [
+        "back leg and the back of the canvas"
+      ]
+    },
+    {
+      "family": "studio_shelf_basic",
+      "name": "studio_shelf_basic",
+      "blend": "blender/sources/phase3/studio_shelf_basic.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/studio_shelf_basic.fbx",
+      "triangles": 368,
+      "vertices": 240,
+      "materials": 1,
+      "parts": {
+        "studio_shelf_basic": {
+          "triangles": 368,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.22,
+        -0.08,
+        0.0
+      ],
+      "boundsMax": [
+        0.72,
+        0.2,
+        0.6
+      ],
+      "anchors": {},
+      "supplemented": [
+        "back panel",
+        "sides of the top items"
+      ]
+    }
+  ]
+}

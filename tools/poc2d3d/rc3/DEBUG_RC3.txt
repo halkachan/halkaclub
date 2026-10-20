@@ -1,0 +1,55 @@
+はるかわーるど ver3.0 RC3 — 検証用パネル（デバッグ）
+====================================================
+
+通常のページでは表示されません（パネルの部品ごと止めているので、描画の負担もありません）。
+URL の最後に ?debug=1 を付けると表示されます。
+
+  http://127.0.0.1:8899/halkaworld/webgl/?debug=1
+  スマホのタッチ表示をPCで見る: ?debug=1&touchControls=1
+
+右上に「はるかわーるど ver3.0 RC3 (debug)」と出ていれば検証モードです。
+
+セーブの開発用ログ（ブラウザの開発者ツールのコンソール。?debug=1 でなくても出ます）
+  HARUKA save: start from <読み込み元>: <マップ> (<x>,<y>) <向き> <2D/3D> AUTO <on/off> steps <歩数> play <秒>s anchor <基準時刻> rev <番号> place: <場所の決め方>
+      読み込み元: new（新規）/ ver2.9 keys（旧キーから移行）/ snapshot（最新）/ backup snapshot（前の世代から復旧）
+                  / ver2.9 keys after damaged snapshots / unreadable / newer schema present
+      場所の決め方: saved cell / nearest safe cell / the map's start / unknown map ...
+  HARUKA save: imported: ...           インポートした内容
+  HARUKA save: saving stopped: ...     保存を止めた理由（別のタブ、新しい形式、全部壊れていた）
+  HARUKA import rejected: ...          インポートを断った理由
+  ゲームの画面には、短い日本語のお知らせだけが出ます。
+
+セーブのファイルを見る（開発者ツール → Application → IndexedDB → /idbfs → FILE_DATA）
+  /idbfs/<値>/harukaworld_save/snapshot_1.json など。編集すると、そのファイルは壊れたものとして扱われます。
+  テスト用のブラウザ・テスト用のアドレスだけで行ってください。
+
+パネルの項目（上から）
+  VIEW                     2D / 3D の切り替え（メニューの「ひょうじ」と同じ）
+  POC options: show/hide   以下の項目の表示
+  2D pixels/cell           2D の1マスの画素数（RC3 は 16）
+  2D camera pitch          2D の見下ろし角度
+  2D square ground         地面を正方形にする補正
+  3D keys                  3D のキーの意味（B camera-relative が標準）
+  3D indoor cam            家の中のカメラ（closer+clamp が標準）
+  Time                     real（実時間）/ force morning / force night
+  Grid/blocked             マス目と通れないマスの表示
+  Stats                    FPS・フレーム時間・Draw Calls・SetPass・三角形数・メモリ
+  3D cam follow            3D カメラ（North fixed が標準）
+  2D outline / Outline color / Grass outline / Inner lines   2D の輪郭線（1px #252B39 が標準）
+  2D see-through trees     2D の木の透け
+  3D indoor walls          家の中の壁の切り取り
+  3D see-through trees     3D の木・イーゼルの透け（40%、0.25秒）
+  3D exit camera           家から出た直後の構図（house front が標準）
+  3D cam distance          3D カメラの距離（屋外 3.4 / 屋内 3.6）
+  3D exit held key         家から出るときキーを押したままの場合
+                             walks on after 0.6s … 家を0.6秒見せてから、そのまま歩き続ける（標準・正式）
+                             waits for release (Phase 4) … 一度キーを離すまで止まる（比較用）
+  2D grass                 2D の草（3D tufts (Phase 4) が標準 / 2D game sprites は比較用）
+  3D outline               3D の輪郭線（ON が標準）
+  3D line boil             3D の輪郭線のゆらぎ（ピクピク、1秒に6回。2D にはありません）
+                             lines (standard) … 線だけが少しゆらぐ（標準）
+                             lines, stronger  … ゆらぎを強く（比較用）
+                             lines + picture  … 線と一緒に絵（塗り）もゆらぐ（比較用）
+                             OFF (still)      … ゆらがない（フィードバック2までの見た目）
+
+パネルの設定は保存されません（再読み込みで標準に戻ります）。

@@ -1,0 +1,303 @@
+{
+  "generator": "blender/scripts/build_phase2_environment.py",
+  "blenderVersion": "5.2.0 LTS",
+  "units": "1 Blender unit = 1 Unity unit, 1 cell = 0.5, origin = ground centre of the root cell",
+  "export": {
+    "format": "FBX 7.4 binary",
+    "axisForward": "-Z",
+    "axisUp": "Y",
+    "bakeSpaceTransform": true,
+    "colors": "SRGB face-corner attribute 'Col'",
+    "material": "HALKA_VertexColor (1 slot)"
+  },
+  "dirtTopHeight": 0.004,
+  "dirtEdgeInset": 0.04,
+  "models": [
+    {
+      "family": "ground_grass",
+      "name": "ground_grass_a",
+      "blend": "blender/sources/phase2/ground_grass.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase2/ground_grass_a.fbx",
+      "triangles": 2,
+      "vertices": 4,
+      "materials": 1,
+      "boundsMin": [
+        -0.25,
+        -0.25,
+        0.0
+      ],
+      "boundsMax": [
+        0.25,
+        0.25,
+        0.0
+      ],
+      "anchors": {}
+    },
+    {
+      "family": "ground_grass",
+      "name": "ground_grass_b",
+      "blend": "blender/sources/phase2/ground_grass.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase2/ground_grass_b.fbx",
+      "triangles": 2,
+      "vertices": 4,
+      "materials": 1,
+      "boundsMin": [
+        -0.25,
+        -0.25,
+        0.0
+      ],
+      "boundsMax": [
+        0.25,
+        0.25,
+        0.0
+      ],
+      "anchors": {}
+    },
+    {
+      "family": "ground_grass",
+      "name": "ground_grass_c",
+      "blend": "blender/sources/phase2/ground_grass.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase2/ground_grass_c.fbx",
+      "triangles": 2,
+      "vertices": 4,
+      "materials": 1,
+      "boundsMin": [
+        -0.25,
+        -0.25,
+        0.0
+      ],
+      "boundsMax": [
+        0.25,
+        0.25,
+        0.0
+      ],
+      "anchors": {}
+    },
+    {
+      "family": "ground_dirt",
+      "name": "ground_dirt_full",
+      "blend": "blender/sources/phase2/ground_dirt.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase2/ground_dirt_full.fbx",
+      "triangles": 2,
+      "vertices": 4,
+      "materials": 1,
+      "boundsMin": [
+        0.0,
+        0.0,
+        0.004
+      ],
+      "boundsMax": [
+        0.25,
+        0.25,
+        0.004
+      ],
+      "anchors": {}
+    },
+    {
+      "family": "ground_dirt",
+      "name": "ground_dirt_edge",
+      "blend": "blender/sources/phase2/ground_dirt.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase2/ground_dirt_edge.fbx",
+      "triangles": 5,
+      "vertices": 7,
+      "materials": 1,
+      "boundsMin": [
+        0.0,
+        0.0,
+        0.004
+      ],
+      "boundsMax": [
+        0.228,
+        0.25,
+        0.004
+      ],
+      "anchors": {}
+    },
+    {
+      "family": "ground_dirt",
+      "name": "ground_dirt_corner",
+      "blend": "blender/sources/phase2/ground_dirt.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase2/ground_dirt_corner.fbx",
+      "triangles": 4,
+      "vertices": 6,
+      "materials": 1,
+      "boundsMin": [
+        0.0,
+        0.0,
+        0.004
+      ],
+      "boundsMax": [
+        0.21,
+        0.21,
+        0.004
+      ],
+      "anchors": {}
+    },
+    {
+      "family": "grass_tuft",
+      "name": "grass_tuft_a",
+      "blend": "blender/sources/phase2/grass_tuft.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase2/grass_tuft_a.fbx",
+      "triangles": 15,
+      "vertices": 20,
+      "materials": 1,
+      "boundsMin": [
+        -0.0955,
+        -0.0587,
+        0.0
+      ],
+      "boundsMax": [
+        0.1011,
+        0.0685,
+        0.198
+      ],
+      "anchors": {}
+    },
+    {
+      "family": "grass_tuft",
+      "name": "grass_tuft_b",
+      "blend": "blender/sources/phase2/grass_tuft.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase2/grass_tuft_b.fbx",
+      "triangles": 12,
+      "vertices": 16,
+      "materials": 1,
+      "boundsMin": [
+        -0.085,
+        -0.0367,
+        0.0
+      ],
+      "boundsMax": [
+        0.0885,
+        0.082,
+        0.165
+      ],
+      "anchors": {}
+    },
+    {
+      "family": "grass_tuft",
+      "name": "grass_tuft_c",
+      "blend": "blender/sources/phase2/grass_tuft.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase2/grass_tuft_c.fbx",
+      "triangles": 18,
+      "vertices": 24,
+      "materials": 1,
+      "boundsMin": [
+        -0.1071,
+        -0.0658,
+        0.0
+      ],
+      "boundsMax": [
+        0.112,
+        0.0776,
+        0.176
+      ],
+      "anchors": {}
+    },
+    {
+      "family": "tree_basic",
+      "name": "tree_basic",
+      "blend": "blender/sources/phase2/tree_basic.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase2/tree_basic.fbx",
+      "triangles": 504,
+      "vertices": 286,
+      "materials": 1,
+      "boundsMin": [
+        -0.6891,
+        -0.4401,
+        -0.0394
+      ],
+      "boundsMax": [
+        0.7191,
+        0.5744,
+        1.7396
+      ],
+      "anchors": {
+        "PerchAnchor": [
+          -0.17,
+          0.0,
+          1.7
+        ]
+      }
+    },
+    {
+      "family": "flower_basic",
+      "name": "flower_basic",
+      "blend": "blender/sources/phase2/flower_basic.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase2/flower_basic.fbx",
+      "triangles": 168,
+      "vertices": 102,
+      "materials": 1,
+      "boundsMin": [
+        -0.13,
+        -0.1035,
+        -0.0004
+      ],
+      "boundsMax": [
+        0.13,
+        0.1046,
+        0.3466
+      ],
+      "anchors": {}
+    },
+    {
+      "family": "stone_basic",
+      "name": "stone_basic_a",
+      "blend": "blender/sources/phase2/stone_basic.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase2/stone_basic_a.fbx",
+      "triangles": 80,
+      "vertices": 42,
+      "materials": 1,
+      "boundsMin": [
+        -0.2081,
+        -0.1643,
+        0.0
+      ],
+      "boundsMax": [
+        0.2005,
+        0.1523,
+        0.2836
+      ],
+      "anchors": {}
+    },
+    {
+      "family": "stone_basic",
+      "name": "stone_basic_b",
+      "blend": "blender/sources/phase2/stone_basic.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase2/stone_basic_b.fbx",
+      "triangles": 80,
+      "vertices": 42,
+      "materials": 1,
+      "boundsMin": [
+        -0.1774,
+        -0.1677,
+        0.0
+      ],
+      "boundsMax": [
+        0.1765,
+        0.188,
+        0.2834
+      ],
+      "anchors": {}
+    },
+    {
+      "family": "stone_basic",
+      "name": "stone_basic_c",
+      "blend": "blender/sources/phase2/stone_basic.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase2/stone_basic_c.fbx",
+      "triangles": 80,
+      "vertices": 42,
+      "materials": 1,
+      "boundsMin": [
+        -0.2167,
+        -0.1313,
+        0.0
+      ],
+      "boundsMax": [
+        0.2242,
+        0.1482,
+        0.2337
+      ],
+      "anchors": {}
+    }
+  ]
+}

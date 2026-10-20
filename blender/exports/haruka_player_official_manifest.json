@@ -1,0 +1,173 @@
+{
+  "model": "ﾊﾙｶﾁｬﾝ 3D (blocky, Minecraft-like low poly)",
+  "status": "official",
+  "adopted": "Phase 7 (user decision): the model used in the 3D view since Phase 2.1 is the official 3D player model; it is not redesigned",
+  "internalName": "haruka_blocky_placeholder (the Phase 2.1 file name, kept so no reference breaks)",
+  "files": {
+    "blenderSource": {
+      "path": "blender/sources/phase2_1/haruka_blocky_placeholder.blend",
+      "sha256": "293e7836285bfbca4ac7e1bcda7d81ae0ef5893075d0f1e929112ca53fcbdc21"
+    },
+    "generator": {
+      "path": "blender/scripts/build_haruka_blocky.py",
+      "sha256": "6c07907a2a5e3032c87425a4c61782aaeda25f6deec71f287fce72809bd2685d"
+    },
+    "generatorHelpers": {
+      "path": "blender/scripts/halka_lowpoly.py",
+      "sha256": "9a932964ee1314ec44a68473f521b341fa243b1abe0f885e2324d353a478387d"
+    },
+    "fbx": {
+      "path": "unity-project/Assets/POC2D3D/Models/Phase2_1/haruka_blocky_placeholder.fbx",
+      "sha256": "2aaf6aeec3aa1184fce91c7eee533180a7eee26a08ce0967acac2ba7968f3a6a"
+    },
+    "fbxImportSettings": {
+      "path": "unity-project/Assets/POC2D3D/Models/Phase2_1/haruka_blocky_placeholder.fbx.meta",
+      "sha256": "e4b787167737dfc8caa79659ed91363330e02c54058afc6b0d27de65d2616045"
+    },
+    "material": {
+      "path": "unity-project/Assets/POC2D3D/Materials/POC_ToonVertexColor.mat",
+      "sha256": "7df3e856381963f79153cd84b95bb3d57b3b41e0cbec9bd352b3701562d3f263"
+    },
+    "materialShader": {
+      "path": "unity-project/Assets/POC2D3D/Shaders/PocToonVertexColor.shader",
+      "sha256": "7207f5c73b88bfef752ed4891eaf8de6a0dc5e0d0b1c6c3a515a786d6edba7c1"
+    }
+  },
+  "hashNote": "SHA-256; .py, .meta, .mat and .shader are hashed with LF line ends",
+  "previews": {
+    "south_front": "blender/exports/previews/phase2_1/haruka_blocky_placeholder_south_front.png",
+    "east": "blender/exports/previews/phase2_1/haruka_blocky_placeholder_east.png",
+    "north_back": "blender/exports/previews/phase2_1/haruka_blocky_placeholder_north_back.png",
+    "west": "blender/exports/previews/phase2_1/haruka_blocky_placeholder_west.png",
+    "three_quarter": "blender/exports/previews/phase2_1/haruka_blocky_placeholder_three_quarter.png",
+    "top": "blender/exports/previews/phase2_1/haruka_blocky_placeholder_top.png",
+    "game_2d_angle": "blender/exports/previews/phase2_1/haruka_blocky_placeholder_game_2d_angle.png"
+  },
+  "unity": {
+    "fbxGuid": "e8371efd9aea7364698cfd1f3c20b58e",
+    "materialGuid": "43dd4b12f1608244089beb1b1322bdbb",
+    "catalog": "Assets/POC2D3D/Data/POC_PresentationCatalog.asset, field player (PocActorPresentation)",
+    "catalogLegacyField": "playerModel = poc_player.fbx (Phase 1 technical stand-in, not drawn in the game)",
+    "prefab": "the FBX's imported model prefab (no separate .prefab asset; PocActorView instantiates it)",
+    "importSettings": "scale 1 (file scale), axis conversion baked, no animation, no blend shapes, materials remapped to POC_ToonVertexColor, readable"
+  },
+  "geometry": {
+    "triangles": 1030,
+    "parts": {
+      "haruka_blocky_placeholder": {
+        "triangles": 806,
+        "pivot": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "ArmL": {
+        "triangles": 60,
+        "pivot": [
+          0.22,
+          0.0,
+          0.462
+        ]
+      },
+      "ArmR": {
+        "triangles": 60,
+        "pivot": [
+          -0.22,
+          0.0,
+          0.462
+        ]
+      },
+      "LegL": {
+        "triangles": 52,
+        "pivot": [
+          0.066,
+          0.0,
+          0.22
+        ]
+      },
+      "LegR": {
+        "triangles": 52,
+        "pivot": [
+          -0.066,
+          0.0,
+          0.22
+        ]
+      }
+    },
+    "boundsMin": [
+      -0.264,
+      -0.2156,
+      0.0
+    ],
+    "boundsMax": [
+      0.264,
+      0.286,
+      0.968
+    ],
+    "heightMetres": 0.968,
+    "pixelMetres": 0.044,
+    "front": "South (-Y in Blender, -Z in Unity)"
+  },
+  "presentation": {
+    "pivot": "ground centre of the model at the logical cell centre",
+    "uniformScale": 1,
+    "yawOffsetDegrees": 180,
+    "idle": "rest pose (limbs at 0)",
+    "walk": "procedural swing of ArmL / ArmR / LegL / LegR, 26 degrees, during the 0.18 s Grid step",
+    "sit": "procedural: legs 90 degrees, arms 28 degrees; bench hips +0.03 and 0.08 toward the middle, sofa +0.07 and 0.06, cushion legs 62 degrees",
+    "view2D": "the original sprites (Assets/Content/Character), never this model"
+  },
+  "sprites2D": {
+    "Assets/Content/Character/back_idle/00.png": "fa9647dd7f21b50089a4c09f2c649fca2e168fbe36f0e652db21ce947905f384",
+    "Assets/Content/Character/back_idle/01.png": "67bd5d83cd555febdff31865bb5c5ff4e83a93663b44ef98dbf3bf03e2f049fa",
+    "Assets/Content/Character/bench_sit.png": "0791ba85fcf1ec6d9275bb0acbe4abedcc5c4091a092c8d9c76051090cc87845",
+    "Assets/Content/Character/front_idle/00.png": "a3c6081eb5fd662aebf1991f025908999db287bbcb8f0b94e29843f3cfdf1cda",
+    "Assets/Content/Character/front_idle/01.png": "f3e2c20f2fb9f3a1ea0970fbe87c13181d6b8067b9dc29e1022d2518037fdc59",
+    "Assets/Content/Character/front_jump/00.png": "693c777d167f9ffdd90cf0a4accb6bc22443824c79f45f2278acf07115a4be37",
+    "Assets/Content/Character/front_jump/01.png": "66dbc38933cdd50e54802fd1a20107a1819fb59c2d81cd8e679ec76474ac8dd4",
+    "Assets/Content/Character/front_jump/02.png": "2814c963fe832296bf5d05ea02626c808e2d5c9647a0a4ad69c0b341e0a136af",
+    "Assets/Content/Character/front_jump/03.png": "ad423507ed193d98d60d9d4bb48ad9a58d071d9cd332a8c7a15d660557f392b7",
+    "Assets/Content/Character/front_jump/04.png": "2bbbe778811c60337211de4ea1e5537153bf0d4f074b5436d86ed33456b6dd58",
+    "Assets/Content/Character/front_jump/05.png": "398751d9cbd9593a1d0bcd049ace010430d0506248a1585a70bc5fab7756a7b5",
+    "Assets/Content/Character/front_jump/06.png": "169c0f6bf2566aee8cffe21d480df90eb473e334acb1c3dac8233d91ec260c3f",
+    "Assets/Content/Character/front_jump/07.png": "2c626e7140f5bb70e8ff09916c8cc74f9e2dda8936710975ff516126c20fd0b6",
+    "Assets/Content/Character/front_jump/08.png": "02b9725c38441c56c7b913496f7f270fca4d7fb838141f247c472c88629314b0",
+    "Assets/Content/Character/front_jump/09.png": "324bcc9192916bb1bf4c76128e18568ca7576a18acf78a67b66cdf541377f2ff",
+    "Assets/Content/Character/front_jump/10.png": "6a6e674874c8c6d485490e563bff5fd619da2bdb5cd70496fb3addbd1a478c00",
+    "Assets/Content/Character/front_jump/11.png": "324bcc9192916bb1bf4c76128e18568ca7576a18acf78a67b66cdf541377f2ff",
+    "Assets/Content/Character/front_jump/12.png": "02b9725c38441c56c7b913496f7f270fca4d7fb838141f247c472c88629314b0",
+    "Assets/Content/Character/front_jump/13.png": "2c626e7140f5bb70e8ff09916c8cc74f9e2dda8936710975ff516126c20fd0b6",
+    "Assets/Content/Character/front_jump/14.png": "169c0f6bf2566aee8cffe21d480df90eb473e334acb1c3dac8233d91ec260c3f",
+    "Assets/Content/Character/front_jump/15.png": "398751d9cbd9593a1d0bcd049ace010430d0506248a1585a70bc5fab7756a7b5",
+    "Assets/Content/Character/front_jump/16.png": "2bbbe778811c60337211de4ea1e5537153bf0d4f074b5436d86ed33456b6dd58",
+    "Assets/Content/Character/front_jump/17.png": "ad423507ed193d98d60d9d4bb48ad9a58d071d9cd332a8c7a15d660557f392b7",
+    "Assets/Content/Character/front_jump/18.png": "2814c963fe832296bf5d05ea02626c808e2d5c9647a0a4ad69c0b341e0a136af",
+    "Assets/Content/Character/front_jump/19.png": "66dbc38933cdd50e54802fd1a20107a1819fb59c2d81cd8e679ec76474ac8dd4",
+    "Assets/Content/Character/front_jump/20.png": "945f94e40644666c323a5170eb64bb34124163ce79cf1eec901e62729622df0c",
+    "Assets/Content/Character/left_idle/00.png": "71b2e3fca8d09676dc0b99881f7c451aa888576e05f81da98cfd16eb671b3510",
+    "Assets/Content/Character/left_idle/01.png": "e6f11b527cbd29694027c3eb1201571976bd83cd0fb7cd6dcc21acab5d53cdad",
+    "Assets/Content/Character/right_idle/00.png": "88853861fc00c37f727afba5a496f63a73991520c6e1bd3a5dbb46ea89b9300f",
+    "Assets/Content/Character/right_idle/01.png": "2522448ba40b54e6d7d53030d940afd76c3ba3f1852d549c92103d36d56f9559",
+    "Assets/Content/Character/turn/00.png": "a3c6081eb5fd662aebf1991f025908999db287bbcb8f0b94e29843f3cfdf1cda",
+    "Assets/Content/Character/turn/01.png": "71b2e3fca8d09676dc0b99881f7c451aa888576e05f81da98cfd16eb671b3510",
+    "Assets/Content/Character/turn/02.png": "fa9647dd7f21b50089a4c09f2c649fca2e168fbe36f0e652db21ce947905f384",
+    "Assets/Content/Character/turn/03.png": "88853861fc00c37f727afba5a496f63a73991520c6e1bd3a5dbb46ea89b9300f",
+    "Assets/Content/Character/walk_back/00.png": "5f930bb6b3cdd214740d9249b7ee8d3ffc52d90bb9d39d74649777c34df95889",
+    "Assets/Content/Character/walk_back/01.png": "fa9647dd7f21b50089a4c09f2c649fca2e168fbe36f0e652db21ce947905f384",
+    "Assets/Content/Character/walk_back/02.png": "87ec78fe40349b27545374583e136fcb7a86fa31b1168c3b193a1e2c069dff04",
+    "Assets/Content/Character/walk_back/03.png": "fa9647dd7f21b50089a4c09f2c649fca2e168fbe36f0e652db21ce947905f384",
+    "Assets/Content/Character/walk_front/00.png": "d35b133a7be62829bf40068c90687436551de041a0aeed6598c89083172aad37",
+    "Assets/Content/Character/walk_front/01.png": "a3c6081eb5fd662aebf1991f025908999db287bbcb8f0b94e29843f3cfdf1cda",
+    "Assets/Content/Character/walk_front/02.png": "83140dd07ccdc8c27f3e76d47266cd1a612649a0fddf6356728e0609c9667397",
+    "Assets/Content/Character/walk_front/03.png": "a3c6081eb5fd662aebf1991f025908999db287bbcb8f0b94e29843f3cfdf1cda",
+    "Assets/Content/Character/walk_left/00.png": "372350d4314b184d535d559f3055d698926ed43d685908735bdbe0e75b63de49",
+    "Assets/Content/Character/walk_left/01.png": "71b2e3fca8d09676dc0b99881f7c451aa888576e05f81da98cfd16eb671b3510",
+    "Assets/Content/Character/walk_left/02.png": "adf62d74d06c6ef4469fcb8c0db45cc2564e8fd5ddfe89e0054a72b9cc2ea2c8",
+    "Assets/Content/Character/walk_left/03.png": "71b2e3fca8d09676dc0b99881f7c451aa888576e05f81da98cfd16eb671b3510",
+    "Assets/Content/Character/walk_right/00.png": "a147142277bcca663769cfda9298f7f326630086318caef0428afe69c6eabb8f",
+    "Assets/Content/Character/walk_right/01.png": "88853861fc00c37f727afba5a496f63a73991520c6e1bd3a5dbb46ea89b9300f",
+    "Assets/Content/Character/walk_right/02.png": "e02d2cf7f5b94c161b8c2832e11d8cc6427962884d899c9fca58b32fe0f96b34",
+    "Assets/Content/Character/walk_right/03.png": "88853861fc00c37f727afba5a496f63a73991520c6e1bd3a5dbb46ea89b9300f"
+  }
+}

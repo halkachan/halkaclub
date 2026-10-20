@@ -39,7 +39,7 @@ namespace Halka.Game.World
             if (!IsInside) return;
             grassOcclusion.UseGrassField(interiorGrass);
             var room = maps.GetMap("halka_house");
-            worldCamera.orthographicSize = 3.4f;
+            worldCamera.orthographicSize = outsideCameraSize;
             cameraFollow.SetBounds(
                 new Vector2(room.MinCell.x * GridWorld2D.TileWorldSize - 0.8f,
                     room.MinCell.y * GridWorld2D.TileWorldSize - 0.8f),
@@ -74,7 +74,7 @@ namespace Halka.Game.World
             grassOcclusion.UseGrassField(interiorGrass);
             player.SetFacing(FacingDirection.Up);
             var room = maps.GetMap("halka_house");
-            worldCamera.orthographicSize = 3.4f;
+            worldCamera.orthographicSize = outsideCameraSize;
             cameraFollow.SetBounds(
                 new Vector2(room.MinCell.x * GridWorld2D.TileWorldSize - 0.8f,
                     room.MinCell.y * GridWorld2D.TileWorldSize - 0.8f),

@@ -1,0 +1,330 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d971d36a6b223cc44a7ab673f6239aad, type: 3}
+  m_Name: POC_PresentationCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Poc2D3D.PocPresentationCatalog
+  playerModel: {fileID: 919132149155446097, guid: 41815d696ba538146b054f1964c91d1f, type: 3}
+  vertexColorMaterial: {fileID: 2100000, guid: 43dd4b12f1608244089beb1b1322bdbb, type: 2}
+  overlayMaterial: {fileID: 2100000, guid: 99428458a4faf404a980948c4e68da5b, type: 2}
+  bindings:
+  - definitionId: tree_basic
+    model: {fileID: 919132149155446097, guid: b4849c8e8f938cb43b22ad2186a4e3c7, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: PerchAnchor
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 1
+    fadeInFront3D: 1
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: flower_basic
+    model: {fileID: 919132149155446097, guid: b07fa73f3afe0c144a758836c02cbb37, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0.3
+  - definitionId: stone_basic
+    model: {fileID: 919132149155446097, guid: bf617b6918105564c99b19ee64fa1bbf, type: 3}
+    variants:
+    - {fileID: 919132149155446097, guid: bf617b6918105564c99b19ee64fa1bbf, type: 3}
+    - {fileID: 919132149155446097, guid: 9c086b7698e72f8488694d20cdb5d25a, type: 3}
+    - {fileID: 919132149155446097, guid: 75dd43d7c99c626439418833db997bf1, type: 3}
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0.3
+  - definitionId: house_main
+    model: {fileID: 919132149155446097, guid: 6fba3904bb5f465419287ff31b267e0a, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 1
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 1
+    minPickSize: 0
+  - definitionId: bench_basic
+    model: {fileID: 919132149155446097, guid: bde8572dfde9124438d705db87ca3997, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: sign_basic
+    model: {fileID: 919132149155446097, guid: d7c6dc2c3b283204e82aee1cb2ba8736, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: well_basic
+    model: {fileID: 919132149155446097, guid: d38080a5b171443419ed5d39409c2106, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: bed_basic
+    model: {fileID: 919132149155446097, guid: 0d03ba6120c139f4aa3c7b363c7858ea, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: desk_basic
+    model: {fileID: 919132149155446097, guid: dba0467e8dc374f4a8fe1fe15ca56320, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: cushion_basic
+    model: {fileID: 919132149155446097, guid: 9bbb8de1e3744ea4b9a59f4a3bc21ed1, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0.3
+  - definitionId: recording_mic_basic
+    model: {fileID: 919132149155446097, guid: 79c4a62415e9f9143ba07b3da8965bf9, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: art_easel_basic
+    model: {fileID: 919132149155446097, guid: c2159fa0d1ff8af4694cf0b3b4ca97de, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 1
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: sofa_basic
+    model: {fileID: 919132149155446097, guid: a70408de33b7e8c4babbc4f656ec87d5, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: studio_shelf_basic
+    model: {fileID: 919132149155446097, guid: 2a5cc87d220504d4383bdd2015f5efce, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  environment:
+    grassTiles:
+    - {fileID: 919132149155446097, guid: 63963ae3c0300124ca9d7edb73f246bc, type: 3}
+    - {fileID: 919132149155446097, guid: 6269f4350be721943a4685ac00f3f028, type: 3}
+    - {fileID: 919132149155446097, guid: 24900c731cd98f244b984c20e40c5322, type: 3}
+    dirtFull: {fileID: 919132149155446097, guid: 4f37f8a6cd6432546a308d4ee2a67b84, type: 3}
+    dirtEdge: {fileID: 919132149155446097, guid: 6152e41c2f87ef64e9014dfaded006c8, type: 3}
+    dirtCorner: {fileID: 919132149155446097, guid: 6eab840a10a99b049b2a59e19841bcc5, type: 3}
+    grassTufts:
+    - {fileID: 919132149155446097, guid: 2c97a88d3fc4d1c49af6900a8ae2385a, type: 3}
+    - {fileID: 919132149155446097, guid: 55f916df7778d81419e5380fe5792b80, type: 3}
+    - {fileID: 919132149155446097, guid: f6670462453580e4e8cde174e5fffb93, type: 3}
+    tuftChance: 0.8
+    roadsideTuftChance: 0.55
+    outsideMargin: 8
+    outsideTint: {r: 0.9, g: 0.93, b: 0.88, a: 1}
+  player:
+    model: {fileID: 919132149155446097, guid: e8371efd9aea7364698cfd1f3c20b58e, type: 3}
+    yawOffsetDegrees: 180
+    pivotOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    armLeft: ArmL
+    armRight: ArmR
+    legLeft: LegL
+    legRight: LegR
+    swingDegrees: 26
+    placeholder: 0
+    sprites:
+      frontIdle:
+      - {fileID: 21300000, guid: 34a28a2f8d3190f4d9f97be041f41f9d, type: 3}
+      - {fileID: 21300000, guid: 11a391c736e7cff4184d4d714e9f28e7, type: 3}
+      backIdle:
+      - {fileID: 21300000, guid: 5e072a5ceadc15c4ba0b66c2eb5a1706, type: 3}
+      - {fileID: 21300000, guid: 104e1a7d06ad5dc48914c7fff9410b7e, type: 3}
+      leftIdle:
+      - {fileID: 21300000, guid: 0202719ea042b4646b18d61865ddba59, type: 3}
+      - {fileID: 21300000, guid: 0ea148dd98f08af49958418d47e5fd97, type: 3}
+      rightIdle:
+      - {fileID: 21300000, guid: 9dc23abc3323cd74d8ebd1c4996992cc, type: 3}
+      - {fileID: 21300000, guid: b4b86d95dd796ab46b7b4cbefcca737f, type: 3}
+      frontWalk:
+      - {fileID: 21300000, guid: be54a809e6fd1a04ab6ded0976885c92, type: 3}
+      - {fileID: 21300000, guid: 42f867209372e074fb6ddbe798e38845, type: 3}
+      - {fileID: 21300000, guid: 4c33327e56574b141ab0da0616901584, type: 3}
+      - {fileID: 21300000, guid: 3ea77c7d854273b41b8b4909ac75fbd3, type: 3}
+      backWalk:
+      - {fileID: 21300000, guid: 72abc1ad5b42b3841b3545a4ca8a8c71, type: 3}
+      - {fileID: 21300000, guid: 17e28c2aaf2d658438b8d9c06efff11e, type: 3}
+      - {fileID: 21300000, guid: 66436904408ff9a4795bd01a89d45fd8, type: 3}
+      - {fileID: 21300000, guid: 9362e9dd502c3a94386577898a19fd99, type: 3}
+      leftWalk:
+      - {fileID: 21300000, guid: 403079da43df29447836b1066ff98a57, type: 3}
+      - {fileID: 21300000, guid: 263a633f59e1d644cb8ec4f4c1a7ba71, type: 3}
+      - {fileID: 21300000, guid: e6fb355e0445b5745a9afe3e7749790e, type: 3}
+      - {fileID: 21300000, guid: 0258432c8d710464ab4a955d2dd6cdd8, type: 3}
+      rightWalk:
+      - {fileID: 21300000, guid: 2ab85f6682d029843981a1087bca8e62, type: 3}
+      - {fileID: 21300000, guid: eda94f0fb00a03448aa4937166f4dc8f, type: 3}
+      - {fileID: 21300000, guid: 11afb286725589e42b91c29daad0344b, type: 3}
+      - {fileID: 21300000, guid: e7298b4d37f83284e926343a7d8ff7c1, type: 3}
+      offsetY: 0.25
+      benchSit: {fileID: 21300000, guid: 606d90ddaa22ab041a9ee7dc47f7a76e, type: 3}
+  interior:
+    floorTiles:
+    - {fileID: 919132149155446097, guid: 9e8a2d69601376d4b81eeeb4903a4f01, type: 3}
+    - {fileID: 919132149155446097, guid: 8482797b33950ff40a6fafc2ab463e01, type: 3}
+    wallBase: {fileID: 919132149155446097, guid: 516bcc850162ca348836c6a5441de670, type: 3}
+    wallUpper: {fileID: 919132149155446097, guid: 385852247231c8142b07a9ffd4dd21a2, type: 3}
+    doorwayBase: {fileID: 919132149155446097, guid: 2030bbff78ccc284a89ebddd12416e6f, type: 3}
+    doorwayUpper: {fileID: 919132149155446097, guid: 66e77b1a1cd00094d8d8a8faf480e0e7, type: 3}
+    wallBaseHeight: 0.14

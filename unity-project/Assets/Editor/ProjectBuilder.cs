@@ -42,7 +42,7 @@ namespace Halka.Game.Editor
         private const float SpritePixelsPerUnit = 64f;
         internal const float ArtworkFootOffset = GridWorld2D.TileWorldSize / 2f;
 
-        [MenuItem("HALKA/Prepare ver2.9 scene")]
+        [MenuItem("HALKA/Prepare ver3.0 Preview scene")]
         public static void PrepareScene()
         {
             ConfigureProject();
@@ -159,6 +159,19 @@ namespace Halka.Game.Editor
             var follow = cameraObject.AddComponent<CameraFollow2D>();
             SetReference(follow, "target", player.transform);
             SetReference(follow, "cameraComponent", camera);
+
+            var timeObject = new GameObject("World time - morning and night");
+            var worldTime = timeObject.AddComponent<WorldTimeController>();
+            var nightObject = new GameObject("Night tint - world only");
+            nightObject.transform.SetParent(cameraObject.transform, false);
+            var nightRenderer = nightObject.AddComponent<SpriteRenderer>();
+            nightRenderer.sprite = pixel;
+            nightRenderer.sortingOrder = 30000;
+            nightRenderer.color = Color.clear;
+            var nightOverlay = nightObject.AddComponent<WorldNightOverlay2D>();
+            SetReference(nightOverlay, "worldTime", worldTime);
+            SetReference(nightOverlay, "worldCamera", camera);
+            SetReference(nightOverlay, "artwork", nightRenderer);
 
             var ground = new GameObject("FirstDay - small ground");
             var groundRenderer = ground.AddComponent<SpriteRenderer>();
@@ -416,6 +429,7 @@ namespace Halka.Game.Editor
             SetReference(mapController, "grassOcclusion", grassOcclusion);
             SetReference(mapController, "cameraFollow", follow);
             SetReference(mapController, "worldCamera", camera);
+            SetReference(nightOverlay, "maps", mapController);
             SetReference(mover, "mapController", mapController);
 
             var areaObject = new GameObject("House area switch");
@@ -461,6 +475,8 @@ namespace Halka.Game.Editor
         [MenuItem("HALKA/Build WebGL for HP")]
         public static void BuildWeb()
         {
+            if (GameVersion.IsPreview)
+                throw new InvalidOperationException("Preview builds must not replace the public WebGL build");
             ConfigureProject();
             // The Scene is generated from Map JSON. Rebuild it on every release build so
             // edits made in the standalone editor cannot be shadowed by an older Scene.
@@ -499,6 +515,28 @@ namespace Halka.Game.Editor
             File.WriteAllText(gamePagePath, Regex.Replace(page, framePattern,
                 "$1?v=" + GameVersion.Value + "&build=" + buildId + "$2"));
             Debug.Log($"HALKA WebGL build succeeded: {output}");
+        }
+
+        [MenuItem("HALKA/Build ver3.0 Preview WebGL outside repository")]
+        public static void BuildPreviewWeb()
+        {
+            if (!GameVersion.IsPreview)
+                throw new InvalidOperationException("This build command is for Preview only");
+            ConfigureProject();
+            PrepareScene();
+            var output = Path.GetFullPath(Path.Combine(Application.dataPath,
+                "..", "..", "..", "HALKA_WORLD_ver3.0_PREVIEW"));
+            Directory.CreateDirectory(output);
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = new[] { ScenePath },
+                locationPathName = output,
+                target = BuildTarget.WebGL,
+                options = BuildOptions.None
+            });
+            if (report.summary.result != BuildResult.Succeeded)
+                throw new InvalidOperationException("Preview WebGL build failed: " + report.summary.result);
+            Debug.Log("HALKA ver3.0 Preview WebGL: " + output);
         }
 
         [MenuItem("HALKA/Refresh character sprites")]
@@ -615,7 +653,7 @@ namespace Halka.Game.Editor
         {
             PlayerSettings.companyName = "HALKA";
             PlayerSettings.productName = "HALKA WORLD";
-            PlayerSettings.bundleVersion = GameVersion.Value;
+            PlayerSettings.bundleVersion = GameVersion.ProductVersion;
             PlayerSettings.SplashScreen.show = false;
             PlayerSettings.SplashScreen.showUnityLogo = false;
             PlayerSettings.defaultScreenWidth = 960;

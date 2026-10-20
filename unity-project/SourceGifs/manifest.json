@@ -1,6 +1,6 @@
 {
   "front_idle": {
-    "source_sha256": "66ee78ff7fcd1991a6773ca08fabaf4393015475e60965a3e6dcc28da881283c",
+    "source_sha256": "128d9650646dfcb10708bed7980e0a1282d99ccc8922714f8f7e6b59accf0368",
     "size": [
       64,
       64
@@ -12,7 +12,7 @@
     ]
   },
   "back_idle": {
-    "source_sha256": "37d4fc7a9944cb66ecca30dc1aa02aabe2e6c10c258d0ef4ad80233e94c7de8e",
+    "source_sha256": "069a1d285799985636fcfe407d8322a76008cddb16b2981f766fa8ab4181ead9",
     "size": [
       64,
       64
@@ -24,7 +24,7 @@
     ]
   },
   "left_idle": {
-    "source_sha256": "3e05cbde094c5ea5a43adb989bc87f1aa663b6a19c6fa6e88279991c7a56efac",
+    "source_sha256": "52d76a2a9e9c8d9cd8c1e6e0d1b8c5035dcd59922f2b4ff754cabf93c88788f5",
     "size": [
       64,
       64
@@ -36,7 +36,7 @@
     ]
   },
   "right_idle": {
-    "source_sha256": "10c98f09bde139e2c1c7924bb368af4158fabb4bcf6de849766a94f968f034c8",
+    "source_sha256": "1e0ce39c794745d6c04fd710f04ebd050257649a2f9503a143da15b282ff11ba",
     "size": [
       64,
       64
@@ -48,7 +48,7 @@
     ]
   },
   "walk_front": {
-    "source_sha256": "b0c7e8c7a5b71aed370e1f2a86c6c9adb8760e96604923c040126f6d67dbca86",
+    "source_sha256": "8e9507501848ab8ac6ebb1fdf1d807b71e71e16a3e66bf91b71dbc6724f3e32b",
     "size": [
       64,
       64
@@ -62,7 +62,7 @@
     ]
   },
   "walk_back": {
-    "source_sha256": "091e2202092f1444fbedfd09353dadbf67cfa2d4be2cc5604ab423817d2071de",
+    "source_sha256": "83a51de49366931edad7301fed6c1693ee2c6c0f18f567745202cfb77ae59180",
     "size": [
       64,
       64
@@ -76,7 +76,7 @@
     ]
   },
   "walk_left": {
-    "source_sha256": "635dadb1304a41fa749417d2c886a1252acd20820645e1c5080b72f3613f8610",
+    "source_sha256": "79bafa60e1472cdeaae0edf39b6d10c484384727e744fc6d78ef69b13c43c05f",
     "size": [
       64,
       64
@@ -90,7 +90,7 @@
     ]
   },
   "walk_right": {
-    "source_sha256": "ac115e7d1af1aafd9e24bb8f1fbca7e8c8943bdd6f5f5a65e9c0883d149483ae",
+    "source_sha256": "9923bb45fbdd86ea0531d96488c149fd0c9d4e5ed9c9d1fcff9224c71430adfe",
     "size": [
       64,
       64
@@ -104,7 +104,7 @@
     ]
   },
   "turn": {
-    "source_sha256": "017e3425800c1518b036bb5b70cf7316b8c000ca7dc83cb017c859e699beb7d6",
+    "source_sha256": "321f2c0600e88936e57d2df1baae700c8d0f300d9481309bb7270e8a9b96cd3b",
     "size": [
       64,
       64
@@ -118,7 +118,7 @@
     ]
   },
   "front_jump": {
-    "source_sha256": "af78ba686d6456b53322b66a1187372bb7945ff3da9936e9c872541d5543cc87",
+    "source_sha256": "7ecb91153a69d21ab3782dc0806320fcf1db4b6899bc46fd4fa1cc37c914f324",
     "size": [
       62,
       87
