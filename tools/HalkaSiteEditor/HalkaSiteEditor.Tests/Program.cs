@@ -566,14 +566,19 @@ var v8 = SiteSession.Load(sandbox);
 var news = v8.News ?? throw new Exception("うれしいこと欄が読めません");
 var clubUpdate = v8.ClubUpdate ?? throw new Exception("くらぶの更新内容が読めません");
 
+// 件数も並び順もサイト側で増えるので、いまの中身から確かめます。
+var newsCount = news.Items.Count;
+var takenoko = news.Items.FirstOrDefault(item => item.Title.Contains("竹取オーバナイト"))
+    ?? throw new Exception("うれしいことの竹取の件が見つかりません");
+var compi = news.Items.FirstOrDefault(item => item.Achievements.Contains("コンピCD"))
+    ?? throw new Exception("うれしいことのコンピCDの件が見つかりません");
+
 Check("うれしいことを読み取れる",
-    news.Items.Count == 3 &&
-    news.Items[0].Date == "2/21投稿" &&
-    news.Items[0].Title.Contains("竹取オーバナイト") &&
-    news.Items[0].Description.Contains("ボカコレ") &&
-    news.Items[0].Achievements.Contains("超かぐや姫！賞"));
-Check("説明が無い件も読める",
-    news.Items[1].Description == "" && news.Items[1].Achievements.Contains("コンピCD"));
+    newsCount >= 3 &&
+    takenoko.Date == "2/21投稿" &&
+    takenoko.Description.Contains("ボカコレ") &&
+    takenoko.Achievements.Contains("超かぐや姫！賞"));
+Check("説明が無い件も読める", compi.Description == "");
 Check("HTMLの印は画面に出さない",
     news.Items.All(item => !item.Title.Contains("<") && !item.Achievements.Contains("<mark>")));
 Check("読んだだけなら1文字も変わらない", news.Rebuild() == File.ReadAllText(Path.Combine(sandbox, "index.html")));
@@ -591,7 +596,7 @@ Check("追加が変更一覧に出る",
     v8.Changes().Any(row => row.Label.Contains("うれしいこと：追加") && row.After == "ためしのお知らせ"));
 
 news.Move(addedNews, -1);
-Check("並べ替えられる", news.Items[2] == addedNews);
+Check("並べ替えられる", news.Items[newsCount - 1] == addedNews);
 
 clubUpdate.Text = "・ページ作成\n・ステムを追加";
 Check("くらぶの更新内容を増やせる", clubUpdate.Changed &&
@@ -602,10 +607,10 @@ v8.Save();
 var newsSession = SiteSession.Load(sandbox);
 var newsAfter = newsSession.News!;
 Check("書いたお知らせが読み直せる",
-    newsAfter.Items.Count == 4 &&
-    newsAfter.Items[2].Title == "ためしのお知らせ" &&
-    newsAfter.Items[2].Achievements == "ためし賞　受賞\nもうひとつ" &&
-    newsAfter.Items[2].Description == "");
+    newsAfter.Items.Count == newsCount + 1 &&
+    newsAfter.Items[newsCount - 1].Title == "ためしのお知らせ" &&
+    newsAfter.Items[newsCount - 1].Achievements == "ためし賞　受賞\nもうひとつ" &&
+    newsAfter.Items[newsCount - 1].Description == "");
 Check("保存後も組み立て直しで1文字も変わらない",
     newsAfter.Rebuild() == File.ReadAllText(Path.Combine(sandbox, "index.html")));
 Check("くらぶの更新内容が読み直せる", newsSession.ClubUpdate!.Text == "・ページ作成\n・ステムを追加");
@@ -619,7 +624,7 @@ shrink.News.Items.Remove(remove);
 Check("削除が変更一覧に出る",
     shrink.Changes().Any(row => row.Label.Contains("削除") && row.Before == "ためしのお知らせ"));
 shrink.Save();
-Check("消すと元の件数に戻る", SiteSession.Load(sandbox).News!.Items.Count == 3);
+Check("消すと元の件数に戻る", SiteSession.Load(sandbox).News!.Items.Count == newsCount);
 
 // リンクの編集と同じファイルを触るので、両方残ること。
 var together = SiteSession.Load(sandbox);
