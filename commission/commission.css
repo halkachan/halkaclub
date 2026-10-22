@@ -224,6 +224,15 @@
   margin: 0;
 }
 
+/* 基本金額（説明のいちばん上に、ひとつまみの札で） */
+.plan-base {
+  display: inline-block;
+  padding: 2px 14px;
+  background: var(--yellow);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+}
+
 .plan-block {
   padding: 16px 18px;
   background: rgba(255, 220, 24, 0.14);

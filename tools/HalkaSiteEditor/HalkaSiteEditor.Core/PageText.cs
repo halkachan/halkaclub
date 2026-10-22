@@ -164,7 +164,7 @@ public sealed class PageTextDocument
             @"<pre class=""template-text"" id=""request-template-text"">(?<raw>[\s\S]*?)</pre>" +
             @"|(?<ul><ul class=""(?:dot-list|caution-list|quote-list[^""]*)"">)(?<ulInner>[\s\S]*?)</ul>" +
             @"|(?<cp><h1>|<h2 id=""[^""]*"">|<h4 class=""plan-block-title"">|<span class=""plan-name"">|<span class=""plan-option-note"">" +
-            @"|<p class=""(?:request-lead|note-lead|note-strong|plan-sub-note|template-intro|template-note|payment-en)"">)" +
+            @"|<p class=""(?:request-lead|note-lead|note-strong|plan-sub-note|plan-base|template-intro|template-note|payment-en)"">)" +
             @"(?<cpInner>[\s\S]*?)</(?:h1|h2|h4|span|p)>" +
             @"|(?<run>(?:[ \t]*<p>(?:(?!</p>)[\s\S])*</p>\r?\n)+)",
             RegexOptions.CultureInvariant),
@@ -178,6 +178,7 @@ public sealed class PageTextDocument
         {
             "plan-name" => "項目の名前",
             "plan-option-note" => "追加プランの補足",
+            "plan-base" => "基本金額",
             "h1" or "h2" => "見出し",
             // plan-block-title は、その見出しそのものを名前に使うので null のままにします。
             "request-lead" => "リード文",
