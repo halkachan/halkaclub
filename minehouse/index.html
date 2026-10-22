@@ -37,11 +37,11 @@
 
         <section class="game-page" aria-labelledby="game-title">
           <h1 id="game-title">みねはうす</h1>
-          <p class="game-current-version">v0.8（試験公開）</p>
+          <p class="game-current-version">v0.9（試験公開）</p>
 
           <!-- ゲーム本体は webgl/（Unity の Web ビルド）。?debug=1 を付けて開くと診断表示が出ます。 -->
           <div class="minehouse-frame" id="minehouse-frame">
-            <iframe id="minehouse-game" src="webgl/?v=0.8.0" title="みねはうす（ゲーム画面）" allow="fullscreen; clipboard-write" loading="eager"></iframe>
+            <iframe id="minehouse-game" src="webgl/?v=0.9.0" title="みねはうす（ゲーム画面）" allow="fullscreen; clipboard-write" loading="eager"></iframe>
           </div>
 
           <div class="game-tools">
@@ -59,7 +59,7 @@
 
           <p class="game-controls">いす（3種類）・本棚・はこも買えます（いすとはこは飾りです）。本棚を置くと、ときどき寝転んで本を読むようになります。模様替え中に家具を選んで「色」を押すと、ひまわり・ミント・いちごの色に変えられます（無料）。</p>
 
-          <p class="game-controls">ゲーム右上の「おもいで」は、リンとレンの思い出の図鑑です。はじめて見た思い出が図鑑にのって、5コインもらえます。それぞれ何回あったかも記録されます（このブラウザの中だけに保存されます）。</p>
+          <p class="game-controls">ゲーム右上の「おもいで」は、リンとレンの思い出の図鑑です。はじめて見た思い出が図鑑にのって、5コインもらえます。それぞれ何回あったかも記録されます（このブラウザの中だけに保存されます）。まだ見ていない思い出は、カードを選んで「ヒントを見る」で探せます。遊び方は、ゲーム右上の「？ 遊び方」でいつでも見られます。</p>
 
           <p class="game-credit">
             この作品は、<a href="https://piapro.jp/license/pcl/summary" target="_blank" rel="noopener">ピアプロ・キャラクター・ライセンス</a>に基づいてクリプトン・フューチャー・メディア株式会社のキャラクター「鏡音リン」「鏡音レン」を描いたものです。<br />
@@ -79,7 +79,7 @@
         var button = document.getElementById("minehouse-fullscreen");
 
         // the browser check panel of the game (development use): /minehouse/?debug=1
-        if (/(?:^|[?&])debug=1(?:&|$)/.test(location.search)) game.src = "webgl/?v=0.8.0&debug=1";
+        if (/(?:^|[?&])debug=1(?:&|$)/.test(location.search)) game.src = "webgl/?v=0.9.0&debug=1";
 
         // full screen: the game frame fills the screen; where a page element cannot go full screen
         // (iPhone Safari), the game opens on its own page, which already fills the window
