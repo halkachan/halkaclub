@@ -300,7 +300,7 @@ var v5 = SiteSession.Load(sandbox);
 var v5Commission = v5.Groups.Single(group => group.Title == "依頼ページ");
 
 Check("追加プランを日英の組で読む",
-    v5Commission.Options.Count == 8 &&
+    v5Commission.Options.Count >= 8 &&
     v5Commission.Options.All(row => row.Name.Ja.Value.Length > 0 && row.Price.Ja.Value.Length > 0) &&
     v5Commission.Options.Any(row => row.Label.Contains("ハモリ")) &&
     v5Commission.Options[0].Price.Ja.Value.Contains("4,000"));

@@ -289,6 +289,14 @@
   content: "・";
 }
 
+/* 追加プランの補足（名前と金額の下に、小さく1行） */
+.plan-option-note {
+  flex-basis: 100%;
+  padding-left: 1em;
+  color: var(--pencil);
+  font-size: 13px;
+}
+
 .plan-option-price {
   padding: 1px 12px;
   background: var(--yellow);
