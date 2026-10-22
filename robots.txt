@@ -2,5 +2,8 @@ User-agent: *
 Allow: /
 Disallow: /club/
 Disallow: /utamaze/
+Disallow: /utamaze/legal/
+Disallow: /utamaze/eula/
+Disallow: /utamaze/privacy/
 
 Sitemap: https://halkaclub.com/sitemap.xml
