@@ -272,7 +272,7 @@ namespace Halka.Poc2D3D
                 BuildWalls(world);
                 return;
             }
-            var interior = catalog.Interior;
+            var interior = catalog.InteriorFor(world.MapId);
             if (world.IsInterior && interior != null && interior.IsComplete)
             {
                 Interior = PocInteriorBuilder.Build(world, interior, catalog.VertexColorMaterial, mapRoot, views);

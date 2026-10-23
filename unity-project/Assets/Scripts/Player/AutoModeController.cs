@@ -106,8 +106,7 @@ namespace Halka.Game.Player
             }
             if (!AutoEnabled || menuSuspended || !world.HasPlayer || world.PlayerMovementLocked ||
                 world.HasActiveMessage ||
-                mapId != "first_field" && mapId != "halka_house" ||
-                mapId == "halka_house" && !world.HasMapRegistry)
+                mapId != "first_field" && !IsIndoorMap(world, mapId))
             {
                 if (world.HasActiveMessage) RecordUserAction(now);
                 else if (Active) StopAuto();
@@ -124,7 +123,7 @@ namespace Halka.Game.Player
             if (world.PlayerIsMoving || now < nextActionAt) return;
             if (routeIndex >= route.Count)
             {
-                if (mapId == "halka_house") PlanIndoorRoute();
+                if (IsIndoorMap(world, mapId)) PlanIndoorRoute(mapId);
                 else PlanOutdoorRoute();
                 routeIndex = 0;
                 if (route.Count == 0)
@@ -143,7 +142,7 @@ namespace Halka.Game.Player
                 return;
             }
             if (routeIndex >= route.Count)
-                nextActionAt = now + (mapId == "halka_house"
+                nextActionAt = now + (IsIndoorMap(world, mapId)
                     ? Random.Range(1f, 4f) : Random.Range(1.5f, 3.5f));
         }
 
@@ -165,11 +164,21 @@ namespace Halka.Game.Player
             }
         }
 
-        private void PlanIndoorRoute()
+        // ver3.1: AUTO walks in every interior map of the registry (the house, the sound booth)
+        // with the same planner; it never steps onto a door or an exit (CanAutoEnter).
+        private static bool IsIndoorMap(IAutoModeWorld world, string mapId)
+        {
+            if (mapId == "halka_house") return world.HasMapRegistry;
+            if (!world.HasMapRegistry || string.IsNullOrEmpty(mapId) || mapId == "first_field") return false;
+            try { return world.GetMap(mapId) is MapDefinition map && map.MapType == "interior"; }
+            catch (System.ArgumentException) { return false; }
+        }
+
+        private void PlanIndoorRoute(string mapId)
         {
             route.Clear();
             var world = World;
-            var room = world.GetMap("halka_house");
+            var room = world.GetMap(mapId);
             var destinations = IndoorAutoRoutePlanner2D.CollectDestinations(
                 room, world.PlayerCell, previousIndoorGoal, CanAutoEnter);
             while (destinations.Count > 0)
@@ -191,11 +200,13 @@ namespace Halka.Game.Player
             var mapId = world.HasMapRegistry ? world.ActiveMapId : "first_field";
             if (mapId == "first_field" && world.HasHouse && cell == world.HouseDoorCell)
                 return false;
-            if (mapId == "halka_house")
+            if (IsIndoorMap(world, mapId))
             {
-                var room = world.GetMap("halka_house");
+                // ver3.1: a room's own door Object (the sound booth in the house) is also a door.
+                var room = world.GetMap(mapId);
                 if (!room.Contains(cell) ||
-                    room.TryGetMarker("interior_exit", out var exit) && cell == exit)
+                    room.TryGetMarker("interior_exit", out var exit) && cell == exit ||
+                    room.TryGetHouseRoot(out var innerDoor) && cell == innerDoor)
                     return false;
             }
             else if (mapId != "first_field") return false;

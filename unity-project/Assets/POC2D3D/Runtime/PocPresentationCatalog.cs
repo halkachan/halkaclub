@@ -80,6 +80,10 @@ namespace Halka.Poc2D3D
         public GameObject doorwayUpper;
         [Tooltip("Height of the wall base that stays visible when a wall is cut away.")]
         public float wallBaseHeight = 0.14f;
+        // ver3.1: which map these pieces dress (empty: the default set, the house) and the wall
+        // Surface they stand for.
+        public string mapId = "";
+        public string wallDefinitionId = "house_wall";
 
         public bool IsComplete => floorTiles.Count > 0 && floorTiles.TrueForAll(t => t != null) &&
             wallBase != null && wallUpper != null && doorwayBase != null && doorwayUpper != null;
@@ -170,6 +174,18 @@ namespace Halka.Poc2D3D
         public void ConfigurePlayer(PocActorPresentation presentation) => player = presentation;
         public PocInteriorPresentation Interior => interior;
         public void ConfigureInterior(PocInteriorPresentation presentation) => interior = presentation;
+        // ver3.1: interior pieces for other rooms (the sound booth), chosen by Map ID.
+        [SerializeField] private List<PocInteriorPresentation> roomInteriors = new List<PocInteriorPresentation>();
+        public IReadOnlyList<PocInteriorPresentation> RoomInteriors => roomInteriors;
+        public void ConfigureRoomInteriors(List<PocInteriorPresentation> presentations) =>
+            roomInteriors = presentations ?? new List<PocInteriorPresentation>();
+
+        public PocInteriorPresentation InteriorFor(string mapId)
+        {
+            foreach (var room in roomInteriors)
+                if (room != null && room.mapId == mapId && room.IsComplete) return room;
+            return interior;
+        }
 
         public void Configure(GameObject player, Material vertexColor, Material overlay,
             List<PocPresentationBinding> entries, PocEnvironmentPresentation dressing = null)

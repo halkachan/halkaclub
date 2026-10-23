@@ -70,8 +70,12 @@ namespace Halka.Poc2D3D
             var pixelMode = views == null || views.Mode == PocViewMode.PixelView2D;
             // Same target alpha function as the shipped 2D overlay (outdoor 0.33, indoor 0.16).
             PixelOverlayAlpha = pixelMode ? blend * WorldNightOverlay2D.TargetAlpha(WorldPhase.Night, mapId) : 0f;
-            var lightNight = pixelMode ? 0f : blend;
-            var indoor = mapId == "halka_house";
+            // ver3.1: every interior map is indoors (the house, the sound booth); the booth's lamps
+            // keep most of its light at night (the same share as its 2D overlay: 0.08 of 0.16).
+            var indoor = session != null && session.World != null ? session.World.IsInterior : mapId == "halka_house";
+            var lampShare = mapId == WorldNightOverlay2D.SoundBoothMapId
+                ? WorldNightOverlay2D.SoundBoothNightAlpha / WorldNightOverlay2D.IndoorNightAlpha : 1f;
+            var lightNight = (pixelMode ? 0f : blend) * lampShare;
             if (sun != null)
             {
                 sun.color = Color.Lerp(new Color(1f, 0.96f, 0.88f), new Color(0.55f, 0.62f, 1f), lightNight);

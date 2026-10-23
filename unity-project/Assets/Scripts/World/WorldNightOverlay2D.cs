@@ -10,6 +10,9 @@ namespace Halka.Game.World
         public const float FadeSeconds = 2.5f;
         public const float OutdoorNightAlpha = 0.33f;
         public const float IndoorNightAlpha = 0.16f;
+        // ver3.1: the sound booth has its own lamps and no window, so night dims it only a little.
+        public const string SoundBoothMapId = "halka_soundbooth";
+        public const float SoundBoothNightAlpha = 0.08f;
 
         [SerializeField] private WorldTimeController worldTime;
         [SerializeField] private MapWorldController2D maps;
@@ -26,7 +29,8 @@ namespace Halka.Game.World
         public float DisplayedAlpha => displayedAlpha;
         public static float TargetAlpha(WorldPhase phase, string mapId) =>
             phase == WorldPhase.Morning ? 0f :
-            mapId == "halka_house" ? IndoorNightAlpha : OutdoorNightAlpha;
+            mapId == "halka_house" ? IndoorNightAlpha :
+            mapId == SoundBoothMapId ? SoundBoothNightAlpha : OutdoorNightAlpha;
 
         private void LateUpdate()
         {

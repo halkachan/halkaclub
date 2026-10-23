@@ -325,7 +325,9 @@ namespace Halka.Game.Editor
                 }
                 var examine = entry.actionPoints.FirstOrDefault(point => point.actionType == "examine");
                 serialized.FindProperty("examineMessage").stringValue = examine?.interactionText ?? "";
-                serialized.FindProperty("behavior").enumValueIndex = entry.definitionId == "house_main"
+                // ver3.1: the sound booth in the house is a door into its own map, like the house.
+                serialized.FindProperty("behavior").enumValueIndex =
+                    entry.definitionId == "house_main" || entry.definitionId == "soundbooth_exterior"
                     ? (int)WorldObjectBehavior.HouseTransition
                     : examine != null && sprite != null ? (int)WorldObjectBehavior.Examine : (int)WorldObjectBehavior.None;
                 if (entry.definitionId == "house_main" || entry.definitionId == "bed_basic")

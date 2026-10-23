@@ -117,7 +117,7 @@ namespace Halka.Poc2D3D
                 renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 var view = upper.AddComponent<PocObjectView>();
                 view.InstanceId = "wall_" + side;
-                view.DefinitionId = "house_wall";
+                view.DefinitionId = string.IsNullOrEmpty(dressing.wallDefinitionId) ? "house_wall" : dressing.wallDefinitionId;
                 view.IsWall = true;
                 view.WallOutward = SideNormal(side);
                 view.CameraOccluder = true;

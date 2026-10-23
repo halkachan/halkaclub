@@ -1,0 +1,57 @@
+[
+  {
+    "sprite": "soundbooth_exterior",
+    "model": "soundbooth_exterior",
+    "width": 64,
+    "height": 128,
+    "pitch": 50.0,
+    "renderSize": [
+      512,
+      784
+    ]
+  },
+  {
+    "sprite": "dtm_desk_large",
+    "model": "dtm_desk_large",
+    "width": 128,
+    "height": 80,
+    "pitch": 50.0,
+    "renderSize": [
+      1024,
+      490
+    ]
+  },
+  {
+    "sprite": "illust_desk_tablet",
+    "model": "illust_desk_tablet",
+    "width": 64,
+    "height": 64,
+    "pitch": 50.0,
+    "renderSize": [
+      512,
+      392
+    ]
+  },
+  {
+    "sprite": "booth_floor",
+    "model": "booth_floor_a",
+    "width": 32,
+    "height": 32,
+    "pitch": 90.0,
+    "renderSize": [
+      256,
+      256
+    ]
+  },
+  {
+    "sprite": "booth_wall",
+    "model": "booth_wall_upper",
+    "width": 32,
+    "height": 32,
+    "pitch": 90.0,
+    "renderSize": [
+      256,
+      256
+    ]
+  }
+]

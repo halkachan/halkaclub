@@ -1,0 +1,370 @@
+{
+  "generator": "blender/scripts/build_v31_studio.py",
+  "blenderVersion": "5.2.0 LTS",
+  "units": "1 Blender unit = 1 Unity unit, 1 cell = 0.5, origin = ground centre of the root cell",
+  "export": {
+    "format": "FBX 7.4 binary",
+    "axisForward": "-Z",
+    "axisUp": "Y",
+    "bakeSpaceTransform": true,
+    "colors": "SRGB face-corner attribute 'Col'",
+    "material": "HALKA_VertexColor (1 slot)"
+  },
+  "approval": "pending: new ver3.1 designs, not approved by the user yet",
+  "interiorWallHeight": 1.2,
+  "interiorWallBase": 0.14,
+  "models": [
+    {
+      "family": "soundbooth_exterior",
+      "name": "soundbooth_exterior",
+      "blend": "blender/sources/v31/soundbooth_exterior.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V31/soundbooth_exterior.fbx",
+      "triangles": 204,
+      "vertices": 136,
+      "materials": 1,
+      "parts": {
+        "soundbooth_exterior": {
+          "triangles": 204,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.247,
+        -0.241,
+        0.0
+      ],
+      "boundsMax": [
+        0.747,
+        0.747,
+        1.115
+      ],
+      "anchors": {
+        "DoorAnchor": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "supplemented": [
+        "new design for ver3.1 (no sprite to follow)",
+        "back and sides plain"
+      ]
+    },
+    {
+      "family": "soundbooth_interior",
+      "name": "booth_floor_a",
+      "blend": "blender/sources/v31/soundbooth_interior.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V31/booth_floor_a.fbx",
+      "triangles": 2,
+      "vertices": 4,
+      "materials": 1,
+      "parts": {
+        "booth_floor_a": {
+          "triangles": 2,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.25,
+        -0.25,
+        0.0
+      ],
+      "boundsMax": [
+        0.25,
+        0.25,
+        0.0
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.1",
+        "foam panels on every face of a wall cell"
+      ]
+    },
+    {
+      "family": "soundbooth_interior",
+      "name": "booth_floor_b",
+      "blend": "blender/sources/v31/soundbooth_interior.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V31/booth_floor_b.fbx",
+      "triangles": 2,
+      "vertices": 4,
+      "materials": 1,
+      "parts": {
+        "booth_floor_b": {
+          "triangles": 2,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.25,
+        -0.25,
+        0.0
+      ],
+      "boundsMax": [
+        0.25,
+        0.25,
+        0.0
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.1",
+        "foam panels on every face of a wall cell"
+      ]
+    },
+    {
+      "family": "soundbooth_interior",
+      "name": "booth_wall_base",
+      "blend": "blender/sources/v31/soundbooth_interior.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V31/booth_wall_base.fbx",
+      "triangles": 12,
+      "vertices": 8,
+      "materials": 1,
+      "parts": {
+        "booth_wall_base": {
+          "triangles": 12,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.25,
+        -0.25,
+        0.0
+      ],
+      "boundsMax": [
+        0.25,
+        0.25,
+        0.14
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.1",
+        "foam panels on every face of a wall cell"
+      ]
+    },
+    {
+      "family": "soundbooth_interior",
+      "name": "booth_wall_upper",
+      "blend": "blender/sources/v31/soundbooth_interior.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V31/booth_wall_upper.fbx",
+      "triangles": 60,
+      "vertices": 104,
+      "materials": 1,
+      "parts": {
+        "booth_wall_upper": {
+          "triangles": 60,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.256,
+        -0.256,
+        0.14
+      ],
+      "boundsMax": [
+        0.256,
+        0.256,
+        1.2
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.1",
+        "foam panels on every face of a wall cell"
+      ]
+    },
+    {
+      "family": "soundbooth_interior",
+      "name": "booth_doorway_base",
+      "blend": "blender/sources/v31/soundbooth_interior.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V31/booth_doorway_base.fbx",
+      "triangles": 38,
+      "vertices": 28,
+      "materials": 1,
+      "parts": {
+        "booth_doorway_base": {
+          "triangles": 38,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.25,
+        -0.25,
+        0.0
+      ],
+      "boundsMax": [
+        0.25,
+        0.25,
+        0.14
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.1",
+        "foam panels on every face of a wall cell"
+      ]
+    },
+    {
+      "family": "soundbooth_interior",
+      "name": "booth_doorway_upper",
+      "blend": "blender/sources/v31/soundbooth_interior.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V31/booth_doorway_upper.fbx",
+      "triangles": 96,
+      "vertices": 64,
+      "materials": 1,
+      "parts": {
+        "booth_doorway_upper": {
+          "triangles": 96,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.25,
+        -0.25,
+        0.0
+      ],
+      "boundsMax": [
+        0.25,
+        0.25,
+        1.2
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.1",
+        "foam panels on every face of a wall cell"
+      ]
+    },
+    {
+      "family": "dtm_desk_large",
+      "name": "dtm_desk_large",
+      "blend": "blender/sources/v31/dtm_desk_large.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V31/dtm_desk_large.fbx",
+      "triangles": 936,
+      "vertices": 592,
+      "materials": 1,
+      "parts": {
+        "dtm_desk_large": {
+          "triangles": 576,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "monitor_speaker_L": {
+          "triangles": 180,
+          "materials": 1,
+          "pivot": [
+            0.13,
+            0.04,
+            0.41
+          ]
+        },
+        "monitor_speaker_R": {
+          "triangles": 180,
+          "materials": 1,
+          "pivot": [
+            1.37,
+            0.04,
+            0.41
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.22,
+        -0.2,
+        0.0
+      ],
+      "boundsMax": [
+        1.72,
+        0.2,
+        0.74
+      ],
+      "anchors": {
+        "WorkAnchor": [
+          0.75,
+          -0.45,
+          0.0
+        ]
+      },
+      "supplemented": [
+        "new design for ver3.1",
+        "speaker backs plain",
+        "interface knobs simplified"
+      ]
+    },
+    {
+      "family": "illust_desk_tablet",
+      "name": "illust_desk_tablet",
+      "blend": "blender/sources/v31/illust_desk_tablet.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V31/illust_desk_tablet.fbx",
+      "triangles": 192,
+      "vertices": 136,
+      "materials": 1,
+      "parts": {
+        "illust_desk_tablet": {
+          "triangles": 192,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.22,
+        -0.17,
+        0.0
+      ],
+      "boundsMax": [
+        0.72,
+        0.17,
+        0.5618
+      ],
+      "anchors": {
+        "WorkAnchor": [
+          0.0,
+          -0.45,
+          0.0
+        ]
+      },
+      "supplemented": [
+        "new design for ver3.1",
+        "stand simplified to two legs"
+      ]
+    }
+  ]
+}

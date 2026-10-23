@@ -16,8 +16,10 @@ namespace Halka.Poc2D3D.EditorTools
         // Phase 5: はるかわーるど ver3.0 Release Candidate 1, outside the repository. The game sits
         // at halkaworld/webgl/ (the public site's path) below a staging copy of the game page.
         // Phase 6: RC2 in its own folder (RC1 is kept as it is). Phase 7: RC3 (RC1 and RC2 kept).
-        public const string ReleaseCandidateFolderName = "HARUKA_WORLD_ver3.0_RC3";
-        public const string ReleaseCandidateKit = "rc3";
+        // ver3.1: a local check build in its own folder (RC3 = the published ver3.0 is kept as it
+        // is); the kit has no publishing files.
+        public const string ReleaseCandidateFolderName = "HARUKA_WORLD_ver3.1_LOCAL";
+        public const string ReleaseCandidateKit = "v31";
         public const string ReleaseCandidateGamePath = "halkaworld/webgl";
 
         public static string ReleaseCandidatePath =>
@@ -93,7 +95,7 @@ namespace Halka.Poc2D3D.EditorTools
                 ", exceptions " + PlayerSettings.WebGL.exceptionSupport + ", data caching " + PlayerSettings.WebGL.dataCaching +
                 ", hashed file names " + PlayerSettings.WebGL.nameFilesAsHashes + ", template " + PlayerSettings.WebGL.template +
                 ", splash " + PlayerSettings.SplashScreen.show + "\n");
-            Debug.Log($"HALKA RC3 WebGL: {output} build {build} ({report.summary.totalSize} bytes, {report.summary.totalTime})");
+            Debug.Log($"HALKA ver3.1 WebGL: {output} build {build} ({report.summary.totalSize} bytes, {report.summary.totalTime})");
         }
 
         // Like the public page's build= value: changes whenever the code or data files change.

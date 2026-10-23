@@ -60,17 +60,19 @@ namespace Halka.Poc2D3D.EditorTools
                 var holder = Open(out var c);
                 try
                 {
-                    FootstepChecks(c);
-                    Grass2DChecks(c);
-                    SeatChecks(c);
-                    RoomChecks(c);
-                    Outline3DChecks(c);
-                    LineBoilChecks(c);
-                    MenuChecks(c);
-                    CrowChecks(c);
-                    CameraChecks(c);
-                    MobileChecks(c);
-                    SessionSaveChecks(c);
+                    // ver3.1: a section that throws counts as a failure and the next sections still
+                    // run (before, one exception ended the whole run). No check is removed or changed.
+                    Section("footsteps", () => FootstepChecks(c));
+                    Section("grass 2D", () => Grass2DChecks(c));
+                    Section("seats", () => SeatChecks(c));
+                    Section("room", () => RoomChecks(c));
+                    Section("outline 3D", () => Outline3DChecks(c));
+                    Section("line boil", () => LineBoilChecks(c));
+                    Section("menu", () => MenuChecks(c));
+                    Section("crow", () => CrowChecks(c));
+                    Section("camera", () => CameraChecks(c));
+                    Section("mobile", () => MobileChecks(c));
+                    Section("session save", () => SessionSaveChecks(c));
                 }
                 finally
                 {
@@ -605,6 +607,16 @@ namespace Halka.Poc2D3D.EditorTools
             Check("sofa: a 64 x 48 sprite for the 2D game and the map editor (point-sampled, 64 px per unit)",
                 sofaSprite != null && sofaSprite.texture.width == 64 && sofaSprite.texture.height == 48 &&
                 sofaSprite.texture.filterMode == FilterMode.Point && Mathf.Approximately(sofaSprite.pixelsPerUnit, 64f));
+        }
+
+        private static void Section(string name, Action checks)
+        {
+            try { checks(); }
+            catch (Exception exception)
+            {
+                Check("section " + name + " ran to its end (no exception)", false, exception.GetType().Name + ": " + exception.Message);
+                Debug.LogException(exception);
+            }
         }
 
         // ---------------------------------------------------------------- the room: mic, easel

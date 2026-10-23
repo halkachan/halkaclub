@@ -383,22 +383,6 @@
       }
     },
     {
-      "instanceId": "obj_recording_mic_v30_preview",
-      "definitionId": "recording_mic_basic",
-      "rootCell": {
-        "x": 4,
-        "y": -1
-      }
-    },
-    {
-      "instanceId": "obj_art_easel_v30_preview",
-      "definitionId": "art_easel_basic",
-      "rootCell": {
-        "x": -3,
-        "y": -2
-      }
-    },
-    {
       "instanceId": "obj_studio_shelf_v30_preview",
       "definitionId": "studio_shelf_basic",
       "rootCell": {
@@ -412,6 +396,22 @@
       "rootCell": {
         "x": 4,
         "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_soundbooth_v31_halka_house",
+      "definitionId": "soundbooth_exterior",
+      "rootCell": {
+        "x": -3,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_illust_desk_v31_halka_house",
+      "definitionId": "illust_desk_tablet",
+      "rootCell": {
+        "x": -3,
+        "y": -2
       }
     }
   ],

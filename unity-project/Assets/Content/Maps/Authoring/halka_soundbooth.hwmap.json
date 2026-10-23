@@ -1,0 +1,474 @@
+{
+  "format": "halka-world-map",
+  "formatVersion": 4,
+  "mapId": "halka_soundbooth",
+  "displayName": "防音室",
+  "mapType": "interior",
+  "baseSurfaceDefinitionId": "booth_floor",
+  "grassMode": "none",
+  "backdropColor": "#0c0c10",
+  "bounds": {
+    "minX": -7,
+    "maxX": 7,
+    "minY": -5,
+    "maxY": 5
+  },
+  "surfaces": [
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -7,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -6,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -5,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -4,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -3,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -2,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -1,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 1,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 2,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 3,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 4,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 5,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 6,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 7,
+        "y": -5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -7,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 7,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -7,
+        "y": -3
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 7,
+        "y": -3
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -7,
+        "y": -2
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 7,
+        "y": -2
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -7,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 7,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -7,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 7,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -7,
+        "y": 1
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 7,
+        "y": 1
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -7,
+        "y": 2
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 7,
+        "y": 2
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -7,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 7,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -7,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -6,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -5,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -4,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -3,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -2,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -1,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 0,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 1,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 2,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 3,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 4,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 5,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 6,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 7,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -7,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -6,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -5,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -4,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -3,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -2,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -1,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 0,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 1,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 2,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 3,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 4,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 5,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 6,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 7,
+        "y": 5
+      }
+    }
+  ],
+  "objects": [
+    {
+      "instanceId": "obj_dtm_desk_v31_soundbooth",
+      "definitionId": "dtm_desk_large",
+      "rootCell": {
+        "x": -2,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_recording_mic_v31_soundbooth",
+      "definitionId": "recording_mic_basic",
+      "rootCell": {
+        "x": 4,
+        "y": 1
+      }
+    }
+  ],
+  "markers": [
+    {
+      "id": "interior_entry",
+      "cell": {
+        "x": 0,
+        "y": -4
+      }
+    },
+    {
+      "id": "interior_exit",
+      "cell": {
+        "x": 0,
+        "y": -5
+      }
+    }
+  ],
+  "entitySpawns": [],
+  "areaTransitions": []
+}
