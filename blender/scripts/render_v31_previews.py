@@ -31,7 +31,7 @@ PIXELS_PER_UNIT = 64  # catalog sprites: 32 px per 0.5 cell
 SUPER = 8
 # sprite name -> (model, width px, height px, left x, front y of the footprint, pitch)
 SPRITE_SPECS = {
-    "soundbooth_exterior": ("soundbooth_exterior", 64, 128, -0.25, -0.25, PITCH),
+    "soundbooth_exterior": ("soundbooth_exterior", 96, 160, -0.75, -0.25, PITCH),
     "dtm_desk_large": ("dtm_desk_large", 128, 80, -0.25, -0.25, PITCH),
     "illust_desk_tablet": ("illust_desk_tablet", 64, 64, -0.25, -0.25, PITCH),
     "booth_floor": ("booth_floor_a", 32, 32, -0.25, -0.25, 90.0),

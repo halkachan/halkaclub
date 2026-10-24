@@ -19,12 +19,12 @@
       "name": "soundbooth_exterior",
       "blend": "blender/sources/v31/soundbooth_exterior.blend",
       "fbx": "unity-project/Assets/POC2D3D/Models/V31/soundbooth_exterior.fbx",
-      "triangles": 204,
-      "vertices": 136,
+      "triangles": 228,
+      "vertices": 152,
       "materials": 1,
       "parts": {
         "soundbooth_exterior": {
-          "triangles": 204,
+          "triangles": 228,
           "materials": 1,
           "pivot": [
             0.0,
@@ -34,14 +34,14 @@
         }
       },
       "boundsMin": [
-        -0.247,
+        -0.747,
         -0.241,
         0.0
       ],
       "boundsMax": [
         0.747,
-        0.747,
-        1.115
+        1.267,
+        1.155
       ],
       "anchors": {
         "DoorAnchor": [

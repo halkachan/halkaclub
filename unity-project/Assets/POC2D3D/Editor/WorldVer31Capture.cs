@@ -39,9 +39,16 @@ namespace Halka.Poc2D3D.EditorTools
             WorldObjectDefinition Def(string id) => AssetDatabase.FindAssets("t:WorldObjectDefinition")
                 .Select(g => AssetDatabase.LoadAssetAtPath<WorldObjectDefinition>(AssetDatabase.GUIDToAssetPath(g)))
                 .First(d => d != null && d.StableId == id);
-            var objects = house.Objects.Where(o => o.Definition.StableId != "soundbooth_exterior" && o.Definition.StableId != "illust_desk_tablet").ToList();
-            objects.Insert(2, new WorldObjectPlacement { InstanceId = "obj_recording_mic_v30_preview", RootCell = new Vector2Int(4, -1), Definition = Def("recording_mic_basic") });
-            objects.Insert(3, new WorldObjectPlacement { InstanceId = "obj_art_easel_v30_preview", RootCell = new Vector2Int(-3, -2), Definition = Def("art_easel_basic") });
+            // ver3.0's six placements, in ver3.0's order (halka_house.hwmap.json at b2b799d).
+            var objects = new List<WorldObjectPlacement>
+            {
+                new WorldObjectPlacement { InstanceId = "obj_bed_basic_v03_migration", RootCell = new Vector2Int(-5, 0), Definition = Def("bed_basic") },
+                new WorldObjectPlacement { InstanceId = "obj_desk_basic_v25_halka_house", RootCell = new Vector2Int(2, 1), Definition = Def("desk_basic") },
+                new WorldObjectPlacement { InstanceId = "obj_recording_mic_v30_preview", RootCell = new Vector2Int(4, -1), Definition = Def("recording_mic_basic") },
+                new WorldObjectPlacement { InstanceId = "obj_art_easel_v30_preview", RootCell = new Vector2Int(-3, -2), Definition = Def("art_easel_basic") },
+                new WorldObjectPlacement { InstanceId = "obj_studio_shelf_v30_preview", RootCell = new Vector2Int(-1, 2), Definition = Def("studio_shelf_basic") },
+                new WorldObjectPlacement { InstanceId = "obj_sofa_basic_v30_rc1", RootCell = new Vector2Int(4, 2), Definition = Def("sofa_basic") },
+            };
             var copy = ScriptableObject.CreateInstance<MapDefinition>();
             copy.ReplaceFromAuthoring(house.MapId, house.DisplayName, house.MapType, house.BaseSurface, "none", house.BackdropColor,
                 house.MinCell, house.MaxCell, house.Surfaces.ToList(), objects, house.Markers.ToList());
@@ -66,7 +73,7 @@ namespace Halka.Poc2D3D.EditorTools
             Overview("04b_house_after_3d_overview", house);
 
             // 5-6: the black booth in the house, from where you walk in.
-            Shoot("05_booth_exterior_2d", "06_booth_exterior_3d", "halka_house", new Vector2Int(-3, -1), FacingDirection.Up);
+            Shoot("05_booth_exterior_2d", "06_booth_exterior_3d", "halka_house", new Vector2Int(4, -2), FacingDirection.Up);
             // 7-8: inside the booth.
             Shoot("07_booth_interior_2d", "08_booth_interior_3d", "halka_soundbooth", new Vector2Int(0, -3), FacingDirection.Up);
             Overview("08b_booth_interior_3d_overview", c.Session.FindWorld("halka_soundbooth").Map);
@@ -75,19 +82,22 @@ namespace Halka.Poc2D3D.EditorTools
             Shoot("09a_dtm_desk_2d", null, "halka_soundbooth", new Vector2Int(-1, 2), FacingDirection.Up);
             Place("halka_soundbooth", new Vector2Int(5, -3), FacingDirection.Up);
             Settle3D();
-            Closeup("09_dtm_desk_front_3d", new Vector3(-0.25f, 0.5f, 1.5f), new Vector3(-0.25f, 1.15f, -0.65f), 42f);
+            Closeup("09_dtm_desk_front_3d", new Vector3(-0.7f, 0.5f, 1.5f), new Vector3(-0.7f, 1.25f, -0.95f), 46f);
             Closeup("10_dtm_desk_oblique_3d", new Vector3(-0.25f, 0.5f, 1.5f), new Vector3(1.35f, 1.25f, 0.0f), 42f);
             Closeup("11_monitor_speakers_3d", new Vector3(-0.25f, 0.62f, 1.55f), new Vector3(-0.25f, 0.85f, 0.55f), 50f);
             Shoot("12_mic_stand_2d", null, "halka_soundbooth", new Vector2Int(4, 0), FacingDirection.Up);
             Place("halka_soundbooth", new Vector2Int(-5, -3), FacingDirection.Up);
             Settle3D();
             Closeup("12_mic_stand_3d", new Vector3(2.0f, 0.55f, 0.6f), new Vector3(3.1f, 1.25f, -1.25f), 40f);
-            // 13-14: the illustration desk with the pen tablet (root (-3,-2): world x -1.5 .. -0.5, z -1).
-            Shoot("13_illust_desk_2d", "14_illust_desk_3d", "halka_house", new Vector2Int(-3, -3), FacingDirection.Up, 0.6f);
-            Place("halka_house", new Vector2Int(3, -3), FacingDirection.Up);
+            // 13-14: the pen-tablet desk, left of the DTM desk in the booth (root (-4,3): world x -2.0 .. -1.5, z 1.5).
+            Shoot("13_illust_desk_2d", "14_illust_desk_3d", "halka_soundbooth", new Vector2Int(-4, 2), FacingDirection.Up, 0.6f);
+            Place("halka_soundbooth", new Vector2Int(5, -3), FacingDirection.Up);
             Settle3D();
-            Closeup("14b_illust_desk_closeup_3d", new Vector3(-1.25f, 0.45f, -1.0f), new Vector3(-0.75f, 1.05f, -2.0f), 40f);
-            Closeup("06b_booth_door_closeup_3d", new Vector3(-1.5f, 0.45f, 0.5f), new Vector3(-1.1f, 0.95f, -0.9f), 44f);
+            Closeup("14b_illust_desk_closeup_3d", new Vector3(-1.75f, 0.45f, 1.5f), new Vector3(-1.2f, 1.05f, 0.45f), 40f);
+            // The booth door in the house (root (4,0): world x 2.0, z 0).
+            Place("halka_house", new Vector2Int(-2, -3), FacingDirection.Up);
+            Settle3D();
+            Closeup("06b_booth_door_closeup_3d", new Vector3(2.0f, 0.5f, 0.1f), new Vector3(1.55f, 1.05f, -1.45f), 44f);
 
             // Night: the booth keeps its light; the house and outdoors for comparison.
             c.Time.Override = PocPhaseOverride.Night;

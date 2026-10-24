@@ -629,17 +629,25 @@
       "displayName": "防音室",
       "category": "fixture",
       "previewSpritePath": "Assets/Content/World/soundbooth_exterior.png",
-      "visualWidthPixels": 64,
-      "visualHeightPixels": 128,
-      "rootAnchor": "bottom-left",
+      "visualWidthPixels": 96,
+      "visualHeightPixels": 160,
+      "rootAnchor": "bottom-center",
       "footprint": {
-        "width": 2,
-        "height": 2
+        "width": 3,
+        "height": 3
       },
       "blockedCellOffsets": [
         {
+          "x": -1,
+          "y": 0
+        },
+        {
           "x": 1,
           "y": 0
+        },
+        {
+          "x": -1,
+          "y": 1
         },
         {
           "x": 0,
@@ -648,6 +656,18 @@
         {
           "x": 1,
           "y": 1
+        },
+        {
+          "x": -1,
+          "y": 2
+        },
+        {
+          "x": 0,
+          "y": 2
+        },
+        {
+          "x": 1,
+          "y": 2
         }
       ],
       "blocksMovement": true,

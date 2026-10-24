@@ -147,6 +147,10 @@ MonoBehaviour:
     RootCell: {x: -2, y: 3}
     Definition: {fileID: 11400000, guid: 518dae906864c3d4f9ddc67d5e7bf655, type: 2}
     SignText: 
+  - InstanceId: obj_illust_desk_v31_soundbooth
+    RootCell: {x: -4, y: 3}
+    Definition: {fileID: 11400000, guid: 3aa14fdec5dd2d94b8d17357b31ecc87, type: 2}
+    SignText: 
   - InstanceId: obj_recording_mic_v31_soundbooth
     RootCell: {x: 4, y: 1}
     Definition: {fileID: 11400000, guid: aad2d0d6b3795a54d8e8851da8cee295, type: 2}

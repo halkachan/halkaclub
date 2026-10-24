@@ -2,12 +2,12 @@
   {
     "sprite": "soundbooth_exterior",
     "model": "soundbooth_exterior",
-    "width": 64,
-    "height": 128,
+    "width": 96,
+    "height": 160,
     "pitch": 50.0,
     "renderSize": [
-      512,
-      784
+      768,
+      981
     ]
   },
   {

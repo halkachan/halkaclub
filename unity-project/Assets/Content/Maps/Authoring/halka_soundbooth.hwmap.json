@@ -445,6 +445,14 @@
       }
     },
     {
+      "instanceId": "obj_illust_desk_v31_soundbooth",
+      "definitionId": "illust_desk_tablet",
+      "rootCell": {
+        "x": -4,
+        "y": 3
+      }
+    },
+    {
       "instanceId": "obj_recording_mic_v31_soundbooth",
       "definitionId": "recording_mic_basic",
       "rootCell": {

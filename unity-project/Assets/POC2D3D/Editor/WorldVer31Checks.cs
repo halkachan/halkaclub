@@ -26,8 +26,12 @@ namespace Halka.Poc2D3D.EditorTools
         public const string HouseId = "halka_house";
         public const string DtmText = "おんがくを つくる つくえ。";
         public const string TabletText = "えきタブ。 イラストを かく。";
-        public static readonly Vector2Int BoothDoor = new Vector2Int(-3, 1);
-        public static readonly Vector2Int BoothApproach = new Vector2Int(-3, 0);
+        // User feedback 2026-10-24: the booth (3 x 3) at the right end of the house, its door in the middle.
+        public static readonly Vector2Int BoothDoor = new Vector2Int(4, 0);
+        public static readonly Vector2Int BoothApproach = new Vector2Int(4, -1);
+        public static readonly Vector2Int TabletDesk = new Vector2Int(-4, 3);
+        public static readonly Vector2Int TabletFront = new Vector2Int(-4, 2);
+        public static readonly Vector2Int SofaSeat = new Vector2Int(1, 1);
         public static readonly Vector2Int BoothEntry = new Vector2Int(0, -4);
         public static readonly Vector2Int BoothExit = new Vector2Int(0, -5);
         private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
@@ -153,31 +157,37 @@ namespace Halka.Poc2D3D.EditorTools
                 booth.Surfaces.Count(s => s.Definition.StableId == "booth_wall") > 0 && booth.Surfaces.All(s => s.Definition.StableId == "booth_wall"));
             Check("halka_soundbooth: one large DTM desk and the mic stand", Placements(booth, "dtm_desk_large").Count() == 1 &&
                 Placements(booth, "recording_mic_basic").Count() == 1);
+            var dtmRoot = Placements(booth, "dtm_desk_large").First().RootCell;
+            Check("halka_soundbooth: the pen-tablet desk stands just left of the DTM desk, against the same wall",
+                Placements(booth, "illust_desk_tablet").Count() == 1 && Placements(booth, "illust_desk_tablet").First().RootCell == TabletDesk &&
+                TabletDesk + new Vector2Int(2, 0) == dtmRoot, TabletDesk + " / DTM " + dtmRoot);
             Check("halka_soundbooth: no Player Start (the one player_main stays in first_field)", !booth.TryGetEntitySpawn("player_main", out _));
             Check("halka_soundbooth: map rules (MapPlacementRules.Validate) report nothing", MapPlacementRules.Validate(booth).Count == 0,
                 string.Join("; ", MapPlacementRules.Validate(booth)));
 
             Check("halka_house: the easel is no longer placed", !Placements(house, "art_easel_basic").Any());
             Check("halka_house: the mic stand is no longer placed (it is in the booth: no copy left in the house)", !Placements(house, "recording_mic_basic").Any());
-            Check("halka_house: one sound booth, its root (door) on (-3, 1)", Placements(house, "soundbooth_exterior").Count() == 1 &&
+            Check("halka_house: one sound booth, its door (root) on (4, 0)", Placements(house, "soundbooth_exterior").Count() == 1 &&
                 Placements(house, "soundbooth_exterior").First().RootCell == BoothDoor);
-            Check("halka_house: one illustration desk with the pen tablet, where the easel stood (-3, -2)",
-                Placements(house, "illust_desk_tablet").Count() == 1 && Placements(house, "illust_desk_tablet").First().RootCell == new Vector2Int(-3, -2));
+            var boothCells = Placements(house, "soundbooth_exterior").SelectMany(p => p.Definition.EffectiveBlockedOffsets().Select(o => p.RootCell + o)).Append(BoothDoor).ToList();
+            Check("halka_house: the booth fills the right end: its East column touches the East wall, its top row the North wall",
+                boothCells.Max(c => c.x) == house.MaxCell.x - 1 && boothCells.Max(c => c.y) == house.MaxCell.y - 2, string.Join(" ", boothCells));
+            Check("halka_house: no illustration desk and no PC desk (desk_basic) in the house",
+                !Placements(house, "illust_desk_tablet").Any() && !Placements(house, "desk_basic").Any());
             var kept = new Dictionary<string, Vector2Int>
             {
-                ["bed_basic"] = new Vector2Int(-5, 0), ["desk_basic"] = new Vector2Int(2, 1),
-                ["studio_shelf_basic"] = new Vector2Int(-1, 2), ["sofa_basic"] = new Vector2Int(4, 2)
+                ["bed_basic"] = new Vector2Int(-5, 0), ["studio_shelf_basic"] = new Vector2Int(-1, 2), ["sofa_basic"] = new Vector2Int(1, 2)
             };
-            Check("halka_house: bed, desk, shelf and sofa stay where they were",
+            Check("halka_house: bed and shelf stay; the sofa moved West along the North wall (1, 2) to make room",
                 kept.All(k => Placements(house, k.Key).Count() == 1 && Placements(house, k.Key).First().RootCell == k.Value));
             Check("halka_house: still 13 x 9 (the house was not enlarged)", house.MaxCell - house.MinCell + Vector2Int.one == new Vector2Int(13, 9));
             Check("halka_house: map rules report nothing", MapPlacementRules.Validate(house).Count == 0, string.Join("; ", MapPlacementRules.Validate(house)));
             var model = new SharedWorldModel(house);
             var reach = Reachable(model, new Vector2Int(0, -3), c => !HarukaSaveSystem.IsTransitionCell(model, c));
             var actionCells = house.Objects.SelectMany(p => p.Definition.ActionPoints.Select(a => p.RootCell + a.PlayerCellOffset)).ToList();
-            Check("halka_house: every Action Point cell (bed, desk, sofa seats, illustration desk) can be reached from the entry",
+            Check("halka_house: every Action Point cell (bed, sofa seats) can be reached from the entry",
                 actionCells.All(reach.Contains), string.Join(" ", actionCells.Where(c => !reach.Contains(c))));
-            Check("halka_house: the booth door can be walked onto from (-3, 0)", reach.Contains(BoothApproach) && model.CanEnter(BoothDoor));
+            Check("halka_house: the booth door can be walked onto from (4, -1)", reach.Contains(BoothApproach) && model.CanEnter(BoothDoor));
 
             foreach (var id in new[] { "art_easel_basic", "recording_mic_basic", "desk_basic" })
                 Check("Definition kept: " + id, Definition(id) != null);
@@ -188,7 +198,11 @@ namespace Halka.Poc2D3D.EditorTools
             var boothDef = Definition("soundbooth_exterior");
             Check("soundbooth_exterior: a door like house_main's (HouseTransition, its root cell walkable)",
                 boothDef != null && boothDef.Behavior == WorldObjectBehavior.HouseTransition &&
-                !boothDef.EffectiveBlockedOffsets().Contains(Vector2Int.zero) && boothDef.EffectiveBlockedOffsets().Count() == 3);
+                !boothDef.EffectiveBlockedOffsets().Contains(Vector2Int.zero) && boothDef.EffectiveBlockedOffsets().Count() == 8);
+            var offsets = boothDef != null ? boothDef.EffectiveBlockedOffsets().Append(Vector2Int.zero).ToList() : new List<Vector2Int>();
+            Check("soundbooth_exterior: square (3 x 3) with the door in the middle of the front row",
+                boothDef != null && boothDef.Footprint == new Vector2Int(3, 3) && offsets.Min(o => o.x) == -1 && offsets.Max(o => o.x) == 1 &&
+                offsets.Min(o => o.y) == 0 && offsets.Max(o => o.y) == 2 && offsets.Distinct().Count() == 9);
             var dtm = Definition("dtm_desk_large");
             var desk = Definition("desk_basic");
             Check("dtm_desk_large: twice desk_basic's width, the same depth", dtm != null && desk != null &&
@@ -197,7 +211,7 @@ namespace Halka.Poc2D3D.EditorTools
                 dtm != null && dtm.ActionPoints.Count == 2 && dtm.ActionPoints.All(a => a.PlayerFacing == WorldFacing.Up && a.InteractionText == DtmText));
             var tablet = Definition("illust_desk_tablet");
             Check("illust_desk_tablet: examine text", tablet != null && tablet.ExamineMessage == TabletText);
-            foreach (var sprite in new[] { ("soundbooth_exterior", 64, 128), ("dtm_desk_large", 128, 80), ("illust_desk_tablet", 64, 64), ("booth_floor", 32, 32), ("booth_wall", 32, 32) })
+            foreach (var sprite in new[] { ("soundbooth_exterior", 96, 160), ("dtm_desk_large", 128, 80), ("illust_desk_tablet", 64, 64), ("booth_floor", 32, 32), ("booth_wall", 32, 32) })
             {
                 var path = "Assets/Content/World/" + sprite.Item1 + ".png";
                 var importer = AssetImporter.GetAtPath(path) as TextureImporter;
@@ -474,10 +488,11 @@ namespace Halka.Poc2D3D.EditorTools
             var cases = new[]
             {
                 (new Vector2Int(0, 0), true, "a cell still free"),
-                (new Vector2Int(-2, 1), false, "a cell the booth now takes"),
+                (new Vector2Int(3, 0), false, "a cell the booth now takes"),
                 (BoothDoor, false, "the booth door (a door is never a resume place)"),
-                (new Vector2Int(-3, -2), false, "the illustration desk (where the easel stood)"),
-                (new Vector2Int(2, 0), true, "in front of the desk (ver3.0's Phase 6 test place)"),
+                (new Vector2Int(5, 1), false, "ver3.0's sofa seat, now inside the booth"),
+                (new Vector2Int(2, 0), true, "in front of where the PC desk stood (ver3.0's Phase 6 test place)"),
+                (new Vector2Int(-3, -1), true, "where the easel stood (free now)"),
             };
             foreach (var (cell, kept, label) in cases)
             {
@@ -576,7 +591,7 @@ namespace Halka.Poc2D3D.EditorTools
             }
 
             // Seated: the view changes, she stays seated.
-            ToHouse(c, new Vector2Int(4, 1), FacingDirection.Up);
+            ToHouse(c, SofaSeat, FacingDirection.Up);
             c.Session.InteractAhead();
             var seated = c.Session.IsSeated;
             menu.ActivateQuickItem(C6.Clock);
@@ -629,7 +644,9 @@ namespace Halka.Poc2D3D.EditorTools
                 c.Menu.ActivateQuickItem(C6.Clock + 0.5f);
                 C6.Settle(c, 0.3f);
             }
-            ToHouse(c, new Vector2Int(-3, -3), FacingDirection.Up);
+            c.Session.LoadMapForCheck(BoothId, TabletFront, FacingDirection.Up);
+            c.Session.PlaceForCheck(TabletFront, FacingDirection.Up);
+            C6.Settle(c, 0.2f);
             c.Session.InteractAhead();
             var shown = c.Hud.HasActiveMessage;
             var text = c.Session.LastMessage;
@@ -653,17 +670,16 @@ namespace Halka.Poc2D3D.EditorTools
             string Here() => c.Session.World.MapId + (c.Switcher.Mode == PocViewMode.PixelView2D ? " 2D" : " 3D");
             route.Add(Here());
             StepThrough(c, Vector2Int.up); C6.Settle(c, 0.2f); route.Add(Here());
-            // In the house, walk (no jump) from the entry (0,-3) to the booth, around the illustration
-            // desk: three cells North to (0,0), three West to (-3,0).
-            foreach (var d in new[] { Vector2Int.up, Vector2Int.up, Vector2Int.up, Vector2Int.left, Vector2Int.left, Vector2Int.left })
+            // In the house, walk (no jump) from the entry (0,-3) to the booth: four cells East, two North.
+            foreach (var d in new[] { Vector2Int.right, Vector2Int.right, Vector2Int.right, Vector2Int.right, Vector2Int.up, Vector2Int.up })
                 C6.Step(c, d, 0.25f);
             var before = c.Session.Cell;
             StepThrough(c, Vector2Int.up); C6.Settle(c, 0.2f); route.Add(Here());
             c.Menu.ActivateQuickItem(C6.Clock); C6.Settle(c, 0.3f); route.Add(Here());
             StepThrough(c, Vector2Int.down); C6.Settle(c, 0.3f); route.Add(Here());
             var houseCell = c.Session.Cell;
-            // Back to the house exit in 3D: (-3,0) -> (0,0) -> (0,-3) -> the exit.
-            foreach (var d in new[] { Vector2Int.right, Vector2Int.right, Vector2Int.right, Vector2Int.down, Vector2Int.down, Vector2Int.down })
+            // Back to the house exit in 3D: (4,-1) -> (4,-3) -> (0,-3) -> the exit.
+            foreach (var d in new[] { Vector2Int.down, Vector2Int.down, Vector2Int.left, Vector2Int.left, Vector2Int.left, Vector2Int.left })
                 C6.Step(c, d, 0.25f);
             StepThrough(c, Vector2Int.down); C6.Settle(c, 0.3f); route.Add(Here());
             var expected = new[] { "first_field 2D", HouseId + " 2D", BoothId + " 2D", BoothId + " 3D", HouseId + " 3D", "first_field 3D" };
@@ -812,7 +828,7 @@ namespace Halka.Poc2D3D.EditorTools
                 view.Renderers.All(r => r.enabled && r.shadowCastingMode != UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly));
             foreach (var id in new[] { "dtm_desk_large", "soundbooth_exterior", "illust_desk_tablet" })
             {
-                var map = id == "dtm_desk_large" ? BoothId : HouseId;
+                var map = id == "soundbooth_exterior" ? HouseId : BoothId;
                 if (c.Session.World.MapId != map) c.Session.LoadMapForCheck(map, map == BoothId ? BoothEntry : new Vector2Int(0, -3), FacingDirection.Up);
                 C6.Settle(c, 0.2f);
                 var v = c.Presenter.Views.FirstOrDefault(x => x.DefinitionId == id);
@@ -839,17 +855,20 @@ namespace Halka.Poc2D3D.EditorTools
         {
             C6.SetLegacy("v1|10|10", "1750000000000");
             var c = C6.Start(new HarukaMemoryStorage());
-            ToHouse(c, new Vector2Int(-3, -3), FacingDirection.Up);
-            Check("illustration desk: examined from the front", Use(c, new Vector2Int(-3, -3), FacingDirection.Up) == TabletText);
-            Check("illustration desk: nothing from the side", Use(c, new Vector2Int(-4, -2), FacingDirection.Right) == null);
-            Check("desk_basic: still examined from (2, 0)", Use(c, new Vector2Int(2, 0), FacingDirection.Up) == "つくえ。");
+            ToHouse(c, new Vector2Int(0, -1), FacingDirection.Up);
+            Check("house: where the PC desk was, nothing answers now", Use(c, new Vector2Int(2, 0), FacingDirection.Up) == null);
             Check("bed: still answers from (-5, -1)", Use(c, new Vector2Int(-5, -1), FacingDirection.Up) == "ベッド。");
-            c.Session.PlaceForCheck(new Vector2Int(4, 1), FacingDirection.Up);
-            Check("sofa: still a seat", c.Session.InteractAhead() && c.Session.IsSeated);
-            c.Session.Stand();
-            Check("the booth itself answers nothing (it is a door)", Use(c, new Vector2Int(-2, 0), FacingDirection.Up) == null);
+            foreach (var seat in new[] { SofaSeat, SofaSeat + Vector2Int.right })
+            {
+                c.Session.PlaceForCheck(seat, FacingDirection.Up);
+                Check($"sofa (moved): the seat {seat} still seats her", c.Session.InteractAhead() && c.Session.IsSeated);
+                c.Session.Stand();
+            }
+            Check("the booth itself answers nothing (it is a door)", Use(c, new Vector2Int(3, -1), FacingDirection.Up) == null);
             c.Session.LoadMapForCheck(BoothId, BoothEntry, FacingDirection.Up);
             C6.Settle(c, 0.2f);
+            Check("pen-tablet desk (booth, left of the DTM desk): examined from the front", Use(c, TabletFront, FacingDirection.Up) == TabletText);
+            Check("pen-tablet desk: nothing from the side", Use(c, TabletDesk + Vector2Int.left, FacingDirection.Right) == null);
             Check("DTM desk: examined from the left middle cell", Use(c, new Vector2Int(-1, 2), FacingDirection.Up) == DtmText);
             Check("DTM desk: examined from the right middle cell", Use(c, new Vector2Int(0, 2), FacingDirection.Up) == DtmText);
             Check("DTM desk: blocks all four cells", new[] { -2, -1, 0, 1 }.All(x => !c.Session.World.CanEnter(new Vector2Int(x, 3))));

@@ -50,18 +50,18 @@ namespace Halka.Poc2D3D.EditorTools
             var holder = Open(out var c);
             try
             {
-                PlacementChecks(c);
-                CatalogChecks(c);
-                OutdoorChecks(c);
-                EntranceChecks(c);
-                InteriorChecks(c);
-                InteriorCameraChecks(c);
-                TwoDChecks(c);
-                InteractionChecks(c);
-                ClickChecks(c);
-                SwitchSequenceChecks(c);
-                NightChecks(c);
-                FixtureChecks(c);
+                Section("PlacementChecks", () => PlacementChecks(c));
+                Section("CatalogChecks", () => CatalogChecks(c));
+                Section("OutdoorChecks", () => OutdoorChecks(c));
+                Section("EntranceChecks", () => EntranceChecks(c));
+                Section("InteriorChecks", () => InteriorChecks(c));
+                Section("InteriorCameraChecks", () => InteriorCameraChecks(c));
+                Section("TwoDChecks", () => TwoDChecks(c));
+                Section("InteractionChecks", () => InteractionChecks(c));
+                Section("ClickChecks", () => ClickChecks(c));
+                Section("SwitchSequenceChecks", () => SwitchSequenceChecks(c));
+                Section("NightChecks", () => NightChecks(c));
+                Section("FixtureChecks", () => FixtureChecks(c));
                 ProtectionChecks();
             }
             finally
@@ -71,6 +71,18 @@ namespace Halka.Poc2D3D.EditorTools
             foreach (var failure in failures) Debug.LogError("PHASE3 FAIL " + failure);
             Debug.Log($"HARUKA Phase 3 building and furniture checks: {passes} passed, {failures.Count} failed");
             return failures.Count == 0;
+        }
+
+        // ver3.1: a section that throws counts as a failure and the next sections still run (before,
+        // one exception ended the whole run). No check is removed or changed.
+        private static void Section(string name, Action checks)
+        {
+            try { checks(); }
+            catch (Exception exception)
+            {
+                Check("section " + name + " ran to its end (no exception)", false, exception.GetType().Name + ": " + exception.Message);
+                Debug.LogException(exception);
+            }
         }
 
         private static void Check(string name, bool condition, string detail = "")

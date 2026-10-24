@@ -67,7 +67,7 @@ PEN, PEN_TIP = "#2b2a30", "#d9d6dd"
 
 INTERIOR_WALL_HEIGHT = p3.INTERIOR_WALL_HEIGHT
 INTERIOR_WALL_BASE = p3.INTERIOR_WALL_BASE
-BOOTH_HEIGHT = 1.08     # a little lower than the room's walls (1.2): it reads as a small room inside the room
+BOOTH_HEIGHT = 1.12     # a little lower than the room's walls (1.2): it reads as a small room inside the room
 BOOTH_DOOR_PLANE = 0.17  # the door at the back of a walkable alcove in the root (door) cell, like house_main
 
 
@@ -78,13 +78,14 @@ def anchor(name, parent, location):
 # ---------------------------------------------------------------- the booth seen in the house
 
 def build_soundbooth_exterior():
-    """soundbooth_exterior: a black square booth, 2 x 2 cells. The root (bottom-left) cell is the
-    walkable alcove with the door (walking in leads to halka_soundbooth); the other three cells are
-    blocked. Front (with the door) faces South."""
+    """soundbooth_exterior: a black square booth, 3 x 3 cells (square seen from above). The root is
+    the bottom-centre cell: the walkable alcove with the door in the middle of the front (walking in
+    leads to halka_soundbooth); the other eight cells are blocked. Front (with the door) faces South.
+    (User feedback 2026-10-24: a square, the entrance in the middle.)"""
     g = Geo()
-    x0, x1, y0, y1, h = -0.235, 0.735, -0.215, 0.735, BOOTH_HEIGHT
-    ax0, ax1 = -0.17, 0.17  # the alcove (door) inside the root cell
-    # Walls around the alcove: left post, the right block (both front cells' right part), back.
+    x0, x1, y0, y1, h = -0.735, 0.735, -0.215, 1.255, BOOTH_HEIGHT
+    ax0, ax1 = -0.17, 0.17  # the alcove (door) inside the root cell, centred on the front
+    # Walls around the alcove: the left and right blocks, the part behind the door, the lintel.
     g.box((x0, y0, 0.0), (ax0, y1, h), BOOTH_BODY, top=BOOTH_TOP, front=BOOTH_BODY)
     g.box((ax1, y0, 0.0), (x1, y1, h), BOOTH_BODY, top=BOOTH_TOP, front=BOOTH_BODY)
     g.box((ax0, BOOTH_DOOR_PLANE, 0.0), (ax1, y1, h), BOOTH_BODY, top=BOOTH_TOP)
@@ -103,11 +104,11 @@ def build_soundbooth_exterior():
     # The recording lamp over the door (the house's yellow accent): the one decoration.
     g.box((-0.05, y0 - 0.02, 0.92), (0.05, y0 + 0.005, 0.98), BOOTH_TRIM)
     g.box((-0.035, y0 - 0.026, 0.93), (0.035, y0 - 0.02, 0.97), LAMP_ON)
-    # Two quiet panel seams on the right front, matching the room's dark wall shades.
-    for x in (0.38, 0.58):
+    # Quiet panel seams on both sides of the door, mirrored, matching the room's dark wall shades.
+    for x in (-0.58, -0.38, 0.38, 0.58):
         g.box((x - 0.006, y0 - 0.004, 0.08), (x + 0.006, y0, h - 0.06), BOOTH_SHADE)
     booth = g.obj("soundbooth_exterior")
-    hl.add_cell_guides("soundbooth_exterior", [(x, y) for x in range(2) for y in range(2)])
+    hl.add_cell_guides("soundbooth_exterior", [(x, y) for x in range(-1, 2) for y in range(3)])
     return [booth], [anchor("DoorAnchor", booth, (0.0, 0.0, 0.0))], {
         "soundbooth_exterior": ["new design for ver3.1 (no sprite to follow)", "back and sides plain"]}
 

@@ -6,9 +6,9 @@ Object Catalog (object_catalog.hwcatalog.json): adds
   surfaces  booth_floor, booth_wall
   objects   soundbooth_exterior (the booth's door, like house_main's), dtm_desk_large, illust_desk_tablet
   Nothing is removed: art_easel_basic and recording_mic_basic keep their Definitions.
-halka_house.hwmap.json: removes the easel and the mic placements, adds the booth and the
-  illustration desk (existing furniture, its cells and Action Point cells are unchanged).
-halka_soundbooth.hwmap.json: the new interior map (15 x 11).
+halka_house.hwmap.json: removes the easel, the mic and the PC desk (desk_basic) placements, adds the
+  3 x 3 booth in the North-East corner and moves the sofa West along the North wall (2026-10-24).
+halka_soundbooth.hwmap.json: the new interior map (15 x 11): DTM desk, the pen-tablet desk on its left, the mic.
 
 Re-running is safe: every step checks the current state first. Files keep CRLF and the
 json.dumps(indent=2, ensure_ascii=False) layout of the existing files.
@@ -57,13 +57,14 @@ SURFACES = [
 ]
 
 OBJECTS = [
-    # The booth as seen in the house: 2 x 2, the root (bottom-left) cell is its walkable door,
-    # like house_main's root cell outdoors. The importer gives it the HouseTransition behavior.
+    # The booth as seen in the house: 3 x 3 (a square), the root (bottom-centre) cell is its walkable
+    # door in the middle of the front, like house_main's root cell outdoors. The importer gives it the
+    # HouseTransition behavior. (User feedback 2026-10-24: square, entrance in the middle.)
     {"definitionId": "soundbooth_exterior", "displayName": "防音室", "category": "fixture",
-     "previewSpritePath": "Assets/Content/World/soundbooth_exterior.png", "visualWidthPixels": 64,
-     "visualHeightPixels": 128, "rootAnchor": "bottom-left", "footprint": {"width": 2, "height": 2},
-     "blockedCellOffsets": [cell(1, 0), cell(0, 1), cell(1, 1)], "blocksMovement": True, "excludeGrass": True,
-     "editorSelectable": True, "allowedMapTypes": [], "actionPoints": []},
+     "previewSpritePath": "Assets/Content/World/soundbooth_exterior.png", "visualWidthPixels": 96,
+     "visualHeightPixels": 160, "rootAnchor": "bottom-center", "footprint": {"width": 3, "height": 3},
+     "blockedCellOffsets": [cell(-1, 0), cell(1, 0), cell(-1, 1), cell(0, 1), cell(1, 1), cell(-1, 2), cell(0, 2), cell(1, 2)],
+     "blocksMovement": True, "excludeGrass": True, "editorSelectable": True, "allowedMapTypes": [], "actionPoints": []},
     # The large DTM desk: desk_basic's depth and height, twice its width.
     {"definitionId": "dtm_desk_large", "displayName": "DTMデスク", "category": "furniture",
      "previewSpritePath": "Assets/Content/World/dtm_desk_large.png", "visualWidthPixels": 128,
@@ -79,11 +80,15 @@ OBJECTS = [
      "actionPoints": [examine("examine_front", 0, -1, TABLET_TEXT)]},
 ]
 
-HOUSE_REMOVED = ["obj_recording_mic_v30_preview", "obj_art_easel_v30_preview"]
+# User feedback 2026-10-24: the booth at the right end of the house (the North-East corner), no
+# illustration desk and no PC desk (desk_basic) in the house; the sofa moves West along the North
+# wall to make room (its two seats and the cushion stay).
+HOUSE_REMOVED = ["obj_recording_mic_v30_preview", "obj_art_easel_v30_preview", "obj_desk_basic_v25_halka_house",
+                 "obj_illust_desk_v31_halka_house"]
 HOUSE_ADDED = [
-    {"instanceId": "obj_soundbooth_v31_halka_house", "definitionId": "soundbooth_exterior", "rootCell": cell(-3, 1)},
-    {"instanceId": "obj_illust_desk_v31_halka_house", "definitionId": "illust_desk_tablet", "rootCell": cell(-3, -2)},
+    {"instanceId": "obj_soundbooth_v31_halka_house", "definitionId": "soundbooth_exterior", "rootCell": cell(4, 0)},
 ]
+HOUSE_MOVED = {"obj_sofa_basic_v30_rc1": cell(1, 2)}
 
 
 def booth_map():
@@ -109,6 +114,8 @@ def booth_map():
         "surfaces": surfaces,
         "objects": [
             {"instanceId": "obj_dtm_desk_v31_soundbooth", "definitionId": "dtm_desk_large", "rootCell": cell(-2, 3)},
+            # User feedback 2026-10-24: the pen tablet on the left of the DTM desk, against the same wall.
+            {"instanceId": "obj_illust_desk_v31_soundbooth", "definitionId": "illust_desk_tablet", "rootCell": cell(-4, 3)},
             {"instanceId": "obj_recording_mic_v31_soundbooth", "definitionId": "recording_mic_basic",
              "rootCell": cell(4, 1)},
         ],
@@ -124,17 +131,20 @@ def main():
         if not any(s["definitionId"] == surface["definitionId"] for s in catalog["surfaces"]):
             catalog["surfaces"].append(surface)
     for obj in OBJECTS:
-        if not any(o["definitionId"] == obj["definitionId"] for o in catalog["objects"]):
-            catalog["objects"].append(obj)
-    for kept in ("art_easel_basic", "recording_mic_basic", "desk_basic"):
+        found = [i for i, o in enumerate(catalog["objects"]) if o["definitionId"] == obj["definitionId"]]
+        if found: catalog["objects"][found[0]] = obj
+        else: catalog["objects"].append(obj)
+    for kept in ("art_easel_basic", "recording_mic_basic", "desk_basic", "illust_desk_tablet"):
         assert any(o["definitionId"] == kept for o in catalog["objects"]), kept
     save(CATALOG, catalog)
 
     house = load(HOUSE)
     house["objects"] = [o for o in house["objects"] if o["instanceId"] not in HOUSE_REMOVED]
     for obj in HOUSE_ADDED:
-        if not any(o["instanceId"] == obj["instanceId"] for o in house["objects"]):
-            house["objects"].append(obj)
+        house["objects"] = [o for o in house["objects"] if o["instanceId"] != obj["instanceId"]] + [obj]
+    for o in house["objects"]:
+        if o["instanceId"] in HOUSE_MOVED:
+            o["rootCell"] = HOUSE_MOVED[o["instanceId"]]
     save(HOUSE, house)
 
     save(BOOTH, booth_map())

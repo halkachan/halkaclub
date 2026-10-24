@@ -18,13 +18,18 @@ MonoBehaviour:
   examineMessage: 
   rootedArtwork: 0
   clickColliderSize: {x: 0.5, y: 0.5}
-  footprint: {x: 2, y: 2}
+  footprint: {x: 3, y: 3}
   blockedCellOffsets:
+  - {x: -1, y: 0}
   - {x: 1, y: 0}
+  - {x: -1, y: 1}
   - {x: 0, y: 1}
   - {x: 1, y: 1}
+  - {x: -1, y: 2}
+  - {x: 0, y: 2}
+  - {x: 1, y: 2}
   actionPoints: []
-  rootAnchor: bottom-left
+  rootAnchor: bottom-center
   behavior: 1
   blocksMovement: 1
   excludesGrass: 1
