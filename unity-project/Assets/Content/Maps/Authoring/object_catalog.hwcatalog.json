@@ -681,11 +681,11 @@
       "displayName": "DTMデスク",
       "category": "furniture",
       "previewSpritePath": "Assets/Content/World/dtm_desk_large.png",
-      "visualWidthPixels": 128,
+      "visualWidthPixels": 160,
       "visualHeightPixels": 80,
       "rootAnchor": "bottom-left",
       "footprint": {
-        "width": 4,
+        "width": 5,
         "height": 1
       },
       "blockedCellOffsets": [
@@ -704,6 +704,10 @@
         {
           "x": 3,
           "y": 0
+        },
+        {
+          "x": 4,
+          "y": 0
         }
       ],
       "blocksMovement": true,
@@ -711,6 +715,17 @@
       "editorSelectable": true,
       "allowedMapTypes": [],
       "actionPoints": [
+        {
+          "id": "examine_center",
+          "playerCellOffset": {
+            "x": 2,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "おんがくを つくる つくえ。"
+        },
         {
           "id": "examine_left",
           "playerCellOffset": {
@@ -725,7 +740,7 @@
         {
           "id": "examine_right",
           "playerCellOffset": {
-            "x": 2,
+            "x": 3,
             "y": -1
           },
           "playerFacing": "up",
@@ -740,8 +755,159 @@
       "displayName": "イラスト机",
       "category": "furniture",
       "previewSpritePath": "Assets/Content/World/illust_desk_tablet.png",
-      "visualWidthPixels": 64,
+      "visualWidthPixels": 96,
       "visualHeightPixels": 64,
+      "rootAnchor": "bottom-left",
+      "footprint": {
+        "width": 3,
+        "height": 1
+      },
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        },
+        {
+          "x": 2,
+          "y": 0
+        }
+      ],
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "allowedMapTypes": [],
+      "actionPoints": [
+        {
+          "id": "examine_center",
+          "playerCellOffset": {
+            "x": 1,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "えきタブ。 イラストを かく。"
+        },
+        {
+          "id": "examine_left",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "えきタブ。 イラストを かく。"
+        },
+        {
+          "id": "examine_right",
+          "playerCellOffset": {
+            "x": 2,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "えきタブ。 イラストを かく。"
+        }
+      ]
+    },
+    {
+      "definitionId": "kitchen_counter",
+      "displayName": "キッチン",
+      "category": "furniture",
+      "previewSpritePath": "Assets/Content/World/kitchen_counter.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 144,
+      "rootAnchor": "bottom-left",
+      "footprint": {
+        "width": 1,
+        "height": 3
+      },
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": 2
+        }
+      ],
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "allowedMapTypes": [],
+      "editorSelectable": true,
+      "actionPoints": [
+        {
+          "id": "sink_center",
+          "playerCellOffset": {
+            "x": -1,
+            "y": 1
+          },
+          "playerFacing": "right",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "ながし。 おさらは ぜんぶ あらってある。"
+        },
+        {
+          "id": "hob",
+          "playerCellOffset": {
+            "x": -1,
+            "y": 0
+          },
+          "playerFacing": "right",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "やかんで おゆを わかして、 おちゃを いれた。"
+        },
+        {
+          "id": "fridge",
+          "playerCellOffset": {
+            "x": -1,
+            "y": 2
+          },
+          "playerFacing": "right",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "れいぞうこ。 ジュースが ひえている。"
+        }
+      ]
+    },
+    {
+      "definitionId": "living_rug",
+      "displayName": "ラグ",
+      "category": "furniture",
+      "previewSpritePath": "Assets/Content/World/living_rug.png",
+      "visualWidthPixels": 96,
+      "visualHeightPixels": 64,
+      "rootAnchor": "bottom-left",
+      "footprint": {
+        "width": 3,
+        "height": 2
+      },
+      "blockedCellOffsets": [],
+      "blocksMovement": false,
+      "excludeGrass": false,
+      "allowedMapTypes": [],
+      "editorSelectable": true,
+      "actionPoints": []
+    },
+    {
+      "definitionId": "low_table_living",
+      "displayName": "ローテーブル",
+      "category": "furniture",
+      "previewSpritePath": "Assets/Content/World/low_table_living.png",
+      "visualWidthPixels": 64,
+      "visualHeightPixels": 48,
       "rootAnchor": "bottom-left",
       "footprint": {
         "width": 2,
@@ -759,8 +925,55 @@
       ],
       "blocksMovement": true,
       "excludeGrass": true,
-      "editorSelectable": true,
       "allowedMapTypes": [],
+      "editorSelectable": true,
+      "actionPoints": [
+        {
+          "id": "examine_left",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "のみかけの ココアと クッキー。"
+        },
+        {
+          "id": "examine_right",
+          "playerCellOffset": {
+            "x": 1,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "のみかけの ココアと クッキー。"
+        }
+      ]
+    },
+    {
+      "definitionId": "guitar_stand",
+      "displayName": "ギター",
+      "category": "furniture",
+      "previewSpritePath": "Assets/Content/World/guitar_stand.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 80,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "allowedMapTypes": [],
+      "editorSelectable": true,
       "actionPoints": [
         {
           "id": "examine_front",
@@ -771,7 +984,7 @@
           "playerFacing": "up",
           "actionType": "examine",
           "poseKey": null,
-          "interactionText": "えきタブ。 イラストを かく。"
+          "interactionText": "ギター。 ちょっと ひいてみた。"
         }
       ]
     }

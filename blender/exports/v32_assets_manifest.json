@@ -1,0 +1,264 @@
+{
+  "generator": "blender/scripts/build_v32_interior.py",
+  "blenderVersion": "5.2.0 LTS",
+  "units": "1 Blender unit = 1 Unity unit, 1 cell = 0.5, origin = ground centre of the root cell",
+  "export": {
+    "format": "FBX 7.4 binary",
+    "axisForward": "-Z",
+    "axisUp": "Y",
+    "bakeSpaceTransform": true,
+    "colors": "SRGB face-corner attribute 'Col'",
+    "material": "HALKA_VertexColor (1 slot)"
+  },
+  "approval": "pending: new ver3.2 interior designs, not approved by the user yet",
+  "models": [
+    {
+      "family": "dtm_desk_large",
+      "name": "dtm_desk_large",
+      "blend": "blender/sources/v32/dtm_desk_large.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V32/dtm_desk_large.fbx",
+      "triangles": 1024,
+      "vertices": 644,
+      "materials": 1,
+      "parts": {
+        "dtm_desk_large": {
+          "triangles": 664,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "monitor_speaker_L": {
+          "triangles": 180,
+          "materials": 1,
+          "pivot": [
+            0.3,
+            0.04,
+            0.41
+          ]
+        },
+        "monitor_speaker_R": {
+          "triangles": 180,
+          "materials": 1,
+          "pivot": [
+            1.7,
+            0.04,
+            0.41
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.22,
+        -0.2,
+        0.0
+      ],
+      "boundsMax": [
+        2.22,
+        0.2,
+        0.74
+      ],
+      "anchors": {
+        "WorkAnchor": [
+          1.0,
+          -0.45,
+          0.0
+        ]
+      },
+      "supplemented": [
+        "ver3.2: 5 cells, centred on the middle cell",
+        "headphones added",
+        "speaker backs plain"
+      ]
+    },
+    {
+      "family": "illust_desk_tablet",
+      "name": "illust_desk_tablet",
+      "blend": "blender/sources/v32/illust_desk_tablet.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V32/illust_desk_tablet.fbx",
+      "triangles": 216,
+      "vertices": 152,
+      "materials": 1,
+      "parts": {
+        "illust_desk_tablet": {
+          "triangles": 216,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.22,
+        -0.17,
+        0.0
+      ],
+      "boundsMax": [
+        1.22,
+        0.17,
+        0.5618
+      ],
+      "anchors": {
+        "WorkAnchor": [
+          0.5,
+          -0.45,
+          0.0
+        ]
+      },
+      "supplemented": [
+        "ver3.2: 3 cells, the display on the middle cell",
+        "sketchbook added"
+      ]
+    },
+    {
+      "family": "kitchen_counter",
+      "name": "kitchen_counter",
+      "blend": "blender/sources/v32/kitchen_counter.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V32/kitchen_counter.fbx",
+      "triangles": 580,
+      "vertices": 372,
+      "materials": 1,
+      "parts": {
+        "kitchen_counter": {
+          "triangles": 580,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.24,
+        -0.24,
+        0.0
+      ],
+      "boundsMax": [
+        0.24,
+        1.235,
+        0.82
+      ],
+      "anchors": {
+        "WorkAnchor": [
+          -0.45,
+          0.5,
+          0.0
+        ]
+      },
+      "supplemented": [
+        "new design for ver3.2",
+        "cabinet backs plain",
+        "fridge back plain"
+      ]
+    },
+    {
+      "family": "living_rug",
+      "name": "living_rug",
+      "blend": "blender/sources/v32/living_rug.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V32/living_rug.fbx",
+      "triangles": 32,
+      "vertices": 48,
+      "materials": 1,
+      "parts": {
+        "living_rug": {
+          "triangles": 32,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.23,
+        -0.23,
+        0.0
+      ],
+      "boundsMax": [
+        1.23,
+        0.73,
+        0.014
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.2"
+      ]
+    },
+    {
+      "family": "low_table_living",
+      "name": "low_table_living",
+      "blend": "blender/sources/v32/low_table_living.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V32/low_table_living.fbx",
+      "triangles": 238,
+      "vertices": 148,
+      "materials": 1,
+      "parts": {
+        "low_table_living": {
+          "triangles": 238,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.21,
+        -0.16,
+        0.0
+      ],
+      "boundsMax": [
+        0.71,
+        0.16,
+        0.246
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.2",
+        "underside plain"
+      ]
+    },
+    {
+      "family": "guitar_stand",
+      "name": "guitar_stand",
+      "blend": "blender/sources/v32/guitar_stand.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V32/guitar_stand.fbx",
+      "triangles": 312,
+      "vertices": 202,
+      "materials": 1,
+      "parts": {
+        "guitar_stand": {
+          "triangles": 312,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.13,
+        -0.1,
+        -0.0036
+      ],
+      "boundsMax": [
+        0.13,
+        0.22,
+        0.8161
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.2",
+        "strings not modelled",
+        "simplified bracing"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+[
+  {
+    "sprite": "dtm_desk_large",
+    "model": "dtm_desk_large",
+    "width": 160,
+    "height": 80,
+    "pitch": 50.0,
+    "renderSize": [
+      1280,
+      490
+    ]
+  },
+  {
+    "sprite": "illust_desk_tablet",
+    "model": "illust_desk_tablet",
+    "width": 96,
+    "height": 64,
+    "pitch": 50.0,
+    "renderSize": [
+      768,
+      392
+    ]
+  },
+  {
+    "sprite": "kitchen_counter",
+    "model": "kitchen_counter",
+    "width": 32,
+    "height": 144,
+    "pitch": 50.0,
+    "renderSize": [
+      256,
+      882
+    ]
+  },
+  {
+    "sprite": "living_rug",
+    "model": "living_rug",
+    "width": 96,
+    "height": 64,
+    "pitch": 50.0,
+    "renderSize": [
+      768,
+      392
+    ]
+  },
+  {
+    "sprite": "low_table_living",
+    "model": "low_table_living",
+    "width": 64,
+    "height": 48,
+    "pitch": 50.0,
+    "renderSize": [
+      512,
+      294
+    ]
+  },
+  {
+    "sprite": "guitar_stand",
+    "model": "guitar_stand",
+    "width": 32,
+    "height": 80,
+    "pitch": 50.0,
+    "renderSize": [
+      256,
+      490
+    ]
+  }
+]

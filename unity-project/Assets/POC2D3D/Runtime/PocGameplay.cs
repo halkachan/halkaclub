@@ -170,9 +170,12 @@ namespace Halka.Poc2D3D
         public void CancelStep() => session.CancelStep();
         public bool HasActiveMessage => hud != null && hud.HasActiveMessage;
         public bool HasHouse => session.OutdoorWorld != null && session.OutdoorWorld.TryGetHouseDoor(out _);
-        public Vector2Int HouseDoorCell => session.OutdoorWorld.Map.HouseDoorCell;
-        public Vector2Int OutsideEntryCell => session.OutdoorWorld.Map.OutsideEntryCell;
-        public bool CanEnter(Vector2Int cell) => session.World.CanEnter(cell);
+        // ver3.2: world cells (the house door of the outdoor world, wherever its region lies).
+        public Vector2Int HouseDoorCell => session.OutdoorWorld.TryGetHouseDoor(out var door) ? door : default;
+        public Vector2Int OutsideEntryCell => HouseDoorCell + Vector2Int.down;
+        // ver3.2: AUTO walks only where the chunk is drawn: it never heads into an undrawn chunk, and
+        // its route search stays inside the drawn area instead of the whole world.
+        public bool CanEnter(Vector2Int cell) => session.World.CanEnter(cell) && session.IsCellReady(cell);
         public bool CanPlayerEnter(Vector2Int cell) => session.CanPlayerEnter(cell);
 
         public bool TryGetCrowCell(out Vector2Int cell)

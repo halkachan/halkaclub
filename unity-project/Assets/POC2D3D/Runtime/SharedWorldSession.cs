@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Halka.Game.Player;
 using Halka.Game.World;
+using Halka.Poc2D3D.World;
 using UnityEngine;
 
 namespace Halka.Poc2D3D
@@ -52,6 +53,10 @@ namespace Halka.Poc2D3D
         // ver3.1: rooms inside rooms (the sound booth in the house). Each is entered through the
         // door Object (HouseTransition) of its outer map, like the house from first_field.
         [SerializeField] private List<SharedRoomLink> innerRooms = new List<SharedRoomLink>();
+        // ver3.2: the outdoor world (regions placed in world cells, chunk size). Empty: the outdoor
+        // Map alone at offset (0,0), which is the ver3.1 world (old checks and fixtures).
+        [SerializeField] private OutdoorWorldDefinition outdoorWorld = new OutdoorWorldDefinition();
+        [SerializeField, Min(0)] private int decorationMargin = 8;
         [SerializeField] private PocInput input;
         [SerializeField, Min(0.05f)] private float stepSeconds = PlayerMover.DefaultStepSeconds;
 
@@ -63,6 +68,7 @@ namespace Halka.Poc2D3D
 
         public SharedWorldModel World { get; private set; }
         public SharedWorldModel OutdoorWorld => outdoor;
+        public OutdoorWorldIndex OutdoorIndex => outdoor?.OutdoorIndex;
         public SharedWorldModel InteriorWorld => interior;
         // Every world of this session: outdoor, the house, then the inner rooms (ver3.1).
         public IEnumerable<SharedWorldModel> Worlds
@@ -129,6 +135,25 @@ namespace Halka.Poc2D3D
 
         public IReadOnlyList<SharedRoomLink> InnerRooms => innerRooms;
 
+        // ver3.2: the outdoor world (the scene builder passes the registry's regions); null or no
+        // region: the outdoor Map alone at (0,0).
+        public void ConfigureOutdoorWorld(OutdoorWorldDefinition definition, int dressingMargin)
+        {
+            outdoorWorld = definition ?? new OutdoorWorldDefinition();
+            decorationMargin = Mathf.Max(0, dressingMargin);
+        }
+
+        public OutdoorWorldDefinition EffectiveOutdoorWorld =>
+            outdoorWorld != null && outdoorWorld.regions != null && outdoorWorld.regions.Count > 0
+                ? outdoorWorld : OutdoorWorldDefinition.Single(outdoorMap, outdoorWorld != null ? outdoorWorld.chunkSize : OutdoorWorldDefinition.DefaultChunkSize);
+
+        // ver3.2, presentation hooks (the chunk streamer): PrepareCell is asked before a step enters a
+        // cell (it makes sure the cell's chunk is drawn, at once if the prefetch was late; it never
+        // refuses a step that the Grid allows), CellReady tells AUTO which cells are drawn.
+        public Func<Vector2Int, bool> PrepareCell { get; set; }
+        public Func<Vector2Int, bool> CellReady { get; set; }
+        public bool IsCellReady(Vector2Int cell) => World != outdoor || CellReady == null || CellReady(cell);
+
         private void Awake() => Initialize();
 
         // Phase 6: where the game resumes (the save system checks the place first). Set before
@@ -138,6 +163,7 @@ namespace Halka.Poc2D3D
         private Vector2Int startCell;
         private FacingDirection startFacing;
 
+        // cell is a Map cell (what a save stores); outdoors it becomes a world cell at Initialize.
         public void SetStartLocation(string mapId, Vector2Int cell, FacingDirection facing)
         {
             hasStart = true;
@@ -152,6 +178,10 @@ namespace Halka.Poc2D3D
             get
             {
                 if (outdoorMap != null) yield return outdoorMap;
+                var world = EffectiveOutdoorWorld;
+                if (world.regions != null)
+                    foreach (var region in world.regions)
+                        if (region != null && region.map != null && region.map != outdoorMap) yield return region.map;
                 if (interiorMap != null) yield return interiorMap;
                 foreach (var link in innerRooms)
                     if (link.room != null) yield return link.room;
@@ -163,7 +193,7 @@ namespace Halka.Poc2D3D
         public void Initialize()
         {
             if (World != null) return;
-            outdoor = new SharedWorldModel(outdoorMap);
+            outdoor = new SharedWorldModel(new OutdoorWorldIndex(EffectiveOutdoorWorld, decorationMargin));
             interior = interiorMap != null ? new SharedWorldModel(interiorMap) : null;
             innerWorlds.Clear();
             foreach (var link in innerRooms)
@@ -171,30 +201,74 @@ namespace Halka.Poc2D3D
             if (!outdoorMap.TryGetEntitySpawn("player_main", out var spawn))
                 throw new InvalidOperationException("The outdoor map has no Player Start");
             World = outdoor;
-            motion = new GridStepMotion(spawn.Cell);
+            var spawnRegion = outdoor.OutdoorIndex.FindRegion(outdoorMap.MapId);
+            motion = new GridStepMotion(spawnRegion != null ? spawnRegion.ToWorld(spawn.Cell) : spawn.Cell);
             Facing = EntityRuntimeFactory2D.ParseFacing(spawn.Facing);
             MapLoads = 1;
-            var start = hasStart ? FindWorld(startMapId) : null;
-            if (start == null) return;
+            if (!hasStart || !TryToSessionCell(startMapId, startCell, out var start, out var cell)) return;
             World = start;
-            motion = new GridStepMotion(startCell);
+            motion = new GridStepMotion(cell);
             Facing = startFacing;
         }
 
+        // A world by Map ID: any region of the outdoor world finds the outdoor world.
         public SharedWorldModel FindWorld(string mapId)
         {
             foreach (var world in Worlds)
                 if (world.MapId == mapId) return world;
+            if (outdoor != null && outdoor.OutdoorIndex.FindRegion(mapId) != null) return outdoor;
             return null;
         }
 
+        // ver3.2: Map ID + Map cell (what saves and imports hold) -> the world it is in and the
+        // session's cell there (world cells outdoors, Map cells indoors). Builds the worlds if needed.
+        public bool TryToSessionCell(string mapId, Vector2Int mapCell, out SharedWorldModel world, out Vector2Int sessionCell)
+        {
+            if (outdoor == null) InitializeWorldsOnly();
+            world = FindWorld(mapId);
+            sessionCell = mapCell;
+            if (world == null) return false;
+            if (world == outdoor)
+            {
+                var region = outdoor.OutdoorIndex.FindRegion(mapId);
+                if (region == null) return false;
+                sessionCell = region.ToWorld(mapCell);
+            }
+            return true;
+        }
+
+        // ver3.2: where the player is, as a save writes it: the Map of the region she stands in and
+        // her cell in that Map (outdoors), or the room's Map ID and cell (indoors). Schema 1 as before.
+        public bool TryGetSavePlace(out string mapId, out Vector2Int mapCell)
+        {
+            mapId = World != null ? World.MapId : null;
+            mapCell = Cell;
+            if (World == null) return false;
+            if (World != outdoor) return true;
+            var region = outdoor.OutdoorIndex.RegionAt(Cell);
+            if (region == null) return false;
+            mapId = region.MapId;
+            mapCell = region.ToLocal(Cell);
+            return true;
+        }
+
+        // The worlds without placing the player (the save system checks a place before the start).
+        private void InitializeWorldsOnly()
+        {
+            if (outdoor != null || outdoorMap == null) return;
+            outdoor = new SharedWorldModel(new OutdoorWorldIndex(EffectiveOutdoorWorld, decorationMargin));
+            interior = interiorMap != null ? new SharedWorldModel(interiorMap) : null;
+            innerWorlds.Clear();
+            foreach (var link in innerRooms)
+                if (link.room != null) innerWorlds.Add(new SharedWorldModel(link.room));
+        }
+
         // Phase 6 import: move to a checked place now, like a door does (MapChanged), without a
-        // step, a transition or an interaction.
+        // step, a transition or an interaction. cell is a Map cell (ver3.2).
         public bool RestoreLocationNow(string mapId, Vector2Int cell, FacingDirection facing)
         {
-            var target = FindWorld(mapId);
-            if (target == null) return false;
-            LoadMap(target, cell, facing, SharedTransitionKind.None, default);
+            if (!TryToSessionCell(mapId, cell, out var target, out var sessionCell)) return false;
+            LoadMap(target, sessionCell, facing, SharedTransitionKind.None, default);
             return true;
         }
 
@@ -202,8 +276,22 @@ namespace Halka.Poc2D3D
         public void UseOutdoorMapForTest(MapDefinition map)
         {
             outdoorMap = map;
+            outdoorWorld = new OutdoorWorldDefinition { chunkSize = outdoorWorld != null ? outdoorWorld.chunkSize : OutdoorWorldDefinition.DefaultChunkSize };
             World = null;
+            outdoor = null;
             Initialize();
+        }
+
+        // ver3.2 checks and the chunk test scene: a whole outdoor world (fixture regions) replaces
+        // the outdoor Map before the first frame. outdoorMapForSpawn holds the Player Start.
+        // initialize false: only configure (the game's own start order initializes later).
+        public void UseOutdoorWorldForTest(OutdoorWorldDefinition definition, MapDefinition outdoorMapForSpawn, bool initialize = true)
+        {
+            outdoorWorld = definition;
+            outdoorMap = outdoorMapForSpawn;
+            World = null;
+            outdoor = null;
+            if (initialize) Initialize();
         }
 
         public MapDefinition GetMap(string mapId)
@@ -243,9 +331,17 @@ namespace Halka.Poc2D3D
         {
             if (MovementLocked || motion.IsMoving || Mathf.Abs(direction.x) + Mathf.Abs(direction.y) != 1) return false;
             Facing = FacingDirectionExtensions.FromVector(direction);
-            if (!motion.TryBegin(direction, cell => World.CanEnter(cell) && CanPlayerEnter(cell), stepSeconds)) return false;
+            if (!motion.TryBegin(direction, cell => World.CanEnter(cell) && CanPlayerEnter(cell) && Prepare(cell), stepSeconds)) return false;
             StartedSteps++;
             StepStarted?.Invoke(motion.StepToCell);
+            return true;
+        }
+
+        // ver3.2: outdoors, the cell's chunk is drawn before she walks in (never refuses: a chunk
+        // that fails to build is drawn as plain ground, so she cannot be shut in by a load).
+        private bool Prepare(Vector2Int cell)
+        {
+            if (World == outdoor && PrepareCell != null) PrepareCell(cell);
             return true;
         }
 

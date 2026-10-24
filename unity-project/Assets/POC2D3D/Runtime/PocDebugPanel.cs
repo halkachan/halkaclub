@@ -16,14 +16,14 @@ namespace Halka.Poc2D3D
         public const string PreviewTitle = "はるかわーるど ver3.0 Phase 4 Preview";
         // Phase 5: the Release Candidate scene. Its page shows only the game; ?debug=1 brings the
         // panel back (with this title). Hidden, the component is disabled: no OnGUI, no recorders.
-        // ver3.1: the studio update, built for a local check only (not published).
-        public const string ReleaseCandidateName = "はるかわーるど ver3.1 制作拠点アップデート (local check)";
+        // ver3.1: the studio update; ver3.2: the open-world base, built for a local check only (not published).
+        public const string ReleaseCandidateName = "はるかわーるど ver3.2 オープンワールド基盤アップデート (local check)";
         // RC1 feedback: the game's name is fixed as はるかわーるど (the page title shows only it).
         public const string ReleaseCandidateTitle = "はるかわーるど";
         // Phase 7: Release Candidate 3 is the release build itself, so the game shows the version
         // players will see (ver3.0); "RC3" only names the candidate (build info, staging, this title).
-        public const string ReleaseCandidateVersionLabel = "ver3.1";
-        public const string ReleaseCandidateShortName = "ver3.1 LOCAL";
+        public const string ReleaseCandidateVersionLabel = "ver3.2";
+        public const string ReleaseCandidateShortName = "ver3.2 LOCAL";
         [SerializeField] private bool releaseCandidate;
         public bool ReleaseCandidate => releaseCandidate;
         public void ConfigureReleaseCandidate(bool value) => releaseCandidate = value;
@@ -97,7 +97,11 @@ namespace Halka.Poc2D3D
         private void Awake()
         {
             var url = Application.absoluteURL ?? "";
+#if HALKA_STRIP_DEV_TOOLS
+            PanelVisible = false;   // ver3.2: a build with this define has no debug panel at all
+#else
             PanelVisible = url.Contains("debug=1");
+#endif
             if (releaseCandidate && !PanelVisible) enabled = false;
         }
 
@@ -173,8 +177,8 @@ namespace Halka.Poc2D3D
             var x = 8f;
             // Below the game's Menu button (GameMenuController: 12 px from the top, 48 px tall).
             var y = gameplay != null && gameplay.Menu != null ? 68f : 8f;
-            var rows = expanded ? 24 : 2;
-            var statsLines = showStats ? expanded ? 13 : 8 : 6;
+            var rows = expanded ? 25 : 2;
+            var statsLines = (showStats ? expanded ? 13 : 8 : 6) + (presenter.ChunkMode ? 2 : 0);
             panelRect = new Rect(x - 4f, y - 4f, width + 8f, rows * (row + 3f) + statsLines * row * 0.78f + 12f);
             GUI.DrawTexture(panelRect, panelBackground);
 
@@ -243,6 +247,9 @@ namespace Halka.Poc2D3D
                     if (outline3D != null) outline3D.Enabled = !outline3D.Enabled;
                 if (lineBoil != null && Button(ref y, x, width, row, "3D line boil: " + BoilLabel(lineBoil.Mode)))
                     lineBoil.Mode = (PocLineBoilMode)(((int)lineBoil.Mode + 1) % 4);
+                // ver3.2 (debug panel only, last row): the chunk borders drawn on the ground.
+                if (Button(ref y, x, width, row, "Chunk borders: " + (presenter.ChunkBordersVisible ? "ON" : "OFF")))
+                    presenter.ChunkBordersVisible = !presenter.ChunkBordersVisible;
             }
             GUI.Label(new Rect(x, y, width, statsLines * row * 0.78f + 8f), BuildText(), textStyle);
             DrawTitle(s);
@@ -326,6 +333,7 @@ namespace Halka.Poc2D3D
             if (views.Mode == PocViewMode.ThirdPerson3D)
                 text.Append("Cam heading ").Append(views.ThirdPerson.Heading).Append("  keys ")
                     .Append(input.Scheme == Poc3DControlScheme.CameraRelative ? "camera" : "world").Append('\n');
+            AppendChunkLines();
             text.Append("Steps ").Append(session.CompletedSteps).Append("  Switches ").Append(views.SwitchCount)
                 .Append(" (").Append(views.LastSwitchMilliseconds.ToString("0.00")).Append("ms)\n");
             text.Append("FPS ").Append(shownFps.ToString("0.0")).Append("  ").Append(shownFrameMs.ToString("0.0"))
@@ -358,6 +366,22 @@ namespace Halka.Poc2D3D
             text.Append("Phase ").Append(timeOfDay.Phase).Append("  blend ").Append(timeOfDay.NightBlend.ToString("0.00"));
             AppendGameLine();
             return text.ToString();
+        }
+
+        // ver3.2: where she is in the outdoor world and what the chunk streamer holds.
+        private void AppendChunkLines()
+        {
+            if (!presenter.ChunkMode || presenter.Streamer == null) return;
+            var index = presenter.ChunkIndex;
+            var cell = session.Cell;
+            var chunk = Halka.Poc2D3D.World.WorldGrid.ChunkOf(cell, index.ChunkSize);
+            var local = Halka.Poc2D3D.World.WorldGrid.LocalInChunk(cell, index.ChunkSize);
+            var s = presenter.Streamer.Stats;
+            text.Append("World ").Append(index.WorldId).Append("  Chunk ").Append(chunk.X).Append(',').Append(chunk.Y)
+                .Append(" (").Append(index.ChunkSize).Append(")  local ").Append(local.x).Append(',').Append(local.y).Append('\n');
+            text.Append("Chunks ").Append(s.Loaded).Append(" ready ").Append(s.Queued).Append(" queued  objs ")
+                .Append(presenter.LoadedChunkObjects).Append("  load ").Append(s.LastLoadMs.ToString("0.0")).Append('/')
+                .Append(s.MaxLoadMs.ToString("0")).Append("ms  free ").Append(s.LastUnloadMs.ToString("0.0")).Append("ms\n");
         }
 
         private string Memory() => usedMemory.Valid && usedMemory.LastValue > 0

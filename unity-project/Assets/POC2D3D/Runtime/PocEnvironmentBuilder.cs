@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Halka.Game.World;
+using Halka.Poc2D3D.World;
 using UnityEngine;
 
 namespace Halka.Poc2D3D
@@ -103,6 +104,110 @@ namespace Halka.Poc2D3D
             tufts = tuftMesh.CreateObject("Grass tufts (decoration only, no collider)", parent, material);
             var tuftRenderer = tufts.GetComponent<MeshRenderer>();
             tuftRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return stats;
+        }
+
+        // ver3.2: the road cells of the whole outdoor world (every region's Dirt Surfaces and the roads
+        // continued off its edges), in world cells. Computed once per world; chunks read it.
+        public static HashSet<Vector2Int> CollectWorldRoad(OutdoorWorldIndex index, int margin, out int insideCells, out int outsideCells)
+        {
+            var road = new HashSet<Vector2Int>();
+            insideCells = outsideCells = 0;
+            foreach (var region in index.Regions)
+            {
+                var stats = new PocEnvironmentStats();
+                CollectRoad(region.Map, margin, stats);
+                insideCells += stats.RoadCells;
+                foreach (var local in stats.RoadCellSet)
+                {
+                    var world = region.ToWorld(local);
+                    // A road running off one region never paints over another region's cells.
+                    if (!region.Map.Contains(local) && index.Contains(world)) continue;
+                    if (road.Add(world) && !region.Map.Contains(local)) outsideCells++;
+                }
+            }
+            return road;
+        }
+
+        // ver3.2: one chunk of the outdoor world, dressed exactly as Build dresses a whole map: the
+        // same pieces, tints and stable hashes (keyed by the region's Map ID and its Map cell, so the
+        // ver3.1 field looks the same cell for cell). Outside every region, the cells within the
+        // dressing margin of a region borrow that region's hashes and the outside tint.
+        public static PocEnvironmentStats BuildChunk(OutdoorWorldIndex index, ChunkStatic chunk, HashSet<Vector2Int> worldRoad,
+            PocEnvironmentPresentation dressing, Material material, Transform parent, out GameObject ground, out GameObject tufts)
+        {
+            var stats = new PocEnvironmentStats { MapId = index.WorldId + " " + chunk.Coord };
+            var groundMesh = new MeshAppender();
+            var whiteTint = Color.white;
+            for (var y = chunk.Rect.Min.y; y <= chunk.Rect.Max.y; y++)
+            for (var x = chunk.Rect.Min.x; x <= chunk.Rect.Max.x; x++)
+            {
+                var cell = new Vector2Int(x, y);
+                var region = index.RegionAt(cell);
+                var keyRegion = region ?? index.DecorationRegionAt(cell);
+                if (keyRegion == null) continue;
+                var local = keyRegion.ToLocal(cell);
+                var tile = dressing.grassTiles[(int)(PocStableHash.Of(keyRegion.MapId, local, "tile") %
+                    (uint)dressing.grassTiles.Count)];
+                groundMesh.Append(Mesh(tile), Matrix4x4.Translate(GridSpace3D.ToWorld(cell)), region != null ? whiteTint : dressing.outsideTint);
+                stats.GrassTiles++;
+            }
+            for (var y = chunk.Rect.Min.y; y <= chunk.Rect.Max.y; y++)
+            for (var x = chunk.Rect.Min.x; x <= chunk.Rect.Max.x; x++)
+            {
+                var cell = new Vector2Int(x, y);
+                if (!worldRoad.Contains(cell)) continue;
+                stats.RoadCellSet.Add(cell);
+                var tint = index.Contains(cell) ? whiteTint : dressing.outsideTint;
+                for (var hx = -1; hx <= 1; hx += 2)
+                for (var hz = -1; hz <= 1; hz += 2)
+                {
+                    var horizontal = worldRoad.Contains(cell + new Vector2Int(hx, 0));
+                    var vertical = worldRoad.Contains(cell + new Vector2Int(0, hz));
+                    GameObject piece;
+                    var swap = false;
+                    if (horizontal && vertical) { piece = dressing.dirtFull; stats.RoadFull++; }
+                    else if (!horizontal && vertical) { piece = dressing.dirtEdge; stats.RoadEdge++; }
+                    else if (horizontal) { piece = dressing.dirtEdge; swap = true; stats.RoadEdge++; }
+                    else { piece = dressing.dirtCorner; stats.RoadCorner++; }
+                    groundMesh.Append(Mesh(piece), QuadrantMatrix(cell, hx, hz, swap), tint);
+                }
+            }
+            stats.GroundTriangles = groundMesh.TriangleCount;
+            ground = groundMesh.CreateObject("Ground " + chunk.Coord + " (Blender tiles + road from Map Data)", parent, material);
+            ground.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            var tuftMesh = new MeshAppender();
+            for (var y = chunk.Rect.Min.y; y <= chunk.Rect.Max.y; y++)
+            for (var x = chunk.Rect.Min.x; x <= chunk.Rect.Max.x; x++)
+            {
+                var cell = new Vector2Int(x, y);
+                if (!index.HasGrass(cell)) continue;
+                var region = index.RegionAt(cell);
+                var mapId = region.MapId;
+                var local = region.ToLocal(cell);
+                var center = GridSpace3D.ToWorld(cell);
+                var hash = PocStableHash.Of(mapId, local, "tuft");
+                if (PocStableHash.Unit(hash) < dressing.tuftChance)
+                {
+                    var jitter = new Vector3(Jitter(mapId, local, "jx", 0.11f), 0f, Jitter(mapId, local, "jz", 0.11f));
+                    AddTuft(tuftMesh, dressing, mapId, local, "main", center + jitter,
+                        0.85f + 0.3f * PocStableHash.Unit(PocStableHash.Of(mapId, local, "scale")), stats);
+                }
+                foreach (var side in Sides)
+                {
+                    if (!worldRoad.Contains(cell + side)) continue;
+                    var salt = "road" + side.x + side.y;
+                    if (PocStableHash.Unit(PocStableHash.Of(mapId, local, salt)) >= dressing.roadsideTuftChance) continue;
+                    var along = new Vector3(side.y, 0f, side.x) * Jitter(mapId, local, salt + "a", 0.12f);
+                    var position = center + GridSpace3D.Direction(side) * 0.17f + along;
+                    AddTuft(tuftMesh, dressing, mapId, local, salt, position, 0.7f, stats);
+                    stats.RoadsideTufts++;
+                }
+            }
+            stats.TuftTriangles = tuftMesh.TriangleCount;
+            tufts = tuftMesh.CreateObject("Grass tufts " + chunk.Coord + " (decoration only, no collider)", parent, material);
+            tufts.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             return stats;
         }
 

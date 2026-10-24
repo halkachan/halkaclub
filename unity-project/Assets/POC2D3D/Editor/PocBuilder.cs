@@ -18,8 +18,10 @@ namespace Halka.Poc2D3D.EditorTools
         // Phase 6: RC2 in its own folder (RC1 is kept as it is). Phase 7: RC3 (RC1 and RC2 kept).
         // ver3.1: a local check build in its own folder (RC3 = the published ver3.0 is kept as it
         // is); the kit has no publishing files.
-        public const string ReleaseCandidateFolderName = "HARUKA_WORLD_ver3.1_LOCAL";
-        public const string ReleaseCandidateKit = "v31";
+        public const string ReleaseCandidateFolderName = "HARUKA_WORLD_ver3.2_LOCAL";
+        public const string ReleaseCandidateKit = "v32";
+        // ver3.2: the chunk test build (generated test worlds, memory saves) in its own folder.
+        public const string ChunkTestFolderName = "HARUKA_WORLD_ver3.2_CHUNKTEST";
         public const string ReleaseCandidateGamePath = "halkaworld/webgl";
 
         public static string ReleaseCandidatePath =>
@@ -109,13 +111,44 @@ namespace Halka.Poc2D3D.EditorTools
             }
         }
 
-        private static BuildReport BuildScene(string scene, string output)
+        // ver3.2: the chunk test scene, built outside the repository (development: true adds the
+        // profiler counters such as draw calls, for that measurement only).
+        public static void BuildChunkTestBatch() => BuildChunkTestBatch(false);
+        public static void BuildChunkTestDevelopmentBatch() => BuildChunkTestBatch(true);
+
+        private static void BuildChunkTestBatch(bool development)
+        {
+            try
+            {
+                PocSceneBuilder.BuildChunkTestScene();
+                var root = Path.GetFullPath(Path.Combine(PocSceneBuilder.RepositoryRoot, "..", ChunkTestFolderName));
+                var output = Path.Combine(root, development ? "webgl_dev" : "webgl");
+                var report = BuildScene(PocSceneBuilder.ChunkTestScenePath, output, development);
+                var page = Path.Combine(output, "index.html");
+                File.WriteAllText(page, PreviewPage(File.ReadAllText(page), "はるかわーるど ver3.2 chunk test", false));
+                File.WriteAllText(Path.Combine(root, development ? "BUILD_INFO_dev.txt" : "BUILD_INFO.txt"),
+                    "はるかわーるど ver3.2 chunk test build (" + (development ? "development" : "release settings") + ")\n" +
+                    "not for publishing; saves stay in memory (no browser save is read or written)\n" +
+                    "URL: webgl/index.html?world=32|64|128|256&chunk=8..64&debug=1\n" +
+                    "build: " + BuildId(output) + "\nsize: " + report.summary.totalSize + " bytes\n");
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        private static BuildReport BuildScene(string scene, string output) => BuildScene(scene, output, false);
+
+        private static BuildReport BuildScene(string scene, string output, bool development)
         {
             var publicWebGl = Path.GetFullPath(Path.Combine(PocSceneBuilder.RepositoryRoot, "halkaworld"));
             if (output.StartsWith(publicWebGl, StringComparison.OrdinalIgnoreCase) ||
                 output.StartsWith(PocSceneBuilder.RepositoryRoot, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("POC builds must stay outside the repository: " + output);
-            if (EditorUserBuildSettings.development || EditorUserBuildSettings.allowDebugging)
+            if (!development && (EditorUserBuildSettings.development || EditorUserBuildSettings.allowDebugging))
                 throw new InvalidOperationException("Expected a non-development configuration (no script debugging)");
             Directory.CreateDirectory(output);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
@@ -123,7 +156,7 @@ namespace Halka.Poc2D3D.EditorTools
                 scenes = new[] { scene },
                 locationPathName = output,
                 target = BuildTarget.WebGL,
-                options = BuildOptions.None
+                options = development ? BuildOptions.Development : BuildOptions.None
             });
             if (report.summary.result != BuildResult.Succeeded)
                 throw new InvalidOperationException("POC WebGL build failed: " + report.summary.result);

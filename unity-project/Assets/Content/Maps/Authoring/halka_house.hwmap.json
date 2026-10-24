@@ -397,6 +397,30 @@
         "x": 4,
         "y": 0
       }
+    },
+    {
+      "instanceId": "obj_kitchen_counter_v32_house",
+      "definitionId": "kitchen_counter",
+      "rootCell": {
+        "x": 5,
+        "y": -3
+      }
+    },
+    {
+      "instanceId": "obj_living_rug_v32_house",
+      "definitionId": "living_rug",
+      "rootCell": {
+        "x": 0,
+        "y": -1
+      }
+    },
+    {
+      "instanceId": "obj_low_table_v32_house",
+      "definitionId": "low_table_living",
+      "rootCell": {
+        "x": 1,
+        "y": 0
+      }
     }
   ],
   "markers": [

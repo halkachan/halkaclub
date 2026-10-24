@@ -144,16 +144,20 @@ MonoBehaviour:
     Definition: {fileID: 11400000, guid: af912f69adb8e0140b255ee852e3d35b, type: 2}
   objects:
   - InstanceId: obj_dtm_desk_v31_soundbooth
-    RootCell: {x: -2, y: 3}
+    RootCell: {x: -3, y: 3}
     Definition: {fileID: 11400000, guid: 518dae906864c3d4f9ddc67d5e7bf655, type: 2}
     SignText: 
   - InstanceId: obj_illust_desk_v31_soundbooth
-    RootCell: {x: -4, y: 3}
+    RootCell: {x: -6, y: 3}
     Definition: {fileID: 11400000, guid: 3aa14fdec5dd2d94b8d17357b31ecc87, type: 2}
     SignText: 
   - InstanceId: obj_recording_mic_v31_soundbooth
     RootCell: {x: 4, y: 1}
     Definition: {fileID: 11400000, guid: aad2d0d6b3795a54d8e8851da8cee295, type: 2}
+    SignText: 
+  - InstanceId: obj_guitar_stand_v32_soundbooth
+    RootCell: {x: 3, y: 3}
+    Definition: {fileID: 11400000, guid: 850b9ba8e43b6144c91aa7da3c7e81d7, type: 2}
     SignText: 
   markers:
   - StableId: interior_entry

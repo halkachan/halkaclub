@@ -176,7 +176,9 @@ namespace Halka.Poc2D3D
 
     // Builds the 3D presentation of the active map from shared data. Nothing here decides
     // movement; a rebuilt presentation is a pure function of the SharedWorldModel.
-    public sealed class PocWorldPresenter : MonoBehaviour
+    // ver3.2: the outdoor world is drawn chunk by chunk (PocWorldPresenter.Chunks.cs); rooms are
+    // built whole as before.
+    public sealed partial class PocWorldPresenter : MonoBehaviour
     {
         public const float WallHeight = 1.1f;
         private const int OutdoorMargin = 8;
@@ -192,15 +194,19 @@ namespace Halka.Poc2D3D
         public IReadOnlyList<PocObjectView> Views => views;
         public int BuiltTriangles { get; private set; }
         public string BuiltMapId { get; private set; }
-        public PocEnvironmentStats Environment { get; private set; }
+        public PocEnvironmentStats Environment => chunkMode ? ChunkEnvironment() : environment;
         public PocInteriorStats Interior { get; private set; }
-        public GameObject GroundObject { get; private set; }
-        public GameObject TuftObject { get; private set; }
+        // ver3.2: outdoors, the ground and the tufts of the chunk she stands in.
+        public GameObject GroundObject => chunkMode ? ChunkPart(true) : groundObject;
+        public GameObject TuftObject => chunkMode ? ChunkPart(false) : tuftObject;
+        private PocEnvironmentStats environment;
+        private GameObject groundObject;
+        private GameObject tuftObject;
 
         public bool GridVisible
         {
             get => gridVisible;
-            set { gridVisible = value; if (gridOverlay != null) gridOverlay.SetActive(value); }
+            set { gridVisible = value; if (gridOverlay != null) gridOverlay.SetActive(value); ApplyOverlayVisibility(); }
         }
 
         public void Configure(SharedWorldSession worldSession, PocPresentationCatalog presentation)
@@ -227,6 +233,7 @@ namespace Halka.Poc2D3D
 
         public void Rebuild(SharedWorldModel world)
         {
+            ReleaseChunks();
             if (mapRoot != null)
             {
                 if (Application.isPlaying) Destroy(mapRoot.gameObject);
@@ -236,6 +243,11 @@ namespace Halka.Poc2D3D
             BuiltTriangles = 0;
             mapRoot = new GameObject("Map 3D - " + world.MapId).transform;
             mapRoot.SetParent(transform, false);
+            if (world.IsOutdoorWorld && catalog.Environment != null && catalog.Environment.IsComplete)
+            {
+                BuildChunkedWorld(world);
+                return;
+            }
             BuildGround(world);
             foreach (var instance in world.Objects) views.Add(BuildObject(instance));
             gridOverlay = BuildGridOverlay(world);
@@ -255,20 +267,20 @@ namespace Halka.Poc2D3D
 
         private void BuildGround(SharedWorldModel world)
         {
-            Environment = null;
+            environment = null;
             Interior = null;
-            GroundObject = TuftObject = null;
+            groundObject = tuftObject = null;
             var dressing = catalog.Environment;
             if (!world.IsInterior && dressing != null && dressing.IsComplete)
             {
-                Environment = PocEnvironmentBuilder.Build(world, dressing, catalog.VertexColorMaterial, mapRoot,
+                environment = PocEnvironmentBuilder.Build(world, dressing, catalog.VertexColorMaterial, mapRoot,
                     out var dressedGround, out var tufts);
-                GroundObject = dressedGround;
-                TuftObject = tufts;
+                groundObject = dressedGround;
+                tuftObject = tufts;
                 // Grass gets the global grass outline setting (marker strength), never a fixed one.
                 PocOutlineTag.ApplyInPlace(tufts.GetComponent<MeshFilter>().sharedMesh,
                     PocOutlineTag.DecorationId, PocOutlineTag.MarkerStrength);
-                BuiltTriangles += Environment.GroundTriangles + Environment.TuftTriangles;
+                BuiltTriangles += environment.GroundTriangles + environment.TuftTriangles;
                 BuildWalls(world);
                 return;
             }
@@ -333,14 +345,19 @@ namespace Halka.Poc2D3D
             }
         }
 
-        private PocObjectView BuildObject(SharedObjectInstance instance)
+        private PocObjectView BuildObject(SharedObjectInstance instance) => BuildObject(instance, mapRoot, views.Count, out _);
+
+        // ver3.2: parent is the chunk's root outdoors; outlineIndex keeps the ver3.1 id (the
+        // Object's place in its Map's list); triangles: this Object's share.
+        private PocObjectView BuildObject(SharedObjectInstance instance, Transform parent, int outlineIndex, out int triangles)
         {
+            var before = BuiltTriangles;
             var binding = catalog.Find(instance.DefinitionId);
             GameObject root;
             if (binding != null)
             {
                 root = new GameObject(instance.DefinitionId + " " + instance.InstanceId);
-                root.transform.SetParent(mapRoot, false);
+                root.transform.SetParent(parent, false);
                 var source = binding.Pick(instance.InstanceId);
                 var model = Instantiate(source, root.transform, false);
                 model.name = source.name;
@@ -367,11 +384,11 @@ namespace Halka.Poc2D3D
                 }
                 BuiltTriangles += mesh.TriangleCount;
                 root = mesh.CreateObject(instance.DefinitionId + " " + instance.InstanceId + " (fallback)",
-                    mapRoot, catalog.VertexColorMaterial);
+                    parent, catalog.VertexColorMaterial);
             }
             root.transform.position = GridSpace3D.ToWorld(instance.RootCell);
             // Object IDs 1..249 for the 2D outline; the order follows the Map's object list.
-            PocOutlineTag.Apply(root, views.Count % 249 + 1, binding != null ? binding.outlineStrength : 1f);
+            PocOutlineTag.Apply(root, outlineIndex % 249 + 1, binding != null ? binding.outlineStrength : 1f);
             var view = root.AddComponent<PocObjectView>();
             view.InstanceId = instance.InstanceId;
             view.DefinitionId = instance.DefinitionId;
@@ -392,6 +409,7 @@ namespace Halka.Poc2D3D
             if (view.PartialOcclusion || view.FadeInFront3D) view.CacheTriangles();
             if (binding != null && !string.IsNullOrEmpty(binding.perchAnchorName))
                 view.PerchAnchor = FindChild(root.transform, binding.perchAnchorName);
+            triangles = BuiltTriangles - before;
             return view;
         }
 

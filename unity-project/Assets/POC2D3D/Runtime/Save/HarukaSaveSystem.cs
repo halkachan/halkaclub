@@ -239,40 +239,68 @@ namespace Halka.Poc2D3D.Save
             start.TryGetEntitySpawn("player_main", out var startSpawn);
             var startPlace = new Place { MapId = start.MapId, Cell = startSpawn.Cell, Facing = EntityRuntimeFactory2D.ParseFacing(startSpawn.Facing) };
             if (map == null) { startPlace.Note = "unknown map " + mapId + ": the first map's start"; return startPlace; }
-            var model = new SharedWorldModel(map);
+            // ver3.2: an outdoor Map is checked inside the outdoor world (world cells: the regions
+            // around it count too); every answer goes back to Map ID + Map cell (Save Schema 1).
+            SharedWorldModel model;
+            Vector2Int target;
+            if (session.TryToSessionCell(mapId, cell, out var world, out var worldCell) && world.IsOutdoorWorld)
+            {
+                model = world;
+                target = worldCell;
+            }
+            else
+            {
+                model = new SharedWorldModel(map);
+                target = cell;
+            }
             bool Safe(Vector2Int c) => model.CanEnter(c) && !IsTransitionCell(model, c) && (occupied == null || !occupied(c));
             var note = facingOk ? "" : "facing reset; ";
-            if (Safe(cell)) return new Place { MapId = mapId, Cell = cell, Facing = facing, Note = note + "saved cell" };
-            var origin = MapStart(model, out var originFacing);
+            if (Safe(target)) return ToPlace(model, target, facing, note + "saved cell");
+            var origin = MapStart(model, map, out var originFacing);
             var reachable = Reachable(model, origin, Safe);
             var best = default(Vector2Int);
             var bestDistance = int.MaxValue;
             foreach (var c in reachable)
             {
-                var d = Mathf.Abs(c.x - cell.x) + Mathf.Abs(c.y - cell.y);
+                var d = Mathf.Abs(c.x - target.x) + Mathf.Abs(c.y - target.y);
                 if (d < bestDistance || d == bestDistance && (c.y > best.y || c.y == best.y && c.x < best.x)) { best = c; bestDistance = d; }
             }
             if (bestDistance != int.MaxValue)
-                return new Place { MapId = mapId, Cell = best, Facing = facing, Note = note + "nearest safe cell (saved cell not usable)" };
-            if (Safe(origin)) return new Place { MapId = mapId, Cell = origin, Facing = originFacing, Note = note + "the map's start" };
+                return ToPlace(model, best, facing, note + "nearest safe cell (saved cell not usable)");
+            if (Safe(origin)) return ToPlace(model, origin, originFacing, note + "the map's start");
             startPlace.Note = note + "the first map's start";
             return startPlace;
+        }
+
+        // A model cell back to what a save holds: the region's Map and its cell outdoors.
+        private static Place ToPlace(SharedWorldModel model, Vector2Int cell, FacingDirection facing, string note)
+        {
+            var region = model.IsOutdoorWorld ? model.OutdoorIndex.RegionAt(cell) : null;
+            return new Place
+            {
+                MapId = region != null ? region.MapId : model.MapId,
+                Cell = region != null ? region.ToLocal(cell) : cell,
+                Facing = facing,
+                Note = note
+            };
         }
 
         public static bool IsTransitionCell(SharedWorldModel model, Vector2Int cell) =>
             model.TryGetHouseDoor(out var door) && door == cell ||
             model.TryGetMarker("interior_exit", out var exit) && exit == cell;
 
-        private static Vector2Int MapStart(SharedWorldModel model, out FacingDirection facing)
+        // The Map's start in the model's cells (world cells for an outdoor region).
+        private static Vector2Int MapStart(SharedWorldModel model, MapDefinition map, out FacingDirection facing)
         {
             facing = FacingDirection.Down;
-            if (model.Map.TryGetEntitySpawn("player_main", out var spawn))
+            var region = model.IsOutdoorWorld ? model.OutdoorIndex.FindRegion(map.MapId) : null;
+            if (map.TryGetEntitySpawn("player_main", out var spawn))
             {
                 facing = EntityRuntimeFactory2D.ParseFacing(spawn.Facing);
-                return spawn.Cell;
+                return region != null ? region.ToWorld(spawn.Cell) : spawn.Cell;
             }
-            if (model.TryGetMarker("interior_entry", out var entry)) { facing = FacingDirection.Up; return entry; }
-            return model.MinCell;
+            if (!model.IsOutdoorWorld && model.TryGetMarker("interior_entry", out var entry)) { facing = FacingDirection.Up; return entry; }
+            return region != null ? region.Rect.Min : model.MinCell;
         }
 
         private static List<Vector2Int> Reachable(SharedWorldModel model, Vector2Int origin, Func<Vector2Int, bool> safe)
@@ -318,8 +346,8 @@ namespace Halka.Poc2D3D.Save
 
         private State Now() => new State
         {
-            Map = session.World.MapId,
-            Cell = session.Cell,
+            Map = SavePlace(out var nowCell),
+            Cell = nowCell,
             Facing = session.Facing,
             Steps = lifeLog != null ? lifeLog.TotalSteps : 0,
             View = views != null ? views.Mode : PocViewMode.PixelView2D,
@@ -338,11 +366,19 @@ namespace Halka.Poc2D3D.Save
                 AutoEnabled = autoMode != null ? autoMode.AutoEnabled : Loaded?.AutoEnabled ?? true,
                 ViewMode = views != null && views.Mode == PocViewMode.ThirdPerson3D ? HarukaSaveData.View3D : HarukaSaveData.View2D,
                 // The logical cell: during a step this is still the cell it started from.
-                MapId = session.World.MapId,
-                CellX = session.Cell.x,
-                CellY = session.Cell.y,
+                // ver3.2: outdoors, the region's Map and the cell in it (Schema 1, as before).
+                MapId = SavePlace(out var placeCell),
+                CellX = placeCell.x,
+                CellY = placeCell.y,
                 Facing = HarukaSaveData.FacingName(session.Facing),
             };
+        }
+
+        private string SavePlace(out Vector2Int mapCell)
+        {
+            if (session.TryGetSavePlace(out var mapId, out mapCell)) return mapId;
+            mapCell = session.Cell;
+            return session.World.MapId;
         }
 
         private void LateUpdate() => Tick(Time.unscaledTime);

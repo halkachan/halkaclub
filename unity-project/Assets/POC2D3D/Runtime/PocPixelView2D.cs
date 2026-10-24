@@ -130,23 +130,49 @@ namespace Halka.Poc2D3D
         private readonly Dictionary<Vector2Int, Vector2> grassRustles = new Dictionary<Vector2Int, Vector2>(); // (frame, elapsed)
         private readonly List<Vector2Int> grassDone = new List<Vector2Int>();
         private SharedWorldModel grassWorld;
+        private int grassChunkVersion = -1;
         private bool grassHooked;
         private PocCrow hookedCrow;
 
+        // The 2D game's grass rule for any cell of the world (drawn or not).
         public bool HasGrass(Vector2Int cell)
         {
             EnsureGrass();
+            if (session != null && session.World != null && session.World.IsOutdoorWorld) return session.World.HasGrass(cell);
             return grassSet.Contains(cell);
         }
 
+        // ver3.2: outdoors only the drawn chunks' grass is listed (the list follows the streamer);
+        // the order stays North row first across chunks, so the South rows still overlap them.
         private void EnsureGrass()
         {
             HookGrass();
-            if (session == null || session.World == grassWorld) return;
+            if (session == null) return;
+            var chunked = session.World != null && session.World.IsOutdoorWorld && worldPresenter != null && worldPresenter.ChunkMode;
+            var version = chunked ? worldPresenter.ChunkVersion : -1;
+            if (session.World == grassWorld && version == grassChunkVersion) return;
+            if (session.World != grassWorld) grassRustles.Clear();
             grassWorld = session.World;
+            grassChunkVersion = version;
             grassCells.Clear();
             grassSet.Clear();
-            grassRustles.Clear();
+            if (chunked)
+            {
+                var index = grassWorld.OutdoorIndex;
+                foreach (var coord in worldPresenter.ReadyChunks())
+                {
+                    var rect = World.WorldGrid.ChunkRect(coord, index.ChunkSize);
+                    for (var y = rect.Min.y; y <= rect.Max.y; y++)
+                    for (var x = rect.Min.x; x <= rect.Max.x; x++)
+                    {
+                        var cell = new Vector2Int(x, y);
+                        if (index.HasGrass(cell)) grassCells.Add(cell);
+                    }
+                }
+                grassCells.Sort((a, b) => a.y != b.y ? b.y.CompareTo(a.y) : a.x.CompareTo(b.x));
+                foreach (var cell in grassCells) grassSet.Add(cell);
+                return;
+            }
             var map = grassWorld.Map;
             for (var y = map.MaxCell.y; y >= map.MinCell.y; y--) // North first: the South rows overlap them
             for (var x = map.MinCell.x; x <= map.MaxCell.x; x++)
@@ -273,6 +299,11 @@ namespace Halka.Poc2D3D
         // The 3D grass tufts belong to the 3D view; with the original grass the 2D view leaves them out.
         public void ApplyTuftVisibility(bool pixelViewActive)
         {
+            if (worldPresenter != null && worldPresenter.ChunkMode)
+            {
+                worldPresenter.SetTuftsHidden(pixelViewActive && OriginalGrass2D && GrassReady);
+                return;
+            }
             var tufts = worldPresenter != null ? worldPresenter.TuftObject : null;
             var renderer = tufts != null ? tufts.GetComponent<Renderer>() : null;
             if (renderer != null) renderer.enabled = !(pixelViewActive && OriginalGrass2D && GrassReady);
@@ -379,6 +410,11 @@ namespace Halka.Poc2D3D
             actor.Apply(0f);
 
             var desired = ClampToMap(GridSpace3D.ToWorld(session.Position));
+            // ver3.2: tell the chunk streamer how many cells this view shows around her.
+            if (worldPresenter != null && target != null)
+                worldPresenter.ViewHalfCells2D = new Vector2Int(
+                    Mathf.CeilToInt(target.width * PixelWorldSize / GridSpace3D.CellSize * 0.5f) + 2,
+                    Mathf.CeilToInt(target.height * PixelWorldNorth / GridSpace3D.CellSize * 0.5f) + 4);
             if (snapNext)
             {
                 focus = desired;

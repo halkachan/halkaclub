@@ -6,6 +6,7 @@ using Halka.Game.Interaction;
 using Halka.Game.Player;
 using Halka.Game.UI;
 using Halka.Game.World;
+using Halka.Poc2D3D.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -23,7 +24,10 @@ namespace Halka.Poc2D3D.EditorTools
         // POC scene stays the technical verification scene with its options shown).
         // ver3.1: the game scene is HARUKA_WORLD_ver3.1 (the ver3.0 RC3 scene file is kept as the
         // published version's scene and no longer rebuilt).
-        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.1.unity";
+        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.2.unity";
+        // ver3.2: the chunk test scene (the release scene + a generated test world; test builds only).
+        public const string ChunkTestScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.2_CHUNKTEST.unity";
+        public const string ChunkTestFixturePath = Root + "/Fixtures/ChunkTest/PocTestWorldFixture.asset";
         public const string Ver30Rc3ScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.0_RC3.unity";
         public const string CatalogPath = Root + "/Data/POC_PresentationCatalog.asset";
         public const string ToonMaterialPath = Root + "/Materials/POC_ToonVertexColor.mat";
@@ -88,6 +92,8 @@ namespace Halka.Poc2D3D.EditorTools
         public const string TreeFadeMaterialPath = Root + "/Materials/POC_ToonVertexColorFade.mat";
         public const string OutdoorMapPath = "Assets/Content/Maps/first_field.asset";
         public const string InteriorMapPath = "Assets/Content/Maps/halka_house.asset";
+        // ver3.2: the outdoor world registry (which outdoor Maps, at which world offsets).
+        public const string OutdoorWorldRegistryPath = "Assets/Content/Maps/World/outdoor_main.hwworld.json";
         // ver3.1: the sound booth (its own map, entered from the booth in the house) and its
         // Blender models (blender/scripts/build_v31_studio.py).
         public const string SoundBoothMapPath = "Assets/Content/Maps/halka_soundbooth.asset";
@@ -99,6 +105,13 @@ namespace Halka.Poc2D3D.EditorTools
             "booth_wall_base", "booth_wall_upper", "booth_doorway_base", "booth_doorway_upper"
         };
         public static readonly string[] V31Definitions = { "soundbooth_exterior", "dtm_desk_large", "illust_desk_tablet" };
+        // ver3.2 interior: the two booth desks one cell wider (a middle cell to stand in front of),
+        // the house's kitchen, rug and low table, the booth's guitar (blender/scripts/build_v32_interior.py).
+        public const string V32Models = Root + "/Models/V32/";
+        public static readonly string[] V32ModelNames =
+        {
+            "dtm_desk_large", "illust_desk_tablet", "kitchen_counter", "living_rug", "low_table_living", "guitar_stand"
+        };
         public const string MessageFontPath = "Assets/Content/Fonts/HalkaMessageSubset.ttf";
         public const string BlenderMaterialName = "HALKA_VertexColor";
 
@@ -149,6 +162,7 @@ namespace Halka.Poc2D3D.EditorTools
             RemapModelMaterial(CrowModelPath, toon);
             RemapModelMaterial(SofaModelPath, toon);
             foreach (var name in V31ModelNames) RemapModelMaterial(V31Models + name + ".fbx", toon);
+            foreach (var name in V32ModelNames) RemapModelMaterial(V32Models + name + ".fbx", toon);
             EnsureMaterial(TreeFadeMaterialPath, "HALKA/POC/ToonVertexColorFade", null);
             EnsureMaterial(OutlineMaterialPath, "HALKA/POC/OutlineComposite", null);
             EnsureMaterial(Outline3DMaterialPath, "HALKA/POC/Outline3D", null);
@@ -200,10 +214,21 @@ namespace Halka.Poc2D3D.EditorTools
                 // through it at the player); the desks are low furniture.
                 new PocPresentationBinding { definitionId = "soundbooth_exterior", model = V31("soundbooth_exterior"),
                     cameraOccluder = false },
-                new PocPresentationBinding { definitionId = "dtm_desk_large", model = V31("dtm_desk_large"),
+                // ver3.2 interior: the wider desks (V32), the kitchen (tall, against the East wall: it
+                // never stands between the camera and her), the rug (flat: no shadow, a soft outline),
+                // the low table and the guitar (small: never hidden for the camera).
+                new PocPresentationBinding { definitionId = "dtm_desk_large", model = V32("dtm_desk_large"),
                     cameraOccluder = false },
-                new PocPresentationBinding { definitionId = "illust_desk_tablet", model = V31("illust_desk_tablet"),
-                    cameraOccluder = false }
+                new PocPresentationBinding { definitionId = "illust_desk_tablet", model = V32("illust_desk_tablet"),
+                    cameraOccluder = false },
+                new PocPresentationBinding { definitionId = "kitchen_counter", model = V32("kitchen_counter"),
+                    cameraOccluder = false },
+                new PocPresentationBinding { definitionId = "living_rug", model = V32("living_rug"),
+                    cameraOccluder = false, castShadows = false, outlineStrength = 0.5f },
+                new PocPresentationBinding { definitionId = "low_table_living", model = V32("low_table_living"),
+                    cameraOccluder = false },
+                new PocPresentationBinding { definitionId = "guitar_stand", model = V32("guitar_stand"),
+                    cameraOccluder = false, minPickSize = SmallPickSize }
             }, new PocEnvironmentPresentation
             {
                 grassTiles = new List<GameObject> { Phase2("ground_grass_a"), Phase2("ground_grass_b"), Phase2("ground_grass_c") },
@@ -256,11 +281,27 @@ namespace Halka.Poc2D3D.EditorTools
             Debug.Log("HALKA POC scene built: " + scenePath + (releaseCandidate ? " (Release Candidate)" : ""));
         }
 
+        // ver3.2: the release scene with a generated test world (PocChunkTestBoot) for the chunk
+        // checks in WebGL. The fixture asset is referenced only by this scene.
+        public static void BuildChunkTestScene()
+        {
+            Build(ChunkTestScenePath, true);
+            var fixture = AssetDatabase.LoadAssetAtPath<Halka.Poc2D3D.World.PocTestWorldFixture>(ChunkTestFixturePath);
+            if (fixture == null || !fixture.IsComplete) throw new InvalidOperationException("chunk test fixture missing: " + ChunkTestFixturePath);
+            var scene = EditorSceneManager.OpenScene(ChunkTestScenePath, OpenSceneMode.Single);
+            var root = scene.GetRootGameObjects()[0];
+            var boot = root.AddComponent<Halka.Poc2D3D.Dev.PocChunkTestBoot>();
+            boot.Configure(fixture, root.GetComponent<SharedWorldSession>(), root.GetComponentInChildren<Halka.Poc2D3D.Save.HarukaSaveSystem>(true));
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            Debug.Log("HALKA chunk test scene built: " + ChunkTestScenePath);
+        }
+
         // Phase 5: the same world and game; only the launch differs. 2D at start, the debug panel
         // off unless ?debug=1, the HUD reads "ver3.0 RC1".
         private static void ConfigureReleaseCandidate(GameObject root)
         {
-            root.name = "HARUKA WORLD ver3.1";
+            root.name = "HARUKA WORLD ver3.2";
             var panel = root.GetComponent<PocDebugPanel>();
             var hud = root.GetComponentInChildren<GameHud>(true);
             var switcher = root.GetComponent<PocViewSwitcher>();
@@ -283,6 +324,22 @@ namespace Halka.Poc2D3D.EditorTools
             EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(menu);
             EditorUtility.SetDirty(guard);
+        }
+
+        // ver3.2: the registry decides the outdoor world; its Player Start Map must be the one the
+        // session starts on (first_field), and any error stops the build.
+        public static OutdoorWorldDefinition LoadOutdoorWorld(MapDefinition startMap)
+        {
+            var file = AssetDatabase.LoadAssetAtPath<TextAsset>(OutdoorWorldRegistryPath);
+            if (file == null) throw new InvalidOperationException("Outdoor world registry is missing: " + OutdoorWorldRegistryPath);
+            var problems = new List<string>();
+            var world = OutdoorWorldRegistryJson.Parse(file.text,
+                id => AssetDatabase.LoadAssetAtPath<MapDefinition>("Assets/Content/Maps/" + id + ".asset"), problems);
+            foreach (var problem in problems) Debug.LogWarning("[ver3.2 world registry] " + problem);
+            if (world == null) throw new InvalidOperationException("Outdoor world registry is invalid: " + string.Join("; ", problems));
+            if (!world.regions.Exists(link => link.map == startMap))
+                throw new InvalidOperationException("Outdoor world registry does not contain " + startMap.MapId);
+            return world;
         }
 
         public static GameObject BuildSceneContent(PocPresentationCatalog catalog, Material screenOverlay)
@@ -347,6 +404,7 @@ namespace Halka.Poc2D3D.EditorTools
             thirdPerson.enabled = false;
 
             session.Configure(outdoor, interior, input);
+            session.ConfigureOutdoorWorld(LoadOutdoorWorld(outdoor), catalog.Environment.outsideMargin);
             session.ConfigureInnerRoom(interior.MapId, soundBooth);
             input.Configure(dpad, action, switcher, panel, session);
             presenter.Configure(session, catalog);
@@ -362,6 +420,8 @@ namespace Halka.Poc2D3D.EditorTools
             switcher.Configure(pixelView, presenterCamera, thirdPerson, actor, presenter, session, input);
             time.Configure(worldTime, session, switcher, sun, thirdCamera);
             panel.Configure(session, switcher, input, time, presenter, dpad, action, font);
+            // ver3.2: development numbers for the browser checks (off unless ?debug=1 / ?devstats=1).
+            root.AddComponent<Halka.Poc2D3D.Dev.PocDevStats>().Configure(session, presenter, switcher);
             BuildPhase4Content(root, session, input, presenter, switcher, pixelView, thirdPerson, actor, panel,
                 dpad, action, font);
             return root;
@@ -554,6 +614,7 @@ namespace Halka.Poc2D3D.EditorTools
         public static GameObject Phase2(string name) => LoadModel(Phase2Models + name + ".fbx");
         public static GameObject Phase3(string name) => LoadModel(Phase3Models + name + ".fbx");
         public static GameObject V31(string name) => LoadModel(V31Models + name + ".fbx");
+        public static GameObject V32(string name) => LoadModel(V32Models + name + ".fbx");
         // Clicks on small things (flower, stone, cushion) count within at least this cube.
         public const float SmallPickSize = 0.3f;
 
