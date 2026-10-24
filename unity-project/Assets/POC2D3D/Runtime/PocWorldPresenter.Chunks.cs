@@ -26,6 +26,7 @@ namespace Halka.Poc2D3D
             public GameObject Tufts;
             public GameObject Grid;
             public GameObject Border;
+            public GameObject RegionBorder;
             public PocEnvironmentStats Stats;
             public int Triangles;
             public bool Fallback;
@@ -40,6 +41,7 @@ namespace Halka.Poc2D3D
         private readonly Dictionary<ChunkCoord, ChunkPayload> payloads = new Dictionary<ChunkCoord, ChunkPayload>();
         private bool tuftsHidden;
         private bool chunkBordersVisible;
+        private bool regionBordersVisible;
         private PocEnvironmentStats aggregated;
         private int aggregatedVersion = -1;
         private readonly Dictionary<string, (bool ok, Vector3 offset)> perchOffsets = new Dictionary<string, (bool, Vector3)>();
@@ -62,6 +64,13 @@ namespace Halka.Poc2D3D
         {
             get => chunkBordersVisible;
             set { chunkBordersVisible = value; ApplyOverlayVisibility(); }
+        }
+
+        // ver3.3, debug only: the outline of every region, in its direction's colour.
+        public bool RegionBordersVisible
+        {
+            get => regionBordersVisible;
+            set { regionBordersVisible = value; ApplyOverlayVisibility(); }
         }
 
         public IEnumerable<ChunkCoord> ReadyChunks()
@@ -355,6 +364,40 @@ namespace Halka.Poc2D3D
                     add(new Vector3(x0, h, z1), new Vector3(x0, h, z0), borderColor);
                 }
             });
+            // ver3.3: the regions' outlines inside this chunk (each in its direction's colour).
+            payload.RegionBorder = LineObject("Region border " + chunk.Coord + " (debug)", payload, (add) =>
+            {
+                foreach (var region in chunkIndex.Regions)
+                {
+                    var theme = chunkIndex.Definition.ThemeOf(region.Direction);
+                    var color = theme != null ? Color.Lerp(theme.shade, Color.white, region.Direction == OutdoorWorldDefinition.Center ? 0.4f : 0f) : Color.white;
+                    var rr = region.Rect;
+                    var x0 = rr.Min.x * GridSpace3D.CellSize - half + 0.035f;
+                    var x1 = rr.Max.x * GridSpace3D.CellSize + half - 0.035f;
+                    var z0 = rr.Min.y * GridSpace3D.CellSize - half + 0.035f;
+                    var z1 = rr.Max.y * GridSpace3D.CellSize + half - 0.035f;
+                    var cx0 = r.Min.x * GridSpace3D.CellSize - half;
+                    var cx1 = r.Max.x * GridSpace3D.CellSize + half;
+                    var cz0 = r.Min.y * GridSpace3D.CellSize - half;
+                    var cz1 = r.Max.y * GridSpace3D.CellSize + half;
+                    void Edge(Vector3 a, Vector3 b)
+                    {
+                        // clip a horizontal / vertical segment to this chunk
+                        var lo = Vector3.Max(Vector3.Min(a, b), new Vector3(cx0, -1f, cz0));
+                        var hi = Vector3.Min(Vector3.Max(a, b), new Vector3(cx1, 1f, cz1));
+                        if (lo.x > hi.x || lo.z > hi.z) return;
+                        for (var k = 0; k < 4; k++)
+                        {
+                            var h = lift + 0.04f + k * 0.008f;
+                            add(new Vector3(lo.x, h, lo.z), new Vector3(hi.x, h, hi.z), color);
+                        }
+                    }
+                    Edge(new Vector3(x0, 0f, z0), new Vector3(x1, 0f, z0));
+                    Edge(new Vector3(x0, 0f, z1), new Vector3(x1, 0f, z1));
+                    Edge(new Vector3(x0, 0f, z0), new Vector3(x0, 0f, z1));
+                    Edge(new Vector3(x1, 0f, z0), new Vector3(x1, 0f, z1));
+                }
+            });
             ApplyOverlayVisibility(payload);
         }
 
@@ -393,6 +436,7 @@ namespace Halka.Poc2D3D
         {
             if (payload.Grid != null) payload.Grid.SetActive(gridVisible);
             if (payload.Border != null) payload.Border.SetActive(chunkBordersVisible);
+            if (payload.RegionBorder != null) payload.RegionBorder.SetActive(regionBordersVisible);
         }
 
         // ver3.2: where a crow perches on a tree, from the Object alone (the drawn tree's PerchAnchor

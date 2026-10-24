@@ -987,6 +987,114 @@
           "interactionText": "ギター。 ちょっと ひいてみた。"
         }
       ]
+    },
+    {
+      "definitionId": "flower_yellow",
+      "displayName": "きいろい花",
+      "category": "nature",
+      "previewSpritePath": "Assets/Content/World/flower_yellow.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "allowedMapTypes": [],
+      "actionPoints": [
+        {
+          "id": "examine_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "きいろい はな。"
+        }
+      ]
+    },
+    {
+      "definitionId": "sunflower_cluster",
+      "displayName": "ひまわり",
+      "category": "nature",
+      "previewSpritePath": "Assets/Content/World/sunflower_cluster.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 64,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "allowedMapTypes": [],
+      "actionPoints": [
+        {
+          "id": "examine_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "ひまわり。 みんな おひさまの ほうを むいている。"
+        }
+      ]
+    },
+    {
+      "definitionId": "sign_yellow",
+      "displayName": "看板（ひがし）",
+      "category": "fixture",
+      "previewSpritePath": "Assets/Content/World/sign_yellow.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "allowedMapTypes": [],
+      "actionPoints": [
+        {
+          "id": "read_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "かんばん。"
+        }
+      ]
     }
   ],
   "visuals": {

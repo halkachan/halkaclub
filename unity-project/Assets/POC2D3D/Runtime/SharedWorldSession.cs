@@ -313,6 +313,14 @@ namespace Halka.Poc2D3D
             if (input != null && input.ActionPressed) InteractAhead();
         }
 
+        // ver3.3: the outdoor region she stands in (null indoors). Crossing into another region is an
+        // ordinary step: no map load, no transition, no camera change; only this changes.
+        public OutdoorRegion CurrentRegion => World != null && World == outdoor ? outdoor.OutdoorIndex.RegionAt(Cell) : null;
+        public string CurrentRegionMapId => CurrentRegion?.MapId;
+        public int RegionChanges { get; private set; }
+        public event Action<OutdoorRegion, OutdoorRegion> RegionChanged;
+        private OutdoorRegion lastRegion;
+
         public void Tick(float deltaTime, Vector2Int direction)
         {
             if (!motion.IsMoving) TryStep(direction);
@@ -321,6 +329,13 @@ namespace Halka.Poc2D3D
             if (!wasMoving || motion.IsMoving) return;
             CompletedSteps++;
             var completed = motion;
+            var region = CurrentRegion;
+            if (region != null && lastRegion != null && region != lastRegion)
+            {
+                RegionChanges++;
+                RegionChanged?.Invoke(lastRegion, region);
+            }
+            lastRegion = region ?? lastRegion;
             StepCompleted?.Invoke(motion.Cell);
             if (CheckHouseTransition() || completed != motion) return;
             TryStep(direction);

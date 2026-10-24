@@ -1,0 +1,35 @@
+[
+  {
+    "sprite": "flower_yellow",
+    "model": "flower_yellow",
+    "width": 32,
+    "height": 32,
+    "pitch": 50.0,
+    "renderSize": [
+      256,
+      196
+    ]
+  },
+  {
+    "sprite": "sunflower_cluster",
+    "model": "sunflower_cluster",
+    "width": 32,
+    "height": 64,
+    "pitch": 50.0,
+    "renderSize": [
+      256,
+      392
+    ]
+  },
+  {
+    "sprite": "sign_yellow",
+    "model": "sign_yellow",
+    "width": 32,
+    "height": 32,
+    "pitch": 50.0,
+    "renderSize": [
+      256,
+      196
+    ]
+  }
+]

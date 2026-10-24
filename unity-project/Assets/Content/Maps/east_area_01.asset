@@ -1,0 +1,291 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7333b7c63ac1a534d85d98463325eff1, type: 3}
+  m_Name: east_area_01
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.MapDefinition
+  dataVersion: 4
+  mapId: east_area_01
+  displayName: "\u6771\u30A8\u30EA\u30A2"
+  mapType: outdoor
+  baseSurface: {fileID: 11400000, guid: 0db760ea3a4879a479bdb2cc6cfd8c4d, type: 2}
+  grassMode: auto
+  backdropColor: {r: 0.0627451, g: 0.0627451, b: 0.078431375, a: 1}
+  minCell: {x: 0, y: 0}
+  maxCell: {x: 25, y: 12}
+  surfaces:
+  - Cell: {x: 16, y: 3}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 15, y: 4}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 16, y: 4}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 17, y: 4}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 0, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 1, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 2, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 3, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 4, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 5, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 6, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 7, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 8, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 9, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 10, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 11, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 12, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 13, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 14, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 15, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 16, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 17, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 18, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 19, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 20, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 21, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 22, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 23, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 24, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 25, y: 5}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 15, y: 6}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 16, y: 6}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 17, y: 6}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  - Cell: {x: 16, y: 7}
+    Definition: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  objects:
+  - InstanceId: obj_bench_basic_v33_east_10
+    RootCell: {x: 4, y: 7}
+    Definition: {fileID: 11400000, guid: 9cd4ab71dc404c846bbe7d60329232d9, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_basic_v33_east_35
+    RootCell: {x: 4, y: 2}
+    Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_basic_v33_east_34
+    RootCell: {x: 23, y: 3}
+    Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_basic_v33_east_32
+    RootCell: {x: 7, y: 8}
+    Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_basic_v33_east_31
+    RootCell: {x: 2, y: 9}
+    Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_basic_v33_east_33
+    RootCell: {x: 10, y: 11}
+    Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_39
+    RootCell: {x: 11, y: 1}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_36
+    RootCell: {x: 5, y: 3}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_01
+    RootCell: {x: 14, y: 3}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_02
+    RootCell: {x: 15, y: 3}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_03
+    RootCell: {x: 17, y: 3}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_04
+    RootCell: {x: 18, y: 3}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_42
+    RootCell: {x: 22, y: 4}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_44
+    RootCell: {x: 6, y: 7}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_37
+    RootCell: {x: 9, y: 7}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_38
+    RootCell: {x: 13, y: 7}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_05
+    RootCell: {x: 14, y: 7}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_06
+    RootCell: {x: 15, y: 7}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_07
+    RootCell: {x: 17, y: 7}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_08
+    RootCell: {x: 18, y: 7}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_40
+    RootCell: {x: 21, y: 7}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_46
+    RootCell: {x: 17, y: 9}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_41
+    RootCell: {x: 14, y: 10}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_43
+    RootCell: {x: 18, y: 10}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v33_east_45
+    RootCell: {x: 16, y: 11}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_sign_yellow_v33_east_09
+    RootCell: {x: 1, y: 6}
+    Definition: {fileID: 11400000, guid: 30aa9389addce594fa490cf019ba650d, type: 2}
+    SignText: "\u3053\u306E\u3055\u304D \u304D\u3044\u308D\u3044 \u306F\u306A\u306E
+      \u3072\u308D\u3070\u3002"
+  - InstanceId: obj_stone_basic_v33_east_30
+    RootCell: {x: 8, y: 1}
+    Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
+  - InstanceId: obj_stone_basic_v33_east_27
+    RootCell: {x: 11, y: 3}
+    Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
+  - InstanceId: obj_stone_basic_v33_east_28
+    RootCell: {x: 20, y: 7}
+    Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
+  - InstanceId: obj_stone_basic_v33_east_26
+    RootCell: {x: 5, y: 10}
+    Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
+  - InstanceId: obj_stone_basic_v33_east_29
+    RootCell: {x: 22, y: 10}
+    Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
+  - InstanceId: obj_sunflower_cluster_v33_east_00
+    RootCell: {x: 16, y: 5}
+    Definition: {fileID: 11400000, guid: a06aea61e8e9db843a0dbec692ee1bd5, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v33_east_19
+    RootCell: {x: 2, y: 1}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v33_east_21
+    RootCell: {x: 10, y: 1}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v33_east_22
+    RootCell: {x: 13, y: 1}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v33_east_25
+    RootCell: {x: 19, y: 1}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v33_east_20
+    RootCell: {x: 7, y: 2}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v33_east_23
+    RootCell: {x: 21, y: 2}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v33_east_24
+    RootCell: {x: 24, y: 2}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v33_east_18
+    RootCell: {x: 24, y: 6}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v33_east_11
+    RootCell: {x: 1, y: 8}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v33_east_12
+    RootCell: {x: 3, y: 9}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v33_east_13
+    RootCell: {x: 6, y: 9}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v33_east_14
+    RootCell: {x: 9, y: 9}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v33_east_15
+    RootCell: {x: 12, y: 9}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v33_east_16
+    RootCell: {x: 20, y: 9}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v33_east_17
+    RootCell: {x: 23, y: 9}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  markers:
+  - StableId: landmark_east_flower_plaza
+    Cell: {x: 16, y: 4}
+  - StableId: road_east
+    Cell: {x: 25, y: 5}
+  - StableId: road_west
+    Cell: {x: 0, y: 5}
+  entitySpawns: []
+  areaTransitions: []

@@ -13,6 +13,20 @@ namespace Halka.Poc2D3D.World
         public string mapId;
         public MapDefinition map;
         public Vector2Int offset;
+        // ver3.3: which direction of the world the region belongs to (center, north, east, south,
+        // west): its accents use that direction's theme colour (North blue, East yellow, South red,
+        // West green). The direction is the region's; the ground keeps the field's own colours.
+        public string direction = OutdoorWorldDefinition.Center;
+    }
+
+    // ver3.3: one direction's colour (Assets/Content/Maps/World/direction_themes.json).
+    [Serializable]
+    public sealed class DirectionTheme
+    {
+        public string direction;
+        public string name;     // the place name the game shows (ひがし ...)
+        public Color color;
+        public Color shade;
     }
 
     // ver3.2: the outdoor world (game side only; WORLD EDITOR v1.0 and the Map JSON are untouched).
@@ -31,6 +45,18 @@ namespace Halka.Poc2D3D.World
         public int formatVersion = FormatVersion;
         public int chunkSize = DefaultChunkSize;
         public List<OutdoorRegionLink> regions = new List<OutdoorRegionLink>();
+        public List<DirectionTheme> themes = new List<DirectionTheme>();
+
+        public const string Center = "center";
+        public static readonly string[] Directions = { Center, "north", "east", "south", "west" };
+
+        public DirectionTheme ThemeOf(string direction)
+        {
+            if (themes != null)
+                foreach (var theme in themes)
+                    if (theme != null && theme.direction == direction) return theme;
+            return null;
+        }
 
         // The ver3.1 world as ver3.2 sees it: the one Map at offset (0,0), so every world cell equals
         // its first_field cell. Used when no registry is configured (old tests, fixtures).
@@ -64,6 +90,10 @@ namespace Halka.Poc2D3D.World
                 if (link.mapId != link.map.MapId) problems.Add("ERROR: region id " + link.mapId + " is not its Map's id " + link.map.MapId);
                 if (!ids.Add(link.map.MapId)) problems.Add("ERROR: Map " + link.map.MapId + " placed twice");
                 if (link.map.MapType != "outdoor") problems.Add("ERROR: " + link.map.MapId + " is not an outdoor Map (" + link.map.MapType + ")");
+                if (Array.IndexOf(Directions, string.IsNullOrEmpty(link.direction) ? Center : link.direction) < 0)
+                    problems.Add("ERROR: " + link.map.MapId + " has an unknown direction '" + link.direction + "'");
+                else if (themes != null && themes.Count > 0 && ThemeOf(string.IsNullOrEmpty(link.direction) ? Center : link.direction) == null)
+                    problems.Add("ERROR: no theme for the direction '" + link.direction + "' of " + link.map.MapId);
                 if (!WorldGrid.IsValidCell(link.offset)) { problems.Add("ERROR: offset out of range for " + link.map.MapId); continue; }
                 CellRect rect;
                 try { rect = new CellRect(WorldGrid.CheckedAdd(link.map.MinCell, link.offset), WorldGrid.CheckedAdd(link.map.MaxCell, link.offset)); }
@@ -103,6 +133,7 @@ namespace Halka.Poc2D3D.World
         {
             public string mapId;
             public CellDto offset;
+            public string direction;   // ver3.3 (optional: center)
         }
 
         [Serializable]
@@ -110,6 +141,26 @@ namespace Halka.Poc2D3D.World
         {
             public int x;
             public int y;
+        }
+    }
+
+    // ver3.3: direction_themes.json's shape.
+    [Serializable]
+    public sealed class DirectionThemesDto
+    {
+        public const string Format = "halka-direction-themes";
+        public const int FormatVersion = 1;
+        public string format;
+        public int formatVersion;
+        public ThemeDto[] themes;
+
+        [Serializable]
+        public sealed class ThemeDto
+        {
+            public string direction;
+            public string name;
+            public string color;
+            public string shade;
         }
 
     }
