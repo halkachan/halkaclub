@@ -128,6 +128,7 @@ first_field は、チャンク (-1,-1)・(0,-1)・(-1,0)・(0,0) にまたがり
   - 道は World 全体で先に集め（`CollectWorldRoad`）、それをチャンクで切り出します。チャンク境界で道の形が変わりません。
   - Object は、その **Root セルのチャンク** が作ります。Outline ID は ver3.1 と同じく「Map の Object 順 % 249 + 1」です。
   - プレイ中はチャンクごとに Static Batching。結合 Mesh は、チャンクを解放するときに一緒に破棄します。
+  - 互換用の `GroundObject` / `TuftObject`（ver3.1 の「1枚の地面」を見る古い検査用）は、Map の (0,0) のチャンクの地面・房を返します。`Environment` は、描かれているチャンクの統計の合計です。
 - `PocPixelView2D`（2D）
   - 2D の草（2D ゲームの Sprite）は、**描かれているチャンクの草セルだけ** を北の行から並べて描きます（`EnsureGrass`。並びは ver3.1 と同じ）。
   - 草があるかどうかの判定は、World 全体の論理（`session.World.HasGrass`）を使います。

@@ -129,10 +129,14 @@ namespace Halka.Poc2D3D
             aggregatedVersion = -1;
         }
 
+        // The ver3.1 single ground / tuft object, for code that asks for "the" ground: the chunk at the
+        // primary Map's (0,0) (a fixed chunk, so walking never changes the answer), else the chunk
+        // under her, else any drawn one.
         private GameObject ChunkPart(bool ground)
         {
             ChunkPayload payload = null;
-            if (session != null && chunkIndex != null) payloads.TryGetValue(chunkIndex.ChunkOfCell(session.Cell), out payload);
+            if (chunkIndex != null) payloads.TryGetValue(chunkIndex.ChunkOfCell(chunkIndex.PrimaryRegion.ToWorld(Vector2Int.zero)), out payload);
+            if (payload == null && session != null && chunkIndex != null) payloads.TryGetValue(chunkIndex.ChunkOfCell(session.Cell), out payload);
             if (payload == null) foreach (var item in payloads.Values) { payload = item; break; }
             return payload == null ? null : ground ? payload.Ground : payload.Tufts;
         }

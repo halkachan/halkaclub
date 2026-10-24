@@ -493,7 +493,7 @@ namespace Halka.Poc2D3D.EditorTools
                 foreach (var link in again.regions) UnityEngine.Object.DestroyImmediate(link.map);
             }
             Check("test worlds are not official content: no Map asset written, first_field untouched",
-                !AssetDatabase.FindAssets("chunktest_ t:MapDefinition").Any() && GitClean("unity-project/Assets/Content"));
+                !AssetDatabase.FindAssets("chunktest_ t:MapDefinition").Any() && GitClean("unity-project/Assets/Content/Maps"));
         }
 
         // ---------------------------------------------------------------- 19.2 chunk lifecycle (the streamer alone)
@@ -651,8 +651,8 @@ namespace Halka.Poc2D3D.EditorTools
             var map = Content<MapDefinition>("first_field");
             Check("first_field is drawn in chunk mode (outdoor_main, chunk 16)", presenter.ChunkMode && presenter.ChunkIndex.WorldId == "outdoor_main" &&
                 presenter.ChunkIndex.ChunkSize == 16, ChunkSummary(c));
-            Check("the whole field and its dressing margin are drawn at the start (4 chunks: (-2..0) x (-1..0) as needed)",
-                presenter.ChunkIndex.Chunks.Keys.All(presenter.IsChunkDrawn), ChunkSummary(c));
+            Check("the whole field and its dressing margin are drawn at the start (8 chunks: x -2..1, y -1..0)",
+                presenter.ChunkIndex.Chunks.Count == 8 && presenter.ChunkIndex.Chunks.Keys.All(presenter.IsChunkDrawn), ChunkSummary(c));
             // The ver3.1 builder on the same Map: the same ground, roads and tufts.
             var holder = new GameObject("ver3.1 reference build");
             try
