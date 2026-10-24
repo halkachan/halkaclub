@@ -1,0 +1,13 @@
+{
+  "format": "harukaworld-save",
+  "schemaVersion": 1,
+  "gameVersion": "ver3.0",
+  "savedAtUtc": "2026-10-20T17:27:55Z",
+  "revision": 10,
+  "lifeLog": { "totalSteps": 20, "totalPlaySeconds": 50 },
+  "worldTime": { "anchorUnixMs": 1792517240667 },
+  "settings": { "autoEnabled": true, "viewMode": "3D" },
+  "player": { "mapId": "halka_house", "cell": { "x": 1, "y": -2 }, "facing": "right" },
+  "extensions": {},
+  "checksum": "crc32:f4309756"
+}

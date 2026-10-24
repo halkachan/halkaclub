@@ -83,6 +83,8 @@ namespace Halka.Poc2D3D
             {
                 // Full screen is a button on the game's page, not a menu row (feedback after RC1).
                 menu.SetExtraItem(viewItem);
+                // ver3.1: the same row as a button at the top right; it names the view it goes to.
+                menu.SetQuickItem(viewItem, () => views != null && views.Mode == PocViewMode.ThirdPerson3D ? "2Dへ" : "3Dへ");
             }
             session.MapChanged += OnMapChanged;
             session.StepCompleted += OnStepCompleted;

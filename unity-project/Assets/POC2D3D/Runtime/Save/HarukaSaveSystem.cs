@@ -722,7 +722,8 @@ namespace Halka.Poc2D3D.Save
                 (seconds / 3600).ToString(CultureInfo.InvariantCulture) + ":" + (seconds / 60 % 60).ToString("D2", CultureInfo.InvariantCulture) +
                 ":" + (seconds % 60).ToString("D2", CultureInfo.InvariantCulture);
 
-            private static string PlaceName(string mapId) => mapId == "halka_house" ? "家" : mapId == "first_field" ? "そと" : mapId;
+            private static string PlaceName(string mapId) => mapId == "halka_house" ? "家" : mapId == "first_field" ? "そと" :
+                mapId == "halka_soundbooth" ? "ぼうおんしつ" : mapId;
 
             private static string LocalStamp(string utc)
             {

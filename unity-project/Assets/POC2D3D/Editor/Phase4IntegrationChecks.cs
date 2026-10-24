@@ -49,15 +49,15 @@ namespace Halka.Poc2D3D.EditorTools
             var holder = Open(out var c);
             try
             {
-                ExitCameraChecks(c);
-                TreeFadeChecks(c);
-                LandscapeChecks(c);
-                AutoChecks(c);
-                CameraDistanceChecks(c);
-                NorthFixedCameraChecks(c);
-                CrowChecks(c);
-                SeatChecks(c);
-                LifeLogTimeMenuChecks(c);
+                Section("ExitCameraChecks", () => ExitCameraChecks(c));
+                Section("TreeFadeChecks", () => TreeFadeChecks(c));
+                Section("LandscapeChecks", () => LandscapeChecks(c));
+                Section("AutoChecks", () => AutoChecks(c));
+                Section("CameraDistanceChecks", () => CameraDistanceChecks(c));
+                Section("NorthFixedCameraChecks", () => NorthFixedCameraChecks(c));
+                Section("CrowChecks", () => CrowChecks(c));
+                Section("SeatChecks", () => SeatChecks(c));
+                Section("LifeLogTimeMenuChecks", () => LifeLogTimeMenuChecks(c));
                 ProtectionChecks();
             }
             finally
@@ -72,6 +72,18 @@ namespace Halka.Poc2D3D.EditorTools
             foreach (var failure in failures) Debug.LogError("PHASE4 FAIL " + failure);
             Debug.Log($"HARUKA Phase 4 integration checks: {passes} passed, {failures.Count} failed");
             return failures.Count == 0;
+        }
+
+        // ver3.1: a section that throws counts as a failure and the next sections still run (before,
+        // one exception ended the whole run). No check is removed or changed.
+        private static void Section(string name, Action checks)
+        {
+            try { checks(); }
+            catch (Exception exception)
+            {
+                Check("section " + name + " ran to its end (no exception)", false, exception.GetType().Name + ": " + exception.Message);
+                Debug.LogException(exception);
+            }
         }
 
         private static void Check(string name, bool condition, string detail = "")

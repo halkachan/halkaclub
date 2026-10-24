@@ -21,7 +21,10 @@ namespace Halka.Poc2D3D.EditorTools
         public const string ScenePath = Root + "/Scenes/HALKA_WORLD_2D3D_POC.unity";
         // Phase 5: the Release Candidate scene, built from the same content as the POC scene (the
         // POC scene stays the technical verification scene with its options shown).
-        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.0_RC3.unity";
+        // ver3.1: the game scene is HARUKA_WORLD_ver3.1 (the ver3.0 RC3 scene file is kept as the
+        // published version's scene and no longer rebuilt).
+        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.1.unity";
+        public const string Ver30Rc3ScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.0_RC3.unity";
         public const string CatalogPath = Root + "/Data/POC_PresentationCatalog.asset";
         public const string ToonMaterialPath = Root + "/Materials/POC_ToonVertexColor.mat";
         public const string GridMaterialPath = Root + "/Materials/POC_GridOverlay.mat";
@@ -85,6 +88,17 @@ namespace Halka.Poc2D3D.EditorTools
         public const string TreeFadeMaterialPath = Root + "/Materials/POC_ToonVertexColorFade.mat";
         public const string OutdoorMapPath = "Assets/Content/Maps/first_field.asset";
         public const string InteriorMapPath = "Assets/Content/Maps/halka_house.asset";
+        // ver3.1: the sound booth (its own map, entered from the booth in the house) and its
+        // Blender models (blender/scripts/build_v31_studio.py).
+        public const string SoundBoothMapPath = "Assets/Content/Maps/halka_soundbooth.asset";
+        public const string SoundBoothMapId = "halka_soundbooth";
+        public const string V31Models = Root + "/Models/V31/";
+        public static readonly string[] V31ModelNames =
+        {
+            "soundbooth_exterior", "dtm_desk_large", "illust_desk_tablet", "booth_floor_a", "booth_floor_b",
+            "booth_wall_base", "booth_wall_upper", "booth_doorway_base", "booth_doorway_upper"
+        };
+        public static readonly string[] V31Definitions = { "soundbooth_exterior", "dtm_desk_large", "illust_desk_tablet" };
         public const string MessageFontPath = "Assets/Content/Fonts/HalkaMessageSubset.ttf";
         public const string BlenderMaterialName = "HALKA_VertexColor";
 
@@ -134,6 +148,7 @@ namespace Halka.Poc2D3D.EditorTools
             foreach (var name in Phase3ModelNames) RemapModelMaterial(Phase3Models + name + ".fbx", toon);
             RemapModelMaterial(CrowModelPath, toon);
             RemapModelMaterial(SofaModelPath, toon);
+            foreach (var name in V31ModelNames) RemapModelMaterial(V31Models + name + ".fbx", toon);
             EnsureMaterial(TreeFadeMaterialPath, "HALKA/POC/ToonVertexColorFade", null);
             EnsureMaterial(OutlineMaterialPath, "HALKA/POC/OutlineComposite", null);
             EnsureMaterial(Outline3DMaterialPath, "HALKA/POC/Outline3D", null);
@@ -180,6 +195,14 @@ namespace Halka.Poc2D3D.EditorTools
                     cameraOccluder = false, fadeInFront3D = true, fadeOpacity = 0.4f, fadeSeconds = 0.25f },
                 new PocPresentationBinding { definitionId = "sofa_basic", model = LoadModel(SofaModelPath), cameraOccluder = false },
                 new PocPresentationBinding { definitionId = "studio_shelf_basic", model = Phase3("studio_shelf_basic"),
+                    cameraOccluder = false },
+                // ver3.1: the booth stands against the house's North wall (the camera never looks
+                // through it at the player); the desks are low furniture.
+                new PocPresentationBinding { definitionId = "soundbooth_exterior", model = V31("soundbooth_exterior"),
+                    cameraOccluder = false },
+                new PocPresentationBinding { definitionId = "dtm_desk_large", model = V31("dtm_desk_large"),
+                    cameraOccluder = false },
+                new PocPresentationBinding { definitionId = "illust_desk_tablet", model = V31("illust_desk_tablet"),
                     cameraOccluder = false }
             }, new PocEnvironmentPresentation
             {
@@ -206,6 +229,19 @@ namespace Halka.Poc2D3D.EditorTools
                 doorwayBase = Phase3("interior_doorway_base"),
                 doorwayUpper = Phase3("interior_doorway_upper")
             });
+            catalog.ConfigureRoomInteriors(new List<PocInteriorPresentation>
+            {
+                new PocInteriorPresentation
+                {
+                    mapId = SoundBoothMapId,
+                    wallDefinitionId = "booth_wall",
+                    floorTiles = new List<GameObject> { V31("booth_floor_a"), V31("booth_floor_b") },
+                    wallBase = V31("booth_wall_base"),
+                    wallUpper = V31("booth_wall_upper"),
+                    doorwayBase = V31("booth_doorway_base"),
+                    doorwayUpper = V31("booth_doorway_upper")
+                }
+            });
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
 
@@ -224,7 +260,7 @@ namespace Halka.Poc2D3D.EditorTools
         // off unless ?debug=1, the HUD reads "ver3.0 RC1".
         private static void ConfigureReleaseCandidate(GameObject root)
         {
-            root.name = "HARUKA WORLD ver3.0 RC3";
+            root.name = "HARUKA WORLD ver3.1";
             var panel = root.GetComponent<PocDebugPanel>();
             var hud = root.GetComponentInChildren<GameHud>(true);
             var switcher = root.GetComponent<PocViewSwitcher>();
@@ -253,8 +289,10 @@ namespace Halka.Poc2D3D.EditorTools
         {
             var outdoor = AssetDatabase.LoadAssetAtPath<MapDefinition>(OutdoorMapPath);
             var interior = AssetDatabase.LoadAssetAtPath<MapDefinition>(InteriorMapPath);
+            var soundBooth = AssetDatabase.LoadAssetAtPath<MapDefinition>(SoundBoothMapPath);
             var font = AssetDatabase.LoadAssetAtPath<Font>(MessageFontPath);
-            if (outdoor == null || interior == null) throw new InvalidOperationException("Official map caches are missing");
+            if (outdoor == null || interior == null || soundBooth == null)
+                throw new InvalidOperationException("Official map caches are missing");
             if (font == null) throw new InvalidOperationException("Message font is missing");
 
             var root = new GameObject("HALKA WORLD 2D3D POC");
@@ -309,6 +347,7 @@ namespace Halka.Poc2D3D.EditorTools
             thirdPerson.enabled = false;
 
             session.Configure(outdoor, interior, input);
+            session.ConfigureInnerRoom(interior.MapId, soundBooth);
             input.Configure(dpad, action, switcher, panel, session);
             presenter.Configure(session, catalog);
             actor.Configure(session, yawRoot.transform, catalog);
@@ -514,6 +553,7 @@ namespace Halka.Poc2D3D.EditorTools
 
         public static GameObject Phase2(string name) => LoadModel(Phase2Models + name + ".fbx");
         public static GameObject Phase3(string name) => LoadModel(Phase3Models + name + ".fbx");
+        public static GameObject V31(string name) => LoadModel(V31Models + name + ".fbx");
         // Clicks on small things (flower, stone, cushion) count within at least this cube.
         public const float SmallPickSize = 0.3f;
 

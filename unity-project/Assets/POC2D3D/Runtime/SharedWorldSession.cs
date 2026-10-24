@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Halka.Game.Player;
 using Halka.Game.World;
 using UnityEngine;
@@ -20,6 +21,14 @@ namespace Halka.Poc2D3D
 
     public enum SharedTransitionKind { None, EnteredBuilding, ExitedBuilding }
 
+    // ver3.1: an inner room and the map whose door Object leads into it.
+    [Serializable]
+    public sealed class SharedRoomLink
+    {
+        public string outerMapId;
+        public MapDefinition room;
+    }
+
     // What the last map change was, for presentation only (the 3D exit camera).
     public struct SharedTransition
     {
@@ -40,17 +49,31 @@ namespace Halka.Poc2D3D
 
         [SerializeField] private MapDefinition outdoorMap;
         [SerializeField] private MapDefinition interiorMap;
+        // ver3.1: rooms inside rooms (the sound booth in the house). Each is entered through the
+        // door Object (HouseTransition) of its outer map, like the house from first_field.
+        [SerializeField] private List<SharedRoomLink> innerRooms = new List<SharedRoomLink>();
         [SerializeField] private PocInput input;
         [SerializeField, Min(0.05f)] private float stepSeconds = PlayerMover.DefaultStepSeconds;
 
         private GridStepMotion motion;
         private SharedWorldModel outdoor;
         private SharedWorldModel interior;
+        private readonly List<SharedWorldModel> innerWorlds = new List<SharedWorldModel>();
         private int transitionSerial;
 
         public SharedWorldModel World { get; private set; }
         public SharedWorldModel OutdoorWorld => outdoor;
         public SharedWorldModel InteriorWorld => interior;
+        // Every world of this session: outdoor, the house, then the inner rooms (ver3.1).
+        public IEnumerable<SharedWorldModel> Worlds
+        {
+            get
+            {
+                if (outdoor != null) yield return outdoor;
+                if (interior != null) yield return interior;
+                foreach (var world in innerWorlds) yield return world;
+            }
+        }
         public Vector2Int Cell => motion.Cell;
         public Vector2 Position => motion.Position;
         public bool IsMoving => motion.IsMoving;
@@ -95,6 +118,17 @@ namespace Halka.Poc2D3D
             input = source;
         }
 
+        // ver3.1: a room entered from the door Object of outerMapId (the outer map must be one of
+        // this session's maps; the room has interior_entry and interior_exit markers).
+        public void ConfigureInnerRoom(string outerMapId, MapDefinition room)
+        {
+            if (room == null) throw new ArgumentNullException(nameof(room));
+            innerRooms.RemoveAll(link => link.room == null || link.room.MapId == room.MapId);
+            innerRooms.Add(new SharedRoomLink { outerMapId = outerMapId, room = room });
+        }
+
+        public IReadOnlyList<SharedRoomLink> InnerRooms => innerRooms;
+
         private void Awake() => Initialize();
 
         // Phase 6: where the game resumes (the save system checks the place first). Set before
@@ -113,12 +147,14 @@ namespace Halka.Poc2D3D
         }
 
         // The maps this session plays (configured before Initialize; the save system reads them).
-        public System.Collections.Generic.IEnumerable<MapDefinition> Maps
+        public IEnumerable<MapDefinition> Maps
         {
             get
             {
                 if (outdoorMap != null) yield return outdoorMap;
                 if (interiorMap != null) yield return interiorMap;
+                foreach (var link in innerRooms)
+                    if (link.room != null) yield return link.room;
             }
         }
 
@@ -129,6 +165,9 @@ namespace Halka.Poc2D3D
             if (World != null) return;
             outdoor = new SharedWorldModel(outdoorMap);
             interior = interiorMap != null ? new SharedWorldModel(interiorMap) : null;
+            innerWorlds.Clear();
+            foreach (var link in innerRooms)
+                if (link.room != null) innerWorlds.Add(new SharedWorldModel(link.room));
             if (!outdoorMap.TryGetEntitySpawn("player_main", out var spawn))
                 throw new InvalidOperationException("The outdoor map has no Player Start");
             World = outdoor;
@@ -144,8 +183,8 @@ namespace Halka.Poc2D3D
 
         public SharedWorldModel FindWorld(string mapId)
         {
-            if (outdoor != null && outdoor.MapId == mapId) return outdoor;
-            if (interior != null && interior.MapId == mapId) return interior;
+            foreach (var world in Worlds)
+                if (world.MapId == mapId) return world;
             return null;
         }
 
@@ -169,8 +208,8 @@ namespace Halka.Poc2D3D
 
         public MapDefinition GetMap(string mapId)
         {
-            if (outdoor != null && outdoor.MapId == mapId) return outdoor.Map;
-            if (interior != null && interior.MapId == mapId) return interior.Map;
+            var world = FindWorld(mapId);
+            if (world != null) return world.Map;
             throw new ArgumentException("Unknown map ID: " + mapId);
         }
 
@@ -249,6 +288,12 @@ namespace Halka.Poc2D3D
             LoadMap(target, cell, facing, SharedTransitionKind.None, default);
         }
 
+        public void LoadMapForCheck(string mapId, Vector2Int cell, FacingDirection facing)
+        {
+            var target = FindWorld(mapId) ?? throw new InvalidOperationException("Unknown map " + mapId);
+            LoadMap(target, cell, facing, SharedTransitionKind.None, default);
+        }
+
         public void SetFacing(FacingDirection facing)
         {
             if (!motion.IsMoving) Facing = facing;
@@ -256,24 +301,57 @@ namespace Halka.Poc2D3D
 
         // House entrance and exit follow HouseArea2D: a completed step onto the door cell
         // or onto the interior exit marker swaps maps without counting an extra step.
+        // ver3.1: the same rule for every room: first_field <-> halka_house <-> halka_soundbooth.
         private bool CheckHouseTransition()
         {
-            if (interior == null) return false;
-            if (World == outdoor && outdoor.TryGetHouseDoor(out var door) && motion.Cell == door &&
-                interior.TryGetMarker("interior_entry", out var entry))
+            if (TryGetRoomBehindDoor(World, motion.Cell, out var room, out var door) &&
+                room.TryGetMarker("interior_entry", out var entry))
             {
-                LoadMap(interior, entry, FacingDirection.Up, SharedTransitionKind.EnteredBuilding, door);
+                LoadMap(room, entry, FacingDirection.Up, SharedTransitionKind.EnteredBuilding, door);
                 return true;
             }
-            if (World == interior && interior.TryGetMarker("interior_exit", out var exit) && motion.Cell == exit &&
-                outdoor.TryGetHouseDoor(out var outsideDoor))
+            if (TryGetOuterOfExit(World, motion.Cell, out var outer, out var outsideDoor))
             {
-                LoadMap(outdoor, outsideDoor + Vector2Int.down, FacingDirection.Down,
+                LoadMap(outer, outsideDoor + Vector2Int.down, FacingDirection.Down,
                     SharedTransitionKind.ExitedBuilding, outsideDoor);
                 return true;
             }
             return false;
         }
+
+        // The room whose door Object has its root on this cell of this world (the house outdoors,
+        // the booth in the house).
+        public bool TryGetRoomBehindDoor(SharedWorldModel world, Vector2Int cell, out SharedWorldModel room,
+            out Vector2Int door)
+        {
+            room = null;
+            if (world == null || !world.TryGetHouseDoor(out door) || cell != door) { door = default; return false; }
+            if (world == outdoor) room = interior;
+            else
+                foreach (var link in innerRooms)
+                    if (link.room != null && link.outerMapId == world.MapId) room = FindWorld(link.room.MapId);
+            return room != null;
+        }
+
+        // The outer world and its door when this cell is this room's interior_exit.
+        public bool TryGetOuterOfExit(SharedWorldModel world, Vector2Int cell, out SharedWorldModel outer,
+            out Vector2Int outsideDoor)
+        {
+            outer = null;
+            outsideDoor = default;
+            if (world == null || !world.IsInterior || !world.TryGetMarker("interior_exit", out var exit) || cell != exit)
+                return false;
+            if (world == interior) outer = outdoor;
+            else
+                foreach (var link in innerRooms)
+                    if (link.room != null && link.room.MapId == world.MapId) outer = FindWorld(link.outerMapId);
+            return outer != null && outer.TryGetHouseDoor(out outsideDoor);
+        }
+
+        // A cell where a completed step changes the map: AUTO never steps there, a save never
+        // resumes there.
+        public bool IsTransitionCell(SharedWorldModel world, Vector2Int cell) =>
+            TryGetRoomBehindDoor(world, cell, out _, out _) || TryGetOuterOfExit(world, cell, out _, out _);
 
         private void LoadMap(SharedWorldModel target, Vector2Int cell, FacingDirection facing,
             SharedTransitionKind kind, Vector2Int door)

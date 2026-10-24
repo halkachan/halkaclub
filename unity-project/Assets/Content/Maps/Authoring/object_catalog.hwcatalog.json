@@ -46,6 +46,28 @@
       "blocksMovement": true,
       "allowedMapTypes": [],
       "editorSelectable": true
+    },
+    {
+      "definitionId": "booth_floor",
+      "displayName": "防音室の床",
+      "category": "base",
+      "previewSpritePath": "Assets/Content/World/booth_floor.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "blocksMovement": false,
+      "allowedMapTypes": [],
+      "editorSelectable": true
+    },
+    {
+      "definitionId": "booth_wall",
+      "displayName": "防音室の壁",
+      "category": "surface",
+      "previewSpritePath": "Assets/Content/World/booth_wall.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "blocksMovement": true,
+      "allowedMapTypes": [],
+      "editorSelectable": true
     }
   ],
   "objects": [
@@ -601,6 +623,157 @@
       "editorSelectable": true,
       "allowedMapTypes": [],
       "actionPoints": []
+    },
+    {
+      "definitionId": "soundbooth_exterior",
+      "displayName": "防音室",
+      "category": "fixture",
+      "previewSpritePath": "Assets/Content/World/soundbooth_exterior.png",
+      "visualWidthPixels": 96,
+      "visualHeightPixels": 160,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 3,
+        "height": 3
+      },
+      "blockedCellOffsets": [
+        {
+          "x": -1,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        },
+        {
+          "x": -1,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": -1,
+          "y": 2
+        },
+        {
+          "x": 0,
+          "y": 2
+        },
+        {
+          "x": 1,
+          "y": 2
+        }
+      ],
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "allowedMapTypes": [],
+      "actionPoints": []
+    },
+    {
+      "definitionId": "dtm_desk_large",
+      "displayName": "DTMデスク",
+      "category": "furniture",
+      "previewSpritePath": "Assets/Content/World/dtm_desk_large.png",
+      "visualWidthPixels": 128,
+      "visualHeightPixels": 80,
+      "rootAnchor": "bottom-left",
+      "footprint": {
+        "width": 4,
+        "height": 1
+      },
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        },
+        {
+          "x": 2,
+          "y": 0
+        },
+        {
+          "x": 3,
+          "y": 0
+        }
+      ],
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "allowedMapTypes": [],
+      "actionPoints": [
+        {
+          "id": "examine_left",
+          "playerCellOffset": {
+            "x": 1,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "おんがくを つくる つくえ。"
+        },
+        {
+          "id": "examine_right",
+          "playerCellOffset": {
+            "x": 2,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "おんがくを つくる つくえ。"
+        }
+      ]
+    },
+    {
+      "definitionId": "illust_desk_tablet",
+      "displayName": "イラスト机",
+      "category": "furniture",
+      "previewSpritePath": "Assets/Content/World/illust_desk_tablet.png",
+      "visualWidthPixels": 64,
+      "visualHeightPixels": 64,
+      "rootAnchor": "bottom-left",
+      "footprint": {
+        "width": 2,
+        "height": 1
+      },
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ],
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "allowedMapTypes": [],
+      "actionPoints": [
+        {
+          "id": "examine_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "えきタブ。 イラストを かく。"
+        }
+      ]
     }
   ],
   "visuals": {

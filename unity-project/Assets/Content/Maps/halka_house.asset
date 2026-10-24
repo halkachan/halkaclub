@@ -127,25 +127,17 @@ MonoBehaviour:
     RootCell: {x: -5, y: 0}
     Definition: {fileID: 11400000, guid: 88990215c948f3441931795d2fde4a44, type: 2}
     SignText: 
-  - InstanceId: obj_desk_basic_v25_halka_house
-    RootCell: {x: 2, y: 1}
-    Definition: {fileID: 11400000, guid: 52facaa19ca183b43a4bc405a5722502, type: 2}
-    SignText: 
-  - InstanceId: obj_recording_mic_v30_preview
-    RootCell: {x: 4, y: -1}
-    Definition: {fileID: 11400000, guid: aad2d0d6b3795a54d8e8851da8cee295, type: 2}
-    SignText: 
-  - InstanceId: obj_art_easel_v30_preview
-    RootCell: {x: -3, y: -2}
-    Definition: {fileID: 11400000, guid: d734c0587f729a9489687c1201cdeb1d, type: 2}
-    SignText: 
   - InstanceId: obj_studio_shelf_v30_preview
     RootCell: {x: -1, y: 2}
     Definition: {fileID: 11400000, guid: 73d9c1360ed8a444eb95a3442ac95ce0, type: 2}
     SignText: 
   - InstanceId: obj_sofa_basic_v30_rc1
-    RootCell: {x: 4, y: 2}
+    RootCell: {x: 1, y: 2}
     Definition: {fileID: 11400000, guid: 8489aedecb8d3174db714eef13a4396f, type: 2}
+    SignText: 
+  - InstanceId: obj_soundbooth_v31_halka_house
+    RootCell: {x: 4, y: 0}
+    Definition: {fileID: 11400000, guid: bdce8d59ec5903441bf50067560ee6e8, type: 2}
     SignText: 
   markers:
   - StableId: interior_entry

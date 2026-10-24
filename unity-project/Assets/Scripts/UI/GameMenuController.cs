@@ -111,6 +111,39 @@ namespace Halka.Game.UI
         }
         public bool BlocksGameplayInput => IsOpen || suppressTouchUntilRelease ||
             Time.unscaledTime < pointerCaptureUntil;
+        // ver3.1: one of the extra rows also offered as a button at the top right, mirroring the
+        // menu button (the view row: 「3Dへ」/「2Dへ」). A press activates that same row, so there
+        // is no second way of doing what the row does. The 2D game sets none (no button).
+        private IGameMenuItem quickItem;
+        private System.Func<string> quickLabel;
+        public IGameMenuItem QuickItem => quickItem;
+        public string QuickLabel => quickItem == null ? "" : quickLabel != null ? quickLabel() : quickItem.Value;
+        public bool QuickButtonShown => quickItem != null && !IsOpen && enabled;
+        public int QuickPresses { get; private set; }
+
+        public void SetQuickItem(IGameMenuItem item, System.Func<string> label)
+        {
+            quickItem = item;
+            quickLabel = label;
+        }
+
+        // The quick button while it is shown (GUI pixels, origin top-left).
+        public bool TryGetQuickButtonRect(out Rect guiRect)
+        {
+            guiRect = QuickRect();
+            return QuickButtonShown;
+        }
+
+        public void ActivateQuickItem(float now)
+        {
+            if (!QuickButtonShown) return;
+            QuickPresses++;
+            pointerCaptureUntil = now + 0.25f;
+            // Like any other press: a walk that AUTO is making stops (AUTO stays ON).
+            if (autoMode != null) autoMode.RecordUserAction(now);
+            quickItem.Activate(now);
+        }
+
         public IGameMenuItem ExtraItem => extraItems.Count > 0 ? extraItems[0] : null;
         public System.Collections.Generic.IReadOnlyList<IGameMenuItem> ExtraItems => extraItems;
         public string VersionText => versionText;
@@ -177,7 +210,8 @@ namespace Halka.Game.UI
         public bool IsOverControls(Vector2 screenPosition)
         {
             if (BlocksGameplayInput) return true;
-            return ButtonRect().Contains(ToGui(screenPosition));
+            var point = ToGui(screenPosition);
+            return ButtonRect().Contains(point) || QuickButtonShown && QuickTouchRect().Contains(point);
         }
 
         private void Update()
@@ -201,6 +235,7 @@ namespace Halka.Game.UI
                     continue;
                 }
                 if (ButtonRect().Contains(point)) SetOpen(!IsOpen, now);
+                else if (QuickButtonShown && QuickTouchRect().Contains(point)) ActivateQuickItem(now);
                 else if (IsOpen && IsLifeLogOpen && BackRect().Contains(point)) BackFromLifeLog(now);
                 else if (IsOpen && !IsLifeLogOpen && AutoRect().Contains(point)) ToggleAuto(now);
                 else if (IsOpen && !IsLifeLogOpen && ExtraIndexAt(point) >= 0)
@@ -238,6 +273,12 @@ namespace Halka.Game.UI
             var useMouse = UnityEngine.Input.touchCount == 0 && Time.unscaledTime >= touchUiUntil;
             if (useMouse && GUI.Button(button, GUIContent.none, GUIStyle.none))
                 SetOpen(!IsOpen, Time.unscaledTime);
+            if (QuickButtonShown)
+            {
+                var quick = QuickRect();
+                DrawTextButton(quick, QuickLabel, new Color(0.96f, 0.96f, 0.91f), QuickLabelSize);
+                if (useMouse && GUI.Button(quick, GUIContent.none, GUIStyle.none)) ActivateQuickItem(Time.unscaledTime);
+            }
             if (!IsOpen) return;
 
             var panel = PanelRect();
@@ -328,6 +369,39 @@ namespace Halka.Game.UI
             return new Rect(safe.xMin + 12f, Screen.height - safe.yMax + 12f, 52f, 48f);
         }
 
+        // The menu button's mirror image at the top right of the safe area (same margin, height and
+        // frame; a little wider than the menu button for 「3Dへ」, its label as large as the icon).
+        public const float QuickButtonWidth = 64f;
+        public const int QuickLabelSize = 28;
+
+        private Rect QuickRect()
+        {
+            var safe = Screen.safeArea;
+            return new Rect(safe.xMax - 12f - QuickButtonWidth, Screen.height - safe.yMax + 12f, QuickButtonWidth, 48f);
+        }
+
+        // ver3.1: where a finger counts as pressing the quick button: the drawn button, grown to at
+        // least 11% of the screen's short side (about 7 mm on a phone) around its centre and kept on
+        // screen. Only the hit area grows; the button is drawn at its own size.
+        public const float QuickTouchFraction = 0.11f;
+
+        private Rect QuickTouchRect()
+        {
+            var drawn = QuickRect();
+            var side = Mathf.Min(Screen.width, Screen.height) * QuickTouchFraction;
+            var width = Mathf.Max(drawn.width, side);
+            var height = Mathf.Max(drawn.height, side);
+            var x = Mathf.Min(drawn.center.x - width * 0.5f, Screen.width - width);
+            var y = Mathf.Max(drawn.center.y - height * 0.5f, 0f);
+            return new Rect(x, y, width, height);
+        }
+
+        public bool TryGetQuickTouchRect(out Rect guiRect)
+        {
+            guiRect = QuickTouchRect();
+            return QuickButtonShown;
+        }
+
         private Rect PanelRect()
         {
             var safe = Screen.safeArea;
@@ -405,12 +479,12 @@ namespace Halka.Game.UI
             return new Rect(panel.x + 12f, panel.y + 162f, panel.width - 24f, 36f);
         }
 
-        private void DrawTextButton(Rect rect, string label, Color background)
+        private void DrawTextButton(Rect rect, string label, Color background, int size = 20)
         {
             Fill(rect, Color.black);
             Fill(Inset(rect, 2f), background);
             valueStyle.normal.textColor = Color.black;
-            GameBitmapFont.Draw(rect, label, 20, Color.black,
+            GameBitmapFont.Draw(rect, label, size, Color.black,
                 TextAnchor.MiddleCenter, font);
         }
 
