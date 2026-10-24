@@ -24,7 +24,10 @@ namespace Halka.Poc2D3D.EditorTools
         // POC scene stays the technical verification scene with its options shown).
         // ver3.1: the game scene is HARUKA_WORLD_ver3.1 (the ver3.0 RC3 scene file is kept as the
         // published version's scene and no longer rebuilt).
-        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.1.unity";
+        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.2.unity";
+        // ver3.2: the chunk test scene (the release scene + a generated test world; test builds only).
+        public const string ChunkTestScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.2_CHUNKTEST.unity";
+        public const string ChunkTestFixturePath = Root + "/Fixtures/ChunkTest/PocTestWorldFixture.asset";
         public const string Ver30Rc3ScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.0_RC3.unity";
         public const string CatalogPath = Root + "/Data/POC_PresentationCatalog.asset";
         public const string ToonMaterialPath = Root + "/Materials/POC_ToonVertexColor.mat";
@@ -259,11 +262,27 @@ namespace Halka.Poc2D3D.EditorTools
             Debug.Log("HALKA POC scene built: " + scenePath + (releaseCandidate ? " (Release Candidate)" : ""));
         }
 
+        // ver3.2: the release scene with a generated test world (PocChunkTestBoot) for the chunk
+        // checks in WebGL. The fixture asset is referenced only by this scene.
+        public static void BuildChunkTestScene()
+        {
+            Build(ChunkTestScenePath, true);
+            var fixture = AssetDatabase.LoadAssetAtPath<Halka.Poc2D3D.World.PocTestWorldFixture>(ChunkTestFixturePath);
+            if (fixture == null || !fixture.IsComplete) throw new InvalidOperationException("chunk test fixture missing: " + ChunkTestFixturePath);
+            var scene = EditorSceneManager.OpenScene(ChunkTestScenePath, OpenSceneMode.Single);
+            var root = scene.GetRootGameObjects()[0];
+            var boot = root.AddComponent<Halka.Poc2D3D.Dev.PocChunkTestBoot>();
+            boot.Configure(fixture, root.GetComponent<SharedWorldSession>(), root.GetComponentInChildren<Halka.Poc2D3D.Save.HarukaSaveSystem>(true));
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            Debug.Log("HALKA chunk test scene built: " + ChunkTestScenePath);
+        }
+
         // Phase 5: the same world and game; only the launch differs. 2D at start, the debug panel
         // off unless ?debug=1, the HUD reads "ver3.0 RC1".
         private static void ConfigureReleaseCandidate(GameObject root)
         {
-            root.name = "HARUKA WORLD ver3.1";
+            root.name = "HARUKA WORLD ver3.2";
             var panel = root.GetComponent<PocDebugPanel>();
             var hud = root.GetComponentInChildren<GameHud>(true);
             var switcher = root.GetComponent<PocViewSwitcher>();
@@ -382,6 +401,8 @@ namespace Halka.Poc2D3D.EditorTools
             switcher.Configure(pixelView, presenterCamera, thirdPerson, actor, presenter, session, input);
             time.Configure(worldTime, session, switcher, sun, thirdCamera);
             panel.Configure(session, switcher, input, time, presenter, dpad, action, font);
+            // ver3.2: development numbers for the browser checks (off unless ?debug=1 / ?devstats=1).
+            root.AddComponent<Halka.Poc2D3D.Dev.PocDevStats>().Configure(session, presenter, switcher);
             BuildPhase4Content(root, session, input, presenter, switcher, pixelView, thirdPerson, actor, panel,
                 dpad, action, font);
             return root;
