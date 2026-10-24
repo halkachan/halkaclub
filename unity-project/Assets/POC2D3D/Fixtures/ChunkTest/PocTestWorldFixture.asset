@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9162ed9874f47746a5e6f623b51a8f4, type: 3}
+  m_Name: PocTestWorldFixture
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Poc2D3D.World.PocTestWorldFixture
+  grass: {fileID: 11400000, guid: 0db760ea3a4879a479bdb2cc6cfd8c4d, type: 2}
+  dirt: {fileID: 11400000, guid: 8d0a733ab23cda64f97bc110017a8789, type: 2}
+  tree: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+  stone: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+  flower: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+  bench: {fileID: 11400000, guid: 9cd4ab71dc404c846bbe7d60329232d9, type: 2}
+  well: {fileID: 11400000, guid: 03751a72806797041a13fcc29007487a, type: 2}
+  house: {fileID: 11400000, guid: 44fd5b0701e1a854799c458ef559905a, type: 2}
+  player: {fileID: 11400000, guid: 5c79467cf3296704a8720f33cfa33bd6, type: 2}
+  crow: {fileID: 11400000, guid: e0e7212624464324f9296d76faddddc8, type: 2}

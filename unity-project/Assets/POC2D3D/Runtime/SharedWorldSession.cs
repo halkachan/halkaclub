@@ -284,13 +284,14 @@ namespace Halka.Poc2D3D
 
         // ver3.2 checks and the chunk test scene: a whole outdoor world (fixture regions) replaces
         // the outdoor Map before the first frame. outdoorMapForSpawn holds the Player Start.
-        public void UseOutdoorWorldForTest(OutdoorWorldDefinition definition, MapDefinition outdoorMapForSpawn)
+        // initialize false: only configure (the game's own start order initializes later).
+        public void UseOutdoorWorldForTest(OutdoorWorldDefinition definition, MapDefinition outdoorMapForSpawn, bool initialize = true)
         {
             outdoorWorld = definition;
             outdoorMap = outdoorMapForSpawn;
             World = null;
             outdoor = null;
-            Initialize();
+            if (initialize) Initialize();
         }
 
         public MapDefinition GetMap(string mapId)

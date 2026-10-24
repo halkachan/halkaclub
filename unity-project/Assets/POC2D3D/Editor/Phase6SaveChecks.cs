@@ -258,7 +258,10 @@ namespace Halka.Poc2D3D.EditorTools
 
         // The game's start, in its own order (WorldTime -100, LifeLog -50, save -45, AUTO -40,
         // session -30, gameplay -25, then OnEnable / Start), over the given storage.
-        internal static Ctx Start(HarukaMemoryStorage storage, HarukaEditorSaveBrowser browser = null)
+        // ver3.2: configure (optional) runs on the built session before anything starts (the
+        // ver3.2 checks put a test outdoor world there).
+        internal static Ctx Start(HarukaMemoryStorage storage, HarukaEditorSaveBrowser browser = null,
+            Action<SharedWorldSession> configure = null)
         {
             if (holder != null) UnityEngine.Object.DestroyImmediate(holder);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -289,6 +292,7 @@ namespace Halka.Poc2D3D.EditorTools
             };
             // The game's own clocks (AUTO's idle time, the Life Log's play time) read the same time.
             clock = UnityEngine.Time.unscaledTime;
+            configure?.Invoke(c.Session);
             Invoke(c.Clock, "Awake");
             Invoke(c.LifeLog, "Awake");
             c.Save.UseStorage(storage, c.Browser);

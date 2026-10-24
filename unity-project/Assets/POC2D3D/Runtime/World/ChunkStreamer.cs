@@ -4,7 +4,10 @@ using UnityEngine;
 
 namespace Halka.Poc2D3D.World
 {
-    public enum ChunkState { Unloaded, Queued, Ready, Failed }
+    // Unloaded -> Queued (needed, waiting for its turn) -> Loading (being built) -> Ready (drawn);
+    // a Ready chunk outside Required is a release candidate (kept while inside the hysteresis
+    // area) and goes back to Unloaded when it leaves it. Failed waits for a retry (then fallback).
+    public enum ChunkState { Unloaded, Queued, Loading, Ready, Failed }
 
     // What builds and frees one chunk's presentation (the presenter). Build may throw: the streamer
     // records the failure, retries later and finally asks for the plain fallback.
@@ -31,7 +34,9 @@ namespace Halka.Poc2D3D.World
     public sealed class ChunkStreamerStats
     {
         public int Loaded, Queued, Failed, FallbackChunks;
-        public int TotalLoads, TotalUnloads, TotalCancels, TotalFailures, SyncLoads;
+        // SyncLoads: chunks the step gate had to build at once (the prefetch was late);
+        // ImmediateLoads: chunks built at once for a map change / start (LoadAllRequiredNow).
+        public int TotalLoads, TotalUnloads, TotalCancels, TotalFailures, SyncLoads, ImmediateLoads;
         public float LastLoadMs, MaxLoadMs, LastUnloadMs, MaxUnloadMs, LastUpdateMs, MaxUpdateMs;
         public double TotalLoadMs, TotalUnloadMs;
         public float AverageLoadMs => TotalLoads > 0 ? (float)(TotalLoadMs / TotalLoads) : 0f;
@@ -41,8 +46,8 @@ namespace Halka.Poc2D3D.World
     // ver3.2: which chunks of the outdoor world are drawn. Pure C# (no Unity objects), so the checks
     // drive it frame by frame. Each update:
     //   1. Required = the chunks under the view rectangle (cells around the focus, both views'
-    //      reach), one chunk further in the walking direction (prefetch), plus the root chunks of
-    //      Objects that reach into them (a wide house is built with every chunk it covers).
+    //      reach), widened in the walking direction (prefetch), plus the root chunks of Objects
+    //      whose picture meets that rectangle from another chunk (a wide house is never cut).
     //   2. Keep = Required grown by HysteresisChunks: a chunk is released only when it has left the
     //      keep area, so walking back and forth over a border never rebuilds the same chunk.
     //   3. Missing required chunks are queued nearest first and built within the time budget;
@@ -84,6 +89,9 @@ namespace Halka.Poc2D3D.World
         public ChunkState StateOf(ChunkCoord coord) => records.TryGetValue(coord, out var r) ? r.State : ChunkState.Unloaded;
         public bool IsReady(ChunkCoord coord) => StateOf(coord) == ChunkState.Ready || index.ChunkAt(coord) == null;
         public bool IsCellReady(Vector2Int cell) => IsReady(index.ChunkOfCell(cell));
+        // Drawn but no longer required: released as soon as it leaves the hysteresis area.
+        public bool IsReleaseCandidate(ChunkCoord coord) => StateOf(coord) == ChunkState.Ready && !required.Contains(coord);
+        public bool IsKept(ChunkCoord coord) => keep.Contains(coord);
 
         // view: the cells the cameras may show around the focus (inclusive); moving: the last step's
         // direction (zero when standing).
@@ -110,7 +118,8 @@ namespace Halka.Poc2D3D.World
             }
             scratch.Clear();
             foreach (var coord in required)
-                foreach (var owner in index.ChunkAt(coord).ReachingOwners) scratch.Add(owner);
+                foreach (var (owner, extent) in index.ChunkAt(coord).Reaching)
+                    if (extent.Overlaps(area) && !required.Contains(owner)) scratch.Add(owner);
             foreach (var owner in scratch) if (index.ChunkAt(owner) != null) required.Add(owner);
             keep.Clear();
             foreach (var coord in required)
@@ -165,20 +174,23 @@ namespace Halka.Poc2D3D.World
         public void LoadAllRequiredNow(double now)
         {
             Unload();
-            foreach (var coord in new List<ChunkCoord>(queue)) EnsureReady(coord, now);
+            foreach (var coord in new List<ChunkCoord>(queue)) EnsureReady(coord, now, false);
             RefreshCounts();
         }
 
         // The step gate: the chunk of the cell she is about to enter is drawn now if the prefetch
         // has not done it. A chunk that keeps failing becomes the plain fallback (never a wall).
-        public bool EnsureReady(ChunkCoord coord, double now)
+        public bool EnsureReady(ChunkCoord coord, double now) => EnsureReady(coord, now, true);
+
+        private bool EnsureReady(ChunkCoord coord, double now, bool stepGate)
         {
             if (index.ChunkAt(coord) == null) return true;
             var record = Record(coord);
             record.LastNeededTick = tick;
             if (record.State == ChunkState.Ready) return true;
             queue.Remove(coord);
-            Stats.SyncLoads++;
+            if (stepGate) Stats.SyncLoads++;
+            else Stats.ImmediateLoads++;
             Load(record, now, true);
             RefreshCounts();
             return record.State == ChunkState.Ready;
@@ -209,6 +221,7 @@ namespace Halka.Poc2D3D.World
         private void Load(ChunkRecord record, double now, bool mustSucceed = false)
         {
             var started = Time.realtimeSinceStartupAsDouble;
+            record.State = ChunkState.Loading;
             try
             {
                 record.Payload = builder.Build(record.Coord);

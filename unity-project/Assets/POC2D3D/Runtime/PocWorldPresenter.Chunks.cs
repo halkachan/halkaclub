@@ -55,6 +55,8 @@ namespace Halka.Poc2D3D
         public int ReachCells3D { get; set; } = 40;
         public float ChunkBudgetMs { get; set; } = 4f;
         public event Action ChunksChanged;
+        // Checks only: a chunk for which this answers true throws while it is built (a failed load).
+        public Func<ChunkCoord, bool> FailChunkBuildForTest { get; set; }
 
         public bool ChunkBordersVisible
         {
@@ -166,6 +168,8 @@ namespace Halka.Poc2D3D
         private ChunkPayload BuildChunkPayload(ChunkCoord coord, bool fallback)
         {
             var chunk = chunkIndex.ChunkAt(coord);
+            if (!fallback && FailChunkBuildForTest != null && FailChunkBuildForTest(coord))
+                throw new InvalidOperationException("chunk " + coord + ": build failure injected by a check");
             var root = new GameObject("Chunk " + coord + (fallback ? " (fallback)" : "")).transform;
             root.SetParent(mapRoot, false);
             var payload = new ChunkPayload { Coord = coord, Root = root, Fallback = fallback };
@@ -400,21 +404,20 @@ namespace Halka.Poc2D3D
                 position = view.PerchAnchor.position;
                 return true;
             }
-            if (!perchOffsets.TryGetValue(instance.DefinitionId, out var cached))
+            var binding = catalog != null ? catalog.Find(instance.DefinitionId) : null;
+            if (binding == null || string.IsNullOrEmpty(binding.perchAnchorName)) return false;
+            var model = binding.Pick(instance.InstanceId);   // the variant this tree is drawn with
+            var key = instance.DefinitionId + "|" + model.name;
+            if (!perchOffsets.TryGetValue(key, out var cached))
             {
                 cached = (false, Vector3.zero);
-                var binding = catalog != null ? catalog.Find(instance.DefinitionId) : null;
-                if (binding != null && !string.IsNullOrEmpty(binding.perchAnchorName))
+                var anchor = FindChild(model.transform, binding.perchAnchorName);
+                if (anchor != null)
                 {
-                    var model = binding.Pick(instance.InstanceId);
-                    var anchor = FindChild(model.transform, binding.perchAnchorName);
-                    if (anchor != null)
-                    {
-                        var local = model.transform.InverseTransformPoint(anchor.position);
-                        cached = (true, binding.meshOffset + Quaternion.Euler(0f, binding.yawDegrees, 0f) * (local * binding.uniformScale));
-                    }
+                    var local = model.transform.InverseTransformPoint(anchor.position);
+                    cached = (true, binding.meshOffset + Quaternion.Euler(0f, binding.yawDegrees, 0f) * (local * binding.uniformScale));
                 }
-                perchOffsets[instance.DefinitionId] = cached;
+                perchOffsets[key] = cached;
             }
             if (!cached.ok) return false;
             position = GridSpace3D.ToWorld(instance.RootCell) + cached.offset;

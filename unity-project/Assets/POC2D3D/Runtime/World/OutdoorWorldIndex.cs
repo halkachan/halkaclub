@@ -105,6 +105,9 @@ namespace Halka.Poc2D3D.World
         public readonly CellRect Rect;
         public readonly List<SharedObjectInstance> OwnedObjects = new List<SharedObjectInstance>();
         public readonly HashSet<ChunkCoord> ReachingOwners = new HashSet<ChunkCoord>();
+        // The Objects of other chunks whose picture reaches into this one: their owner chunk and the
+        // cells the picture covers (the streamer loads the owner only when the view meets those cells).
+        public readonly List<(ChunkCoord owner, CellRect extent)> Reaching = new List<(ChunkCoord, CellRect)>();
         public int RegionCells;
         public bool HasDecoration;
 
@@ -208,7 +211,10 @@ namespace Halka.Poc2D3D.World
                 for (var cx = c0.X; cx <= c1.X; cx++)
                 {
                     var reached = new ChunkCoord(cx, cy);
-                    if (reached != owner) Ensure(reached).ReachingOwners.Add(owner);
+                    if (reached == owner) continue;
+                    var chunk = Ensure(reached);
+                    chunk.ReachingOwners.Add(owner);
+                    chunk.Reaching.Add((owner, extent));
                 }
             }
         }

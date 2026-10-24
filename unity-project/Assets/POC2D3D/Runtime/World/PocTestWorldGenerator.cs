@@ -12,7 +12,7 @@ namespace Halka.Poc2D3D.World
     //     (0,0) and holds the Player Start, the crow and a house; the other three are authored from
     //     (0,0) and placed with a non-zero offset (their Map cells differ from their world cells);
     //   - roads every 24 cells, trees / stones / flowers at the density of first_field, and wide
-    //     Objects across chunk borders (the house across x = 0 or x = 16, benches across x = 16k).
+    //     Objects across chunk borders (the house across x = 0 or x = 16, benches across x = 16k - 1 / 16k).
     // The same size and seed always give the same world. Nothing here is saved to disk.
     public static class PocTestWorldGenerator
     {
@@ -75,7 +75,7 @@ namespace Halka.Poc2D3D.World
         {
             var half = size / 2;
             for (var x = 15; x + 1 < half; x += 16)
-                yield return new Vector2Int(x, 12);
+                yield return new Vector2Int(x, 10);
         }
 
         private static bool IsRoad(Vector2Int world) =>
@@ -127,7 +127,6 @@ namespace Halka.Poc2D3D.World
             {
                 var cell = new Vector2Int(x, y);
                 if (reserved.Contains(cell) || taken.Contains(cell) || IsRoad(cell)) continue;
-                // Keep one free cell around the region edge rows next to roads so every road stays walkable.
                 var r = Hash(seed, cell, 1) % 1000;
                 if (r < 40) Place(f.tree, cell, "tree_" + x + "_" + y);
                 else if (r < 60) Place(f.stone, cell, "stone_" + x + "_" + y);
@@ -135,6 +134,7 @@ namespace Halka.Poc2D3D.World
             }
             var map = ScriptableObject.CreateInstance<MapDefinition>();
             map.name = mapId;
+            map.hideFlags = HideFlags.HideAndDontSave;   // in memory only: survives the checks' scene changes, never saved
             map.ReplaceFromAuthoring(mapId, mapId, "outdoor", f.grass, "auto", new Color(0.06f, 0.06f, 0.08f),
                 worldRect.Min - offset, worldRect.Max - offset, surfaces, objects, new List<LockedMapMarker>(), spawns);
             return map;
