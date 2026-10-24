@@ -285,6 +285,29 @@ namespace Halka.Poc2D3D.EditorTools
 
         private static void CameraChecks()
         {
+            // first_field framed as in ver3.2: the 2D camera at the start and on the field's West
+            // side stands where the one-region world (ver3.2) had it.
+            Vector3 CameraAt(bool eastToo, Vector2Int cell)
+            {
+                var g = C6.Start(new HarukaMemoryStorage(), null, s =>
+                {
+                    if (eastToo) return;
+                    var f = Map("first_field");
+                    s.UseOutdoorWorldForTest(OutdoorWorldDefinition.Single(f), f, false);
+                });
+                g.Session.PlaceForCheck(cell, FacingDirection.Down);
+                g.Pixel.SnapToTarget();
+                V32.Settle(g, 1.5f);
+                return g.Pixel.WorldCamera.transform.position;
+            }
+            foreach (var cell in new[] { Vector2Int.zero, new Vector2Int(-9, 2) })
+            {
+                var before = CameraAt(false, cell);
+                var after = CameraAt(true, cell);
+                Check($"2D: with her on {cell} the camera frames first_field as ver3.2 did (the East area does not shift the field's picture)",
+                    Vector3.Distance(before, after) < 0.01f, $"ver3.2-like {before} / ver3.3 {after}");
+            }
+
             foreach (var mode in new[] { PocViewMode.PixelView2D, PocViewMode.ThirdPerson3D })
             {
                 var c = C6.Start(new HarukaMemoryStorage());

@@ -890,8 +890,18 @@ namespace Halka.Poc2D3D
             var rangeZ = Mathf.Max(0f, (maxZ - minZ) * 0.5f - halfH);
             var cx = (minX + maxX) * 0.5f;
             var cz = (minZ + maxZ) * 0.5f;
-            return new Vector3(Mathf.Clamp(position.x, cx - rangeX, cx + rangeX), 0f,
-                Mathf.Clamp(position.z, cz - rangeZ, cz + rangeZ));
+            float loX = cx - rangeX, hiX = cx + rangeX, loZ = cz - rangeZ, hiZ = cz + rangeZ;
+            // ver3.3: with several outdoor regions the camera may always stand over each region's
+            // centre: first_field keeps the framing it had alone (ver3.2), and the camera still
+            // follows her over the region border (the range only widens, so it never jumps).
+            if (world.OutdoorIndex != null)
+                foreach (var region in world.OutdoorIndex.Regions)
+                {
+                    var centre = GridSpace3D.ToWorld(region.Rect.Min) * 0.5f + GridSpace3D.ToWorld(region.Rect.Max) * 0.5f;
+                    loX = Mathf.Min(loX, centre.x); hiX = Mathf.Max(hiX, centre.x);
+                    loZ = Mathf.Min(loZ, centre.z); hiZ = Mathf.Max(hiZ, centre.z);
+                }
+            return new Vector3(Mathf.Clamp(position.x, loX, hiX), 0f, Mathf.Clamp(position.z, loZ, hiZ));
         }
 
         // Integer scale chosen so about 18 cells stay visible vertically, as in the 2D game.
