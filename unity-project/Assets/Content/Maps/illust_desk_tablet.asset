@@ -19,13 +19,28 @@ MonoBehaviour:
     \u304B\u304F\u3002"
   rootedArtwork: 0
   clickColliderSize: {x: 0.5, y: 0.5}
-  footprint: {x: 2, y: 1}
+  footprint: {x: 3, y: 1}
   blockedCellOffsets:
   - {x: 0, y: 0}
   - {x: 1, y: 0}
+  - {x: 2, y: 0}
   actionPoints:
-  - id: examine_front
+  - id: examine_center
+    playerCellOffset: {x: 1, y: -1}
+    playerFacing: 0
+    actionType: 1
+    poseKey: 
+    interactionText: "\u3048\u304D\u30BF\u30D6\u3002 \u30A4\u30E9\u30B9\u30C8\u3092
+      \u304B\u304F\u3002"
+  - id: examine_left
     playerCellOffset: {x: 0, y: -1}
+    playerFacing: 0
+    actionType: 1
+    poseKey: 
+    interactionText: "\u3048\u304D\u30BF\u30D6\u3002 \u30A4\u30E9\u30B9\u30C8\u3092
+      \u304B\u304F\u3002"
+  - id: examine_right
+    playerCellOffset: {x: 2, y: -1}
     playerFacing: 0
     actionType: 1
     poseKey: 

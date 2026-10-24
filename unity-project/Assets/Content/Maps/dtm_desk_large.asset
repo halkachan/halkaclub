@@ -18,13 +18,20 @@ MonoBehaviour:
   examineMessage: "\u304A\u3093\u304C\u304F\u3092 \u3064\u304F\u308B \u3064\u304F\u3048\u3002"
   rootedArtwork: 0
   clickColliderSize: {x: 0.5, y: 0.5}
-  footprint: {x: 4, y: 1}
+  footprint: {x: 5, y: 1}
   blockedCellOffsets:
   - {x: 0, y: 0}
   - {x: 1, y: 0}
   - {x: 2, y: 0}
   - {x: 3, y: 0}
+  - {x: 4, y: 0}
   actionPoints:
+  - id: examine_center
+    playerCellOffset: {x: 2, y: -1}
+    playerFacing: 0
+    actionType: 1
+    poseKey: 
+    interactionText: "\u304A\u3093\u304C\u304F\u3092 \u3064\u304F\u308B \u3064\u304F\u3048\u3002"
   - id: examine_left
     playerCellOffset: {x: 1, y: -1}
     playerFacing: 0
@@ -32,7 +39,7 @@ MonoBehaviour:
     poseKey: 
     interactionText: "\u304A\u3093\u304C\u304F\u3092 \u3064\u304F\u308B \u3064\u304F\u3048\u3002"
   - id: examine_right
-    playerCellOffset: {x: 2, y: -1}
+    playerCellOffset: {x: 3, y: -1}
     playerFacing: 0
     actionType: 1
     poseKey: 

@@ -139,6 +139,18 @@ MonoBehaviour:
     RootCell: {x: 4, y: 0}
     Definition: {fileID: 11400000, guid: bdce8d59ec5903441bf50067560ee6e8, type: 2}
     SignText: 
+  - InstanceId: obj_kitchen_counter_v32_house
+    RootCell: {x: 5, y: -3}
+    Definition: {fileID: 11400000, guid: e2036a46a7eb63a4ba0c5a66187259f0, type: 2}
+    SignText: 
+  - InstanceId: obj_living_rug_v32_house
+    RootCell: {x: 0, y: -1}
+    Definition: {fileID: 11400000, guid: 313d8ce2aa01297448a358fdd076c7ed, type: 2}
+    SignText: 
+  - InstanceId: obj_low_table_v32_house
+    RootCell: {x: 1, y: 0}
+    Definition: {fileID: 11400000, guid: d014e951aa03f6f43bfecaaaa38549cf, type: 2}
+    SignText: 
   markers:
   - StableId: interior_entry
     Cell: {x: 0, y: -3}

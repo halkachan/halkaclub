@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Halka.Game.Player;
+using Halka.Game.UI;
 using Halka.Game.World;
 using Halka.Poc2D3D.Save;
 using Halka.Poc2D3D.World;
@@ -89,6 +90,7 @@ namespace Halka.Poc2D3D.EditorTools
                 Run("save", SaveChecks);
                 Run("time-lifelog", TimeChecks);
                 Run("protection", ProtectionChecks);
+                Run("interior", InteriorFurnitureChecks);
             }
             finally
             {
@@ -291,6 +293,25 @@ namespace Halka.Poc2D3D.EditorTools
             return s == null ? "no streamer" : $"ready {s.Loaded} queued {s.Queued} loads {s.TotalLoads} unloads {s.TotalUnloads} sync {s.SyncLoads}";
         }
 
+        // The published ver3.1 (its first_field is the one ver3.2 keeps unchanged).
+        public const string Ver31Commit = "71ec01b";
+
+        private static bool GitSameAsVer31(string relative) => Git("diff --quiet " + Ver31Commit + " -- \"" + relative + "\"", out _);
+
+        private static bool Git(string arguments, out string output)
+        {
+            var info = new ProcessStartInfo("git", arguments)
+            {
+                WorkingDirectory = PocSceneBuilder.RepositoryRoot, RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true
+            };
+            using (var process = Process.Start(info))
+            {
+                output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+                return process.ExitCode == 0;
+            }
+        }
+
         private static bool GitClean(string relative)
         {
             var info = new ProcessStartInfo("git", "status --porcelain -- \"" + relative + "\"")
@@ -444,8 +465,9 @@ namespace Halka.Poc2D3D.EditorTools
             far.regions.Add(new OutdoorRegionLink { mapId = "first_field", map = Content<MapDefinition>("first_field"), offset = new Vector2Int(40000, 0) });
             Check("a region beyond ±32768 cells is a WARNING (float precision), not silently accepted",
                 far.Validate().Any(p => p.StartsWith("WARNING") && p.Contains("float")) && !OutdoorWorldDefinition.HasErrors(far.Validate()));
-            Check("the registry never writes the Authoring Maps (first_field.json unchanged in Git)",
-                GitClean("unity-project/Assets/Content/Maps/Authoring") && GitClean("unity-project/Assets/Content/Maps/first_field.asset"));
+            Check("the registry never writes the Authoring Maps (first_field the same as published ver3.1; nothing left changed by a run)",
+                GitSameAsVer31("unity-project/Assets/Content/Maps/Authoring/first_field.hwmap.json") &&
+                GitSameAsVer31("unity-project/Assets/Content/Maps/first_field.asset") && GitClean("unity-project/Assets/Content/Maps"));
         }
 
         // ---------------------------------------------------------------- test worlds (spec 10)
@@ -1187,7 +1209,7 @@ namespace Halka.Poc2D3D.EditorTools
             var places = new (string version, string map, Vector2Int cell)[]
             {
                 ("ver3.0", "first_field", new Vector2Int(-1, 0)), ("ver3.0", "halka_house", new Vector2Int(0, 0)),
-                ("ver3.1", "first_field", new Vector2Int(9, -5)), ("ver3.1", "halka_house", new Vector2Int(1, 0)),
+                ("ver3.1", "first_field", new Vector2Int(9, -5)), ("ver3.1", "halka_house", new Vector2Int(-2, 0)),
                 ("ver3.1", "halka_soundbooth", new Vector2Int(3, -1)),
             };
             foreach (var (version, map, cell) in places)
@@ -1201,6 +1223,17 @@ namespace Halka.Poc2D3D.EditorTools
                     (c.Switcher.Mode == PocViewMode.ThirdPerson3D) == (view == HarukaSaveData.View3D) && c.Auto.AutoEnabled == auto &&
                     c.LifeLog.TotalSteps == 4321 && c.Clock.AnchorMilliseconds == 1760000000000L && c.Session.CompletedSteps == 0,
                     $"{c.Session.World.MapId} {c.Session.Cell} {c.Switcher.Mode} auto {c.Auto.AutoEnabled}");
+            }
+            // ver3.2 interior: a ver3.1 save standing where the low table / the kitchen now stand
+            // resumes on the nearest free cell of the house (never inside furniture), steps kept.
+            foreach (var taken in new[] { new Vector2Int(1, 0), new Vector2Int(5, -2) })
+            {
+                var st = new HarukaMemoryStorage();
+                new HarukaSnapshotStore(st).Write(Old("ver3.1", "halka_house", taken));
+                var rr = C6.Start(st);
+                Check($"ver3.1 save on house cell {taken} (now under the new furniture): resumes on a free cell next to it, steps kept",
+                    rr.Session.World.MapId == "halka_house" && rr.Session.Cell != taken && rr.Session.World.CanEnter(rr.Session.Cell) &&
+                    (rr.Session.Cell - taken).sqrMagnitude <= 2 && rr.LifeLog.TotalSteps == 4321, rr.Session.Cell.ToString());
             }
             // Next to the door and on an invalid cell.
             var door = Content<MapDefinition>("first_field").HouseDoorCell;
@@ -1299,13 +1332,130 @@ namespace Halka.Poc2D3D.EditorTools
             Check("a chunk loaded at night uses the same lit materials as the others (no per-chunk time)", materials.Count == 1);
         }
 
+        // ---------------------------------------------------------------- ver3.2 interior update
+
+        // The user's requests (2026-10-24): a kitchen (bottom right), a rug and a low table in the
+        // house; a guitar on a stand in the booth; standing exactly in front of the pen-tablet desk and
+        // the DTM desk's monitor (the desks are now 3 and 5 cells: they have a middle cell).
+        private static void InteriorFurnitureChecks()
+        {
+            var house = Content<MapDefinition>("halka_house");
+            var booth = Content<MapDefinition>("halka_soundbooth");
+            WorldObjectPlacement One(MapDefinition map, string id) => map.Objects.Single(o => o.Definition != null && o.Definition.StableId == id);
+            Check("house: bed, shelf, sofa and the booth stay where they were",
+                One(house, "bed_basic").RootCell == new Vector2Int(-5, 0) && One(house, "studio_shelf_basic").RootCell == new Vector2Int(-1, 2) &&
+                One(house, "sofa_basic").RootCell == new Vector2Int(1, 2) && One(house, "soundbooth_exterior").RootCell == new Vector2Int(4, 0));
+            Check("house: the kitchen stands in the bottom right (East wall, (5,-3)..(5,-1)), 3 cells, facing West",
+                One(house, "kitchen_counter").RootCell == new Vector2Int(5, -3) && One(house, "kitchen_counter").Definition.Footprint == new Vector2Int(1, 3));
+            Check("house: the rug (walkable) and the low table in front of the sofa",
+                One(house, "living_rug").RootCell == new Vector2Int(0, -1) && !One(house, "living_rug").Definition.BlocksMovement &&
+                One(house, "low_table_living").RootCell == new Vector2Int(1, 0));
+            Check("booth: the guitar on its stand at (3,3); the mic stays at (4,1)",
+                One(booth, "guitar_stand").RootCell == new Vector2Int(3, 3) && One(booth, "recording_mic_basic").RootCell == new Vector2Int(4, 1));
+            Check("booth: the desks have an odd width (pen-tablet desk 3, DTM desk 5): a middle cell exists",
+                One(booth, "illust_desk_tablet").Definition.Footprint == new Vector2Int(3, 1) &&
+                One(booth, "dtm_desk_large").Definition.Footprint == new Vector2Int(5, 1));
+            foreach (var map in new[] { house, booth })
+                Check(map.MapId + ": map rules (MapPlacementRules.Validate) report nothing", MapPlacementRules.Validate(map).Count == 0,
+                    string.Join("; ", MapPlacementRules.Validate(map)));
+
+            var c = C6.Start(new HarukaMemoryStorage());
+            var expected = new (string map, Vector2Int cell, FacingDirection facing, string id, string text)[]
+            {
+                ("halka_soundbooth", new Vector2Int(-5, 2), FacingDirection.Up, "illust_desk_tablet", WorldVer31Checks.TabletText),
+                ("halka_soundbooth", new Vector2Int(-1, 2), FacingDirection.Up, "dtm_desk_large", WorldVer31Checks.DtmText),
+                ("halka_soundbooth", new Vector2Int(3, 2), FacingDirection.Up, "guitar_stand", "ギター。 ちょっと ひいてみた。"),
+                ("halka_house", new Vector2Int(4, -2), FacingDirection.Right, "kitchen_counter", "ながし。 おさらは ぜんぶ あらってある。"),
+                ("halka_house", new Vector2Int(4, -3), FacingDirection.Right, "kitchen_counter", "やかんで おゆを わかして、 おちゃを いれた。"),
+                ("halka_house", new Vector2Int(4, -1), FacingDirection.Right, "kitchen_counter", "れいぞうこ。 ジュースが ひえている。"),
+                ("halka_house", new Vector2Int(1, -1), FacingDirection.Up, "low_table_living", "のみかけの ココアと クッキー。"),
+            };
+            foreach (var (mapId, cell, facing, id, text) in expected)
+            {
+                if (c.Session.World.MapId != mapId) { c.Session.LoadMapForCheck(mapId, cell, facing); Settle(c, 0.3f); }
+                c.Session.PlaceForCheck(cell, facing);
+                Settle(c, 0.2f);
+                var found = c.Session.World.FindInteractionAhead(cell, facing, out var message);
+                Check($"{mapId}: standing on {cell} facing {facing} answers 「{text}」 ({id})", found != null && found.DefinitionId == id && message == text,
+                    found?.DefinitionId + " " + message);
+                Check($"font: every character of 「{text}」", GameBitmapFont.HasAllGlyphs(text),
+                    new string(text.Where(ch => !GameBitmapFont.HasAllGlyphs(ch.ToString())).ToArray()));
+            }
+
+            // Exactly in front: the drawn desk's middle (its picture's centre, East-West) is the middle
+            // cell's centre, the cell she stands on.
+            c.Session.LoadMapForCheck("halka_soundbooth", new Vector2Int(0, -4), FacingDirection.Up);
+            Settle(c, 0.3f);
+            foreach (var (id, stand) in new[] { ("illust_desk_tablet", new Vector2Int(-5, 2)), ("dtm_desk_large", new Vector2Int(-1, 2)) })
+            {
+                var view = c.Presenter.Views.FirstOrDefault(v => v.DefinitionId == id);
+                var bounds = view != null ? view.Renderers.Select(r => r.bounds).Aggregate((a, b) => { a.Encapsulate(b); return a; }) : default;
+                var standX = GridSpace3D.ToWorld(stand).x;
+                Check($"{id}: its centre is in front of the stand cell {stand} (no left / right offset)",
+                    view != null && Mathf.Abs(bounds.center.x - standX) < 0.02f, $"desk centre x {bounds.center.x:0.000} stand x {standX:0.000}");
+            }
+            var model = c.Session.World;
+            var reach = ReachableCells(model, WorldVer31Checks.BoothEntry, cell => !c.Session.IsTransitionCell(model, cell));
+            Check("booth: both desks' front cells, the guitar's and the mic's surroundings are reachable from the entry",
+                new[] { new Vector2Int(-5, 2), new Vector2Int(-1, 2), new Vector2Int(3, 2), new Vector2Int(4, 0) }.All(reach.Contains));
+            c.Session.LoadMapForCheck("halka_house", new Vector2Int(0, -3), FacingDirection.Up);
+            Settle(c, 0.3f);
+            model = c.Session.World;
+            reach = ReachableCells(model, new Vector2Int(0, -3), cell => !c.Session.IsTransitionCell(model, cell));
+            var houseCells = new[] { new Vector2Int(-5, -1), new Vector2Int(1, 1), new Vector2Int(2, 1), WorldVer31Checks.BoothApproach,
+                new Vector2Int(4, -3), new Vector2Int(4, -2), new Vector2Int(4, -1), new Vector2Int(1, -1), new Vector2Int(2, -1), new Vector2Int(0, 0) };
+            Check("house: bed, both sofa seats, the booth approach, the three kitchen cells, the table and the rug are reachable from the entry",
+                houseCells.All(reach.Contains), string.Join(" ", houseCells.Where(x => !reach.Contains(x))));
+            Check("house: the rug's cells are walkable, the table's and the kitchen's are not",
+                model.CanEnter(new Vector2Int(0, -1)) && model.CanEnter(new Vector2Int(2, -1)) && !model.CanEnter(new Vector2Int(1, 0)) &&
+                !model.CanEnter(new Vector2Int(5, -2)));
+            var rug = c.Presenter.Views.FirstOrDefault(v => v.DefinitionId == "living_rug");
+            Check("house: every new piece is drawn (3D model, not a fallback box); the rug casts no shadow",
+                new[] { "kitchen_counter", "living_rug", "low_table_living" }.All(id => c.Presenter.Views.Any(v => v.DefinitionId == id && !v.IsFallback)) &&
+                rug != null && rug.Renderers.All(r => r.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.Off));
+            Check("the sofa still seats her (left seat, from the rug side)", SitOnSofa(c));
+        }
+
+        private static bool SitOnSofa(C6.Ctx c)
+        {
+            c.Session.PlaceForCheck(WorldVer31Checks.SofaSeat, FacingDirection.Up);
+            Settle(c, 0.2f);
+            c.Session.InteractAhead();
+            Settle(c, 0.3f);
+            var seated = c.Session.IsSeated;
+            c.Session.Stand();
+            Settle(c, 0.3f);
+            return seated;
+        }
+
+        private static HashSet<Vector2Int> ReachableCells(SharedWorldModel model, Vector2Int origin, Func<Vector2Int, bool> through)
+        {
+            var seen = new HashSet<Vector2Int> { origin };
+            var queue = new Queue<Vector2Int>();
+            queue.Enqueue(origin);
+            while (queue.Count > 0)
+            {
+                var cell = queue.Dequeue();
+                foreach (var d in Dirs)
+                {
+                    var next = cell + d;
+                    if (seen.Contains(next) || !model.CanEnter(next)) continue;
+                    seen.Add(next);
+                    if (through(next)) queue.Enqueue(next);
+                }
+            }
+            return seen;
+        }
+
         // ---------------------------------------------------------------- protection
 
         private static void ProtectionChecks()
         {
-            Check("first_field, halka_house, halka_soundbooth assets and their Authoring JSON unchanged (Git)",
-                GitClean("unity-project/Assets/Content/Maps/first_field.asset") && GitClean("unity-project/Assets/Content/Maps/halka_house.asset") &&
-                GitClean("unity-project/Assets/Content/Maps/halka_soundbooth.asset") && GitClean("unity-project/Assets/Content/Maps/Authoring"));
+            Check("first_field (asset and Authoring JSON) the same as published ver3.1; house and booth maps not left changed by a run (Git)",
+                GitSameAsVer31("unity-project/Assets/Content/Maps/first_field.asset") &&
+                GitSameAsVer31("unity-project/Assets/Content/Maps/Authoring/first_field.hwmap.json") &&
+                GitClean("unity-project/Assets/Content/Maps/halka_house.asset") && GitClean("unity-project/Assets/Content/Maps/halka_soundbooth.asset") &&
+                GitClean("unity-project/Assets/Content/Maps/Authoring"));
             Check("WORLD EDITOR v1.0 sources unchanged (Git)", GitClean("tools/HalkaWorldMapEditor") && GitClean("unity-project/Assets/Editor/MapAuthoringImporter.cs"));
             var scene = File.ReadAllText(Path.Combine(PocSceneBuilder.RepositoryRoot, "unity-project", PocSceneBuilder.RcScenePath));
             Check("the release scene references no test world (no fixture, no chunktest Map)",

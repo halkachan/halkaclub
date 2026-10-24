@@ -440,7 +440,7 @@
       "instanceId": "obj_dtm_desk_v31_soundbooth",
       "definitionId": "dtm_desk_large",
       "rootCell": {
-        "x": -2,
+        "x": -3,
         "y": 3
       }
     },
@@ -448,7 +448,7 @@
       "instanceId": "obj_illust_desk_v31_soundbooth",
       "definitionId": "illust_desk_tablet",
       "rootCell": {
-        "x": -4,
+        "x": -6,
         "y": 3
       }
     },
@@ -458,6 +458,14 @@
       "rootCell": {
         "x": 4,
         "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_guitar_stand_v32_soundbooth",
+      "definitionId": "guitar_stand",
+      "rootCell": {
+        "x": 3,
+        "y": 3
       }
     }
   ],

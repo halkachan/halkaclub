@@ -105,6 +105,13 @@ namespace Halka.Poc2D3D.EditorTools
             "booth_wall_base", "booth_wall_upper", "booth_doorway_base", "booth_doorway_upper"
         };
         public static readonly string[] V31Definitions = { "soundbooth_exterior", "dtm_desk_large", "illust_desk_tablet" };
+        // ver3.2 interior: the two booth desks one cell wider (a middle cell to stand in front of),
+        // the house's kitchen, rug and low table, the booth's guitar (blender/scripts/build_v32_interior.py).
+        public const string V32Models = Root + "/Models/V32/";
+        public static readonly string[] V32ModelNames =
+        {
+            "dtm_desk_large", "illust_desk_tablet", "kitchen_counter", "living_rug", "low_table_living", "guitar_stand"
+        };
         public const string MessageFontPath = "Assets/Content/Fonts/HalkaMessageSubset.ttf";
         public const string BlenderMaterialName = "HALKA_VertexColor";
 
@@ -155,6 +162,7 @@ namespace Halka.Poc2D3D.EditorTools
             RemapModelMaterial(CrowModelPath, toon);
             RemapModelMaterial(SofaModelPath, toon);
             foreach (var name in V31ModelNames) RemapModelMaterial(V31Models + name + ".fbx", toon);
+            foreach (var name in V32ModelNames) RemapModelMaterial(V32Models + name + ".fbx", toon);
             EnsureMaterial(TreeFadeMaterialPath, "HALKA/POC/ToonVertexColorFade", null);
             EnsureMaterial(OutlineMaterialPath, "HALKA/POC/OutlineComposite", null);
             EnsureMaterial(Outline3DMaterialPath, "HALKA/POC/Outline3D", null);
@@ -206,10 +214,21 @@ namespace Halka.Poc2D3D.EditorTools
                 // through it at the player); the desks are low furniture.
                 new PocPresentationBinding { definitionId = "soundbooth_exterior", model = V31("soundbooth_exterior"),
                     cameraOccluder = false },
-                new PocPresentationBinding { definitionId = "dtm_desk_large", model = V31("dtm_desk_large"),
+                // ver3.2 interior: the wider desks (V32), the kitchen (tall, against the East wall: it
+                // never stands between the camera and her), the rug (flat: no shadow, a soft outline),
+                // the low table and the guitar (small: never hidden for the camera).
+                new PocPresentationBinding { definitionId = "dtm_desk_large", model = V32("dtm_desk_large"),
                     cameraOccluder = false },
-                new PocPresentationBinding { definitionId = "illust_desk_tablet", model = V31("illust_desk_tablet"),
-                    cameraOccluder = false }
+                new PocPresentationBinding { definitionId = "illust_desk_tablet", model = V32("illust_desk_tablet"),
+                    cameraOccluder = false },
+                new PocPresentationBinding { definitionId = "kitchen_counter", model = V32("kitchen_counter"),
+                    cameraOccluder = false },
+                new PocPresentationBinding { definitionId = "living_rug", model = V32("living_rug"),
+                    cameraOccluder = false, castShadows = false, outlineStrength = 0.5f },
+                new PocPresentationBinding { definitionId = "low_table_living", model = V32("low_table_living"),
+                    cameraOccluder = false },
+                new PocPresentationBinding { definitionId = "guitar_stand", model = V32("guitar_stand"),
+                    cameraOccluder = false, minPickSize = SmallPickSize }
             }, new PocEnvironmentPresentation
             {
                 grassTiles = new List<GameObject> { Phase2("ground_grass_a"), Phase2("ground_grass_b"), Phase2("ground_grass_c") },
@@ -595,6 +614,7 @@ namespace Halka.Poc2D3D.EditorTools
         public static GameObject Phase2(string name) => LoadModel(Phase2Models + name + ".fbx");
         public static GameObject Phase3(string name) => LoadModel(Phase3Models + name + ".fbx");
         public static GameObject V31(string name) => LoadModel(V31Models + name + ".fbx");
+        public static GameObject V32(string name) => LoadModel(V32Models + name + ".fbx");
         // Clicks on small things (flower, stone, cushion) count within at least this cube.
         public const float SmallPickSize = 0.3f;
 

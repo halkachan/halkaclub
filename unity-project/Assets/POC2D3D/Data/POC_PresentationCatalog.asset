@@ -275,7 +275,7 @@ MonoBehaviour:
     partialOcclusion: 0
     minPickSize: 0
   - definitionId: dtm_desk_large
-    model: {fileID: 919132149155446097, guid: e4ebd60ad87884e49a3b9e3281781ce2, type: 3}
+    model: {fileID: 919132149155446097, guid: fd629e426daa7cc4598b7771e99bef82, type: 3}
     variants: []
     yawDegrees: 0
     meshOffset: {x: 0, y: 0, z: 0}
@@ -292,7 +292,7 @@ MonoBehaviour:
     partialOcclusion: 0
     minPickSize: 0
   - definitionId: illust_desk_tablet
-    model: {fileID: 919132149155446097, guid: 39380f667f1a2ed40ba6c48cc4322ec8, type: 3}
+    model: {fileID: 919132149155446097, guid: d04b7a3a5cf1b474d8664fbe523af43d, type: 3}
     variants: []
     yawDegrees: 0
     meshOffset: {x: 0, y: 0, z: 0}
@@ -308,6 +308,74 @@ MonoBehaviour:
     fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0
+  - definitionId: kitchen_counter
+    model: {fileID: 919132149155446097, guid: 7522770cca72d174d8e4a33ed4fd7e3b, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: living_rug
+    model: {fileID: 919132149155446097, guid: d09a34ba77f3a1d4cb6e03c8baa81d69, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 0
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 0.5
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: low_table_living
+    model: {fileID: 919132149155446097, guid: 47c5e93550940ba48a1899ccde4352ea, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: guitar_stand
+    model: {fileID: 919132149155446097, guid: 393a115a5814ef04096fa30e14eaef06, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0.3
   environment:
     grassTiles:
     - {fileID: 919132149155446097, guid: 63963ae3c0300124ca9d7edb73f246bc, type: 3}
