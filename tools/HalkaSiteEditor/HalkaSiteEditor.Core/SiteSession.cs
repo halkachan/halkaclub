@@ -15,6 +15,7 @@ public sealed class SiteSession
 {
     // HTML / CSS / JS の中から「値だけ」を取り出すための形。2番目のグループが値です。
     private const string StatusBadge = @"(<p class=""request-status-badge"">)([^<]*)(</p>)";
+    private const string UpdatedOn = @"(<p class=""request-updated"">)([^<]*)(</p>)";
     private const string PlanAmount = @"(<span class=""plan-amount"">)([^<]*)(</span>)";
     private const string PlanName = @"(<span class=""plan-name"">)([^<]*)(</span>)";
     private const string OptionName = @"(<span class=""plan-option-name"">)([^<]*)(</span>)";
@@ -481,6 +482,10 @@ public sealed class SiteSession
         var statusJa = Field(ja, jaRelative, StatusBadge, 0, "commission.status.ja", "受付状況（日本語）");
         var statusEn = Field(en, enRelative, StatusBadge, 0, "commission.status.en", "受付状況（英語）");
         pairs.Add(new FieldPair("受付状況", statusJa, statusEn));
+
+        var updatedJa = Field(ja, jaRelative, UpdatedOn, 0, "commission.updated.ja", "最終更新日（日本語）");
+        var updatedEn = Field(en, enRelative, UpdatedOn, 0, "commission.updated.en", "最終更新日（英語）");
+        pairs.Add(new FieldPair("最終更新日", updatedJa, updatedEn));
 
         var names = ValueSlot.ReadAll(ja.Text, PlanName);
         var jaCount = new ValueSlot(PlanAmount).Count(ja.Text);

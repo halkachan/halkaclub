@@ -131,6 +131,9 @@ Check("依頼ページを日英そろえて読む",
 Check("見出しは日本語版の項目名", commission.Pairs.Skip(1).All(pair => !string.IsNullOrWhiteSpace(pair.Label)) &&
     commission.Pairs.Any(pair => pair.Label.Contains("歌ってみた")));
 Check("いまの受付状況を読めている", commission.Pairs[0].Ja.Value.Length > 0 && commission.Pairs[0].En.Value.Length > 0);
+Check("最終更新日を日英そろえて読む",
+    commission.Pairs[1].Label == "最終更新日" &&
+    commission.Pairs[1].Ja.Value.Length > 0 && commission.Pairs[1].En.Value.Length > 0);
 Check("色を6つ読む", colors.Fields.Count == 6 && colors.Fields.All(field => CssColor.IsValid(field.Value)));
 Check("最新動画を読む", YouTubeUrl.ExtractId(top.Fields.Single(field => field.Id == "top.latestVideo").Value) != null);
 Check("読んだ直後は変更なし", !session.HasChanges && !session.HasError && session.Changes().Count == 0);

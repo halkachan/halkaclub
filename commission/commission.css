@@ -49,6 +49,13 @@
   margin: 0;
 }
 
+/* 最終更新日（受付状況の下に、小さく1行） */
+.request-updated {
+  margin: 10px 0 0;
+  color: var(--pencil);
+  font-size: 12px;
+}
+
 /* 日本語版と英語版を行き来するリンク */
 .lang-switch {
   display: inline-flex;
