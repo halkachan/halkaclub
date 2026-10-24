@@ -606,11 +606,25 @@ Unity Editor（batch、ウィンドウなし）で、同じ道のり（静止・
 
 ## 47. Git Commit
 
-⟪COMMITS⟫
+ブランチ `claude/harukaworld-v32`（ローカルのみ。Push・Merge していません）:
+
+| Commit | 内容 |
+|---|---|
+| `6abbf9b` | Phase 2〜3: World 座標・チャンク表・streaming・registry・テスト World の生成（ver3.1 の検査 191 件合格） |
+| `991d068` | WorldVer32Checks（219）と、検査で見つけた streaming の修正 |
+| `2d23ad4` | 開発用の計測、チャンク確認版、ver3.2 ローカルの付属一式、チャンクサイズの比較、設計資料 |
+| `924cb6a` | 回帰の一括実行、互換用 GroundObject の安定化、この報告 |
+| （この後） | 報告の最終の値（47・48章） |
 
 ## 48. 最終 Git 状態
 
-⟪FINALGIT⟫
+- ブランチ: `claude/harukaworld-v32`。origin/main `144a534` から 5 Commit 先です。
+- origin/main は `144a534` のまま（Push なし）。main への Merge もしていません。GitHub Pages・halkaclub.com は変えていません。
+- 作業ツリー: 未コミットの変更なし。検査が改行だけ書き換えた Material・Catalog・シーンと、検査中の Sprite の状態は、元に戻しました。
+- ローカル Build（リポジトリの外）:
+  - `HARUKA_WORLD_ver3.2_LOCAL`（build `0e1134f5…`、`start_v32.bat` → http://127.0.0.1:8932/halkaworld/）
+  - `HARUKA_WORLD_ver3.2_CHUNKTEST`（`webgl/` と `webgl_dev/`。ポート 8933）
+- 公開中の ver3.1（`halkaworld/`）と、ver3.1 のローカル版（`HARUKA_WORLD_ver3.1_LOCAL`）はそのままです。
 
 ## 49. 未解決事項
 
@@ -654,7 +668,15 @@ Unity Editor（batch、ウィンドウなし）で、同じ道のり（静止・
 | 公開 ver3.1 が変更されていない | 達成 | 44章 |
 | 設計資料と検証レポートが完成している | 達成 | この報告と設計資料 |
 
-⟪VERDICT⟫
+**判定: 技術的には完成（PC のローカル WebGL・Unity の検査の範囲で）。**
+
+- 指示書 25章の条件は、すべて満たしています。
+- 未確認なのは実機のスマートフォンと Standalone の計測で、どちらも NOT RUN と明記しました。
+- 公開は、ユーザーの確認と許可を待ちます。
+
+公開の前に、次の確認をお願いします:
+1. ローカル版（`start_v32.bat`）で、いつもの遊び方（屋外・家・防音室、2D/3D）に違和感がないか。
+2. 可能なら、実機のスマートフォンでの表示と重さ。
 
 ## 51. ver3.3 で必要になる作業
 
