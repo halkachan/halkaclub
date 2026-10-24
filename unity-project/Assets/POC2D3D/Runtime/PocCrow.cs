@@ -22,7 +22,9 @@ namespace Halka.Poc2D3D
         [SerializeField] private InteractionAudio voice;
 
         private readonly List<ICrowPerch> perches = new List<ICrowPerch>();
-        private readonly Dictionary<PocObjectView, TreePerch> perchByTree = new Dictionary<PocObjectView, TreePerch>();
+        // ver3.2: one perch per tree Object (not per drawn tree), so a tree whose chunk is released
+        // stays the same perch and the crow keeps its target.
+        private readonly Dictionary<string, TreePerch> perchByTree = new Dictionary<string, TreePerch>();
 
         public Sprite CurrentSprite { get; private set; }
         public bool CurrentFlipX { get; private set; }
@@ -83,34 +85,31 @@ namespace Halka.Poc2D3D
         protected override Vector2 ScreenDelta(Vector3 from, Vector3 to) =>
             new Vector2(to.x - from.x, to.z - from.z + (to.y - from.y));
 
+        // ver3.2: the trees of the crow's Map (its region of the outdoor world), from the logical
+        // Objects in the Map's order (the order the drawn trees had in ver3.1); a perch point comes
+        // from the drawn tree when its chunk is drawn, else from the same model's anchor offset.
         protected override IReadOnlyList<ICrowPerch> PerchCandidates()
         {
             perches.Clear();
-            if (presenter == null || activeMap == null) return perches;
-            // A map rebuild replaces the tree views; forget the destroyed ones.
-            if (perchByTree.Count > 0)
+            if (presenter == null || activeMap == null || session == null || session.OutdoorWorld == null) return perches;
+            var index = session.OutdoorIndex;
+            var region = index != null ? index.FindRegion(activeMap.MapId) : null;
+            if (region == null) return perches;
+            foreach (var instance in session.OutdoorWorld.Objects)
             {
-                var stale = new List<PocObjectView>();
-                foreach (var view in perchByTree.Keys)
-                    if (view == null) stale.Add(view);
-                foreach (var view in stale) perchByTree.Remove(view);
-            }
-            foreach (var view in presenter.Views)
-            {
-                if (view == null || view.PerchAnchor == null) continue;
-                if (!perchByTree.TryGetValue(view, out var perch))
+                if (instance.RegionMapId != activeMap.MapId) continue;
+                if (!presenter.TryGetPerchPosition(instance, out var point)) continue;
+                if (!region.ContainsWorld(PositionToCell(point))) continue;
+                if (!perchByTree.TryGetValue(instance.InstanceId, out var perch))
                 {
-                    perch = new TreePerch(view);
-                    perchByTree[view] = perch;
+                    perch = new TreePerch(presenter, instance);
+                    perchByTree[instance.InstanceId] = perch;
                 }
-                if (!perch.IsUsable) continue;
-                if (!activeMap.Contains(PositionToCell(perch.PerchPosition))) continue;
                 perches.Add(perch);
             }
             return perches;
         }
 
-        // Phase 5: the 2D view rustles the grass it hops into (as the 2D game's grass field).
         public event System.Action<Vector2Int> Rustled;
 
         protected override void RustleAt(Vector2Int cell)
@@ -147,10 +146,17 @@ namespace Halka.Poc2D3D
         // A Blender tree as a perch: its PerchAnchor, usable while the tree is drawn.
         private sealed class TreePerch : ICrowPerch
         {
-            public readonly PocObjectView View;
-            public TreePerch(PocObjectView view) => View = view;
-            public bool IsUsable => View != null && View.PerchAnchor != null && View.gameObject.activeInHierarchy;
-            public Vector3 PerchPosition => View.PerchAnchor.position;
+            private readonly PocWorldPresenter presenter;
+            public readonly SharedObjectInstance Tree;
+            public TreePerch(PocWorldPresenter worldPresenter, SharedObjectInstance tree)
+            {
+                presenter = worldPresenter;
+                Tree = tree;
+            }
+            // The drawn tree when its chunk is drawn (null otherwise).
+            public PocObjectView View => presenter != null ? presenter.FindView(Tree.InstanceId) : null;
+            public bool IsUsable => presenter != null && presenter.TryGetPerchPosition(Tree, out _);
+            public Vector3 PerchPosition => presenter.TryGetPerchPosition(Tree, out var point) ? point : GridSpace3D.ToWorld(Tree.RootCell);
         }
     }
 }

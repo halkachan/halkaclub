@@ -6,6 +6,7 @@ using Halka.Game.Interaction;
 using Halka.Game.Player;
 using Halka.Game.UI;
 using Halka.Game.World;
+using Halka.Poc2D3D.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -88,6 +89,8 @@ namespace Halka.Poc2D3D.EditorTools
         public const string TreeFadeMaterialPath = Root + "/Materials/POC_ToonVertexColorFade.mat";
         public const string OutdoorMapPath = "Assets/Content/Maps/first_field.asset";
         public const string InteriorMapPath = "Assets/Content/Maps/halka_house.asset";
+        // ver3.2: the outdoor world registry (which outdoor Maps, at which world offsets).
+        public const string OutdoorWorldRegistryPath = "Assets/Content/Maps/World/outdoor_main.hwworld.json";
         // ver3.1: the sound booth (its own map, entered from the booth in the house) and its
         // Blender models (blender/scripts/build_v31_studio.py).
         public const string SoundBoothMapPath = "Assets/Content/Maps/halka_soundbooth.asset";
@@ -285,6 +288,22 @@ namespace Halka.Poc2D3D.EditorTools
             EditorUtility.SetDirty(guard);
         }
 
+        // ver3.2: the registry decides the outdoor world; its Player Start Map must be the one the
+        // session starts on (first_field), and any error stops the build.
+        public static OutdoorWorldDefinition LoadOutdoorWorld(MapDefinition startMap)
+        {
+            var file = AssetDatabase.LoadAssetAtPath<TextAsset>(OutdoorWorldRegistryPath);
+            if (file == null) throw new InvalidOperationException("Outdoor world registry is missing: " + OutdoorWorldRegistryPath);
+            var problems = new List<string>();
+            var world = OutdoorWorldRegistryJson.Parse(file.text,
+                id => AssetDatabase.LoadAssetAtPath<MapDefinition>("Assets/Content/Maps/" + id + ".asset"), problems);
+            foreach (var problem in problems) Debug.LogWarning("[ver3.2 world registry] " + problem);
+            if (world == null) throw new InvalidOperationException("Outdoor world registry is invalid: " + string.Join("; ", problems));
+            if (!world.regions.Exists(link => link.map == startMap))
+                throw new InvalidOperationException("Outdoor world registry does not contain " + startMap.MapId);
+            return world;
+        }
+
         public static GameObject BuildSceneContent(PocPresentationCatalog catalog, Material screenOverlay)
         {
             var outdoor = AssetDatabase.LoadAssetAtPath<MapDefinition>(OutdoorMapPath);
@@ -347,6 +366,7 @@ namespace Halka.Poc2D3D.EditorTools
             thirdPerson.enabled = false;
 
             session.Configure(outdoor, interior, input);
+            session.ConfigureOutdoorWorld(LoadOutdoorWorld(outdoor), catalog.Environment.outsideMargin);
             session.ConfigureInnerRoom(interior.MapId, soundBooth);
             input.Configure(dpad, action, switcher, panel, session);
             presenter.Configure(session, catalog);

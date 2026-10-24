@@ -106,7 +106,7 @@ namespace Halka.Game.Player
             }
             if (!AutoEnabled || menuSuspended || !world.HasPlayer || world.PlayerMovementLocked ||
                 world.HasActiveMessage ||
-                mapId != "first_field" && !IsIndoorMap(world, mapId))
+                !IsOutdoorMap(world, mapId) && !IsIndoorMap(world, mapId))
             {
                 if (world.HasActiveMessage) RecordUserAction(now);
                 else if (Active) StopAuto();
@@ -166,6 +166,15 @@ namespace Halka.Game.Player
 
         // ver3.1: AUTO walks in every interior map of the registry (the house, the sound booth)
         // with the same planner; it never steps onto a door or an exit (CanAutoEnter).
+        // ver3.2: first_field and any other outdoor Map of the registry (a ver3.3 region).
+        private static bool IsOutdoorMap(IAutoModeWorld world, string mapId)
+        {
+            if (mapId == "first_field") return true;
+            if (!world.HasMapRegistry || string.IsNullOrEmpty(mapId)) return false;
+            try { return world.GetMap(mapId) is MapDefinition map && map.MapType == "outdoor"; }
+            catch (System.ArgumentException) { return false; }
+        }
+
         private static bool IsIndoorMap(IAutoModeWorld world, string mapId)
         {
             if (mapId == "halka_house") return world.HasMapRegistry;
@@ -198,7 +207,8 @@ namespace Halka.Game.Player
         {
             var world = World;
             var mapId = world.HasMapRegistry ? world.ActiveMapId : "first_field";
-            if (mapId == "first_field" && world.HasHouse && cell == world.HouseDoorCell)
+            var outdoors = IsOutdoorMap(world, mapId);
+            if (outdoors && world.HasHouse && cell == world.HouseDoorCell)
                 return false;
             if (IsIndoorMap(world, mapId))
             {
@@ -209,7 +219,7 @@ namespace Halka.Game.Player
                     room.TryGetHouseRoot(out var innerDoor) && cell == innerDoor)
                     return false;
             }
-            else if (mapId != "first_field") return false;
+            else if (!outdoors) return false;
             return world.CanEnter(cell) && world.CanPlayerEnter(cell);
         }
 

@@ -1,0 +1,9 @@
+{
+  "format": "halka-world-outdoor",
+  "formatVersion": 1,
+  "worldId": "outdoor_main",
+  "chunkSize": 16,
+  "regions": [
+    { "mapId": "first_field", "offset": { "x": 0, "y": 0 } }
+  ]
+}
