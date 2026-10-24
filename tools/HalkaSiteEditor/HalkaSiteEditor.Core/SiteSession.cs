@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
+
 namespace HalkaSiteEditor.Core;
 
 /// <summary>別の場所でファイルが書き換わっていたときに投げます。</summary>
@@ -596,6 +599,10 @@ public sealed class SiteSession
     {
         if (HasError) throw new InvalidOperationException("入力に誤りがある項目があります。");
 
+        // 日付のことは、他の反映を始める前の姿を覚えておきます。
+        var dateByHand = UpdatedFields.Any(field => field.Changed);
+        var commissionBefore = UpdatedFields.Select(field => DateBlind(field.FileText)).ToArray();
+
         foreach (var file in files)
         {
             if (file.ChangedOnDisk()) throw new SiteChangedOnDiskException(SitePaths.Relative(Root, file.Path));
@@ -635,6 +642,8 @@ public sealed class SiteSession
         // 上げないと、見る人のブラウザが古い画像をしばらく掴んだままになります。
         foreach (var image in Images) image.Bump(files);
 
+        StampCommissionDate(dateByHand, commissionBefore);
+
         // 書き換わるファイルの控えを取ってから書き込みます。
         Backups.Take(Root, files
             .Where(file => file.Dirty)
@@ -655,6 +664,44 @@ public sealed class SiteSession
         World?.MarkSaved();
         // 保存したあとは、戻せる手を数え直します（戻しても保存前には戻らないため）。
         Undo.Clear();
+    }
+
+    /// <summary>依頼ページの「最終更新日」の欄（日本語と英語）。</summary>
+    private IEnumerable<EditField> UpdatedFields => Fields
+        .Where(field => field.Id is "commission.updated.ja" or "commission.updated.en");
+
+    /// <summary>
+    /// 日付と `?v=` の番号を消した姿。
+    /// 色を変えるだけでも全ページの `?v=` は上がるので、
+    /// 「依頼ページの中身が変わったか」を見るにはこれを比べます。
+    /// </summary>
+    private static string DateBlind(string text) => Regex.Replace(
+        Regex.Replace(text, @"(<p class=""request-updated"">)[^<]*", "$1"),
+        @"\?v=\d+", "?v=");
+
+    /// <summary>
+    /// 依頼ページを直したときだけ、最終更新日を今日にします。
+    /// 自分で日付を書き換えたときは、その値をそのまま残します。
+    /// 日本語版と英語版は双子なので、片方を直したときも両方をそろえます。
+    /// </summary>
+    private void StampCommissionDate(bool byHand, IReadOnlyList<string> before)
+    {
+        if (byHand) return;
+
+        var updated = UpdatedFields.ToArray();
+        if (updated.Length == 0) return;
+
+        var now = updated.Select(field => DateBlind(field.FileText)).ToArray();
+        if (now.SequenceEqual(before, StringComparer.Ordinal)) return;
+
+        var today = DateTime.Now;
+        foreach (var field in updated)
+        {
+            field.Value = field.Id.EndsWith(".ja", StringComparison.Ordinal)
+                ? $"最終更新：{today:yyyy年M月d日}"
+                : $"Last updated: {today.ToString("d MMMM yyyy", CultureInfo.InvariantCulture)}";
+            field.Apply();
+        }
     }
 
     public void Revert()

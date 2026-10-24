@@ -81,6 +81,9 @@ public sealed class EditField : INotifyPropertyChanged
     public bool HasError => Error != null;
     public bool Changed => !string.Equals(Value, Original, StringComparison.Ordinal);
 
+    /// <summary>この欄が書き込むファイルの、いまの中身。</summary>
+    internal string FileText => file.Text;
+
     /// <summary>色の欄だけ、画面に出す色見本。</summary>
     public string? SwatchHex => Kind == FieldKind.CssColor ? CssColor.ToSwatchHex(Value) : null;
 

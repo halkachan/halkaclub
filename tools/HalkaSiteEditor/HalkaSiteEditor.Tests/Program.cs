@@ -1533,6 +1533,75 @@ Check("あそびかたに HTML の印は入れられない", guideBad.HasError);
 guideBad.Revert();
 File.WriteAllBytes(guideHtml, guideBytes);   // 後のテストのために元へ戻す
 
+// --- v1.12：依頼ページの最終更新日 -----------------------------------------
+
+static string Today() => $"最終更新：{DateTime.Now:yyyy年M月d日}";
+static string TodayEn() =>
+    $"Last updated: {DateTime.Now.ToString("d MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture)}";
+
+static EditField Updated(SiteSession at, bool japanese)
+{
+    var pair = at.Groups.Single(group => group.Title == "依頼ページ")
+        .Pairs.Single(row => row.Label == "最終更新日");
+    return japanese ? pair.Ja : pair.En;
+}
+
+static void PutOldDate(string root)
+{
+    var at = SiteSession.Load(root);
+    Updated(at, true).Value = "最終更新：2000年1月1日";
+    Updated(at, false).Value = "Last updated: 1 January 2000";
+    at.Save();
+}
+
+static void ChangeStatus(string root, bool japanese, string text)
+{
+    var at = SiteSession.Load(root);
+    var status = at.Groups.Single(group => group.Title == "依頼ページ")
+        .Pairs.Single(row => row.Label == "受付状況");
+    (japanese ? status.Ja : status.En).Value = text;
+    at.Save();
+}
+
+// 自分で書いた日付は、そのまま残ること。
+PutOldDate(sandbox);
+Check("自分で書いた日付はそのまま残る",
+    Updated(SiteSession.Load(sandbox), true).Value == "最終更新：2000年1月1日" &&
+    Updated(SiteSession.Load(sandbox), false).Value == "Last updated: 1 January 2000");
+
+// 依頼ページのどこかを直して保存すると、日付が今日になること。
+ChangeStatus(sandbox, true, "ためし受付中");
+Check("依頼ページを直すと今日の日付になる",
+    Updated(SiteSession.Load(sandbox), true).Value == Today() &&
+    Updated(SiteSession.Load(sandbox), false).Value == TodayEn());
+
+// 英語版だけ直したときも、両方そろうこと。
+PutOldDate(sandbox);
+ChangeStatus(sandbox, false, "Test inquiries");
+Check("英語版だけ直しても両方そろう",
+    Updated(SiteSession.Load(sandbox), true).Value == Today() &&
+    Updated(SiteSession.Load(sandbox), false).Value == TodayEn());
+
+// 依頼ページ以外を直したときは、日付は動かないこと。
+PutOldDate(sandbox);
+var dateColor = SiteSession.Load(sandbox);
+dateColor.Groups.Single(group => group.Title == "サイトの基本色")
+    .Fields.Single(field => field.Label.StartsWith("黄色")).Value = "#ffdc19";
+dateColor.Save();
+Check("依頼ページ以外を直しても日付は動かない",
+    Updated(SiteSession.Load(sandbox), true).Value == "最終更新：2000年1月1日");
+
+// 日付と中身を一緒に直したときは、書いた日付が勝つこと。
+var dateBoth = SiteSession.Load(sandbox);
+Updated(dateBoth, true).Value = "最終更新：1999年12月31日";
+Updated(dateBoth, false).Value = "Last updated: 31 December 1999";
+dateBoth.Groups.Single(group => group.Title == "依頼ページ")
+    .Pairs.Single(row => row.Label == "受付状況").Ja.Value = "また受付中";
+dateBoth.Save();
+Check("自分で書いた日付は、同時に中身を直しても勝つ",
+    Updated(SiteSession.Load(sandbox), true).Value == "最終更新：1999年12月31日" &&
+    Updated(SiteSession.Load(sandbox), false).Value == "Last updated: 31 December 1999");
+
 // --- v1.9：新しいページを自分で見つける -------------------------------------
 
 // あとからページが増えても、ツールに書き足さずに出てくること。
