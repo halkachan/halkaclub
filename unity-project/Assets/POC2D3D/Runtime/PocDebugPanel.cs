@@ -331,7 +331,8 @@ namespace Halka.Poc2D3D
         private string BuildText()
         {
             text.Clear();
-            text.Append("Map ").Append(session.World.MapId).Append("  Cell ").Append(session.Cell.x).Append(',')
+            // ver3.3: outdoors the Map is the region she stands in (the Cell stays the world cell).
+            text.Append("Map ").Append(session.CurrentRegionMapId ?? session.World.MapId).Append("  Cell ").Append(session.Cell.x).Append(',')
                 .Append(session.Cell.y).Append("  Facing ").Append(session.Facing).Append('\n');
             if (views.Mode == PocViewMode.ThirdPerson3D)
                 text.Append("Cam heading ").Append(views.ThirdPerson.Heading).Append("  keys ")
@@ -380,9 +381,18 @@ namespace Halka.Poc2D3D
             var chunk = Halka.Poc2D3D.World.WorldGrid.ChunkOf(cell, index.ChunkSize);
             var local = Halka.Poc2D3D.World.WorldGrid.LocalInChunk(cell, index.ChunkSize);
             var s = presenter.Streamer.Stats;
-            text.Append("Region ").Append(session.CurrentRegionMapId ?? "-").Append('\n');
+            // ver3.3: the region with its direction and her cell in that region's Map ("in chunk": her
+            // cell inside the chunk, the ver3.2 "local").
+            var region = session.CurrentRegion;
+            if (region != null)
+            {
+                var inRegion = region.ToLocal(cell);
+                text.Append("Region ").Append(region.MapId).Append(" (").Append(region.Direction)
+                    .Append(")  local ").Append(inRegion.x).Append(',').Append(inRegion.y).Append('\n');
+            }
+            else text.Append("Region -\n");
             text.Append("World ").Append(index.WorldId).Append("  Chunk ").Append(chunk.X).Append(',').Append(chunk.Y)
-                .Append(" (").Append(index.ChunkSize).Append(")  local ").Append(local.x).Append(',').Append(local.y).Append('\n');
+                .Append(" (").Append(index.ChunkSize).Append(")  in chunk ").Append(local.x).Append(',').Append(local.y).Append('\n');
             text.Append("Chunks ").Append(s.Loaded).Append(" ready ").Append(s.Queued).Append(" queued  objs ")
                 .Append(presenter.LoadedChunkObjects).Append("  load ").Append(s.LastLoadMs.ToString("0.0")).Append('/')
                 .Append(s.MaxLoadMs.ToString("0")).Append("ms  free ").Append(s.LastUnloadMs.ToString("0.0")).Append("ms\n");

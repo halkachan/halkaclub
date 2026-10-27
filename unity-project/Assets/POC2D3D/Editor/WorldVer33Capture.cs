@@ -94,7 +94,7 @@ namespace Halka.Poc2D3D.EditorTools
             var b = GridSpace3D.ToWorld(max);
             var centre = (a + b) * 0.5f;
             camera.fieldOfView = 34f;
-            camera.transform.position = centre + new Vector3(0f, 11f, -12.5f);
+            camera.transform.position = centre + new Vector3(0f, 15f, -17f);
             camera.transform.rotation = Quaternion.LookRotation(centre + new Vector3(0f, 0f, 1.2f) - camera.transform.position, Vector3.up);
             Render(name, camera, "a high 3D view from the South over the whole outdoor world (presentation camera)");
             UnityEngine.Object.DestroyImmediate(camera.gameObject);
