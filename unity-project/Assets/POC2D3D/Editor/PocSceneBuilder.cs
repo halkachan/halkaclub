@@ -236,12 +236,12 @@ namespace Halka.Poc2D3D.EditorTools
                 new PocPresentationBinding { definitionId = "guitar_stand", model = V32("guitar_stand"),
                     cameraOccluder = false, minPickSize = SmallPickSize },
                 // ver3.3, the East area: a yellow flower (as flower_basic), the plaza's sunflowers (tall:
-                // they fade in front of her like the trees), the yellow sign (as sign_basic).
+                // they fade in front of her like the trees), the yellow signpost (its model: sign_yellow).
                 new PocPresentationBinding { definitionId = "flower_yellow", model = V33("flower_yellow"),
                     cameraOccluder = false, minPickSize = SmallPickSize },
                 new PocPresentationBinding { definitionId = "sunflower_cluster", model = V33("sunflower_cluster"),
                     cameraOccluder = false, fadeInFront2D = true, fadeInFront3D = true, fadeOpacity = 0.4f, fadeSeconds = 0.25f },
-                new PocPresentationBinding { definitionId = "sign_yellow", model = V33("sign_yellow"), cameraOccluder = false }
+                new PocPresentationBinding { definitionId = "signpost_yellow", model = V33("sign_yellow"), cameraOccluder = false }
             }, new PocEnvironmentPresentation
             {
                 grassTiles = new List<GameObject> { Phase2("ground_grass_a"), Phase2("ground_grass_b"), Phase2("ground_grass_c") },

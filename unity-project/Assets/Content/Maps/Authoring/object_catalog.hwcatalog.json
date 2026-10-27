@@ -1061,8 +1061,8 @@
       ]
     },
     {
-      "definitionId": "sign_yellow",
-      "displayName": "看板（ひがし）",
+      "definitionId": "signpost_yellow",
+      "displayName": "道しるべ（ひがし）",
       "category": "fixture",
       "previewSpritePath": "Assets/Content/World/sign_yellow.png",
       "visualWidthPixels": 32,
@@ -1092,7 +1092,7 @@
           "playerFacing": "up",
           "actionType": "examine",
           "poseKey": null,
-          "interactionText": "かんばん。"
+          "interactionText": "このさき きいろい はなの ひろば。"
         }
       ]
     }

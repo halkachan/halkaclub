@@ -410,7 +410,7 @@ MonoBehaviour:
     fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0
-  - definitionId: sign_yellow
+  - definitionId: signpost_yellow
     model: {fileID: 919132149155446097, guid: fb5ba6891527384498be96609f27db14, type: 3}
     variants: []
     yawDegrees: 0

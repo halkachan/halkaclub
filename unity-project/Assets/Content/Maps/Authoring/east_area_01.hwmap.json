@@ -455,13 +455,12 @@
       }
     },
     {
-      "instanceId": "obj_sign_yellow_v33_east_09",
-      "definitionId": "sign_yellow",
+      "instanceId": "obj_signpost_yellow_v33_east_09",
+      "definitionId": "signpost_yellow",
       "rootCell": {
         "x": 1,
         "y": 6
-      },
-      "signText": "このさき きいろい はなの ひろば。"
+      }
     },
     {
       "instanceId": "obj_stone_basic_v33_east_30",

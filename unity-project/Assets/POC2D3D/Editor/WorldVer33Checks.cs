@@ -23,6 +23,7 @@ namespace Halka.Poc2D3D.EditorTools
     public static class WorldVer33Checks
     {
         public const string EastId = "east_area_01";
+        public const string SignpostText = "このさき きいろい はなの ひろば。";
         public static readonly Vector2Int EastOffset = new Vector2Int(11, -6);
         public static readonly Vector2Int FieldRoadEnd = new Vector2Int(10, -1);     // first_field's road_east
         public static readonly Vector2Int EastRoadStart = new Vector2Int(11, -1);    // east_area_01 local (0,5)
@@ -209,18 +210,25 @@ namespace Halka.Poc2D3D.EditorTools
                 east.Objects.Single(o => o.Definition.StableId == "sunflower_cluster").RootCell == new Vector2Int(16, 5) &&
                 east.TryGetMarker("landmark_east_flower_plaza", out var lm) && lm == new Vector2Int(16, 4));
             var yellow = east.Objects.Count(o => o.Definition.StableId == "flower_yellow");
-            Check("yellow accents: yellow flowers (8 by the plaza + more around), a yellow sign at the entrance", yellow >= 15 &&
-                east.Objects.Count(o => o.Definition.StableId == "sign_yellow") == 1, "yellow flowers " + yellow);
+            Check("yellow accents: yellow flowers (8 by the plaza + more around), a yellow signpost at the entrance", yellow >= 15 &&
+                east.Objects.Count(o => o.Definition.StableId == "signpost_yellow") == 1, "yellow flowers " + yellow);
             Check("the existing look is reused: trees, stones, white flowers, a bench from the field's catalog",
                 new[] { "tree_basic", "stone_basic", "flower_basic", "bench_basic" }.All(id => east.Objects.Any(o => o.Definition.StableId == id)));
             Check("first_field unchanged: the same as published ver3.1 / ver3.2 (Git)",
                 V32.GitSameAsVer31("unity-project/Assets/Content/Maps/Authoring/first_field.hwmap.json") &&
                 V32.GitSameAsVer31("unity-project/Assets/Content/Maps/first_field.asset"));
-            var sign = east.Objects.Single(o => o.Definition.StableId == "sign_yellow");
-            foreach (var text in new[] { sign.SignText, "きいろい はな。", "ひまわり。 みんな おひさまの ほうを むいている。" })
+            foreach (var text in new[] { SignpostText, "きいろい はな。", "ひまわり。 みんな おひさまの ほうを むいている。" })
                 Check($"font: every character of 「{text}」", GameBitmapFont.HasAllGlyphs(text),
                     new string(text.Where(ch => !GameBitmapFont.HasAllGlyphs(ch.ToString())).ToArray()));
             var model = new SharedWorldModel(east);
+            // The signpost's message is its definition's (a placement's signText is read for sign_basic
+            // only, by the game and by WORLD EDITOR v1.0): read from its front cell, facing it.
+            var signpost = east.Objects.Single(o => o.Definition.StableId == "signpost_yellow");
+            var answer = model.FindInteractionAhead(signpost.RootCell + Vector2Int.down, FacingDirection.Up, out var signMessage);
+            Check("the yellow signpost answers from its front cell (local (1,5), facing it): 「" + SignpostText + "」",
+                answer != null && answer.DefinitionId == "signpost_yellow" && signMessage == SignpostText, signMessage);
+            Check("the catalog keeps one sign definition (sign_basic, WORLD EDITOR v1.0's rule): the signpost is no sign_*",
+                !east.Objects.Any(o => o.Definition.StableId.StartsWith("sign_", StringComparison.Ordinal)));
             var reach = V32.ReachableCells(model, new Vector2Int(0, 5), _ => true);
             var actions = east.Objects.SelectMany(o => o.Definition.ActionPoints.Select(a => o.RootCell + a.PlayerCellOffset)).Distinct().ToList();
             Check("every Action Point (sign, bench seats, landmark, flowers...) can be reached from the road's West end",

@@ -191,11 +191,10 @@ MonoBehaviour:
     RootCell: {x: 16, y: 11}
     Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
     SignText: 
-  - InstanceId: obj_sign_yellow_v33_east_09
+  - InstanceId: obj_signpost_yellow_v33_east_09
     RootCell: {x: 1, y: 6}
     Definition: {fileID: 11400000, guid: 30aa9389addce594fa490cf019ba650d, type: 2}
-    SignText: "\u3053\u306E\u3055\u304D \u304D\u3044\u308D\u3044 \u306F\u306A\u306E
-      \u3072\u308D\u3070\u3002"
+    SignText: 
   - InstanceId: obj_stone_basic_v33_east_30
     RootCell: {x: 8, y: 1}
     Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
