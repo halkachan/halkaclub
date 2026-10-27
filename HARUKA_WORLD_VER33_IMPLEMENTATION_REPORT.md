@@ -516,13 +516,13 @@ PC の headless Chrome（Chrome 156、1280×720）、ローカル WebGL、releas
 | `737ac6e` | 2D カメラが first_field を ver3.2 と同じ位置から写す・全体図の撮影ツール |
 | `7b5260e` | 設計資料・回帰テストの実行スクリプト・開発パネルの Region 表示・古い絵の削除 |
 | `47526d2` | 東エリアの看板の文が出ない不具合の修正（`signpost_yellow`） |
-| （この報告の Commit） | この報告と設計資料の最終版 |
+| （報告の Commit） | この報告と設計資料（`5c6c91d` ほか、文の直し） |
 
 すべての Commit に `Co-Authored-By` を付けています。
 
 ## 44. 最終Git状態
 
-- ブランチ `claude/harukaworld-v33`、`origin/main`（`edbb217`）より 5 Commit 先（ローカルだけ）。
+- ブランチ `claude/harukaworld-v33`、`origin/main`（`edbb217`）の先に、上のコードの 4 Commit と報告の Commit があります（ローカルだけ）。
 - **main への Merge・Push・GitHub Pages の更新・halkaclub.com の更新はしていません。** `origin/main` は `edbb217`（公開 ver3.2）のままです。
 - 作業ツリー: 変更なし（Unity の検査が書き換えた生成物・改行だけの変化は、Git の状態に戻しています）。
 - 既存データの保護（SHA-256、`logs/sha256_compare.txt`）:
