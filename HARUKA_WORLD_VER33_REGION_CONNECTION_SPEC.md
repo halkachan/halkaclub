@@ -118,7 +118,7 @@ Map上の目印（Marker）:
 
 - 2D と 3D は同じ `PocWorldPresenter` の同じチャンクを見ます（2Dは3D表示を正射影で撮る）。Regionごとの特別扱いはありません。
 - 東エリアのObjectは Blender で作ったモデル（`blender/scripts/build_v33_east.py` → `Assets/POC2D3D/Models/V33/`）と、既存の木・石・白い花・ベンチです。
-  - `flower_yellow`（黄色い花）、`sunflower_cluster`（ひまわり＝ランドマーク）、`sign_yellow`（黄色い看板と矢印）。黄色は `direction_themes.json` の east から読みます。
+  - `flower_yellow`（黄色い花）、`sunflower_cluster`（ひまわり＝ランドマーク）、`signpost_yellow`（黄色い道しるべと矢印。モデルと絵のファイル名は `sign_yellow`）。黄色は `direction_themes.json` の east から読みます。
   - ひまわりは木と同じく、2D/3Dで手前に来たら薄くなります（Tree Fade）。
 - 草の生え方は first_field と同じ規則（同じGround Builder）。
 - デバッグ: パネルの「Region borders」をONにすると、チャンクごとに **方角の色の線** でRegion境界を描きます（初期値OFF。公開画面には出ません）。
@@ -171,8 +171,10 @@ Map上の目印（Marker）:
 
 - **WORLD EDITOR v1.0 本体は変更していません。** 東エリアは v1.0 Core（`MapFormat.SaveAtomic`、`MapRules.Validate`）を外部の小さなツールから使って作り、検証しています。
 - 東エリアの Map JSON は v1.0 の形式そのもの（Map JSON v4）。WORLD EDITOR で開いて編集できます。
-- 新しく足したObject（`flower_yellow`、`sunflower_cluster`、`sign_yellow`）は `object_catalog.hwcatalog.json` に追加しています。
-  - 注意: 名前が `sign_north` / `sign_east` / `sign_south` / `sign_west` だと、取り込み時の旧名変換で `sign_basic` になります。方角の看板は `sign_<色>` などの別名にしてください。
+- 新しく足したObject（`flower_yellow`、`sunflower_cluster`、`signpost_yellow`）は `object_catalog.hwcatalog.json` に追加しています。
+  - 注意1: 看板の文を Map の配置ごとに変えられる（`signText`）のは **`sign_basic` だけ** です（ゲームも WORLD EDITOR v1.0 も同じ規則。WORLD EDITOR v1.0 のテストは「`sign_` で始まる定義は `sign_basic` の1つだけ」を確かめます）。
+    色の違う看板は、`signpost_yellow` のように `sign_` で始まらない ID の **固定の文を持つ Object**（Action Point の `interactionText`）にしてください。
+  - 注意2: `sign_north` / `sign_east` / `sign_south` / `sign_west` は、取り込み時の旧名変換で `sign_basic` になります。
 - World Registry（`outdoor_main.hwworld.json`）と方角テーマはゲーム本編専用です。WORLD EDITOR v1.0 はこれを読みません（v1.1以降の課題）。
 
 ## 11. 新しいRegionを足す手順（チェックリスト）
