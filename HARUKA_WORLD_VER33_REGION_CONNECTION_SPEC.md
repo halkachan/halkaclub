@@ -172,7 +172,7 @@ Map上の目印（Marker）:
 - **WORLD EDITOR v1.0 本体は変更していません。** 東エリアは v1.0 Core（`MapFormat.SaveAtomic`、`MapRules.Validate`）を外部の小さなツールから使って作り、検証しています。
 - 東エリアの Map JSON は v1.0 の形式そのもの（Map JSON v4）。WORLD EDITOR で開いて編集できます。
 - 新しく足したObject（`flower_yellow`、`sunflower_cluster`、`signpost_yellow`）は `object_catalog.hwcatalog.json` に追加しています。
-  - 注意1: 看板の文を Map の配置ごとに変えられる（`signText`）のは **`sign_basic` だけ** です（ゲームも WORLD EDITOR v1.0 も同じ規則。WORLD EDITOR v1.0 のテストは「`sign_` で始まる定義は `sign_basic` の1つだけ」を確かめます）。
+  - 注意1: 看板の文を Map の配置ごとに変えられる（`signText`）のは `sign_basic` **だけ** です（ゲームも WORLD EDITOR v1.0 も同じ規則。WORLD EDITOR v1.0 のテストは「`sign_` で始まる定義は `sign_basic` の1つだけ」を確かめます）。
     色の違う看板は、`signpost_yellow` のように `sign_` で始まらない ID の **固定の文を持つ Object**（Action Point の `interactionText`）にしてください。
   - 注意2: `sign_north` / `sign_east` / `sign_south` / `sign_west` は、取り込み時の旧名変換で `sign_basic` になります。
 - World Registry（`outdoor_main.hwworld.json`）と方角テーマはゲーム本編専用です。WORLD EDITOR v1.0 はこれを読みません（v1.1以降の課題）。
