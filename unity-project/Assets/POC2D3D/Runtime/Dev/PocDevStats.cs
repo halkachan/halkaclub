@@ -22,6 +22,12 @@ namespace Halka.Poc2D3D.Dev
         [SerializeField] private SharedWorldSession session;
         [SerializeField] private PocWorldPresenter presenter;
         [SerializeField] private PocViewSwitcher views;
+        // ver3.4: the crow and the menu (where to click them, the companion's numbers).
+        private PocGameplay gameplay;
+        private PocCrow crow;
+        private int crowCount;
+        private Halka.Game.Input.TouchDpad dpad;
+        private Halka.Game.Input.TouchActionButton actionButton;
 
         private readonly float[] frames = new float[300];
         private readonly float[] sorted = new float[300];
@@ -60,6 +66,10 @@ namespace Halka.Poc2D3D.Dev
             Active = url.Contains("debug=1") || url.Contains("devstats=1");
 #endif
             if (!Active) enabled = false;
+            gameplay = GetComponentInChildren<PocGameplay>(true) ?? FindFirstObjectByType<PocGameplay>(FindObjectsInactive.Include);
+            crow = gameplay != null ? gameplay.Crow : null;
+            dpad = FindFirstObjectByType<Halka.Game.Input.TouchDpad>(FindObjectsInactive.Include);
+            actionButton = FindFirstObjectByType<Halka.Game.Input.TouchActionButton>(FindObjectsInactive.Include);
         }
 
         private void OnEnable()
@@ -85,6 +95,7 @@ namespace Halka.Poc2D3D.Dev
             if (now >= countAt)
             {
                 gameObjects = FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
+                crowCount = FindObjectsByType<PocCrow>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
                 countAt = now + 2f;
             }
             if (now < publishAt) return;
@@ -167,10 +178,61 @@ namespace Halka.Poc2D3D.Dev
                 ready.Append(coord.X).Append(',').Append(coord.Y).Append(';');
             }
             Str("readyList", ready.ToString());
+            AppendCrow();
             Num("t", Time.unscaledTime);
             json.Length--;   // the last comma
             json.Append('}');
             return json.ToString();
+        }
+
+        // ver3.4: the crow (mode, activity, cell, distance to her, the companion's numbers), where it is
+        // on screen (pixels from the bottom left, for a click), and the open menu page's buttons
+        // (GUI pixels from the top left).
+        private void AppendCrow()
+        {
+            var active = crow != null && crow.isActiveAndEnabled;
+            Str("crowMode", crow == null ? "" : crow.Following ? "follow" : "free");
+            Str("crowState", crow != null ? crow.CompanionState : "");
+            Num("crowCount", crowCount);
+            Num("crowX", crow != null ? crow.Cell.x : 0); Num("crowY", crow != null ? crow.Cell.y : 0);
+            Num("crowDist", crow != null ? crow.DistanceToPlayer : -1);
+            var region = active && session.OutdoorIndex != null ? session.OutdoorIndex.RegionAt(crow.Cell) : null;
+            Str("crowRegion", region != null ? region.MapId : "");
+            Num("crowChoice", crow != null && crow.ChoiceOpen ? 1 : 0);
+            Num("crowSearches", crow != null ? crow.PathSearches : 0); Num("crowSearchFails", crow != null ? crow.PathFailures : 0);
+            Num("crowSearchLastMs", crow != null ? crow.LastSearchMilliseconds : 0); Num("crowSearchMaxMs", crow != null ? crow.MaxSearchMilliseconds : 0);
+            Num("crowSearchCells", crow != null ? crow.LastSearchCells : 0);
+            Num("crowFlights", crow != null ? crow.CatchUpFlights : 0); Num("crowHops", crow != null ? crow.ShortHops : 0);
+            Num("crowPerches", crow != null ? crow.NearbyPerchFlights : 0); Num("crowSteps", crow != null ? crow.CompanionSteps : 0);
+            Num("crowYields", crow != null ? crow.Yields : 0); Num("crowRelocations", crow != null ? crow.Relocations : 0);
+            Num("crowTalks", crow != null ? crow.TalkCount : 0);
+            var screen = new Vector2(-1f, -1f);
+            if (active && views.Mode == PocViewMode.PixelView2D)
+            {
+                var rect = views.PixelView.LastCrowRect;
+                if (rect.width > 0) screen = rect.center;
+            }
+            else if (active && views.ThirdPerson != null && views.ThirdPerson.ViewCamera != null)
+            {
+                var p = views.ThirdPerson.ViewCamera.WorldToScreenPoint(crow.transform.position + Vector3.up * 0.25f);
+                if (p.z > 0f) screen = p;
+            }
+            Num("crowSX", screen.x); Num("crowSY", screen.y);
+            var menu = gameplay != null ? gameplay.Menu : null;
+            Str("page", menu != null && menu.Page != null ? menu.Page.Title : "");
+            var buttons = new StringBuilder();
+            for (var i = 0; menu != null && menu.Page != null && i < menu.Page.Buttons.Count; i++)
+                if (menu.TryGetPageButtonRect(i, out var r))
+                    buttons.Append(menu.Page.Buttons[i]).Append('@').Append(Mathf.RoundToInt(r.center.x)).Append(',')
+                        .Append(Mathf.RoundToInt(r.center.y)).Append(';');
+            Str("pageButtons", buttons.ToString());
+            // The phone controls (GUI pixels from the top left), for touches in the checks.
+            var touch = dpad != null && dpad.Visible;
+            Num("touchUi", touch ? 1 : 0);
+            var pad = touch ? dpad.ControlBoundsGui : default;
+            Num("padX", pad.x); Num("padY", pad.y); Num("padW", pad.width); Num("padH", pad.height);
+            var a = actionButton != null && actionButton.Visible ? actionButton.ControlBoundsGui : default;
+            Num("aX", a.center.x); Num("aY", a.center.y); Num("aW", a.width);
         }
 
         private static Vector2Int FacingVector(Halka.Game.Player.FacingDirection facing) =>

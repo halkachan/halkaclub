@@ -65,6 +65,8 @@ namespace Halka.Game.World
         protected float lastTickAt;
         protected float interactionTakeoffAt = -1f;
         protected float interactionCooldownUntil;
+        // ver3.4: the length of the step in progress (a host may walk at its own pace).
+        protected float stepSecondsInUse = StepSeconds;
 
         public Vector2Int Cell => motion != null ? motion.Cell : PositionToCell(transform.position);
         public Vector2Int StepFromCell => motion != null ? motion.StepFromCell : Cell;
@@ -105,6 +107,16 @@ namespace Halka.Game.World
         protected virtual void SetPointerInteraction(bool enabled) { }
         protected virtual void OnTakeoffVisual() { }
         protected virtual void OnLandedVisual() { }
+
+        // ---------------------------------------------------------------- ver3.4 host decisions
+        // A host that leads the crow itself (the shared world's companion mode). The defaults keep
+        // the wander / tree / landing behaviour exactly as before.
+        // On the ground and standing: true when the host made this moment's decision (a step, a
+        // takeoff, or a deliberate wait); false lets the wander and tree timers decide as before.
+        protected virtual bool DecideOnGround(float now) => false;
+        // Perched: true when the rest on the tree is over.
+        protected virtual bool PerchRestOver(float now) => now >= perchedUntil;
+        protected virtual float FlightUnitsPerSecond => flightUnitsPerSecond;
 
         protected void ApplySpawnState(EntitySpawnPlacement spawn)
         {
@@ -172,6 +184,68 @@ namespace Halka.Game.World
         private static bool IsMissing(ICrowPerch perch) =>
             perch == null || perch is Object unityObject && unityObject == null;
 
+        // ver3.4: a takeoff the host chooses: toward this perch, or (null) toward the ground cell
+        // that TryChooseGroundLanding picks once the crow is up. Only from standing on the ground.
+        protected bool TryTakeoffToward(ICrowPerch perch, float now)
+        {
+            if (motion == null || motion.IsMoving || activity != CrowActivity.GroundIdle ||
+                flightRight == null || flightRight.Length < 2 || flightDown == null || flightDown.Length < 2) return false;
+            targetTree = perch;
+            if (perch != null) previousTree = perch;
+            interactionTakeoffAt = -1f;
+            SetPointerInteraction(false);
+            OnTakeoffVisual();
+            activity = CrowActivity.Takeoff;
+            StartLeg(transform.position, transform.position + AltitudeAxis * 0.32f, now, 0.45f);
+            return true;
+        }
+
+        // ver3.4: one ground step in any direction (no wander range), at the host's pace.
+        protected bool TryBeginStep(Vector2Int direction, float stepSeconds)
+        {
+            if (motion == null || motion.IsMoving || activity != CrowActivity.GroundIdle) return false;
+            var target = Cell + direction;
+            if (!CanEnterCell(target) || !CanCrowEnterCell(target)) return false;
+            if (!motion.TryBegin(direction, cell => CanEnterCell(cell) && CanCrowEnterCell(cell), stepSeconds)) return false;
+            stepSecondsInUse = stepSeconds;
+            Facing = FacingDirectionExtensions.FromVector(direction);
+            activity = CrowActivity.GroundWalk;
+            SetPointerInteraction(false);
+            RustleAt(target);
+            return true;
+        }
+
+        protected void TurnTo(FacingDirection facing)
+        {
+            if (!IsMoving) Facing = facing;
+        }
+
+        // ver3.4: puts the crow on a ground cell at once, standing (waiting by the house, resuming a
+        // save, or a catch-up out of sight). The host checks the cell first.
+        protected void PlaceOnGround(Vector2Int cell, FacingDirection facing, float now)
+        {
+            transform.position = CellToPosition(cell);
+            motion = new GridStepMotion(cell);
+            activity = CrowActivity.GroundIdle;
+            targetTree = null;
+            flyingTowardGround = false;
+            legDuration = 0f;
+            interactionTakeoffAt = -1f;
+            Facing = facing;
+            nextActionAt = now + Random.Range(2f, 4f);
+            nextFlightAt = now + Random.Range(minimumGroundSeconds, maximumGroundSeconds);
+            lastTickAt = now;
+            SetPointerInteraction(true);
+            RefreshVisual();
+        }
+
+        // ver3.4: the free crow's timers start again from now (back from companion mode).
+        protected void RestartWanderTimers(float now)
+        {
+            nextActionAt = now + Random.Range(2f, 4f);
+            nextFlightAt = now + Random.Range(minimumGroundSeconds, maximumGroundSeconds);
+        }
+
         private void StartLeg(Vector3 start, Vector3 end, float now, float duration)
         {
             legStart = start;
@@ -181,7 +255,7 @@ namespace Halka.Game.World
         }
 
         private float FlightDuration(Vector3 from, Vector3 to) =>
-            Mathf.Clamp(Vector3.Distance(from, to) / flightUnitsPerSecond, 0.55f, 3.5f);
+            Mathf.Clamp(Vector3.Distance(from, to) / FlightUnitsPerSecond, 0.55f, 3.5f);
 
         private void TickAir(float now)
         {
@@ -189,7 +263,7 @@ namespace Halka.Game.World
             {
                 if (IsMissing(targetTree) || !targetTree.IsUsable) { BeginGroundReturn(now); return; }
                 transform.position = targetTree.PerchPosition;
-                if (now >= perchedUntil)
+                if (PerchRestOver(now))
                 {
                     activity = CrowActivity.LeavingPerch;
                     StartLeg(transform.position, transform.position + AltitudeAxis * 0.25f, now, 0.35f);
@@ -251,7 +325,7 @@ namespace Halka.Game.World
             StartLeg(transform.position, approach, now, FlightDuration(transform.position, approach));
         }
 
-        private bool TryChooseGroundLanding(out Vector2Int cell)
+        protected virtual bool TryChooseGroundLanding(out Vector2Int cell)
         {
             var candidates = new List<Vector2Int>();
             for (var y = RangeMin.y; y <= RangeMax.y; y++)
@@ -265,7 +339,7 @@ namespace Halka.Game.World
             return true;
         }
 
-        private bool CanLand(Vector2Int cell)
+        protected virtual bool CanLand(Vector2Int cell)
         {
             if (!CanEnterCell(cell) || !CanCrowEnterCell(cell)) return false;
             if (activeMap != null)
@@ -351,6 +425,12 @@ namespace Halka.Game.World
                 SetPointerInteraction(true);
                 nextActionAt = now + Random.Range(2f, 4f);
             }
+            if (!motion.IsMoving && DecideOnGround(now))
+            {
+                if (activity == CrowActivity.GroundIdle || activity == CrowActivity.GroundWalk) RefreshVisual();
+                else RefreshAirVisual(now);
+                return;
+            }
             if (!motion.IsMoving && interactionTakeoffAt >= 0f)
             {
                 if (now < interactionTakeoffAt) { RefreshVisual(); return; }
@@ -392,6 +472,7 @@ namespace Halka.Game.World
                 if (!motion.TryBegin(direction,
                     cell => CanEnterCell(cell) && CanCrowEnterCell(cell),
                     StepSeconds)) continue;
+                stepSecondsInUse = StepSeconds;
                 Facing = FacingDirectionExtensions.FromVector(direction);
                 activity = CrowActivity.GroundWalk;
                 SetPointerInteraction(false); // Pointer interaction only while stopped.
@@ -422,7 +503,7 @@ namespace Halka.Game.World
             };
             if (frames == null || frames.Length != 2)
                 throw new System.InvalidOperationException("Crow needs two walk frames in every direction");
-            var frame = Mathf.FloorToInt(StepProgressNormalized * StepSeconds /
+            var frame = Mathf.FloorToInt(StepProgressNormalized * stepSecondsInUse /
                 WalkFrameSeconds) % frames.Length;
             ShowFrame(frames[frame], false);
         }

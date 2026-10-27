@@ -132,6 +132,16 @@ namespace Halka.Poc2D3D
 
         public bool LastPickUsedPlayer { get; private set; }
 
+        // ver3.4: whether a world point is inside the visible view (the companion crow is only ever
+        // put down where this is false).
+        public bool IsInView(Vector3 point)
+        {
+            var camera = Mode == PocViewMode.PixelView2D ? pixelView.WorldCamera : thirdPerson.ViewCamera;
+            if (camera == null) return false;
+            var v = camera.WorldToViewportPoint(point);
+            return v.z > 0f && v.x > -0.05f && v.x < 1.05f && v.y > -0.05f && v.y < 1.1f;
+        }
+
         // Phase 4: the crow under the pointer (its 2D sprite as drawn, or its 3D model), unless a
         // standing wall is nearer. Talking keeps ExamineInteractable's range rule (PocCrow.TryTalk).
         public PocCrow PickCrow(Vector2 screenPosition)

@@ -14,7 +14,7 @@ mergeInto(LibraryManager.library, {
     if (history.length > 4000) history.shift();
     if (!window.__halkaDevCmd) {
       window.__halkaDevCmd = function (command) {
-        var name = document.__halkaDevTarget || "HARUKA WORLD ver3.3";
+        var name = document.__halkaDevTarget || "HARUKA WORLD ver3.4";
         if (typeof SendMessage === "function") SendMessage(name, "DevCommand", command);
         else if (typeof Module !== "undefined" && Module.SendMessage) Module.SendMessage(name, "DevCommand", command);
       };

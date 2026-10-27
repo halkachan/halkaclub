@@ -47,6 +47,9 @@ namespace Halka.Poc2D3D.Save
         [SerializeField] private GameMenuController menu;
         [SerializeField] private GameHud hud;
         [SerializeField] private string gameVersion = "ver3.0";
+        // ver3.4: the crow whose companion mode is saved (none: always "free", as before).
+        [SerializeField] private PocCrow crow;
+        [SerializeField] private PocGameplay gameplay;
 
         public HarukaSnapshotStore Store { get; private set; }
         public IHarukaSaveBrowser Browser { get; private set; }
@@ -89,6 +92,18 @@ namespace Halka.Poc2D3D.Save
             hud = messageHud;
             gameVersion = version;
         }
+
+        public void ConfigureCrow(PocCrow sharedCrow, PocGameplay sharedGameplay)
+        {
+            crow = sharedCrow;
+            gameplay = sharedGameplay;
+        }
+
+        public static CrowCompanionMode ToCrowMode(string saved) =>
+            saved == HarukaSaveData.CrowFollow ? CrowCompanionMode.FollowPlayer : CrowCompanionMode.FreeRoam;
+
+        private string CrowModeNow() => crow != null && crow.Following ? HarukaSaveData.CrowFollow :
+            crow != null ? HarukaSaveData.CrowFree : Loaded?.CrowMode ?? HarukaSaveData.CrowFree;
 
         // Checks: memory files and a recording browser instead of IndexedDB and the page.
         public void UseStorage(IHarukaSaveStorage storage, IHarukaSaveBrowser browser)
@@ -164,7 +179,7 @@ namespace Halka.Poc2D3D.Save
 
         public static string Describe(HarukaSaveData d) =>
             d.MapId + " (" + d.CellX + "," + d.CellY + ") " + d.Facing + " " + d.ViewMode + " AUTO " + (d.AutoEnabled ? "on" : "off") +
-            " steps " + d.TotalSteps + " play " + d.TotalPlaySeconds + "s anchor " + d.TimeAnchorUnixMs;
+            " steps " + d.TotalSteps + " play " + d.TotalPlaySeconds + "s anchor " + d.TimeAnchorUnixMs + " crow " + d.CrowMode;
 
         private HarukaSaveData FromLegacy(LifeLogData legacyLife)
         {
@@ -197,6 +212,8 @@ namespace Halka.Poc2D3D.Save
                 lifeLog.ReplaceTotals(data.TotalSteps, data.TotalPlaySeconds);
             if (worldTime != null && worldTime.AnchorMilliseconds != data.TimeAnchorUnixMs)
                 worldTime.SetAnchor(data.TimeAnchorUnixMs, Clock().ToUnixTimeMilliseconds());
+            // ver3.4: before the crow is placed (PocGameplay places a companion beside her).
+            if (crow != null) crow.RestoreMode(ToCrowMode(data.CrowMode));
         }
 
         // After every component's Awake: AUTO's setting (it starts idle: the 60 s are counted
@@ -346,8 +363,9 @@ namespace Halka.Poc2D3D.Save
             public long Steps;
             public PocViewMode View;
             public bool Auto;
+            public string Crow;
 
-            public bool SameSettings(State other) => View == other.View && Auto == other.Auto;
+            public bool SameSettings(State other) => View == other.View && Auto == other.Auto && Crow == other.Crow;
             public bool Same(State other) => SameSettings(other) && Map == other.Map && Cell == other.Cell &&
                 Facing == other.Facing && Steps == other.Steps;
         }
@@ -360,6 +378,7 @@ namespace Halka.Poc2D3D.Save
             Steps = lifeLog != null ? lifeLog.TotalSteps : 0,
             View = views != null ? views.Mode : PocViewMode.PixelView2D,
             Auto = autoMode != null && autoMode.AutoEnabled,
+            Crow = CrowModeNow(),
         };
 
         public HarukaSaveData Capture()
@@ -379,6 +398,7 @@ namespace Halka.Poc2D3D.Save
                 CellX = placeCell.x,
                 CellY = placeCell.y,
                 Facing = HarukaSaveData.FacingName(session.Facing),
+                CrowMode = CrowModeNow(),
             };
         }
 
@@ -570,6 +590,11 @@ namespace Halka.Poc2D3D.Save
             if (views != null)
                 views.SetMode(written.ViewMode == HarukaSaveData.View3D ? PocViewMode.ThirdPerson3D : PocViewMode.PixelView2D);
             session.RestoreLocationNow(place.MapId, place.Cell, place.Facing);
+            if (crow != null)
+            {
+                crow.SetMode(ToCrowMode(written.CrowMode), Time.time);
+                if (gameplay != null) gameplay.RefreshCrowAfterRestore();
+            }
             if (views != null)
             {
                 if (views.PixelView != null) views.PixelView.SnapToTarget();
@@ -582,7 +607,8 @@ namespace Halka.Poc2D3D.Save
             saved = Now();
             if (after.MapId != written.MapId || after.CellX != written.CellX || after.CellY != written.CellY ||
                 after.Facing != written.Facing || after.ViewMode != written.ViewMode || after.AutoEnabled != written.AutoEnabled ||
-                after.TotalSteps != written.TotalSteps || after.TimeAnchorUnixMs != written.TimeAnchorUnixMs)
+                after.TotalSteps != written.TotalSteps || after.TimeAnchorUnixMs != written.TimeAnchorUnixMs ||
+                after.CrowMode != written.CrowMode)
             {
                 problem = "the world does not match the imported data";
                 return false;

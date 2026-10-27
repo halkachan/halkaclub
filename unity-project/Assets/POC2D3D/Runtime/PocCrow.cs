@@ -12,8 +12,9 @@ namespace Halka.Poc2D3D
     // outdoor Grid, the player's reservation, and the trees' Blender PerchAnchors. It draws
     // nothing: the 2D Pixel View draws CurrentSprite (the 2D game's frame choice), the 3D view
     // poses the Blender crow. Switching views never touches this state.
+    // ver3.4: the crow can also walk with her (companion mode, PocCrow.Companion.cs).
     [DefaultExecutionOrder(-20)]
-    public sealed class PocCrow : CrowBehaviourCore, ISharedGroundOccupant, ISharedTalkTarget
+    public sealed partial class PocCrow : CrowBehaviourCore, ISharedGroundOccupant, ISharedTalkTarget
     {
         public const string TalkMessage = "カァ。";
 
@@ -67,6 +68,8 @@ namespace Halka.Poc2D3D
             ApplySpawnState(spawn);
             SetPointerInteraction(true);
             RefreshVisual();
+            WaitingOutside = false;
+            MarkPlaced();
             return true;
         }
 
@@ -90,6 +93,7 @@ namespace Halka.Poc2D3D
         // from the drawn tree when its chunk is drawn, else from the same model's anchor offset.
         protected override IReadOnlyList<ICrowPerch> PerchCandidates()
         {
+            if (Following) return NearbyPerches();
             perches.Clear();
             if (presenter == null || activeMap == null || session == null || session.OutdoorWorld == null) return perches;
             var index = session.OutdoorIndex;
@@ -134,12 +138,16 @@ namespace Halka.Poc2D3D
         // "カァ。", the voice, and the reaction (takeoff toward a nearby tree).
         public bool TryTalk(Vector2Int playerCell, FacingDirection facing, bool playerMoving)
         {
-            if (!isActiveAndEnabled || !ExamineInteractable.IsInRange(playerCell, playerMoving, facing, Cell) ||
+            if (!isActiveAndEnabled || ChoiceOpen || !ExamineInteractable.IsInRange(playerCell, playerMoving, facing, Cell) ||
                 !CanInteract) return false;
+            // ver3.4: "カァ。" and then the choices (ついてきて / あそんでおいで, やめる) in the game's
+            // menu panel; the crow waits until one is chosen. Without a menu (old checks): as before.
+            ChoiceOpen = OpenChoices != null && OpenChoices();
             if (session != null) session.ShowMessage(TalkMessage);
             if (voice != null) voice.Play();
             TalkCount++;
-            OnExamined();
+            if (ChoiceOpen) interactionCooldownUntil = Time.time + InteractionCooldownSeconds;
+            else OnExamined();
             return true;
         }
 

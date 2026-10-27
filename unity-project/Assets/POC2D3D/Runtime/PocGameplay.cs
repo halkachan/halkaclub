@@ -9,6 +9,8 @@ namespace Halka.Poc2D3D
     // AutoModeController (on the shared Grid), LifeLogController (completed steps, same save key),
     // GameHud (messages), GameMenuController (AUTO, Life Log, and the view row), and the crow's
     // life cycle (EntityRuntimeFactory2D's rule: indoors it is gone, outdoors it respawns).
+    // ver3.4: the crow's choices (a page of the menu panel) and the companion crow, which waits
+    // beside the house's door while she is inside instead of respawning.
     [DefaultExecutionOrder(-25)]
     public sealed class PocGameplay : MonoBehaviour
     {
@@ -24,6 +26,7 @@ namespace Halka.Poc2D3D
 
         private PocAutoWorld autoWorld;
         private ViewMenuItem viewItem;
+        private CrowChoicePage crowChoices;
         private bool suspended;
 
         public AutoModeController AutoMode => autoMode;
@@ -32,6 +35,7 @@ namespace Halka.Poc2D3D
         public GameMenuController Menu => menu;
         public PocCrow Crow => crow;
         public PlayerFootstepAudio Footsteps => footsteps;
+        public CrowChoicePage CrowChoices => crowChoices;
 
         public void ConfigureFootsteps(PlayerFootstepAudio footstepAudio) => footsteps = footstepAudio;
         public PocAutoWorld AutoWorld => autoWorld;
@@ -75,6 +79,9 @@ namespace Halka.Poc2D3D
             {
                 session.GroundOccupant = crow;
                 session.TalkTarget = crow;
+                crowChoices = new CrowChoicePage(crow, menu, hud);
+                if (menu != null) crow.OpenChoices = () => crowChoices.Open(Time.unscaledTime);
+                if (views != null) crow.IsInView = views.IsInView;
             }
             autoWorld = new PocAutoWorld(session, crow, hud, this);
             if (autoMode != null) autoMode.UseWorld(autoWorld);
@@ -106,21 +113,58 @@ namespace Halka.Poc2D3D
         private void OnStepCompleted(Vector2Int cell) { if (lifeLog != null) lifeLog.RecordCompletedStep(); }
         // Manual and AUTO steps both start here (one step, one footstep; blocked steps never start).
         private void OnStepStarted(Vector2Int cell) { if (footsteps != null && footsteps.isActiveAndEnabled) footsteps.PlayStep(); }
-        private void OnMessageShown(string text) { if (hud != null) hud.ShowMessage(text); }
+        // ver3.4: while the crow's choices are open, its "カァ。" is in the choice window instead.
+        private void OnMessageShown(string text)
+        {
+            if (hud == null || crow != null && crow.ChoiceOpen && text == PocCrow.TalkMessage) return;
+            hud.ShowMessage(text);
+        }
+
+        // ver3.4: the menu closed without a choice (a touch or click outside it): やめる.
+        private void Update()
+        {
+            if (crowChoices != null) crowChoices.Watch(Time.unscaledTime);
+        }
 
         // Indoors the outdoor crow is switched off (and frees its cell); back outdoors it is
         // rebuilt from the map's crow_main spawn, exactly like MapRuntimeLoader2D.Build.
+        // ver3.4: a companion crow is not rebuilt: it waits on the ground beside the door (still
+        // switched off while she is in) and is there when she comes out. A game resumed with a
+        // companion starts it beside her outdoors, or beside the door when she is inside.
         private void ActivateCrowFor(SharedWorldModel world)
         {
             if (crow == null || world == null) return;
             var outdoors = world == session.OutdoorWorld;
+            var now = Time.time;
             if (!outdoors)
             {
+                if (crow.Following)
+                {
+                    if (!crow.HasPlace)
+                    {
+                        crow.gameObject.SetActive(true);
+                        crow.ApplySpawnFrom(session.OutdoorWorld.Map);
+                    }
+                    if (crow.gameObject.activeSelf) crow.WaitOutside(now);
+                }
                 crow.gameObject.SetActive(false);
                 return;
             }
             crow.gameObject.SetActive(true);
-            if (!crow.ApplySpawnFrom(world.Map)) crow.gameObject.SetActive(false);
+            if (crow.Following && crow.HasPlace)
+            {
+                crow.ReturnFromWaiting(now);
+                return;
+            }
+            if (!crow.ApplySpawnFrom(world.Map)) { crow.gameObject.SetActive(false); return; }
+            if (crow.Following) crow.JoinNear(now);
+        }
+
+        // ver3.4: a mode set after the start (an import): the companion joins her now.
+        public void RefreshCrowAfterRestore()
+        {
+            if (crow == null || session.World != session.OutdoorWorld || !crow.isActiveAndEnabled) return;
+            if (crow.Following && crow.DistanceToPlayer > PocCrow.FlyDistance) crow.JoinNear(Time.time);
         }
 
         // The menu row that switches the view (2D pixel / 3D third-person).
@@ -131,6 +175,61 @@ namespace Halka.Poc2D3D
             public string Label => "ひょうじ";
             public string Value => views != null && views.Mode == PocViewMode.ThirdPerson3D ? "3D" : "2D";
             public void Activate(float now) { if (views != null) views.Toggle(); }
+        }
+    }
+
+    // ver3.4: the crow's choices, a page of the game's menu panel (its window, its font, its touch
+    // and click rules, the blocked game input and AUTO's pause while it is open): 「カァ。」 and
+    // ついてきて / あそんでおいで (only the one that changes something), and やめる.
+    public sealed class CrowChoicePage : IGameMenuPage
+    {
+        private readonly PocCrow crow;
+        private readonly GameMenuController menu;
+        private readonly GameHud hud;
+        private readonly System.Collections.Generic.List<string> lines = new System.Collections.Generic.List<string> { PocCrow.ChoiceLine };
+        private readonly System.Collections.Generic.List<string> buttons = new System.Collections.Generic.List<string>();
+        private bool shown;
+
+        public CrowChoicePage(PocCrow sharedCrow, GameMenuController gameMenu, GameHud messageHud)
+        {
+            crow = sharedCrow;
+            menu = gameMenu;
+            hud = messageHud;
+        }
+
+        public string Title => PocCrow.ChoiceTitle;
+        public System.Collections.Generic.IReadOnlyList<string> Lines => lines;
+        public System.Collections.Generic.IReadOnlyList<string> Buttons => buttons;
+        public bool IsOpen => menu != null && menu.Page == this;
+        public int Opens { get; private set; }
+
+        public bool Open(float now)
+        {
+            if (menu == null) return false;
+            buttons.Clear();
+            buttons.Add(crow.Following ? PocCrow.ChoicePlay : PocCrow.ChoiceFollow);
+            buttons.Add(PocCrow.ChoiceCancel);
+            if (hud != null) hud.ClearMessage();
+            if (menu.IsOpen) menu.SetOpen(false, now);
+            menu.OpenPage(this, now);
+            shown = IsOpen;
+            if (shown) Opens++;
+            return shown;
+        }
+
+        public void Press(int index, float now)
+        {
+            var choice = index != 0 ? CrowChoice.Cancel : crow.Following ? CrowChoice.Play : CrowChoice.Follow;
+            shown = false;
+            crow.Choose(choice, Time.time);
+            menu.SetOpen(false, now);
+        }
+
+        public void Watch(float now)
+        {
+            if (!shown || IsOpen) return;
+            shown = false;
+            crow.Choose(CrowChoice.Cancel, Time.time);
         }
     }
 

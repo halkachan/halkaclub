@@ -28,6 +28,9 @@ namespace Halka.Game.UI
 
         public void ShowMessage(string text) => message.Show(text, Time.unscaledTime, messageSeconds);
 
+        // ver3.4: a window that replaces the message (the crow's choices) ends it at once.
+        public void ClearMessage() => message.Show(null, Time.unscaledTime, 0f);
+
         private void OnGUI()
         {
             if (versionStyle == null)

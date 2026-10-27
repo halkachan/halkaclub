@@ -321,8 +321,18 @@ namespace Halka.Poc2D3D
         public event Action<OutdoorRegion, OutdoorRegion> RegionChanged;
         private OutdoorRegion lastRegion;
 
+        // ver3.4: how long she has been walking into a cell that only a ground occupant (the crow)
+        // keeps her out of, and that cell. The companion crow steps aside after a moment.
+        public float PushSeconds { get; private set; }
+        public Vector2Int PushedCell { get; private set; }
+
         public void Tick(float deltaTime, Vector2Int direction)
         {
+            var pushed = motion.Cell + direction;
+            var pushing = !motion.IsMoving && !MovementLocked && Mathf.Abs(direction.x) + Mathf.Abs(direction.y) == 1 &&
+                World.CanEnter(pushed) && !CanPlayerEnter(pushed);
+            PushSeconds = pushing ? PushSeconds + deltaTime : 0f;
+            if (pushing) PushedCell = pushed;
             if (!motion.IsMoving) TryStep(direction);
             var wasMoving = motion.IsMoving;
             motion.Advance(deltaTime);
