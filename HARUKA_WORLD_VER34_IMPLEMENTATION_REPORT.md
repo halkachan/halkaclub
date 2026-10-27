@@ -410,7 +410,7 @@ ver3.3 公開時の実行（`HARUKA_WORLD_V33_LOGS/regression`）と、同じ検
 ブランチ `claude/harukaworld-v34`（ローカルのみ。push していません）:
 
 - ddb797f ver3.4: the crow as a companion (ついてきて / あそんでおいで)
-- （このレポートの commit）
+- c3aea96 ver3.4: implementation report（とこの commit 一覧の更新）
 
 main・origin/main には何もしていません。
 
