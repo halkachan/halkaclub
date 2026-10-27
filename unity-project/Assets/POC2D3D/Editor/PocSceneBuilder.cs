@@ -24,7 +24,7 @@ namespace Halka.Poc2D3D.EditorTools
         // POC scene stays the technical verification scene with its options shown).
         // ver3.1: the game scene is HARUKA_WORLD_ver3.1 (the ver3.0 RC3 scene file is kept as the
         // published version's scene and no longer rebuilt).
-        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.3.unity";
+        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.4.unity";
         // ver3.2: the chunk test scene (the release scene + a generated test world; test builds only).
         public const string ChunkTestScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.2_CHUNKTEST.unity";
         public const string ChunkTestFixturePath = Root + "/Fixtures/ChunkTest/PocTestWorldFixture.asset";
@@ -314,7 +314,7 @@ namespace Halka.Poc2D3D.EditorTools
         // off unless ?debug=1, the HUD reads "ver3.0 RC1".
         private static void ConfigureReleaseCandidate(GameObject root)
         {
-            root.name = "HARUKA WORLD ver3.3";
+            root.name = "HARUKA WORLD ver3.4";
             var panel = root.GetComponent<PocDebugPanel>();
             var hud = root.GetComponentInChildren<GameHud>(true);
             var switcher = root.GetComponent<PocViewSwitcher>();
@@ -510,6 +510,9 @@ namespace Halka.Poc2D3D.EditorTools
             var worldTime = root.GetComponent<WorldTimeController>();
             if (worldTime == null) throw new InvalidOperationException("World time missing");
             save.Configure(session, switcher, autoMode, lifeLog, worldTime, menu, hud, "ver3.0 POC");
+            // ver3.4: the crow's companion mode is saved with the rest.
+            var gameplay = root.GetComponentInChildren<PocGameplay>(true);
+            save.ConfigureCrow(gameplay != null ? gameplay.Crow : null, gameplay);
         }
 
         // Phase 5: footsteps (PlayerFootstepAudio driven by SharedWorldSession.StepStarted, the 2D

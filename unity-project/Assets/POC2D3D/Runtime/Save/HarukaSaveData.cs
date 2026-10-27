@@ -20,6 +20,12 @@ namespace Halka.Poc2D3D.Save
     // a seated pose) is never saved. "extensions" is reserved for later data (items, furniture,
     // ...): a later schema adds fields and a migration step reads every older schema.
     // The checksum (CRC-32 over the values) only detects accidental damage; it is not a signature.
+    // ver3.4: extensions.crowCompanion holds the crow's companion mode ("free" / "follow") with its
+    // own checksum (over the mode and the main checksum, so it belongs to this file only). Still
+    // Schema 1: the main values and checksum are unchanged, so ver3.0-3.3 read a ver3.4 file as
+    // before (they ignore the extension; the crow is then simply free). A file without it (every
+    // older save, and a ver3.4 save with a free crow) means "free"; a damaged entry makes the file
+    // Corrupt.
     public sealed class HarukaSaveData
     {
         public const string Format = "harukaworld-save";
@@ -27,6 +33,9 @@ namespace Halka.Poc2D3D.Save
         public const int MaxFileBytes = 64 * 1024;
         public const string View2D = "2D";
         public const string View3D = "3D";
+        public const string CrowFree = "free";
+        public const string CrowFollow = "follow";
+        public const string CrowExtension = "crowCompanion";
 
         public int Schema = SchemaVersion;
         public string GameVersion = "";
@@ -41,6 +50,7 @@ namespace Halka.Poc2D3D.Save
         public int CellX;
         public int CellY;
         public string Facing = "down";
+        public string CrowMode = CrowFree;
         public string Checksum = "";
 
         public HarukaSaveData Copy() => (HarukaSaveData)MemberwiseClone();
@@ -84,6 +94,9 @@ namespace Halka.Poc2D3D.Save
 
         public void Seal() => Checksum = ComputeChecksum();
 
+        public string ComputeCrowChecksum() => "crc32:" +
+            Crc32(Encoding.UTF8.GetBytes(CrowExtension + "|" + CrowMode + "|" + Checksum)).ToString("x8", CultureInfo.InvariantCulture);
+
         // UTF-8 JSON, readable (exported files are meant to be kept by people).
         public string ToJson()
         {
@@ -103,7 +116,10 @@ namespace Halka.Poc2D3D.Save
             b.Append("  \"player\": { \"mapId\": ").Append(HarukaSaveJson.Quote(MapId))
                 .Append(", \"cell\": { \"x\": ").Append(CellX.ToString(inv)).Append(", \"y\": ").Append(CellY.ToString(inv))
                 .Append(" }, \"facing\": ").Append(HarukaSaveJson.Quote(Facing)).Append(" },\n");
-            b.Append("  \"extensions\": {},\n");
+            // A free crow (the default) writes nothing: the file is exactly a ver3.3 file.
+            if (CrowMode == CrowFree) b.Append("  \"extensions\": {},\n");
+            else b.Append("  \"extensions\": { \"").Append(CrowExtension).Append("\": { \"mode\": ").Append(HarukaSaveJson.Quote(CrowMode))
+                .Append(", \"checksum\": ").Append(HarukaSaveJson.Quote(ComputeCrowChecksum())).Append(" } },\n");
             b.Append("  \"checksum\": ").Append(HarukaSaveJson.Quote(Checksum)).Append('\n');
             b.Append("}\n");
             return b.ToString();
@@ -149,6 +165,13 @@ namespace Halka.Poc2D3D.Save
             if (o.TryGetValue("extensions", out var extensions) && extensions != null && !(extensions is Dictionary<string, object>))
                 return Bad("extensions", out problem);
             if (!Str(o, "checksum", out d.Checksum) || d.Checksum != d.ComputeChecksum()) return Bad("checksum", out problem);
+            if (extensions is Dictionary<string, object> ext && ext.TryGetValue(CrowExtension, out var crowValue))
+            {
+                if (!(crowValue is Dictionary<string, object> crow) || !Str(crow, "mode", out d.CrowMode) ||
+                    d.CrowMode != CrowFree && d.CrowMode != CrowFollow ||
+                    !Str(crow, "checksum", out var crowChecksum) || crowChecksum != d.ComputeCrowChecksum())
+                    return Bad("extensions." + CrowExtension, out problem);
+            }
             data = d;
             return HarukaSaveReadStatus.Valid;
         }
