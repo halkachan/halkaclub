@@ -1,0 +1,659 @@
+{
+  "format": "halka-world-map",
+  "formatVersion": 4,
+  "mapId": "east_area_01",
+  "displayName": "東エリア",
+  "mapType": "outdoor",
+  "baseSurfaceDefinitionId": "base_ground",
+  "grassMode": "auto",
+  "backdropColor": "#101014",
+  "bounds": {
+    "minX": 0,
+    "maxX": 25,
+    "minY": 0,
+    "maxY": 12
+  },
+  "surfaces": [
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 16,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 15,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 16,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 17,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 0,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 1,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 2,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 3,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 4,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 5,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 6,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 7,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 8,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 9,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 11,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 12,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 13,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 14,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 15,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 16,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 17,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 18,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 19,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 20,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 21,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 22,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 23,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 24,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 25,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 15,
+        "y": 6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 16,
+        "y": 6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 17,
+        "y": 6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 16,
+        "y": 7
+      }
+    }
+  ],
+  "objects": [
+    {
+      "instanceId": "obj_bench_basic_v33_east_10",
+      "definitionId": "bench_basic",
+      "rootCell": {
+        "x": 4,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_flower_basic_v33_east_35",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 4,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_flower_basic_v33_east_34",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 23,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_flower_basic_v33_east_32",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 7,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_flower_basic_v33_east_31",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 2,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_flower_basic_v33_east_33",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 10,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_39",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 11,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_36",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 5,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_01",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 14,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_02",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 15,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_03",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 17,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_04",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 18,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_42",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 22,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_44",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 6,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_37",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 9,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_38",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 13,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_05",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 14,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_06",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 15,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_07",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 17,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_08",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 18,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_40",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 21,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_46",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 17,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_41",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 14,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_43",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 18,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v33_east_45",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 16,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_signpost_yellow_v33_east_09",
+      "definitionId": "signpost_yellow",
+      "rootCell": {
+        "x": 1,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v33_east_30",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 8,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v33_east_27",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 11,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v33_east_28",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 20,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v33_east_26",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 5,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v33_east_29",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 22,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_sunflower_cluster_v33_east_00",
+      "definitionId": "sunflower_cluster",
+      "rootCell": {
+        "x": 16,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v33_east_19",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 2,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v33_east_21",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 10,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v33_east_22",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 13,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v33_east_25",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 19,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v33_east_20",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 7,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v33_east_23",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 21,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v33_east_24",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 24,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v33_east_18",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 24,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v33_east_11",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 1,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v33_east_12",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 3,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v33_east_13",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 6,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v33_east_14",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 9,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v33_east_15",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 12,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v33_east_16",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 20,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v33_east_17",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 23,
+        "y": 9
+      }
+    }
+  ],
+  "markers": [
+    {
+      "id": "landmark_east_flower_plaza",
+      "cell": {
+        "x": 16,
+        "y": 4
+      }
+    },
+    {
+      "id": "road_east",
+      "cell": {
+        "x": 25,
+        "y": 5
+      }
+    },
+    {
+      "id": "road_west",
+      "cell": {
+        "x": 0,
+        "y": 5
+      }
+    }
+  ],
+  "entitySpawns": [],
+  "areaTransitions": []
+}

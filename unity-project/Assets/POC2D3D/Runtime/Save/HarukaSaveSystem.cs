@@ -236,8 +236,11 @@ namespace Halka.Poc2D3D.Save
             MapDefinition map = null;
             foreach (var candidate in session.Maps) if (candidate.MapId == mapId) map = candidate;
             var start = session.StartMap;
-            start.TryGetEntitySpawn("player_main", out var startSpawn);
-            var startPlace = new Place { MapId = start.MapId, Cell = startSpawn.Cell, Facing = EntityRuntimeFactory2D.ParseFacing(startSpawn.Facing) };
+            // ver3.3: a start without a readable Player Start (a test world, a damaged Map) faces down
+            // instead of stopping the game's start.
+            var hasStart = start.TryGetEntitySpawn("player_main", out var startSpawn) && HarukaSaveData.TryParseFacing(startSpawn.Facing, out _);
+            var startPlace = new Place { MapId = start.MapId, Cell = startSpawn.Cell,
+                Facing = hasStart ? EntityRuntimeFactory2D.ParseFacing(startSpawn.Facing) : FacingDirection.Down };
             if (map == null) { startPlace.Note = "unknown map " + mapId + ": the first map's start"; return startPlace; }
             // ver3.2: an outdoor Map is checked inside the outdoor world (world cells: the regions
             // around it count too); every answer goes back to Map ID + Map cell (Save Schema 1).
@@ -260,11 +263,16 @@ namespace Halka.Poc2D3D.Save
             var reachable = Reachable(model, origin, Safe);
             var best = default(Vector2Int);
             var bestDistance = int.MaxValue;
-            foreach (var c in reachable)
-            {
-                var d = Mathf.Abs(c.x - target.x) + Mathf.Abs(c.y - target.y);
-                if (d < bestDistance || d == bestDistance && (c.y > best.y || c.y == best.y && c.x < best.x)) { best = c; bestDistance = d; }
-            }
+            // ver3.3: outdoors the saved Map's own region comes first (a bad cell of first_field comes
+            // back inside first_field, not in the next region); other regions only if it has none.
+            var home = model.IsOutdoorWorld ? model.OutdoorIndex.FindRegion(mapId) : null;
+            for (var pass = home != null ? 0 : 1; pass < 2 && bestDistance == int.MaxValue; pass++)
+                foreach (var c in reachable)
+                {
+                    if (pass == 0 && !home.ContainsWorld(c)) continue;
+                    var d = Mathf.Abs(c.x - target.x) + Mathf.Abs(c.y - target.y);
+                    if (d < bestDistance || d == bestDistance && (c.y > best.y || c.y == best.y && c.x < best.x)) { best = c; bestDistance = d; }
+                }
             if (bestDistance != int.MaxValue)
                 return ToPlace(model, best, facing, note + "nearest safe cell (saved cell not usable)");
             if (Safe(origin)) return ToPlace(model, origin, originFacing, note + "the map's start");
@@ -585,6 +593,17 @@ namespace Halka.Poc2D3D.Save
         public SaveMenu Menu => saveMenu;
 
         // The セーブデータ page and its steps (shown inside the game's menu panel).
+        // The place a save names, as the menu shows it: the rooms, そと for first_field, and an outdoor
+        // region of a direction by its direction's name (ver3.3: east_area_01 -> ひがし).
+        public string PlaceName(string mapId)
+        {
+            var known = SaveMenu.PlaceName(mapId);
+            if (known != mapId) return known;
+            var region = session != null ? session.OutdoorIndex?.FindRegion(mapId) : null;
+            var theme = region != null ? session.OutdoorIndex.Definition.ThemeOf(region.Direction) : null;
+            return theme != null ? theme.name : mapId;
+        }
+
         public sealed class SaveMenu : IGameMenuPage
         {
             public enum Stage { Main, ExportWaiting, ExportDone, ExportFailed, ImportWaiting, ImportConfirm, ImportDone, ImportFailed }
@@ -598,6 +617,10 @@ namespace Halka.Poc2D3D.Save
             private Rect armedImport;
 
             public SaveMenu(HarukaSaveSystem system) => owner = system;
+
+            // The rooms and first_field by name (the regions of the outdoor world: owner.PlaceName).
+            public static string PlaceName(string mapId) => mapId == "halka_house" ? "家" : mapId == "first_field" ? "そと" :
+                mapId == "halka_soundbooth" ? "ぼうおんしつ" : mapId;
             public Stage Current { get; private set; }
             public HarukaSaveData PendingImport { get; private set; }
             public string LastProblem { get; private set; } = "";
@@ -652,7 +675,7 @@ namespace Halka.Poc2D3D.Save
                         lines.Add("ほぞんしたひ " + LocalStamp(d.SavedAtUtc));
                         lines.Add("あるいたかず " + d.TotalSteps.ToString("N0", CultureInfo.InvariantCulture));
                         lines.Add("プレイじかん " + PlayTime(d.TotalPlaySeconds));
-                        lines.Add("ばしょ " + PlaceName(d.MapId) + "  ひょうじ " + d.ViewMode);
+                        lines.Add("ばしょ " + owner.PlaceName(d.MapId) + "  ひょうじ " + d.ViewMode);
                         lines.Add("いまの セーブデータを");
                         lines.Add("おきかえますか？");
                         buttons.Add("ふくげんする");
@@ -758,8 +781,7 @@ namespace Halka.Poc2D3D.Save
                 (seconds / 3600).ToString(CultureInfo.InvariantCulture) + ":" + (seconds / 60 % 60).ToString("D2", CultureInfo.InvariantCulture) +
                 ":" + (seconds % 60).ToString("D2", CultureInfo.InvariantCulture);
 
-            private static string PlaceName(string mapId) => mapId == "halka_house" ? "家" : mapId == "first_field" ? "そと" :
-                mapId == "halka_soundbooth" ? "ぼうおんしつ" : mapId;
+
 
             private static string LocalStamp(string utc)
             {

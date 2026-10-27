@@ -17,13 +17,13 @@ namespace Halka.Poc2D3D
         // Phase 5: the Release Candidate scene. Its page shows only the game; ?debug=1 brings the
         // panel back (with this title). Hidden, the component is disabled: no OnGUI, no recorders.
         // ver3.1: the studio update; ver3.2: the open-world base, built for a local check only (not published).
-        public const string ReleaseCandidateName = "はるかわーるど ver3.2 オープンワールド基盤アップデート (local check)";
+        public const string ReleaseCandidateName = "はるかわーるど ver3.3 東エリア追加アップデート (local check)";
         // RC1 feedback: the game's name is fixed as はるかわーるど (the page title shows only it).
         public const string ReleaseCandidateTitle = "はるかわーるど";
         // Phase 7: Release Candidate 3 is the release build itself, so the game shows the version
         // players will see (ver3.0); "RC3" only names the candidate (build info, staging, this title).
-        public const string ReleaseCandidateVersionLabel = "ver3.2";
-        public const string ReleaseCandidateShortName = "ver3.2 LOCAL";
+        public const string ReleaseCandidateVersionLabel = "ver3.3";
+        public const string ReleaseCandidateShortName = "ver3.3 LOCAL";
         [SerializeField] private bool releaseCandidate;
         public bool ReleaseCandidate => releaseCandidate;
         public void ConfigureReleaseCandidate(bool value) => releaseCandidate = value;
@@ -177,8 +177,8 @@ namespace Halka.Poc2D3D
             var x = 8f;
             // Below the game's Menu button (GameMenuController: 12 px from the top, 48 px tall).
             var y = gameplay != null && gameplay.Menu != null ? 68f : 8f;
-            var rows = expanded ? 25 : 2;
-            var statsLines = (showStats ? expanded ? 13 : 8 : 6) + (presenter.ChunkMode ? 2 : 0);
+            var rows = expanded ? 26 : 2;
+            var statsLines = (showStats ? expanded ? 13 : 8 : 6) + (presenter.ChunkMode ? 3 : 0);
             panelRect = new Rect(x - 4f, y - 4f, width + 8f, rows * (row + 3f) + statsLines * row * 0.78f + 12f);
             GUI.DrawTexture(panelRect, panelBackground);
 
@@ -250,6 +250,9 @@ namespace Halka.Poc2D3D
                 // ver3.2 (debug panel only, last row): the chunk borders drawn on the ground.
                 if (Button(ref y, x, width, row, "Chunk borders: " + (presenter.ChunkBordersVisible ? "ON" : "OFF")))
                     presenter.ChunkBordersVisible = !presenter.ChunkBordersVisible;
+                // ver3.3 (last row): the regions' outlines in their direction colours.
+                if (Button(ref y, x, width, row, "Region borders: " + (presenter.RegionBordersVisible ? "ON" : "OFF")))
+                    presenter.RegionBordersVisible = !presenter.RegionBordersVisible;
             }
             GUI.Label(new Rect(x, y, width, statsLines * row * 0.78f + 8f), BuildText(), textStyle);
             DrawTitle(s);
@@ -328,7 +331,8 @@ namespace Halka.Poc2D3D
         private string BuildText()
         {
             text.Clear();
-            text.Append("Map ").Append(session.World.MapId).Append("  Cell ").Append(session.Cell.x).Append(',')
+            // ver3.3: outdoors the Map is the region she stands in (the Cell stays the world cell).
+            text.Append("Map ").Append(session.CurrentRegionMapId ?? session.World.MapId).Append("  Cell ").Append(session.Cell.x).Append(',')
                 .Append(session.Cell.y).Append("  Facing ").Append(session.Facing).Append('\n');
             if (views.Mode == PocViewMode.ThirdPerson3D)
                 text.Append("Cam heading ").Append(views.ThirdPerson.Heading).Append("  keys ")
@@ -377,8 +381,18 @@ namespace Halka.Poc2D3D
             var chunk = Halka.Poc2D3D.World.WorldGrid.ChunkOf(cell, index.ChunkSize);
             var local = Halka.Poc2D3D.World.WorldGrid.LocalInChunk(cell, index.ChunkSize);
             var s = presenter.Streamer.Stats;
+            // ver3.3: the region with its direction and her cell in that region's Map ("in chunk": her
+            // cell inside the chunk, the ver3.2 "local").
+            var region = session.CurrentRegion;
+            if (region != null)
+            {
+                var inRegion = region.ToLocal(cell);
+                text.Append("Region ").Append(region.MapId).Append(" (").Append(region.Direction)
+                    .Append(")  local ").Append(inRegion.x).Append(',').Append(inRegion.y).Append('\n');
+            }
+            else text.Append("Region -\n");
             text.Append("World ").Append(index.WorldId).Append("  Chunk ").Append(chunk.X).Append(',').Append(chunk.Y)
-                .Append(" (").Append(index.ChunkSize).Append(")  local ").Append(local.x).Append(',').Append(local.y).Append('\n');
+                .Append(" (").Append(index.ChunkSize).Append(")  in chunk ").Append(local.x).Append(',').Append(local.y).Append('\n');
             text.Append("Chunks ").Append(s.Loaded).Append(" ready ").Append(s.Queued).Append(" queued  objs ")
                 .Append(presenter.LoadedChunkObjects).Append("  load ").Append(s.LastLoadMs.ToString("0.0")).Append('/')
                 .Append(s.MaxLoadMs.ToString("0")).Append("ms  free ").Append(s.LastUnloadMs.ToString("0.0")).Append("ms\n");

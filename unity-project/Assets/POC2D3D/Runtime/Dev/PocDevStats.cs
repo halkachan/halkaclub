@@ -102,6 +102,7 @@ namespace Halka.Poc2D3D.Dev
             switch (parts[0])
             {
                 case "borders": presenter.ChunkBordersVisible = on; break;
+                case "regions": presenter.RegionBordersVisible = on; break;
                 case "grid": presenter.GridVisible = on; break;
                 case "view": views.SetMode(parts.Length > 1 && parts[1] == "3d" ? PocViewMode.ThirdPerson3D : PocViewMode.PixelView2D); break;
             }
@@ -136,6 +137,7 @@ namespace Halka.Poc2D3D.Dev
             Num("localX", outdoors ? local.x : 0); Num("localY", outdoors ? local.y : 0);
             Num("chunkSize", size);
             Str("saveMap", placeMap ?? ""); Num("saveX", placeCell.x); Num("saveY", placeCell.y);
+            Str("region", session.CurrentRegionMapId ?? ""); Num("regionChanges", session.RegionChanges);
             Str("view", views.Mode == PocViewMode.PixelView2D ? "2D" : "3D");
             Num("steps", session.CompletedSteps); Num("mapLoads", session.MapLoads);
             Num("frames", n); Num("fps", avg > 0 ? 1000f / avg : 0f); Num("frameAvgMs", avg); Num("frameP95Ms", p95);

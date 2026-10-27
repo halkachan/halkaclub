@@ -135,7 +135,7 @@ namespace Halka.Poc2D3D.EditorTools
 
         // ---------------------------------------------------------------- fixtures and the harness
 
-        private static T Content<T>(string id) where T : UnityEngine.Object =>
+        internal static T Content<T>(string id) where T : UnityEngine.Object =>
             AssetDatabase.LoadAssetAtPath<T>("Assets/Content/Maps/" + id + ".asset");
 
         // The official definitions a test world is made of (the asset is test-only: only the chunk
@@ -168,7 +168,7 @@ namespace Halka.Poc2D3D.EditorTools
             return fixture;
         }
 
-        private static (OutdoorWorldDefinition world, MapDefinition primary) TestWorld(int size, int chunkSize = 16)
+        internal static (OutdoorWorldDefinition world, MapDefinition primary) TestWorld(int size, int chunkSize = 16)
         {
             if (worlds.TryGetValue((size, chunkSize), out var cached)) return cached;
             var world = PocTestWorldGenerator.Build(LoadOrCreateFixture(false), size, chunkSize, Seed, out var primary);
@@ -184,19 +184,19 @@ namespace Halka.Poc2D3D.EditorTools
 
         // One frame of play as the game runs it, plus what Update does in play mode (the crow, the
         // chunk streamer), which the Editor harness has to call itself.
-        private static void Frame(C6.Ctx c, float dt, Vector2Int raw, bool auto = false)
+        internal static void Frame(C6.Ctx c, float dt, Vector2Int raw, bool auto = false)
         {
             C6.Frame(c, dt, raw, auto);
             if (c.Crow != null && c.Crow.isActiveAndEnabled && c.Crow.gameObject.activeInHierarchy) c.Crow.Tick(C6.Clock);
             c.Presenter.UpdateStreaming(false);
         }
 
-        private static void Settle(C6.Ctx c, float seconds, bool auto = false)
+        internal static void Settle(C6.Ctx c, float seconds, bool auto = false)
         {
             for (var t = 0f; t < seconds; t += 1f / 60f) Frame(c, 1f / 60f, Vector2Int.zero, auto);
         }
 
-        private static Vector2Int Raw(C6.Ctx c, Vector2Int world)
+        internal static Vector2Int Raw(C6.Ctx c, Vector2Int world)
         {
             if (c.Switcher.Mode != PocViewMode.ThirdPerson3D) return world;
             foreach (var raw in Dirs)
@@ -204,7 +204,7 @@ namespace Halka.Poc2D3D.EditorTools
             return world;
         }
 
-        private static void Step(C6.Ctx c, Vector2Int world, float settle = 0.25f)
+        internal static void Step(C6.Ctx c, Vector2Int world, float settle = 0.25f)
         {
             C6.Release(c);
             var raw = Raw(c, world);
@@ -213,10 +213,10 @@ namespace Halka.Poc2D3D.EditorTools
             Settle(c, settle);
         }
 
-        private static bool Walkable(C6.Ctx c, Vector2Int cell) =>
+        internal static bool Walkable(C6.Ctx c, Vector2Int cell) =>
             c.Session.World.CanEnter(cell) && !c.Session.IsTransitionCell(c.Session.World, cell) && c.Session.CanPlayerEnter(cell);
 
-        private static List<Vector2Int> Route(C6.Ctx c, Vector2Int from, Vector2Int goal)
+        internal static List<Vector2Int> Route(C6.Ctx c, Vector2Int from, Vector2Int goal)
         {
             var previous = new Dictionary<Vector2Int, Vector2Int> { [from] = from };
             var queue = new Queue<Vector2Int>();
@@ -241,7 +241,7 @@ namespace Halka.Poc2D3D.EditorTools
         }
 
         // Walks there step by step (each step a real input tap); onStep runs after every step.
-        private static bool WalkTo(C6.Ctx c, Vector2Int goal, Action<Vector2Int> onStep = null, float settle = 0.22f)
+        internal static bool WalkTo(C6.Ctx c, Vector2Int goal, Action<Vector2Int> onStep = null, float settle = 0.22f)
         {
             for (var attempt = 0; attempt < 4 && c.Session.Cell != goal; attempt++)
             {
@@ -258,7 +258,7 @@ namespace Halka.Poc2D3D.EditorTools
             return c.Session.Cell == goal;
         }
 
-        private static Vector2Int NearestWalkable(C6.Ctx c, Vector2Int target)
+        internal static Vector2Int NearestWalkable(C6.Ctx c, Vector2Int target)
         {
             for (var r = 0; r < 12; r++)
                 for (var y = -r; y <= r; y++)
@@ -271,12 +271,12 @@ namespace Halka.Poc2D3D.EditorTools
             return target;
         }
 
-        private static PlayerFootstepAudio Footsteps() =>
+        internal static PlayerFootstepAudio Footsteps() =>
             UnityEngine.Object.FindAnyObjectByType<PlayerFootstepAudio>(FindObjectsInactive.Include);
 
         private static int CountGameObjects(C6.Ctx c) => c.Presenter.GetComponentsInChildren<Transform>(true).Length;
 
-        private static int ChunkRoots(C6.Ctx c)
+        internal static int ChunkRoots(C6.Ctx c)
         {
             var count = 0;
             foreach (var t in UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
@@ -284,10 +284,10 @@ namespace Halka.Poc2D3D.EditorTools
             return count;
         }
 
-        private static List<string> DuplicateViews(C6.Ctx c) =>
+        internal static List<string> DuplicateViews(C6.Ctx c) =>
             c.Presenter.Views.Where(v => v != null && !v.IsWall).GroupBy(v => v.InstanceId).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
 
-        private static string ChunkSummary(C6.Ctx c)
+        internal static string ChunkSummary(C6.Ctx c)
         {
             var s = c.Presenter.Streamer?.Stats;
             return s == null ? "no streamer" : $"ready {s.Loaded} queued {s.Queued} loads {s.TotalLoads} unloads {s.TotalUnloads} sync {s.SyncLoads}";
@@ -296,9 +296,9 @@ namespace Halka.Poc2D3D.EditorTools
         // The published ver3.1 (its first_field is the one ver3.2 keeps unchanged).
         public const string Ver31Commit = "71ec01b";
 
-        private static bool GitSameAsVer31(string relative) => Git("diff --quiet " + Ver31Commit + " -- \"" + relative + "\"", out _);
+        internal static bool GitSameAsVer31(string relative) => Git("diff --quiet " + Ver31Commit + " -- \"" + relative + "\"", out _);
 
-        private static bool Git(string arguments, out string output)
+        internal static bool Git(string arguments, out string output)
         {
             var info = new ProcessStartInfo("git", arguments)
             {
@@ -312,7 +312,7 @@ namespace Halka.Poc2D3D.EditorTools
             }
         }
 
-        private static bool GitClean(string relative)
+        internal static bool GitClean(string relative)
         {
             var info = new ProcessStartInfo("git", "status --porcelain -- \"" + relative + "\"")
             {
@@ -410,7 +410,7 @@ namespace Halka.Poc2D3D.EditorTools
                 nw.Offset == new Vector2Int(-64, 0) && nw.ToWorld(Vector2Int.zero) == new Vector2Int(-64, 0) && nw.Map.MinCell == Vector2Int.zero && roundTrip);
         }
 
-        private static bool Throws<T>(Action action) where T : Exception
+        internal static bool Throws<T>(Action action) where T : Exception
         {
             try { action(); return false; }
             catch (T) { return true; }
@@ -1196,7 +1196,7 @@ namespace Halka.Poc2D3D.EditorTools
 
         // ---------------------------------------------------------------- 19.6 save
 
-        private static HarukaSaveData Old(string version, string map, Vector2Int cell, string view = HarukaSaveData.View2D, bool auto = false) => new HarukaSaveData
+        internal static HarukaSaveData Old(string version, string map, Vector2Int cell, string view = HarukaSaveData.View2D, bool auto = false) => new HarukaSaveData
         {
             GameVersion = version, SavedAtUtc = "2026-10-21T03:04:05Z", Revision = 0, TotalSteps = 4321, TotalPlaySeconds = 765,
             TimeAnchorUnixMs = 1760000000000L, AutoEnabled = auto, ViewMode = view, MapId = map, CellX = cell.x, CellY = cell.y, Facing = "left",
@@ -1428,7 +1428,7 @@ namespace Halka.Poc2D3D.EditorTools
             return seated;
         }
 
-        private static HashSet<Vector2Int> ReachableCells(SharedWorldModel model, Vector2Int origin, Func<Vector2Int, bool> through)
+        internal static HashSet<Vector2Int> ReachableCells(SharedWorldModel model, Vector2Int origin, Func<Vector2Int, bool> through)
         {
             var seen = new HashSet<Vector2Int> { origin };
             var queue = new Queue<Vector2Int>();

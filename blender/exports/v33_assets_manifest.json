@@ -1,0 +1,85 @@
+{
+  "generator": "blender/scripts/build_v33_east.py",
+  "blenderVersion": "5.2.0 LTS",
+  "units": "1 Blender unit = 1 Unity unit, 1 cell = 0.5, origin = ground centre of the root cell",
+  "theme": {
+    "source": "unity-project/Assets/Content/Maps/World/direction_themes.json",
+    "east": [
+      "#f2c443",
+      "#c99425"
+    ]
+  },
+  "approval": "pending: new ver3.3 designs, not approved by the user yet",
+  "models": [
+    {
+      "family": "flower_yellow",
+      "name": "flower_yellow",
+      "blend": "blender/sources/v33/flower_yellow.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V33/flower_yellow.fbx",
+      "triangles": 168,
+      "vertices": 102,
+      "materials": 1,
+      "boundsMin": [
+        -0.13,
+        -0.103,
+        -0.0004
+      ],
+      "boundsMax": [
+        0.13,
+        0.1041,
+        0.3457
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.3"
+      ]
+    },
+    {
+      "family": "sunflower_cluster",
+      "name": "sunflower_cluster",
+      "blend": "blender/sources/v33/sunflower_cluster.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V33/sunflower_cluster.fbx",
+      "triangles": 1776,
+      "vertices": 1068,
+      "materials": 1,
+      "boundsMin": [
+        -0.23,
+        -0.2071,
+        -0.0009
+      ],
+      "boundsMax": [
+        0.26,
+        0.2049,
+        0.8111
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.3 (landmark of the East plaza)"
+      ]
+    },
+    {
+      "family": "sign_yellow",
+      "name": "sign_yellow",
+      "blend": "blender/sources/v33/sign_yellow.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V33/sign_yellow.fbx",
+      "triangles": 63,
+      "vertices": 47,
+      "materials": 1,
+      "boundsMin": [
+        -0.22,
+        -0.07,
+        0.0
+      ],
+      "boundsMax": [
+        0.22,
+        0.03,
+        0.56
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.3",
+        "back of the board"
+      ]
+    }
+  ]
+}

@@ -24,6 +24,7 @@ namespace Halka.Poc2D3D.World
         public readonly Vector2Int Offset;
         public readonly CellRect Rect;      // world cells
         public readonly int Order;          // position in the registry
+        public readonly string Direction;   // ver3.3: center / north / east / south / west
         private readonly CellFlags[] flags;
         private readonly Dictionary<Vector2Int, SurfaceDefinition> surfaces = new Dictionary<Vector2Int, SurfaceDefinition>();
 
@@ -34,6 +35,7 @@ namespace Halka.Poc2D3D.World
             Map = link.map;
             Offset = link.offset;
             Order = order;
+            Direction = string.IsNullOrEmpty(link.direction) ? OutdoorWorldDefinition.Center : link.direction;
             Rect = new CellRect(Map.MinCell + Offset, Map.MaxCell + Offset);
             flags = new CellFlags[Rect.Width * Rect.Height];
             foreach (var surface in Map.Surfaces)

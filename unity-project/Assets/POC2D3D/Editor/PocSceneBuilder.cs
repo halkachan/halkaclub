@@ -24,7 +24,7 @@ namespace Halka.Poc2D3D.EditorTools
         // POC scene stays the technical verification scene with its options shown).
         // ver3.1: the game scene is HARUKA_WORLD_ver3.1 (the ver3.0 RC3 scene file is kept as the
         // published version's scene and no longer rebuilt).
-        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.2.unity";
+        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.3.unity";
         // ver3.2: the chunk test scene (the release scene + a generated test world; test builds only).
         public const string ChunkTestScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.2_CHUNKTEST.unity";
         public const string ChunkTestFixturePath = Root + "/Fixtures/ChunkTest/PocTestWorldFixture.asset";
@@ -94,6 +94,8 @@ namespace Halka.Poc2D3D.EditorTools
         public const string InteriorMapPath = "Assets/Content/Maps/halka_house.asset";
         // ver3.2: the outdoor world registry (which outdoor Maps, at which world offsets).
         public const string OutdoorWorldRegistryPath = "Assets/Content/Maps/World/outdoor_main.hwworld.json";
+        // ver3.3: the direction colours (North blue, East yellow, South red, West green).
+        public const string DirectionThemesPath = "Assets/Content/Maps/World/direction_themes.json";
         // ver3.1: the sound booth (its own map, entered from the booth in the house) and its
         // Blender models (blender/scripts/build_v31_studio.py).
         public const string SoundBoothMapPath = "Assets/Content/Maps/halka_soundbooth.asset";
@@ -108,6 +110,9 @@ namespace Halka.Poc2D3D.EditorTools
         // ver3.2 interior: the two booth desks one cell wider (a middle cell to stand in front of),
         // the house's kitchen, rug and low table, the booth's guitar (blender/scripts/build_v32_interior.py).
         public const string V32Models = Root + "/Models/V32/";
+        // ver3.3: the East area's yellow accents (blender/scripts/build_v33_east.py).
+        public const string V33Models = Root + "/Models/V33/";
+        public static readonly string[] V33ModelNames = { "flower_yellow", "sunflower_cluster", "sign_yellow" };
         public static readonly string[] V32ModelNames =
         {
             "dtm_desk_large", "illust_desk_tablet", "kitchen_counter", "living_rug", "low_table_living", "guitar_stand"
@@ -163,6 +168,7 @@ namespace Halka.Poc2D3D.EditorTools
             RemapModelMaterial(SofaModelPath, toon);
             foreach (var name in V31ModelNames) RemapModelMaterial(V31Models + name + ".fbx", toon);
             foreach (var name in V32ModelNames) RemapModelMaterial(V32Models + name + ".fbx", toon);
+            foreach (var name in V33ModelNames) RemapModelMaterial(V33Models + name + ".fbx", toon);
             EnsureMaterial(TreeFadeMaterialPath, "HALKA/POC/ToonVertexColorFade", null);
             EnsureMaterial(OutlineMaterialPath, "HALKA/POC/OutlineComposite", null);
             EnsureMaterial(Outline3DMaterialPath, "HALKA/POC/Outline3D", null);
@@ -228,7 +234,14 @@ namespace Halka.Poc2D3D.EditorTools
                 new PocPresentationBinding { definitionId = "low_table_living", model = V32("low_table_living"),
                     cameraOccluder = false },
                 new PocPresentationBinding { definitionId = "guitar_stand", model = V32("guitar_stand"),
-                    cameraOccluder = false, minPickSize = SmallPickSize }
+                    cameraOccluder = false, minPickSize = SmallPickSize },
+                // ver3.3, the East area: a yellow flower (as flower_basic), the plaza's sunflowers (tall:
+                // they fade in front of her like the trees), the yellow signpost (its model: sign_yellow).
+                new PocPresentationBinding { definitionId = "flower_yellow", model = V33("flower_yellow"),
+                    cameraOccluder = false, minPickSize = SmallPickSize },
+                new PocPresentationBinding { definitionId = "sunflower_cluster", model = V33("sunflower_cluster"),
+                    cameraOccluder = false, fadeInFront2D = true, fadeInFront3D = true, fadeOpacity = 0.4f, fadeSeconds = 0.25f },
+                new PocPresentationBinding { definitionId = "signpost_yellow", model = V33("sign_yellow"), cameraOccluder = false }
             }, new PocEnvironmentPresentation
             {
                 grassTiles = new List<GameObject> { Phase2("ground_grass_a"), Phase2("ground_grass_b"), Phase2("ground_grass_c") },
@@ -301,7 +314,7 @@ namespace Halka.Poc2D3D.EditorTools
         // off unless ?debug=1, the HUD reads "ver3.0 RC1".
         private static void ConfigureReleaseCandidate(GameObject root)
         {
-            root.name = "HARUKA WORLD ver3.2";
+            root.name = "HARUKA WORLD ver3.3";
             var panel = root.GetComponent<PocDebugPanel>();
             var hud = root.GetComponentInChildren<GameHud>(true);
             var switcher = root.GetComponent<PocViewSwitcher>();
@@ -333,8 +346,11 @@ namespace Halka.Poc2D3D.EditorTools
             var file = AssetDatabase.LoadAssetAtPath<TextAsset>(OutdoorWorldRegistryPath);
             if (file == null) throw new InvalidOperationException("Outdoor world registry is missing: " + OutdoorWorldRegistryPath);
             var problems = new List<string>();
-            var world = OutdoorWorldRegistryJson.Parse(file.text,
-                id => AssetDatabase.LoadAssetAtPath<MapDefinition>("Assets/Content/Maps/" + id + ".asset"), problems);
+            var themesFile = AssetDatabase.LoadAssetAtPath<TextAsset>(DirectionThemesPath);
+            if (themesFile == null) throw new InvalidOperationException("Direction themes are missing: " + DirectionThemesPath);
+            var themes = OutdoorWorldRegistryJson.ParseThemes(themesFile.text, problems);
+            var world = themes == null ? null : OutdoorWorldRegistryJson.Parse(file.text,
+                id => AssetDatabase.LoadAssetAtPath<MapDefinition>("Assets/Content/Maps/" + id + ".asset"), problems, themes);
             foreach (var problem in problems) Debug.LogWarning("[ver3.2 world registry] " + problem);
             if (world == null) throw new InvalidOperationException("Outdoor world registry is invalid: " + string.Join("; ", problems));
             if (!world.regions.Exists(link => link.map == startMap))
@@ -615,6 +631,7 @@ namespace Halka.Poc2D3D.EditorTools
         public static GameObject Phase3(string name) => LoadModel(Phase3Models + name + ".fbx");
         public static GameObject V31(string name) => LoadModel(V31Models + name + ".fbx");
         public static GameObject V32(string name) => LoadModel(V32Models + name + ".fbx");
+        public static GameObject V33(string name) => LoadModel(V33Models + name + ".fbx");
         // Clicks on small things (flower, stone, cushion) count within at least this cube.
         public const float SmallPickSize = 0.3f;
 

@@ -175,7 +175,15 @@ namespace Halka.Poc2D3D
         public Vector2Int OutsideEntryCell => HouseDoorCell + Vector2Int.down;
         // ver3.2: AUTO walks only where the chunk is drawn: it never heads into an undrawn chunk, and
         // its route search stays inside the drawn area instead of the whole world.
-        public bool CanEnter(Vector2Int cell) => session.World.CanEnter(cell) && session.IsCellReady(cell);
+        // ver3.3: outdoors AUTO also stays in the region she stands in: a new region is found by
+        // walking there herself (AUTO never wanders into it), and within it AUTO walks as before.
+        public bool CanEnter(Vector2Int cell) => session.World.CanEnter(cell) && session.IsCellReady(cell) && SameRegion(cell);
+
+        private bool SameRegion(Vector2Int cell)
+        {
+            var here = session.CurrentRegion;
+            return here == null || session.OutdoorIndex.RegionAt(cell) == here;
+        }
         public bool CanPlayerEnter(Vector2Int cell) => session.CanPlayerEnter(cell);
 
         public bool TryGetCrowCell(out Vector2Int cell)
