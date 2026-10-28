@@ -216,7 +216,8 @@ namespace Halka.Poc2D3D
                 DiscoveryVersion++;
                 Discoveries++;
                 count++;
-                if (gameplay != null && gameplay.Hud != null) gameplay.Hud.ShowMessage(MessageFound);
+                // ver3.6: through the session (its LastMessage, the HUD), as every message of the game.
+                session.ShowMessage(MessageFound);
                 Discovered?.Invoke(point);
             }
             return count;
@@ -251,9 +252,8 @@ namespace Halka.Poc2D3D
             var menu = gameplay != null ? gameplay.Menu : null;
             if (menu != null) menu.SetOpen(false, now);
             var result = TryBegin(point.id, now, LastSource);
-            var hud = gameplay != null ? gameplay.Hud : null;
-            if (hud == null || result == FastTravelStart.Started) return;
-            hud.ShowMessage(result == FastTravelStart.AlreadyHere ? MessageHere : MessageFailed);
+            if (result == FastTravelStart.Started) return;
+            session.ShowMessage(result == FastTravelStart.AlreadyHere ? MessageHere : MessageFailed);
         }
 
         // ---------------------------------------------------------------- a flight
@@ -405,7 +405,7 @@ namespace Halka.Poc2D3D
             if (flightFailed)
             {
                 Failures++;
-                if (gameplay != null && gameplay.Hud != null) gameplay.Hud.ShowMessage(MessageFailed);
+                session.ShowMessage(MessageFailed);
             }
             else
             {

@@ -5,6 +5,7 @@
   "chunkSize": 16,
   "regions": [
     { "mapId": "first_field", "offset": { "x": 0, "y": 0 }, "direction": "center" },
-    { "mapId": "east_area_01", "offset": { "x": 11, "y": -6 }, "direction": "east" }
+    { "mapId": "east_area_01", "offset": { "x": 11, "y": -6 }, "direction": "east" },
+    { "mapId": "north_area_01", "offset": { "x": -10, "y": 7 }, "direction": "north" }
   ]
 }

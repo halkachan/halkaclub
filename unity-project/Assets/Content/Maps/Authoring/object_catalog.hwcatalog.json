@@ -68,6 +68,17 @@
       "blocksMovement": true,
       "allowedMapTypes": [],
       "editorSelectable": true
+    },
+    {
+      "definitionId": "water",
+      "displayName": "みず",
+      "category": "surface",
+      "previewSpritePath": "Assets/Content/World/water.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "editorSelectable": true,
+      "blocksMovement": true,
+      "allowedMapTypes": []
     }
   ],
   "objects": [
@@ -1095,6 +1106,128 @@
           "interactionText": "このさき きいろい はなの ひろば。"
         }
       ]
+    },
+    {
+      "definitionId": "flower_blue",
+      "displayName": "あおい はな",
+      "category": "nature",
+      "previewSpritePath": "Assets/Content/World/flower_blue.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "allowedMapTypes": [],
+      "actionPoints": [
+        {
+          "id": "examine_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "あおい はな。"
+        }
+      ]
+    },
+    {
+      "definitionId": "signpost_blue",
+      "displayName": "みちしるべ（きた）",
+      "category": "fixture",
+      "previewSpritePath": "Assets/Content/World/sign_blue.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "allowedMapTypes": [],
+      "actionPoints": [
+        {
+          "id": "read_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "きたの みずべ。 しずかな いけが ある。"
+        }
+      ]
+    },
+    {
+      "definitionId": "water_lily",
+      "displayName": "すいれん（みずをのぞく）",
+      "category": "nature",
+      "previewSpritePath": "Assets/Content/World/water_lily.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": false,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [],
+      "allowedMapTypes": [],
+      "actionPoints": [
+        {
+          "id": "look_into_water",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "みずが きらきらしている。"
+        }
+      ]
+    },
+    {
+      "definitionId": "pond_reeds",
+      "displayName": "みずべの あし",
+      "category": "nature",
+      "previewSpritePath": "Assets/Content/World/pond_reeds.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": false,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [],
+      "allowedMapTypes": [],
+      "actionPoints": []
     }
   ],
   "visuals": {

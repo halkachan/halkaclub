@@ -24,7 +24,7 @@ namespace Halka.Poc2D3D.EditorTools
         // POC scene stays the technical verification scene with its options shown).
         // ver3.1: the game scene is HARUKA_WORLD_ver3.1 (the ver3.0 RC3 scene file is kept as the
         // published version's scene and no longer rebuilt).
-        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.5.unity";
+        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.6.unity";
         // ver3.2: the chunk test scene (the release scene + a generated test world; test builds only).
         public const string ChunkTestScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.2_CHUNKTEST.unity";
         public const string ChunkTestFixturePath = Root + "/Fixtures/ChunkTest/PocTestWorldFixture.asset";
@@ -115,6 +115,9 @@ namespace Halka.Poc2D3D.EditorTools
         // ver3.3: the East area's yellow accents (blender/scripts/build_v33_east.py).
         public const string V33Models = Root + "/Models/V33/";
         public static readonly string[] V33ModelNames = { "flower_yellow", "sunflower_cluster", "sign_yellow" };
+        // ver3.6, the North area (blender/scripts/build_v36_north.py).
+        public const string V36Models = Root + "/Models/V36/";
+        public static readonly string[] V36ModelNames = { "flower_blue", "sign_blue", "water_lily", "pond_reeds" };
         public static readonly string[] V32ModelNames =
         {
             "dtm_desk_large", "illust_desk_tablet", "kitchen_counter", "living_rug", "low_table_living", "guitar_stand"
@@ -171,6 +174,7 @@ namespace Halka.Poc2D3D.EditorTools
             foreach (var name in V31ModelNames) RemapModelMaterial(V31Models + name + ".fbx", toon);
             foreach (var name in V32ModelNames) RemapModelMaterial(V32Models + name + ".fbx", toon);
             foreach (var name in V33ModelNames) RemapModelMaterial(V33Models + name + ".fbx", toon);
+            foreach (var name in V36ModelNames) RemapModelMaterial(V36Models + name + ".fbx", toon);
             EnsureMaterial(TreeFadeMaterialPath, "HALKA/POC/ToonVertexColorFade", null);
             EnsureMaterial(OutlineMaterialPath, "HALKA/POC/OutlineComposite", null);
             EnsureMaterial(Outline3DMaterialPath, "HALKA/POC/Outline3D", null);
@@ -243,7 +247,16 @@ namespace Halka.Poc2D3D.EditorTools
                     cameraOccluder = false, minPickSize = SmallPickSize },
                 new PocPresentationBinding { definitionId = "sunflower_cluster", model = V33("sunflower_cluster"),
                     cameraOccluder = false, fadeInFront2D = true, fadeInFront3D = true, fadeOpacity = 0.4f, fadeSeconds = 0.25f },
-                new PocPresentationBinding { definitionId = "signpost_yellow", model = V33("sign_yellow"), cameraOccluder = false }
+                new PocPresentationBinding { definitionId = "signpost_yellow", model = V33("sign_yellow"), cameraOccluder = false },
+                // ver3.6, the North area: a blue flower, the blue signpost (its model: sign_blue), and at the
+                // pond the lily pads (flat on the water: no shadow, a soft outline) and the reeds.
+                new PocPresentationBinding { definitionId = "flower_blue", model = V36("flower_blue"),
+                    cameraOccluder = false, minPickSize = SmallPickSize },
+                new PocPresentationBinding { definitionId = "signpost_blue", model = V36("sign_blue"), cameraOccluder = false },
+                new PocPresentationBinding { definitionId = "water_lily", model = V36("water_lily"),
+                    cameraOccluder = false, castShadows = false, outlineStrength = 0.5f, minPickSize = SmallPickSize },
+                new PocPresentationBinding { definitionId = "pond_reeds", model = V36("pond_reeds"),
+                    cameraOccluder = false, minPickSize = SmallPickSize }
             }, new PocEnvironmentPresentation
             {
                 grassTiles = new List<GameObject> { Phase2("ground_grass_a"), Phase2("ground_grass_b"), Phase2("ground_grass_c") },
@@ -316,7 +329,7 @@ namespace Halka.Poc2D3D.EditorTools
         // off unless ?debug=1, the HUD reads "ver3.0 RC1".
         private static void ConfigureReleaseCandidate(GameObject root)
         {
-            root.name = "HARUKA WORLD ver3.5";
+            root.name = "HARUKA WORLD ver3.6";
             var panel = root.GetComponent<PocDebugPanel>();
             var hud = root.GetComponentInChildren<GameHud>(true);
             var switcher = root.GetComponent<PocViewSwitcher>();
@@ -662,6 +675,7 @@ namespace Halka.Poc2D3D.EditorTools
         public static GameObject V31(string name) => LoadModel(V31Models + name + ".fbx");
         public static GameObject V32(string name) => LoadModel(V32Models + name + ".fbx");
         public static GameObject V33(string name) => LoadModel(V33Models + name + ".fbx");
+        public static GameObject V36(string name) => LoadModel(V36Models + name + ".fbx");
         // Clicks on small things (flower, stone, cushion) count within at least this cube.
         public const float SmallPickSize = 0.3f;
 

@@ -218,11 +218,13 @@ namespace Halka.Poc2D3D
         private void OnEnable()
         {
             if (session != null) session.MapChanged += Rebuild;
+            if (session != null) session.Interacted += OnInteracted;
         }
 
         private void OnDisable()
         {
             if (session != null) session.MapChanged -= Rebuild;
+            if (session != null) session.Interacted -= OnInteracted;
         }
 
         private void Start()
@@ -475,6 +477,7 @@ namespace Halka.Poc2D3D
                 "dirt" => new Color32(0xc9, 0xa8, 0x74, 0xff),
                 "house_floor" => new Color32(0xd3, 0x8b, 0x40, 0xff),
                 "house_wall" => new Color32(0x8a, 0x76, 0x62, 0xff),
+                "water" => new Color32(0x5c, 0x8d, 0xc2, 0xff),
                 _ => new Color32(0x8f, 0xb8, 0x5c, 0xff)
             };
             // A tiny per-cell variation keeps the grid readable after pixelation.

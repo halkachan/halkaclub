@@ -1,0 +1,756 @@
+{
+  "format": "halka-world-map",
+  "formatVersion": 4,
+  "mapId": "north_area_01",
+  "displayName": "北エリア",
+  "mapType": "outdoor",
+  "baseSurfaceDefinitionId": "base_ground",
+  "grassMode": "auto",
+  "backdropColor": "#101014",
+  "bounds": {
+    "minX": 0,
+    "maxX": 20,
+    "minY": 0,
+    "maxY": 19
+  },
+  "surfaces": [
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 1
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 2
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 6,
+        "y": 7
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 7,
+        "y": 7
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 7
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 5,
+        "y": 8
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 6,
+        "y": 8
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 7,
+        "y": 8
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 8,
+        "y": 8
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 9,
+        "y": 8
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 8
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 5,
+        "y": 9
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 6,
+        "y": 9
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 7,
+        "y": 9
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 9
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 4,
+        "y": 10
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 5,
+        "y": 10
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 6,
+        "y": 10
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 7,
+        "y": 10
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 8,
+        "y": 10
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 10
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 3,
+        "y": 11
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 4,
+        "y": 11
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 5,
+        "y": 11
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 6,
+        "y": 11
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 7,
+        "y": 11
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 8,
+        "y": 11
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 11
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 3,
+        "y": 12
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 4,
+        "y": 12
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 5,
+        "y": 12
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 6,
+        "y": 12
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 7,
+        "y": 12
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 12
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 4,
+        "y": 13
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 5,
+        "y": 13
+      }
+    },
+    {
+      "definitionId": "water",
+      "cell": {
+        "x": 6,
+        "y": 13
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 13
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 14
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 15
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 16
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 17
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 18
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 19
+      }
+    }
+  ],
+  "objects": [
+    {
+      "instanceId": "obj_flower_basic_v36_north_44",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 5,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_flower_basic_v36_north_43",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 15,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_flower_basic_v36_north_45",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 18,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_40",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 17,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_42",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 8,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_32",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 13,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_41",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 3,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_30",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 11,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_29",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 9,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_34",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 16,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_27",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 4,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_31",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 12,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_28",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 9,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_33",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 15,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_26",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 2,
+        "y": 13
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_37",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 4,
+        "y": 15
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_38",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 7,
+        "y": 15
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_35",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 11,
+        "y": 15
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_36",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 13,
+        "y": 16
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v36_north_39",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 18,
+        "y": 16
+      }
+    },
+    {
+      "instanceId": "obj_pond_reeds_v36_north_02",
+      "definitionId": "pond_reeds",
+      "rootCell": {
+        "x": 8,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_pond_reeds_v36_north_01",
+      "definitionId": "pond_reeds",
+      "rootCell": {
+        "x": 3,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_pond_reeds_v36_north_03",
+      "definitionId": "pond_reeds",
+      "rootCell": {
+        "x": 4,
+        "y": 13
+      }
+    },
+    {
+      "instanceId": "obj_signpost_blue_v36_north_08",
+      "definitionId": "signpost_blue",
+      "rootCell": {
+        "x": 11,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v36_north_07",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 3,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v36_north_04",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 2,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v36_north_05",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 9,
+        "y": 12
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v36_north_06",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 8,
+        "y": 14
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_24",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 3,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_23",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 1,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_17",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 18,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_18",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 14,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_13",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 1,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_25",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 19,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_09",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 2,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_16",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 17,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_14",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 12,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_10",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 1,
+        "y": 12
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_22",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 19,
+        "y": 13
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_15",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 14,
+        "y": 14
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_11",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 2,
+        "y": 15
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_12",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 5,
+        "y": 16
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_21",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 8,
+        "y": 16
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_20",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 12,
+        "y": 16
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v36_north_19",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 16,
+        "y": 16
+      }
+    },
+    {
+      "instanceId": "obj_water_lily_v36_north_00",
+      "definitionId": "water_lily",
+      "rootCell": {
+        "x": 6,
+        "y": 9
+      }
+    }
+  ],
+  "markers": [
+    {
+      "id": "landmark_north_blue_pond",
+      "cell": {
+        "x": 6,
+        "y": 8
+      }
+    },
+    {
+      "id": "road_north",
+      "cell": {
+        "x": 10,
+        "y": 19
+      }
+    },
+    {
+      "id": "road_south",
+      "cell": {
+        "x": 10,
+        "y": 0
+      }
+    }
+  ],
+  "entitySpawns": [],
+  "areaTransitions": []
+}

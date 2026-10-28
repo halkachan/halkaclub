@@ -399,6 +399,9 @@ namespace Halka.Poc2D3D
 
         public void SnapToTarget() => snapNext = true;
 
+        // ver3.6: half of the visible height of the 2D view, in world units North (the checks).
+        public float ViewHalfWorldNorth => target != null ? target.height * PixelWorldNorth * 0.5f : 0f;
+
         private void LateUpdate() => UpdateView(Time.unscaledDeltaTime, Screen.width, Screen.height);
 
         public void UpdateView(float deltaTime, int screenWidth, int screenHeight)
@@ -901,7 +904,64 @@ namespace Halka.Poc2D3D
                     loX = Mathf.Min(loX, centre.x); hiX = Mathf.Max(hiX, centre.x);
                     loZ = Mathf.Min(loZ, centre.z); hiZ = Mathf.Max(hiZ, centre.z);
                 }
-            return new Vector3(Mathf.Clamp(position.x, loX, hiX), 0f, Mathf.Clamp(position.z, loZ, hiZ));
+            var z = Mathf.Clamp(position.z, loZ, hiZ);
+            if (world.OutdoorIndex != null && BandClamp(world, halfH, margin, out var bandLo, out var bandHi, out var bandMinZ, out var bandMaxZ))
+            {
+                // ver3.6: a region North (or South) of first_field's rows. Inside those rows the camera
+                // keeps the framing it had before (first_field and the East area unchanged); past them the
+                // distance it had kept from her at the rows' edge shrinks to nothing over CatchUpRows rows
+                // (the camera moves at most 1 + edge distance / CatchUpRows times her speed: no jump).
+                var reach = CatchUpRows * GridSpace3D.CellSize;
+                if (position.z > bandMaxZ)
+                {
+                    var behind = bandMaxZ - Mathf.Clamp(bandMaxZ, bandLo, bandHi);
+                    z = Mathf.Clamp(position.z - behind * (1f - Mathf.Clamp01((position.z - bandMaxZ) / reach)), loZ, hiZ);
+                }
+                else if (position.z < bandMinZ)
+                {
+                    var ahead = Mathf.Clamp(bandMinZ, bandLo, bandHi) - bandMinZ;
+                    z = Mathf.Clamp(position.z + ahead * (1f - Mathf.Clamp01((bandMinZ - position.z) / reach)), loZ, hiZ);
+                }
+                else z = Mathf.Clamp(position.z, bandLo, bandHi);
+            }
+            return new Vector3(Mathf.Clamp(position.x, loX, hiX), 0f, z);
+        }
+
+        // ver3.6: rows past first_field's top or bottom over which the 2D camera catches up with her.
+        public const int CatchUpRows = 12;
+
+        // The vertical clamp of the regions in first_field's rows alone (what the camera did before a
+        // region North or South existed), and those rows' edges. False (the ver3.3 rule alone) when every
+        // region is in them, or when a region beside first_field is taller than it (a test world).
+        private static bool BandClamp(SharedWorldModel world, float halfH, float margin, out float lo, out float hi, out float minZ, out float maxZ)
+        {
+            var primary = world.OutdoorIndex.PrimaryRegion.Rect;
+            int minY = primary.Min.y, maxY = primary.Max.y;
+            var outside = false;
+            foreach (var region in world.OutdoorIndex.Regions)
+            {
+                var r = region.Rect;
+                if (r.Max.y < primary.Min.y || r.Min.y > primary.Max.y) { outside = true; continue; }
+                minY = Mathf.Min(minY, r.Min.y); maxY = Mathf.Max(maxY, r.Max.y);
+            }
+            minZ = minY * GridSpace3D.CellSize;
+            maxZ = maxY * GridSpace3D.CellSize;
+            lo = hi = 0f;
+            if (!outside || minY != primary.Min.y || maxY != primary.Max.y) return false;
+            var bandMin = minZ - margin;
+            var bandMax = maxZ + margin;
+            var range = Mathf.Max(0f, (bandMax - bandMin) * 0.5f - halfH);
+            var centreZ = (bandMin + bandMax) * 0.5f;
+            lo = centreZ - range;
+            hi = centreZ + range;
+            foreach (var region in world.OutdoorIndex.Regions)
+            {
+                var r = region.Rect;
+                if (r.Max.y < primary.Min.y || r.Min.y > primary.Max.y) continue;
+                var c = (r.Min.y + r.Max.y) * 0.5f * GridSpace3D.CellSize;
+                lo = Mathf.Min(lo, c); hi = Mathf.Max(hi, c);
+            }
+            return true;
         }
 
         // Integer scale chosen so about 18 cells stay visible vertically, as in the 2D game.

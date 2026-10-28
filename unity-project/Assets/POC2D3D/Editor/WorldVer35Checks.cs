@@ -303,8 +303,9 @@ namespace Halka.Poc2D3D.EditorTools
             var registry = t.Registry;
             var index = c.Session.OutdoorIndex;
             bool Door(Vector2Int cell) => c.Session.IsTransitionCell(c.Session.OutdoorWorld, cell);
+            // ver3.6: more places may follow (landmark_north_blue_pond); these two stay as they were.
             Check("the registry has the two places: ハルカチャンの家 (landmark_halka_home) and ひがしのはなのひろば (landmark_east_flower_plaza)",
-                registry.points.Count == 2 && registry.Find(Home) != null && registry.Find(Plaza) != null &&
+                registry.points.Count >= 2 && registry.Find(Home) != null && registry.Find(Plaza) != null &&
                 NameOf(c, Home) == "ハルカチャンの家" && NameOf(c, Plaza) == "ひがしのはなのひろば", string.Join(",", registry.points.Select(p => p.id)));
             var problems = registry.Validate(index, Door);
             Check("the registry passes its checks against the outdoor world (no error, no warning)", problems.Count == 0, string.Join("; ", problems));
@@ -339,8 +340,9 @@ namespace Halka.Poc2D3D.EditorTools
             Check("a malformed id is an error", HasError(badId.Validate(index, Door), "invalid point id"));
             var world = CopyOf(registry); world.points[1].worldId = "outdoor_other";
             Check("an unknown World ID is an error", HasError(world.Validate(index, Door), "unknown world"));
-            var region = CopyOf(registry); region.points[1].mapId = "north_area_01";
-            Check("an unknown region (a north area that does not exist) is an error", HasError(region.Validate(index, Door), "unknown region"));
+            // ver3.6: north_area_01 exists now; a region that does not.
+            var region = CopyOf(registry); region.points[1].mapId = "south_area_99";
+            Check("an unknown region (a south area that does not exist) is an error", HasError(region.Validate(index, Door), "unknown region"));
             var outside = CopyOf(registry); outside.points[1].arrivalCell = new Vector2Int(99, 4);
             Check("an arrival cell outside its Map is an error", HasError(outside.Validate(index, Door), "outside"));
             var blocked = CopyOf(registry); blocked.points[1].arrivalCell = new Vector2Int(16, 5);
