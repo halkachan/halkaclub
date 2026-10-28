@@ -450,7 +450,7 @@ main・origin/main には何もしていません。
 ## 38. 最終Git状態
 
 - `HALKA_HP_V35`（`claude/harukaworld-v35`）: 上の commit のあと、未コミットの変更はありません（Unity が書き換えた素材などは元に戻しました）。
-- `origin/main`: 3d86685（ver3.4 公開）のまま。
+- `origin/main`: 作業中に、別のプロジェクト「みねはうす」の commit が 4 件増えて 8433395 になりました（5a00485・21b8f4e・2784110・8433395）。どれも `minehouse/` などだけの変更で、`halkaworld/`・`unity-project/`・`tools/poc2d3d/`・`blender/` は 3d86685 と同じです（`git diff 3d86685 origin/main` でこれらの差分は 0）。公開するときは、この新しい origin/main の上に重ねます。
 - `halkaworld/`（公開中の ver3.4）: 3d86685 から 1 バイトも変えていません。
 - ver3.4 の作業・公開フォルダ、ユーザーの `HALKA HP`、みねはうす: 触っていません。
 - ローカル確認版: `C:\Users\owner\Documents\ChatGPT\HARUKA_WORLD_ver3.5_LOCAL`（Build ba8e7c821a9c27941f338d5bdfc43f6b、30,756,874 bytes）。
