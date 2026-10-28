@@ -123,7 +123,7 @@ namespace Halka.Poc2D3D
 
         public void Apply(float deltaTime, float now)
         {
-            var show = Visible && crow != null && crow.isActiveAndEnabled;
+            var show = Visible && crow != null && crow.isActiveAndEnabled && !crow.HiddenForTravel;
             if (instance != null && instance.activeSelf != show) instance.SetActive(show);
             shown = show;
             if (!show || instance == null) return;

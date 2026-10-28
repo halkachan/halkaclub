@@ -61,7 +61,7 @@ namespace Halka.Poc2D3D
 
         // GameInput's rules: an open menu (or a touch it just used) blocks gameplay input, and any
         // input counts as a user action that stops AUTO and restarts its 60-second idle clock.
-        private bool Blocked => menu != null && menu.BlocksGameplayInput || gameplay != null && gameplay.Suspended;
+        private bool Blocked => menu != null && menu.BlocksGameplayInput || gameplay != null && (gameplay.Suspended || gameplay.TravelBusy);
 
         private void Update()
         {

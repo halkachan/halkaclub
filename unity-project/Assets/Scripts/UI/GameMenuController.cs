@@ -46,6 +46,9 @@ namespace Halka.Game.UI
         private readonly System.Collections.Generic.List<string> linkLabels = new System.Collections.Generic.List<string>();
         private readonly System.Collections.Generic.List<System.Action<float>> linkActions =
             new System.Collections.Generic.List<System.Action<float>>();
+        // ver3.5: when a row is shown (null: always). The shared world's そらをとぶ is outdoors only.
+        private readonly System.Collections.Generic.List<System.Func<bool>> linkShown =
+            new System.Collections.Generic.List<System.Func<bool>>();
         private string closeLabel = "";
         private IGameMenuPage page;
         // Touches that began on an open page: only these press its buttons when released (the
@@ -59,11 +62,37 @@ namespace Halka.Game.UI
         public System.Collections.Generic.IReadOnlyList<string> LinkLabels => linkLabels;
         public string CloseLabel => closeLabel;
 
-        public void AddLinkItem(string label, System.Action<float> activate)
+        public void AddLinkItem(string label, System.Action<float> activate) => AddLinkItem(label, activate, null);
+
+        public void AddLinkItem(string label, System.Action<float> activate, System.Func<bool> shown)
         {
             if (string.IsNullOrEmpty(label) || activate == null) return;
             linkLabels.Add(label);
             linkActions.Add(activate);
+            linkShown.Add(shown);
+        }
+
+        public bool IsLinkShown(int index) =>
+            index >= 0 && index < linkShown.Count && (linkShown[index] == null || linkShown[index]());
+
+        private int ShownLinkCount
+        {
+            get
+            {
+                var count = 0;
+                for (var index = 0; index < linkLabels.Count; index++)
+                    if (IsLinkShown(index)) count++;
+                return count;
+            }
+        }
+
+        // A link row while the menu shows it (GUI pixels, origin top-left).
+        public bool TryGetLinkRect(int index, out Rect guiRect)
+        {
+            guiRect = default;
+            if (!IsOpen || IsLifeLogOpen || page != null || !IsLinkShown(index)) return false;
+            guiRect = LinkRect(index);
+            return true;
         }
 
         public void SetCloseLabel(string label) => closeLabel = label ?? "";
@@ -89,7 +118,7 @@ namespace Halka.Game.UI
 
         public void ActivateLink(int index, float now)
         {
-            if (!IsOpen || IsLifeLogOpen || page != null || index < 0 || index >= linkActions.Count) return;
+            if (!IsOpen || IsLifeLogOpen || page != null || index < 0 || index >= linkActions.Count || !IsLinkShown(index)) return;
             pointerCaptureUntil = now + 0.25f;
             linkActions[index](now);
         }
@@ -337,6 +366,7 @@ namespace Halka.Game.UI
                 var lastButton = lifeButton;
                 for (var index = 0; index < linkLabels.Count; index++)
                 {
+                    if (!IsLinkShown(index)) continue;
                     var link = LinkRect(index);
                     DrawTextButton(link, linkLabels[index], Color.white);
                     if (useMouse && GUI.Button(link, GUIContent.none, GUIStyle.none)) ActivateLink(index, Time.unscaledTime);
@@ -408,7 +438,7 @@ namespace Halka.Game.UI
             var button = ButtonRect();
             var width = Mathf.Min(IsPageOpen ? 280f : IsLifeLogOpen ? 240f : 200f, Mathf.Max(120f, safe.width - 24f));
             var height = IsPageOpen ? 48f + page.Lines.Count * 24f + page.Buttons.Count * 46f + 6f :
-                IsLifeLogOpen ? 208f : 150f + extraItems.Count * 48f + linkLabels.Count * 46f +
+                IsLifeLogOpen ? 208f : 150f + extraItems.Count * 48f + ShownLinkCount * 46f +
                 (closeLabel.Length > 0 ? 46f : 0f) + (string.IsNullOrEmpty(versionText) ? 0f : 26f);
             var y = Mathf.Min(button.yMax + 6f, Screen.height - safe.yMin - height - 4f);
             return new Rect(button.x, y, width, height);
@@ -439,23 +469,27 @@ namespace Halka.Game.UI
             return new Rect(panel.x + 12f, panel.y + 98f + extraItems.Count * 48f, panel.width - 24f, 38f);
         }
 
+        // Shown rows only, one under the other (a hidden row leaves no gap).
         private Rect LinkRect(int index)
         {
             var life = LifeLogRect();
-            return new Rect(life.x, life.yMax + 8f + index * 46f, life.width, 38f);
+            var slot = 0;
+            for (var i = 0; i < index; i++)
+                if (IsLinkShown(i)) slot++;
+            return new Rect(life.x, life.yMax + 8f + slot * 46f, life.width, 38f);
         }
 
         private int LinkIndexAt(Vector2 point)
         {
             for (var index = 0; index < linkLabels.Count; index++)
-                if (LinkRect(index).Contains(point)) return index;
+                if (IsLinkShown(index) && LinkRect(index).Contains(point)) return index;
             return -1;
         }
 
         private Rect CloseRect()
         {
             var life = LifeLogRect();
-            return new Rect(life.x, life.yMax + 8f + linkLabels.Count * 46f, life.width, 38f);
+            return new Rect(life.x, life.yMax + 8f + ShownLinkCount * 46f, life.width, 38f);
         }
 
         private Rect PageButtonRect(int index)

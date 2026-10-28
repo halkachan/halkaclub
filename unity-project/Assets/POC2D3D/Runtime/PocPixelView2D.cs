@@ -671,7 +671,7 @@ namespace Halka.Poc2D3D
         private SpriteCard? CrowCard(out bool onTop)
         {
             onTop = false;
-            if (crow == null || !crow.isActiveAndEnabled || crow.CurrentSprite == null || target == null) return null;
+            if (crow == null || !crow.isActiveAndEnabled || crow.HiddenForTravel || crow.CurrentSprite == null || target == null) return null;
             onTop = crow.Airborne;
             var root = crow.transform.position;
             if (!onTop) root.y = 0f;
@@ -937,6 +937,13 @@ namespace Halka.Poc2D3D
         }
 
         // Screen pixel (origin bottom-left) to a ray through the low-resolution view.
+        // ver3.5: where a world point is drawn on the screen (pixels, origin bottom-left; z < 0 behind).
+        public Vector3 WorldToScreenPoint(Vector3 world)
+        {
+            var p = worldCamera.WorldToScreenPoint(world);
+            return new Vector3(p.x * Scale - Offset.x, p.y * Scale - Offset.y, p.z);
+        }
+
         public Ray ScreenPointToRay(Vector2 screenPosition)
         {
             var pixel = new Vector3((screenPosition.x + Offset.x) / Scale, (screenPosition.y + Offset.y) / Scale, 0f);

@@ -18,8 +18,8 @@ namespace Halka.Poc2D3D.EditorTools
         // Phase 6: RC2 in its own folder (RC1 is kept as it is). Phase 7: RC3 (RC1 and RC2 kept).
         // ver3.1: a local check build in its own folder (RC3 = the published ver3.0 is kept as it
         // is); the kit has no publishing files.
-        public const string ReleaseCandidateFolderName = "HARUKA_WORLD_ver3.4_LOCAL";
-        public const string ReleaseCandidateKit = "v34";
+        public const string ReleaseCandidateFolderName = "HARUKA_WORLD_ver3.5_LOCAL";
+        public const string ReleaseCandidateKit = "v35";
         // ver3.2: the chunk test build (generated test worlds, memory saves) in its own folder.
         public const string ChunkTestFolderName = "HARUKA_WORLD_ver3.2_CHUNKTEST";
         public const string ReleaseCandidateGamePath = "halkaworld/webgl";

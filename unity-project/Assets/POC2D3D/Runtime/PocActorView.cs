@@ -173,6 +173,10 @@ namespace Halka.Poc2D3D
 
         private void LateUpdate() => Apply(Time.deltaTime);
 
+        // ver3.5 そらをとぶ: how far above the ground she is drawn (both views); the logical cell is
+        // the session's and never changes with it.
+        public float PresentationLift { get; set; }
+
         public void Apply(float deltaTime)
         {
             var position = GridSpace3D.ToWorld(session.Position);
@@ -202,6 +206,12 @@ namespace Halka.Poc2D3D
                 // TowardCenter along the seat's length (presentation only).
                 SeatDisplayShift = SeatShift(CurrentSeatDisplayFor().TowardCenter);
                 position = new Vector3(SeatPoint.x, 0f, SeatPoint.z) + SeatDisplayShift;
+            }
+            else if (PresentationLift > 0f)
+            {
+                // ver3.5: lifted off the ground with the crow (そらをとぶ; presentation only).
+                position.y += PresentationLift;
+                SpriteOffsetNorth += PresentationLift;
             }
             transform.position = position;
             SetModelVisible(!pixelView || !HasSprites);

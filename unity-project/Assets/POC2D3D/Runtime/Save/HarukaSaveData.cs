@@ -26,6 +26,13 @@ namespace Halka.Poc2D3D.Save
     // before (they ignore the extension; the crow is then simply free). A file without it (every
     // older save, and a ver3.4 save with a free crow) means "free"; a damaged entry makes the file
     // Corrupt.
+    // ver3.5: extensions.fastTravel holds the ids of the places 「そらをとぶ」 can go to that she has
+    // found ({ "discovered": [ids], "checksum" }, the checksum over the ids as written and the main
+    // checksum). Written only when she has found more than the start places, so a ver3.4-like game
+    // still writes exactly a ver3.4 file. Ids are kept as they are (an id this version does not know
+    // belongs to a later version and is written back unchanged); a duplicate is read once. A wrong
+    // type, a malformed id, more than 64 ids or a wrong checksum makes the file Corrupt (the snapshot
+    // store then falls back to an older good snapshot). Both extensions can be present together.
     public sealed class HarukaSaveData
     {
         public const string Format = "harukaworld-save";
@@ -36,6 +43,8 @@ namespace Halka.Poc2D3D.Save
         public const string CrowFree = "free";
         public const string CrowFollow = "follow";
         public const string CrowExtension = "crowCompanion";
+        public const string FastTravelExtension = "fastTravel";
+        public const int MaxFastTravelIds = 64;
 
         public int Schema = SchemaVersion;
         public string GameVersion = "";
@@ -51,9 +60,26 @@ namespace Halka.Poc2D3D.Save
         public int CellY;
         public string Facing = "down";
         public string CrowMode = CrowFree;
+        // ver3.5: the found places beyond the start (null or empty: none, nothing written).
+        public List<string> FastTravel;
         public string Checksum = "";
 
-        public HarukaSaveData Copy() => (HarukaSaveData)MemberwiseClone();
+        public HarukaSaveData Copy()
+        {
+            var copy = (HarukaSaveData)MemberwiseClone();
+            copy.FastTravel = FastTravel != null ? new List<string>(FastTravel) : null;
+            return copy;
+        }
+
+        public bool HasFastTravel => FastTravel != null && FastTravel.Count > 0;
+
+        public static bool ValidPlaceId(string id)
+        {
+            if (string.IsNullOrEmpty(id) || id.Length > 64) return false;
+            foreach (var c in id)
+                if (!(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_' || c == '-')) return false;
+            return true;
+        }
 
         public static string FacingName(FacingDirection facing) => facing switch
         {
@@ -97,6 +123,12 @@ namespace Halka.Poc2D3D.Save
         public string ComputeCrowChecksum() => "crc32:" +
             Crc32(Encoding.UTF8.GetBytes(CrowExtension + "|" + CrowMode + "|" + Checksum)).ToString("x8", CultureInfo.InvariantCulture);
 
+        public string ComputeFastTravelChecksum() => ComputeFastTravelChecksum(FastTravel);
+
+        private string ComputeFastTravelChecksum(IList<string> ids) => "crc32:" +
+            Crc32(Encoding.UTF8.GetBytes(FastTravelExtension + "|" + string.Join(",", ids ?? new List<string>()) + "|" + Checksum))
+                .ToString("x8", CultureInfo.InvariantCulture);
+
         // UTF-8 JSON, readable (exported files are meant to be kept by people).
         public string ToJson()
         {
@@ -116,10 +148,21 @@ namespace Halka.Poc2D3D.Save
             b.Append("  \"player\": { \"mapId\": ").Append(HarukaSaveJson.Quote(MapId))
                 .Append(", \"cell\": { \"x\": ").Append(CellX.ToString(inv)).Append(", \"y\": ").Append(CellY.ToString(inv))
                 .Append(" }, \"facing\": ").Append(HarukaSaveJson.Quote(Facing)).Append(" },\n");
-            // A free crow (the default) writes nothing: the file is exactly a ver3.3 file.
-            if (CrowMode == CrowFree) b.Append("  \"extensions\": {},\n");
-            else b.Append("  \"extensions\": { \"").Append(CrowExtension).Append("\": { \"mode\": ").Append(HarukaSaveJson.Quote(CrowMode))
-                .Append(", \"checksum\": ").Append(HarukaSaveJson.Quote(ComputeCrowChecksum())).Append(" } },\n");
+            // A free crow (the default) and only the start places write nothing: the file is then
+            // exactly a ver3.3 file.
+            var entries = new List<string>();
+            if (CrowMode != CrowFree)
+                entries.Add("\"" + CrowExtension + "\": { \"mode\": " + HarukaSaveJson.Quote(CrowMode) +
+                    ", \"checksum\": " + HarukaSaveJson.Quote(ComputeCrowChecksum()) + " }");
+            if (HasFastTravel)
+            {
+                var ids = new StringBuilder();
+                foreach (var id in FastTravel) ids.Append(ids.Length > 0 ? ", " : "").Append(HarukaSaveJson.Quote(id));
+                entries.Add("\"" + FastTravelExtension + "\": { \"discovered\": [" + ids + "], \"checksum\": " +
+                    HarukaSaveJson.Quote(ComputeFastTravelChecksum()) + " }");
+            }
+            if (entries.Count == 0) b.Append("  \"extensions\": {},\n");
+            else b.Append("  \"extensions\": { ").Append(string.Join(", ", entries)).Append(" },\n");
             b.Append("  \"checksum\": ").Append(HarukaSaveJson.Quote(Checksum)).Append('\n');
             b.Append("}\n");
             return b.ToString();
@@ -171,6 +214,23 @@ namespace Halka.Poc2D3D.Save
                     d.CrowMode != CrowFree && d.CrowMode != CrowFollow ||
                     !Str(crow, "checksum", out var crowChecksum) || crowChecksum != d.ComputeCrowChecksum())
                     return Bad("extensions." + CrowExtension, out problem);
+            }
+            if (extensions is Dictionary<string, object> ext2 && ext2.TryGetValue(FastTravelExtension, out var travelValue))
+            {
+                if (!(travelValue is Dictionary<string, object> travel) || !travel.TryGetValue("discovered", out var listValue) ||
+                    !(listValue is List<object> list) || list.Count > MaxFastTravelIds || !Str(travel, "checksum", out var travelChecksum))
+                    return Bad("extensions." + FastTravelExtension, out problem);
+                var ids = new List<string>();
+                foreach (var item in list)
+                {
+                    if (!(item is string id) || !ValidPlaceId(id)) return Bad("extensions." + FastTravelExtension, out problem);
+                    ids.Add(id);
+                }
+                if (travelChecksum != d.ComputeFastTravelChecksum(ids)) return Bad("extensions." + FastTravelExtension, out problem);
+                var unique = new List<string>();
+                foreach (var id in ids)
+                    if (!unique.Contains(id)) unique.Add(id);
+                d.FastTravel = unique.Count > 0 ? unique : null;
             }
             data = d;
             return HarukaSaveReadStatus.Valid;

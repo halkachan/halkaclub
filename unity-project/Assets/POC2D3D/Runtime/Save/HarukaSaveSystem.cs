@@ -50,6 +50,8 @@ namespace Halka.Poc2D3D.Save
         // ver3.4: the crow whose companion mode is saved (none: always "free", as before).
         [SerializeField] private PocCrow crow;
         [SerializeField] private PocGameplay gameplay;
+        // ver3.5: the places found for そらをとぶ (none: whatever was loaded is written back as it was).
+        [SerializeField] private PocFastTravel fastTravel;
 
         public HarukaSnapshotStore Store { get; private set; }
         public IHarukaSaveBrowser Browser { get; private set; }
@@ -97,6 +99,43 @@ namespace Halka.Poc2D3D.Save
         {
             crow = sharedCrow;
             gameplay = sharedGameplay;
+        }
+
+        // ver3.5: the found places are saved with the rest; during a flight the place she left is
+        // what a save holds, and once she has landed the destination is saved at once.
+        public void ConfigureFastTravel(PocFastTravel travel)
+        {
+            if (fastTravel != null) fastTravel.Completed -= OnTravelCompleted;
+            fastTravel = travel;
+            if (fastTravel != null) fastTravel.Completed += OnTravelCompleted;
+        }
+
+        private void OnEnable()
+        {
+            if (fastTravel != null) { fastTravel.Completed -= OnTravelCompleted; fastTravel.Completed += OnTravelCompleted; }
+        }
+
+        private void OnDisable()
+        {
+            if (fastTravel != null) fastTravel.Completed -= OnTravelCompleted;
+        }
+
+        private void OnTravelCompleted(bool landed)
+        {
+            if (landed && started && !SavingStopped) Write("fast travel", Time.unscaledTime);
+        }
+
+        private List<string> FastTravelNow() =>
+            fastTravel != null ? fastTravel.SavedIds() : Loaded?.FastTravel != null ? new List<string>(Loaded.FastTravel) : null;
+
+        public static bool SameIds(IList<string> a, IList<string> b)
+        {
+            var countA = a != null ? a.Count : 0;
+            var countB = b != null ? b.Count : 0;
+            if (countA != countB) return false;
+            for (var i = 0; i < countA; i++)
+                if (a[i] != b[i]) return false;
+            return true;
         }
 
         public static CrowCompanionMode ToCrowMode(string saved) =>
@@ -179,7 +218,8 @@ namespace Halka.Poc2D3D.Save
 
         public static string Describe(HarukaSaveData d) =>
             d.MapId + " (" + d.CellX + "," + d.CellY + ") " + d.Facing + " " + d.ViewMode + " AUTO " + (d.AutoEnabled ? "on" : "off") +
-            " steps " + d.TotalSteps + " play " + d.TotalPlaySeconds + "s anchor " + d.TimeAnchorUnixMs + " crow " + d.CrowMode;
+            " steps " + d.TotalSteps + " play " + d.TotalPlaySeconds + "s anchor " + d.TimeAnchorUnixMs + " crow " + d.CrowMode +
+            " places " + (d.HasFastTravel ? string.Join(",", d.FastTravel) : "start");
 
         private HarukaSaveData FromLegacy(LifeLogData legacyLife)
         {
@@ -214,6 +254,8 @@ namespace Halka.Poc2D3D.Save
                 worldTime.SetAnchor(data.TimeAnchorUnixMs, Clock().ToUnixTimeMilliseconds());
             // ver3.4: before the crow is placed (PocGameplay places a companion beside her).
             if (crow != null) crow.RestoreMode(ToCrowMode(data.CrowMode));
+            // ver3.5: what was found (the start places when the save has none).
+            if (fastTravel != null) fastTravel.SetFound(data.FastTravel);
         }
 
         // After every component's Awake: AUTO's setting (it starts idle: the 60 s are counted
@@ -233,6 +275,8 @@ namespace Halka.Poc2D3D.Save
             saved = Now();
             savedPlaySeconds = lifeLog != null ? lifeLog.TotalPlaySeconds : 0;
             lastWriteAt = now - StepSaveSeconds;
+            // ver3.5: a place found at the start (an old save resumed at the plaza) is saved soon.
+            if (fastTravel != null && Loaded != null && !SameIds(fastTravel.SavedIds(), Loaded.FastTravel)) firstSaveDue = true;
         }
 
         public struct Place
@@ -364,8 +408,10 @@ namespace Halka.Poc2D3D.Save
             public PocViewMode View;
             public bool Auto;
             public string Crow;
+            public int Places;
 
-            public bool SameSettings(State other) => View == other.View && Auto == other.Auto && Crow == other.Crow;
+            public bool SameSettings(State other) => View == other.View && Auto == other.Auto && Crow == other.Crow &&
+                Places == other.Places;
             public bool Same(State other) => SameSettings(other) && Map == other.Map && Cell == other.Cell &&
                 Facing == other.Facing && Steps == other.Steps;
         }
@@ -374,11 +420,12 @@ namespace Halka.Poc2D3D.Save
         {
             Map = SavePlace(out var nowCell),
             Cell = nowCell,
-            Facing = session.Facing,
+            Facing = SaveFacing(),
             Steps = lifeLog != null ? lifeLog.TotalSteps : 0,
             View = views != null ? views.Mode : PocViewMode.PixelView2D,
             Auto = autoMode != null && autoMode.AutoEnabled,
             Crow = CrowModeNow(),
+            Places = fastTravel != null ? fastTravel.DiscoveryVersion : 0,
         };
 
         public HarukaSaveData Capture()
@@ -397,17 +444,22 @@ namespace Halka.Poc2D3D.Save
                 MapId = SavePlace(out var placeCell),
                 CellX = placeCell.x,
                 CellY = placeCell.y,
-                Facing = HarukaSaveData.FacingName(session.Facing),
+                Facing = HarukaSaveData.FacingName(SaveFacing()),
                 CrowMode = CrowModeNow(),
+                FastTravel = FastTravelNow(),
             };
         }
 
         private string SavePlace(out Vector2Int mapCell)
         {
+            if (fastTravel != null && fastTravel.TryGetHeldPlace(out var heldMap, out mapCell, out _)) return heldMap;
             if (session.TryGetSavePlace(out var mapId, out mapCell)) return mapId;
             mapCell = session.Cell;
             return session.World.MapId;
         }
+
+        private FacingDirection SaveFacing() =>
+            fastTravel != null && fastTravel.TryGetHeldPlace(out _, out _, out var heldFacing) ? heldFacing : session.Facing;
 
         private void LateUpdate() => Tick(Time.unscaledTime);
 
@@ -595,6 +647,7 @@ namespace Halka.Poc2D3D.Save
                 crow.SetMode(ToCrowMode(written.CrowMode), Time.time);
                 if (gameplay != null) gameplay.RefreshCrowAfterRestore();
             }
+            if (fastTravel != null) fastTravel.SetFound(written.FastTravel);
             if (views != null)
             {
                 if (views.PixelView != null) views.PixelView.SnapToTarget();
@@ -608,12 +661,32 @@ namespace Halka.Poc2D3D.Save
             if (after.MapId != written.MapId || after.CellX != written.CellX || after.CellY != written.CellY ||
                 after.Facing != written.Facing || after.ViewMode != written.ViewMode || after.AutoEnabled != written.AutoEnabled ||
                 after.TotalSteps != written.TotalSteps || after.TimeAnchorUnixMs != written.TimeAnchorUnixMs ||
-                after.CrowMode != written.CrowMode)
+                after.CrowMode != written.CrowMode || fastTravel != null && !SameIds(after.FastTravel, Normalized(written.FastTravel)))
             {
                 problem = "the world does not match the imported data";
                 return false;
             }
             return true;
+        }
+
+        // The ids as the game writes them back: with the start places, sorted, once each; the start
+        // places alone are written as none.
+        private List<string> Normalized(List<string> ids)
+        {
+            if (fastTravel == null) return ids;
+            var set = new SortedSet<string>(StringComparer.Ordinal);
+            var beyondStart = false;
+            foreach (var point in fastTravel.Registry.points)
+                if (point != null && point.unlockedAtStart) set.Add(point.id);
+            if (ids != null)
+                foreach (var id in ids)
+                {
+                    if (!HarukaSaveData.ValidPlaceId(id)) continue;
+                    set.Add(id);
+                    var point = fastTravel.Registry.Find(id);
+                    if (point == null || !point.unlockedAtStart) beyondStart = true;
+                }
+            return beyondStart ? new List<string>(set) : null;
         }
 
         public SaveMenu Menu => saveMenu;
