@@ -932,7 +932,8 @@ namespace Halka.Poc2D3D
 
         // The vertical clamp of the regions in first_field's rows alone (what the camera did before a
         // region North or South existed), and those rows' edges. False (the ver3.3 rule alone) when every
-        // region is in them, or when a region beside first_field is taller than it (a test world).
+        // region is in them, when a region beside first_field is taller than it, or when those rows are
+        // taller than a screen (test worlds).
         private static bool BandClamp(SharedWorldModel world, float halfH, float margin, out float lo, out float hi, out float minZ, out float maxZ)
         {
             var primary = world.OutdoorIndex.PrimaryRegion.Rect;
@@ -948,6 +949,9 @@ namespace Halka.Poc2D3D
             maxZ = maxY * GridSpace3D.CellSize;
             lo = hi = 0f;
             if (!outside || minY != primary.Min.y || maxY != primary.Max.y) return false;
+            // Only rows about one screen tall had a framing of their own to keep (the camera stood still
+            // over first_field's 13 rows); in taller rows it already followed her, up to the world's edge.
+            if (maxY - minY + 1 > VisibleCellsTall) return false;
             var bandMin = minZ - margin;
             var bandMax = maxZ + margin;
             var range = Mathf.Max(0f, (bandMax - bandMin) * 0.5f - halfH);

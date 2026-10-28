@@ -966,11 +966,12 @@ namespace Halka.Poc2D3D.EditorTools
         {
             const string Published = "3d86685";
             Check("WORLD EDITOR v1.0 unchanged since ver3.4 (tools/HalkaWorldMapEditor)", V32.Git("diff --quiet " + Published + " -- tools/HalkaWorldMapEditor", out _));
+            // ver3.6: the existing files unchanged, the catalog and the registry only added to (a new Region).
             Check("the official Maps, their Authoring JSON, the world registry and direction_themes.json unchanged",
-                V32.Git("diff --quiet " + Published + " -- unity-project/Assets/Content/Maps", out _));
+                WorldVer36Checks.MapsFolderKept(Published) && WorldVer36Checks.RegistryKept(Published));
             Check("the published ver3.4 (halkaworld/) unchanged", V32.Git("diff --quiet " + Published + " -- halkaworld", out _));
-            Check("the crow's sprites, model and voice, and the font atlas unchanged (no new crow made)",
-                V32.Git("diff --quiet " + Published + " -- unity-project/Assets/Content/World unity-project/Assets/Content/Audio unity-project/Assets/POC2D3D/Models unity-project/Assets/Resources", out _));
+            // ver3.6: the crow's own files (new pictures and models of other Objects may be there).
+            Check("the crow's sprites, model and voice, and the font atlas unchanged (no new crow made)", WorldVer36Checks.CrowKept(Published, true));
             Check("the old tests are all still there (none deleted)", V32.Git("diff --quiet --diff-filter=D " + Published + " -- unity-project/Assets/POC2D3D/Editor unity-project/Assets/Editor", out _));
         }
     }

@@ -828,29 +828,57 @@ namespace Halka.Poc2D3D.EditorTools
         {
             const string Published = "d2441b7";
             Check("WORLD EDITOR v1.0 unchanged since ver3.5 (tools/HalkaWorldMapEditor)", V32.Git("diff --quiet " + Published + " -- tools/HalkaWorldMapEditor", out _));
-            Check("first_field, east_area_01, the house and the booth Maps (Authoring JSON and caches) unchanged",
-                V32.Git("diff --quiet " + Published + " -- unity-project/Assets/Content/Maps/Authoring/first_field.hwmap.json unity-project/Assets/Content/Maps/Authoring/east_area_01.hwmap.json " +
-                    "unity-project/Assets/Content/Maps/Authoring/halka_house.hwmap.json unity-project/Assets/Content/Maps/Authoring/halka_soundbooth.hwmap.json " +
-                    "unity-project/Assets/Content/Maps/first_field.asset unity-project/Assets/Content/Maps/east_area_01.asset " +
-                    "unity-project/Assets/Content/Maps/halka_house.asset unity-project/Assets/Content/Maps/halka_soundbooth.asset", out _));
+            Check("first_field, east_area_01, the house and the booth Maps (Authoring JSON and caches) unchanged", OfficialMapsKept(Published));
             Check("direction_themes.json unchanged", V32.Git("diff --quiet " + Published + " -- unity-project/Assets/Content/Maps/World/direction_themes.json", out _));
             Check("the Object Catalog: the existing definitions unchanged (only new ones added)", CatalogKept());
             Check("the published ver3.5 (halkaworld/) unchanged", V32.Git("diff --quiet " + Published + " -- halkaworld", out _));
-            Check("the crow's sprites, model and voice, and the font atlas unchanged",
-                V32.Git("diff --quiet " + Published + " -- unity-project/Assets/POC2D3D/Models/crow_basic.fbx unity-project/Assets/Content/Audio unity-project/Assets/Resources", out _) &&
-                V32.Git("diff --quiet " + Published + " -- " + string.Join(" ", Directory.GetFiles(Path.Combine(PocSceneBuilder.RepositoryRoot, "unity-project/Assets/Content/World"), "crow*").Select(f => "unity-project/Assets/Content/World/" + Path.GetFileName(f))), out _));
+            Check("the crow's sprites, model and voice, and the font atlas unchanged", CrowKept(Published, true));
             Check("the old tests are all still there (none deleted)", V32.Git("diff --quiet --diff-filter=D " + Published + " -- unity-project/Assets/POC2D3D/Editor unity-project/Assets/Editor", out _));
         }
 
         // Every definition of the ver3.5 catalog is still there, unchanged: the change only adds lines
         // (two lines change only to take a comma, where the lists go on).
-        private static bool CatalogKept()
+        private static bool CatalogKept() => OnlyAdded("d2441b7", Catalog) && V32.Git("diff --numstat d2441b7 -- " + Catalog, out var stat) && stat.Trim().Length > 0;
+
+        // ---------------------------------------------------------------- shared with the ver3.4 / ver3.5 checks
+        // Their whole-folder comparisons with an old commit fail on anything new in a folder; since
+        // ver3.6 adds a Region (a Map, catalog entries, a registry line, pictures and models) they ask
+        // what they meant instead: the existing files unchanged, the shared list files only added to.
+
+        private const string Catalog = "unity-project/Assets/Content/Maps/Authoring/object_catalog.hwcatalog.json";
+        private const string Registry = "unity-project/Assets/Content/Maps/World/outdoor_main.hwworld.json";
+
+        // A JSON list file since a commit: unchanged, or lines added only (a line that ended a list may
+        // come back with a comma, where the list goes on).
+        internal static bool OnlyAdded(string commit, string path)
         {
-            if (!V32.Git("diff --numstat d2441b7 -- unity-project/Assets/Content/Maps/Authoring/object_catalog.hwcatalog.json", out var stat)) return false;
-            var parts = stat.Trim().Split('\t');
-            return parts.Length >= 2 && int.TryParse(parts[0], out var added) && int.TryParse(parts[1], out var deleted) && added > 0 && deleted <= 2 &&
-                V32.Git("diff -U0 d2441b7 -- unity-project/Assets/Content/Maps/Authoring/object_catalog.hwcatalog.json", out var diff) &&
-                diff.Split('\n').Where(l => l.StartsWith("-") && !l.StartsWith("---")).All(l => l.Trim() == "-    }" || l.Trim() == "-}");
+            if (!V32.Git("diff -U0 " + commit + " -- " + path, out var diff)) return false;
+            var lines = diff.Replace("\r", "").Split('\n');
+            var added = lines.Where(l => l.StartsWith("+") && !l.StartsWith("+++")).Select(l => l.Substring(1).TrimEnd()).ToList();
+            return lines.Where(l => l.StartsWith("-") && !l.StartsWith("---")).Select(l => l.Substring(1).TrimEnd()).All(l => added.Contains(l + ","));
         }
+
+        // The Maps folder since a commit: no file changed or removed but the catalog and the world
+        // registry, and those two only added to (new Maps and their caches may be there).
+        internal static bool MapsFolderKept(string commit) =>
+            V32.Git("diff --quiet --diff-filter=MDR " + commit + " -- unity-project/Assets/Content/Maps :(exclude)" + Catalog + " :(exclude)" + Registry, out _) &&
+            OnlyAdded(commit, Catalog) && OnlyAdded(commit, Registry);
+
+        // The world registry since a commit: only added to; direction_themes.json unchanged.
+        internal static bool RegistryKept(string commit) =>
+            OnlyAdded(commit, Registry) && V32.Git("diff --quiet " + commit + " -- unity-project/Assets/Content/Maps/World/direction_themes.json", out _);
+
+        // first_field, east_area_01, the house and the booth: Authoring JSON and caches unchanged.
+        internal static bool OfficialMapsKept(string commit) =>
+            V32.Git("diff --quiet " + commit + " -- " + string.Join(" ", new[] { "first_field", "east_area_01", "halka_house", "halka_soundbooth" }
+                .SelectMany(m => new[] { "unity-project/Assets/Content/Maps/Authoring/" + m + ".hwmap.json", "unity-project/Assets/Content/Maps/" + m + ".asset" })), out _);
+
+        // The crow's own files (its sprites and model), the voices and (from ver3.5) the font atlas unchanged.
+        // (the model must be there: a path that does not exist would compare as unchanged)
+        internal static bool CrowKept(string commit, bool fontAtlas) =>
+            File.Exists(Path.Combine(PocSceneBuilder.RepositoryRoot, "unity-project/Assets/POC2D3D/Models/Phase4/crow_basic.fbx")) &&
+            V32.Git("diff --quiet " + commit + " -- unity-project/Assets/POC2D3D/Models/Phase4/crow_basic.fbx unity-project/Assets/Content/Audio" + (fontAtlas ? " unity-project/Assets/Resources" : ""), out _) &&
+            V32.Git("diff --quiet " + commit + " -- " + string.Join(" ", Directory.GetFiles(Path.Combine(PocSceneBuilder.RepositoryRoot, "unity-project/Assets/Content/World"), "crow*")
+                .Select(f => "unity-project/Assets/Content/World/" + Path.GetFileName(f))), out _);
     }
 }
