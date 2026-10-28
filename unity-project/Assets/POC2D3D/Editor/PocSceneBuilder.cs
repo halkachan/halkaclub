@@ -24,7 +24,7 @@ namespace Halka.Poc2D3D.EditorTools
         // POC scene stays the technical verification scene with its options shown).
         // ver3.1: the game scene is HARUKA_WORLD_ver3.1 (the ver3.0 RC3 scene file is kept as the
         // published version's scene and no longer rebuilt).
-        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.4.unity";
+        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.5.unity";
         // ver3.2: the chunk test scene (the release scene + a generated test world; test builds only).
         public const string ChunkTestScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.2_CHUNKTEST.unity";
         public const string ChunkTestFixturePath = Root + "/Fixtures/ChunkTest/PocTestWorldFixture.asset";
@@ -96,6 +96,8 @@ namespace Halka.Poc2D3D.EditorTools
         public const string OutdoorWorldRegistryPath = "Assets/Content/Maps/World/outdoor_main.hwworld.json";
         // ver3.3: the direction colours (North blue, East yellow, South red, West green).
         public const string DirectionThemesPath = "Assets/Content/Maps/World/direction_themes.json";
+        // ver3.5: the places 「そらをとぶ」 can fly to.
+        public const string FastTravelPointsPath = "Assets/Content/FastTravel/fast_travel_points.json";
         // ver3.1: the sound booth (its own map, entered from the booth in the house) and its
         // Blender models (blender/scripts/build_v31_studio.py).
         public const string SoundBoothMapPath = "Assets/Content/Maps/halka_soundbooth.asset";
@@ -314,7 +316,7 @@ namespace Halka.Poc2D3D.EditorTools
         // off unless ?debug=1, the HUD reads "ver3.0 RC1".
         private static void ConfigureReleaseCandidate(GameObject root)
         {
-            root.name = "HARUKA WORLD ver3.4";
+            root.name = "HARUKA WORLD ver3.5";
             var panel = root.GetComponent<PocDebugPanel>();
             var hud = root.GetComponentInChildren<GameHud>(true);
             var switcher = root.GetComponent<PocViewSwitcher>();
@@ -337,6 +339,25 @@ namespace Halka.Poc2D3D.EditorTools
             EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(menu);
             EditorUtility.SetDirty(guard);
+        }
+
+        // ver3.5: the fast travel points, checked against the outdoor world (any error stops the build).
+        public static FastTravelRegistry LoadFastTravel(SharedWorldSession session)
+        {
+            var file = AssetDatabase.LoadAssetAtPath<TextAsset>(FastTravelPointsPath);
+            if (file == null) throw new InvalidOperationException("Fast travel points are missing: " + FastTravelPointsPath);
+            var problems = new List<string>();
+            var registry = OutdoorWorldRegistryJson.ParseFastTravel(file.text, problems);
+            if (registry != null)
+            {
+                // The logical world on its own (the session itself is initialized at play).
+                var index = new OutdoorWorldIndex(session.EffectiveOutdoorWorld);
+                problems.AddRange(registry.Validate(index, cell => index.TryGetHouseDoor(out var door) && door == cell));
+            }
+            foreach (var problem in problems) Debug.LogWarning("[ver3.5 fast travel] " + problem);
+            if (registry == null || FastTravelRegistry.HasErrors(problems))
+                throw new InvalidOperationException("Fast travel points are invalid: " + string.Join("; ", problems));
+            return registry;
         }
 
         // ver3.2: the registry decides the outdoor world; its Player Start Map must be the one the
@@ -495,6 +516,10 @@ namespace Halka.Poc2D3D.EditorTools
             actor.ConfigureSeats(presenter);
             thirdPerson.ConfigureTreeFade(AssetDatabase.LoadAssetAtPath<Material>(TreeFadeMaterialPath));
             panel.ConfigureGame(gameplay, guard);
+            // ver3.5: そらをとぶ (the destination list, the flight, what she has found).
+            var fastTravel = root.AddComponent<PocFastTravel>();
+            fastTravel.Configure(LoadFastTravel(session), session, switcher, presenter, actor, gameplay, root.GetComponent<PocTimeOfDay>());
+            gameplay.ConfigureFastTravel(fastTravel);
             BuildPhase5Content(root, gameplay, pixelView);
             BuildPhase6Content(root, session, switcher, autoMode, lifeLog, menu, hud);
         }
@@ -513,6 +538,8 @@ namespace Halka.Poc2D3D.EditorTools
             // ver3.4: the crow's companion mode is saved with the rest.
             var gameplay = root.GetComponentInChildren<PocGameplay>(true);
             save.ConfigureCrow(gameplay != null ? gameplay.Crow : null, gameplay);
+            // ver3.5: and the places found for そらをとぶ.
+            save.ConfigureFastTravel(gameplay != null ? gameplay.FastTravel : null);
         }
 
         // Phase 5: footsteps (PlayerFootstepAudio driven by SharedWorldSession.StepStarted, the 2D

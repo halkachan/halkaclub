@@ -385,6 +385,24 @@ namespace Halka.Poc2D3D
             motion = new GridStepMotion(cell);
         }
 
+        // ver3.5 そらをとぶ: she is put on a checked outdoor cell at once (the fast travel's landing,
+        // behind its cover). Not a step (none counted, no StepCompleted, no door), not a map load (the
+        // outdoor world stays); the region she lands in simply becomes the current one.
+        public int Relocations { get; private set; }
+
+        public bool RelocateOutdoorsNow(Vector2Int worldCell, FacingDirection facing)
+        {
+            if (outdoor == null || World != outdoor || motion.IsMoving || !outdoor.CanEnter(worldCell) ||
+                IsTransitionCell(outdoor, worldCell)) return false;
+            Stand();
+            motion = new GridStepMotion(worldCell);
+            Facing = facing;
+            PushSeconds = 0f;
+            lastRegion = CurrentRegion ?? lastRegion;
+            Relocations++;
+            return true;
+        }
+
         // Regression checks only: place the player without counting a step.
         public void PlaceForCheck(Vector2Int cell, FacingDirection facing)
         {

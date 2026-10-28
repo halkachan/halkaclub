@@ -35,6 +35,9 @@ namespace Halka.Poc2D3D
         public Vector2Int LastRustleCell { get; private set; }
         public PocObjectView TargetTreeView => (targetTree as TreePerch)?.View;
         public MapDefinition ActiveMap => activeMap;
+        // ver3.5: the flight frames (the 2D game's sprites), for the fast travel's flying crow.
+        public IReadOnlyList<Sprite> FlightRightFrames => flightRight;
+        public IReadOnlyList<Sprite> FlightDownFrames => flightDown;
 
         public void Configure(SharedWorldSession worldSession, PocWorldPresenter worldPresenter, InteractionAudio audio)
         {
@@ -138,7 +141,7 @@ namespace Halka.Poc2D3D
         // "カァ。", the voice, and the reaction (takeoff toward a nearby tree).
         public bool TryTalk(Vector2Int playerCell, FacingDirection facing, bool playerMoving)
         {
-            if (!isActiveAndEnabled || ChoiceOpen || !ExamineInteractable.IsInRange(playerCell, playerMoving, facing, Cell) ||
+            if (!isActiveAndEnabled || ChoiceOpen || TravelHeld || !ExamineInteractable.IsInRange(playerCell, playerMoving, facing, Cell) ||
                 !CanInteract) return false;
             // ver3.4: "カァ。" and then the choices (ついてきて / あそんでおいで, やめる) in the game's
             // menu panel; the crow waits until one is chosen. Without a menu (old checks): as before.

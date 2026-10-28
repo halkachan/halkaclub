@@ -116,6 +116,11 @@ namespace Halka.Poc2D3D.Dev
                 case "regions": presenter.RegionBordersVisible = on; break;
                 case "grid": presenter.GridVisible = on; break;
                 case "view": views.SetMode(parts.Length > 1 && parts[1] == "3d" ? PocViewMode.ThirdPerson3D : PocViewMode.PixelView2D); break;
+                // ver3.5: the night look (pictures of a night flight); "night:0" back to the clock.
+                case "night":
+                    var time = GetComponent<PocTimeOfDay>();
+                    if (time != null) time.Override = on ? PocPhaseOverride.Night : PocPhaseOverride.Auto;
+                    break;
             }
         }
 
@@ -226,6 +231,37 @@ namespace Halka.Poc2D3D.Dev
                     buttons.Append(menu.Page.Buttons[i]).Append('@').Append(Mathf.RoundToInt(r.center.x)).Append(',')
                         .Append(Mathf.RoundToInt(r.center.y)).Append(';');
             Str("pageButtons", buttons.ToString());
+            // ver3.5: the menu's link rows as shown (GUI pixels), and そらをとぶ.
+            var links = new StringBuilder();
+            for (var i = 0; menu != null && i < menu.LinkLabels.Count; i++)
+                if (menu.TryGetLinkRect(i, out var r))
+                    links.Append(menu.LinkLabels[i]).Append('@').Append(Mathf.RoundToInt(r.center.x)).Append(',')
+                        .Append(Mathf.RoundToInt(r.center.y)).Append(';');
+            Str("menuLinks", links.ToString());
+            Num("menuOpen", menu != null && menu.IsOpen ? 1 : 0);
+            Num("menuEnabled", menu != null && menu.enabled ? 1 : 0);
+            var travel = gameplay != null ? gameplay.FastTravel : null;
+            Str("travelPhase", travel != null ? travel.Phase.ToString() : "");
+            Str("travelFound", travel != null ? string.Join(",", travel.FoundIds) : "");
+            Num("travels", travel != null ? travel.Travels : 0); Num("travelFails", travel != null ? travel.Failures : 0);
+            Num("travelDiscoveries", travel != null ? travel.Discoveries : 0);
+            Str("travelLastStart", travel != null ? travel.LastStart.ToString() : "");
+            Num("travelArrivalOk", travel != null && travel.LastArrivalVerified ? 1 : 0);
+            Str("travelArrivalProblem", travel != null ? travel.LastArrivalProblem : "");
+            Num("travelPrepareMs", travel != null ? travel.LastPrepareMilliseconds : 0);
+            Num("travelPrepareBuilt", travel != null ? travel.LastPrepareBuilt : 0);
+            Num("travelTransferMs", travel != null ? travel.LastTransferMilliseconds : 0);
+            Num("travelTransferMaxMs", travel != null ? travel.MaxTransferMilliseconds : 0);
+            Num("travelSeconds", travel != null ? travel.LastFlightSeconds : 0);
+            Num("travelCover", travel != null ? travel.CoverAlpha() : 0);
+            Num("relocations", session.Relocations);
+            Num("crowHeld", crow != null && crow.TravelHeld ? 1 : 0); Num("crowHidden", crow != null && crow.HiddenForTravel ? 1 : 0);
+            Num("crowLandings", crow != null ? crow.TravelLandings : 0);
+            var log = gameplay != null ? gameplay.LifeLog : null;
+            Num("lifeSteps", log != null ? log.TotalSteps : -1); Num("playSeconds", log != null ? log.TotalPlaySeconds : -1);
+            var clock = GetComponent<WorldTimeController>();
+            Num("timeAnchor", clock != null ? clock.AnchorMilliseconds : 0);
+            Str("worldPhase", clock != null ? clock.CurrentPhase.ToString() : "");
             // The phone controls (GUI pixels from the top left), for touches in the checks.
             var touch = dpad != null && dpad.Visible;
             Num("touchUi", touch ? 1 : 0);

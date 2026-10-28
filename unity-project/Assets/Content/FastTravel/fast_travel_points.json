@@ -1,0 +1,33 @@
+{
+  "format": "harukaworld-fast-travel",
+  "formatVersion": 1,
+  "note": "The places 「そらをとぶ」 (ver3.5) can fly to. Cells are Map-local cells of the region's Map (mapId). A save keeps only the ids of the places found, so an id never changes; a position may. A new place is one more entry (see HARUKA_WORLD_VER35_FAST_TRAVEL_SPEC.md).",
+  "points": [
+    {
+      "id": "landmark_halka_home",
+      "name": "ハルカチャンの家",
+      "worldId": "outdoor_main",
+      "mapId": "first_field",
+      "discoverCell": { "x": -7, "y": -5 },
+      "discoverRadius": 2,
+      "arrivalCell": { "x": -7, "y": -5 },
+      "arrivalFacing": "down",
+      "landingSearchRadius": 4,
+      "unlockedAtStart": true,
+      "order": 0
+    },
+    {
+      "id": "landmark_east_flower_plaza",
+      "name": "ひがしのはなのひろば",
+      "worldId": "outdoor_main",
+      "mapId": "east_area_01",
+      "discoverCell": { "x": 16, "y": 4 },
+      "discoverRadius": 2,
+      "arrivalCell": { "x": 16, "y": 4 },
+      "arrivalFacing": "up",
+      "landingSearchRadius": 4,
+      "unlockedAtStart": false,
+      "order": 10
+    }
+  ]
+}

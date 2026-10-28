@@ -17,13 +17,13 @@ namespace Halka.Poc2D3D
         // Phase 5: the Release Candidate scene. Its page shows only the game; ?debug=1 brings the
         // panel back (with this title). Hidden, the component is disabled: no OnGUI, no recorders.
         // ver3.1: the studio update; ver3.2: the open-world base, built for a local check only (not published).
-        public const string ReleaseCandidateName = "はるかわーるど ver3.4 カラスの相棒化アップデート (local check)";
+        public const string ReleaseCandidateName = "はるかわーるど ver3.5 カラスの「そらをとぶ」アップデート (local check)";
         // RC1 feedback: the game's name is fixed as はるかわーるど (the page title shows only it).
         public const string ReleaseCandidateTitle = "はるかわーるど";
         // Phase 7: Release Candidate 3 is the release build itself, so the game shows the version
         // players will see (ver3.0); "RC3" only names the candidate (build info, staging, this title).
-        public const string ReleaseCandidateVersionLabel = "ver3.4";
-        public const string ReleaseCandidateShortName = "ver3.4 LOCAL";
+        public const string ReleaseCandidateVersionLabel = "ver3.5";
+        public const string ReleaseCandidateShortName = "ver3.5 LOCAL";
         [SerializeField] private bool releaseCandidate;
         public bool ReleaseCandidate => releaseCandidate;
         public void ConfigureReleaseCandidate(bool value) => releaseCandidate = value;
@@ -411,6 +411,8 @@ namespace Halka.Poc2D3D
                 .Append(crow != null && crow.isActiveAndEnabled ? crow.Activity.ToString() : "-")
                 // ver3.4: the companion mode (and the crow waiting by the door while she is in).
                 .Append(crow != null ? crow.Following ? " follow" + (crow.WaitingOutside ? " (waiting outside)" : "") : " free" : "")
+                // ver3.5: a flight under way.
+                .Append(gameplay.TravelBusy ? "  flying " + gameplay.FastTravel.Phase : "")
                 .Append(session.IsSeated ? "  seated " + session.SeatPose : "")
                 .Append("  fade3D ").Append(views.ThirdPerson.TreeFade != null ? views.ThirdPerson.TreeFade.FadingCount : 0)
                 .Append(views.ThirdPerson.CompositionHeld ? "  exit-cam" : "");

@@ -11,6 +11,8 @@ namespace Halka.Poc2D3D
     // life cycle (EntityRuntimeFactory2D's rule: indoors it is gone, outdoors it respawns).
     // ver3.4: the crow's choices (a page of the menu panel) and the companion crow, which waits
     // beside the house's door while she is inside instead of respawning.
+    // ver3.5: そらをとぶ (PocFastTravel) in the crow's choices; while a flight is under way her input,
+    // AUTO and the crow wait.
     [DefaultExecutionOrder(-25)]
     public sealed class PocGameplay : MonoBehaviour
     {
@@ -28,6 +30,8 @@ namespace Halka.Poc2D3D
         private ViewMenuItem viewItem;
         private CrowChoicePage crowChoices;
         private bool suspended;
+        [Header("ver3.5")]
+        [SerializeField] private PocFastTravel fastTravel;
 
         public AutoModeController AutoMode => autoMode;
         public LifeLogController LifeLog => lifeLog;
@@ -36,6 +40,22 @@ namespace Halka.Poc2D3D
         public PocCrow Crow => crow;
         public PlayerFootstepAudio Footsteps => footsteps;
         public CrowChoicePage CrowChoices => crowChoices;
+        public PocFastTravel FastTravel => fastTravel;
+        public bool TravelBusy => fastTravel != null && fastTravel.Busy;
+        // ver3.5: whether the step that started last was AUTO's (AUTO never finds a place).
+        public bool LastStepByAuto { get; private set; }
+
+        public void ConfigureFastTravel(PocFastTravel travel)
+        {
+            fastTravel = travel;
+            if (crowChoices != null) crowChoices.FastTravel = travel;
+        }
+
+        // ver3.5: no input while the phone guide shows or a flight is under way.
+        public void RefreshInputSuspension()
+        {
+            if (session != null) session.InputSuspended = suspended || TravelBusy;
+        }
 
         public void ConfigureFootsteps(PlayerFootstepAudio footstepAudio) => footsteps = footstepAudio;
         public PocAutoWorld AutoWorld => autoWorld;
@@ -47,7 +67,7 @@ namespace Halka.Poc2D3D
             set
             {
                 suspended = value;
-                if (session != null) session.InputSuspended = value;
+                RefreshInputSuspension();
                 if (lifeLog != null) lifeLog.ForegroundBlocked = value;
                 if (autoMode != null && value) autoMode.RecordUserAction(Time.unscaledTime);
             }
@@ -79,7 +99,7 @@ namespace Halka.Poc2D3D
             {
                 session.GroundOccupant = crow;
                 session.TalkTarget = crow;
-                crowChoices = new CrowChoicePage(crow, menu, hud);
+                crowChoices = new CrowChoicePage(crow, menu, hud) { FastTravel = fastTravel };
                 if (menu != null) crow.OpenChoices = () => crowChoices.Open(Time.unscaledTime);
                 if (views != null) crow.IsInView = views.IsInView;
             }
@@ -112,7 +132,11 @@ namespace Halka.Poc2D3D
         private void OnMapChanged(SharedWorldModel world) => ActivateCrowFor(world);
         private void OnStepCompleted(Vector2Int cell) { if (lifeLog != null) lifeLog.RecordCompletedStep(); }
         // Manual and AUTO steps both start here (one step, one footstep; blocked steps never start).
-        private void OnStepStarted(Vector2Int cell) { if (footsteps != null && footsteps.isActiveAndEnabled) footsteps.PlayStep(); }
+        private void OnStepStarted(Vector2Int cell)
+        {
+            LastStepByAuto = autoWorld != null && autoWorld.InStep;
+            if (footsteps != null && footsteps.isActiveAndEnabled) footsteps.PlayStep();
+        }
         // ver3.4: while the crow's choices are open, its "カァ。" is in the choice window instead.
         private void OnMessageShown(string text)
         {
@@ -181,6 +205,7 @@ namespace Halka.Poc2D3D
     // ver3.4: the crow's choices, a page of the game's menu panel (its window, its font, its touch
     // and click rules, the blocked game input and AUTO's pause while it is open): 「カァ。」 and
     // ついてきて / あそんでおいで (only the one that changes something), and やめる.
+    // ver3.5: そらをとぶ between them (the destination list replaces this page in the open menu).
     public sealed class CrowChoicePage : IGameMenuPage
     {
         private readonly PocCrow crow;
@@ -202,12 +227,14 @@ namespace Halka.Poc2D3D
         public System.Collections.Generic.IReadOnlyList<string> Buttons => buttons;
         public bool IsOpen => menu != null && menu.Page == this;
         public int Opens { get; private set; }
+        public PocFastTravel FastTravel { get; set; }
 
         public bool Open(float now)
         {
             if (menu == null) return false;
             buttons.Clear();
             buttons.Add(crow.Following ? PocCrow.ChoicePlay : PocCrow.ChoiceFollow);
+            if (FastTravel != null) buttons.Add(PocCrow.ChoiceTravel);
             buttons.Add(PocCrow.ChoiceCancel);
             if (hud != null) hud.ClearMessage();
             if (menu.IsOpen) menu.SetOpen(false, now);
@@ -219,8 +246,15 @@ namespace Halka.Poc2D3D
 
         public void Press(int index, float now)
         {
-            var choice = index != 0 ? CrowChoice.Cancel : crow.Following ? CrowChoice.Play : CrowChoice.Follow;
+            var label = index >= 0 && index < buttons.Count ? buttons[index] : PocCrow.ChoiceCancel;
             shown = false;
+            if (label == PocCrow.ChoiceTravel && FastTravel != null)
+            {
+                crow.Choose(CrowChoice.Travel, Time.time);
+                if (!FastTravel.Open(now, FastTravelSource.Crow)) menu.SetOpen(false, now);
+                return;
+            }
+            var choice = index != 0 ? CrowChoice.Cancel : crow.Following ? CrowChoice.Play : CrowChoice.Follow;
             crow.Choose(choice, Time.time);
             menu.SetOpen(false, now);
         }
@@ -258,10 +292,15 @@ namespace Halka.Poc2D3D
         public bool PlayerIsMoving => session.IsMoving;
         public bool PlayerMovementLocked => session.MovementLocked;
         public int AutoSteps { get; private set; }
+        // ver3.5: true while AUTO's own step is being started (its StepStarted is AUTO's).
+        public bool InStep { get; private set; }
 
         public bool TryStep(Vector2Int direction)
         {
-            var stepped = session.TryStep(direction);
+            InStep = true;
+            bool stepped;
+            try { stepped = session.TryStep(direction); }
+            finally { InStep = false; }
             if (stepped) AutoSteps++;
             return stepped;
         }
@@ -292,6 +331,7 @@ namespace Halka.Poc2D3D
             return active;
         }
 
-        public bool Suspended => owner != null && owner.Suspended;
+        // ver3.5: a flight pauses AUTO too (its setting is not changed).
+        public bool Suspended => owner != null && (owner.Suspended || owner.TravelBusy);
     }
 }

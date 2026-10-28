@@ -63,5 +63,29 @@ namespace Halka.Poc2D3D.EditorTools
                 if (!list.Exists(x => x.direction == d)) problems.Add("ERROR: themes: no theme for " + d);
             return OutdoorWorldDefinition.HasErrors(problems) ? null : list;
         }
+
+        // ver3.5: the fast travel points (fast_travel_points.json). Only the file's shape is checked
+        // here; FastTravelRegistry.Validate checks the points against the outdoor world.
+        public static FastTravelRegistry ParseFastTravel(string json, List<string> problems)
+        {
+            FastTravelRegistryDto dto;
+            try { dto = JsonUtility.FromJson<FastTravelRegistryDto>(json); }
+            catch (ArgumentException exception) { problems.Add("ERROR: fast travel points are not JSON: " + exception.Message); return null; }
+            if (dto == null || dto.format != FastTravelRegistry.Format || dto.formatVersion != FastTravelRegistry.FormatVersion)
+            { problems.Add("ERROR: fast travel points: format " + dto?.format + " v" + dto?.formatVersion + " is not supported"); return null; }
+            var registry = new FastTravelRegistry();
+            foreach (var p in dto.points ?? Array.Empty<FastTravelRegistryDto.PointDto>())
+            {
+                if (p == null || p.discoverCell == null || p.arrivalCell == null) { problems.Add("ERROR: fast travel point " + p?.id + " without its cells"); continue; }
+                registry.points.Add(new FastTravelPoint
+                {
+                    id = p.id, name = p.name, worldId = p.worldId, mapId = p.mapId,
+                    discoverCell = new Vector2Int(p.discoverCell.x, p.discoverCell.y), discoverRadius = p.discoverRadius,
+                    arrivalCell = new Vector2Int(p.arrivalCell.x, p.arrivalCell.y), arrivalFacing = p.arrivalFacing,
+                    landingSearchRadius = p.landingSearchRadius, unlockedAtStart = p.unlockedAtStart, order = p.order,
+                });
+            }
+            return FastTravelRegistry.HasErrors(problems) ? null : registry;
+        }
     }
 }

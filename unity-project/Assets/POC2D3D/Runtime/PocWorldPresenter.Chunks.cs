@@ -127,6 +127,34 @@ namespace Halka.Poc2D3D
             else streamer.Update(ChunkBudgetMs, Now());
         }
 
+        // ver3.5 そらをとぶ: every chunk the views will show around a destination cell (the area
+        // UpdateStreaming asks for when she stands there), built now. False when the chunk under the
+        // cell could not be built (only the plain fallback ground): the caller does not go there.
+        public int LastPrepareBuilt { get; private set; }
+        public double LastPrepareMilliseconds { get; private set; }
+
+        public bool PrepareAround(Vector2Int cell)
+        {
+            LastPrepareBuilt = 0;
+            LastPrepareMilliseconds = 0;
+            if (!chunkMode || streamer == null) return true;
+            var started = Now();
+            var half = new Vector2Int(Mathf.Max(ViewHalfCells2D.x, ReachCells3D), Mathf.Max(ViewHalfCells2D.y, ReachCells3D));
+            var c0 = chunkIndex.ChunkOfCell(cell - half);
+            var c1 = chunkIndex.ChunkOfCell(cell + half);
+            for (var cy = c0.Y; cy <= c1.Y; cy++)
+            for (var cx = c0.X; cx <= c1.X; cx++)
+            {
+                var coord = new ChunkCoord(cx, cy);
+                if (!streamer.Exists(coord) || streamer.IsReady(coord)) continue;
+                streamer.EnsureReady(coord, Now());
+                LastPrepareBuilt++;
+            }
+            LastPrepareMilliseconds = (Now() - started) * 1000.0;
+            var under = chunkIndex.ChunkOfCell(cell);
+            return streamer.IsReady(under) && !(streamer.Records.TryGetValue(under, out var record) && record.IsFallback);
+        }
+
         private void ReleaseChunks()
         {
             if (streamer != null) streamer.ReleaseAll();

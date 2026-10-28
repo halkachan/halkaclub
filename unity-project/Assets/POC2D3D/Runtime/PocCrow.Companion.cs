@@ -9,8 +9,8 @@ namespace Halka.Poc2D3D
     // ver3.4: whether the crow lives on its own (as before) or walks with her.
     public enum CrowCompanionMode { FreeRoam, FollowPlayer }
 
-    // ver3.4: what the talk's choices answer.
-    public enum CrowChoice { Follow, Play, Cancel }
+    // ver3.4: what the talk's choices answer. ver3.5: そらをとぶ (the destination list follows).
+    public enum CrowChoice { Follow, Play, Cancel, Travel }
 
     // ver3.4 companion mode. The mode is a wish ("walk with her"); the crow's activity (standing,
     // walking, taking off, flying, perched, landing) stays CrowBehaviourCore's and changes inside
@@ -32,6 +32,7 @@ namespace Halka.Poc2D3D
         public const string ChoiceFollow = "ついてきて";
         public const string ChoicePlay = "あそんでおいで";
         public const string ChoiceCancel = "やめる";
+        public const string ChoiceTravel = "そらをとぶ";
         public const float FollowStepSeconds = 0.2f;
         public const float FollowFlightUnitsPerSecond = 7f;
         public const int NearDistance = 2;
@@ -155,6 +156,9 @@ namespace Halka.Poc2D3D
                     SetMode(CrowCompanionMode.FreeRoam, now);
                     FlyHome(now);
                     break;
+                case CrowChoice.Travel:
+                    // そらをとぶ: the destination list opens next; nothing changes here (no takeoff).
+                    break;
                 default:
                     // やめる: nothing changes. The free crow reacts as it always did (a tree nearby).
                     if (!Following && PerchCandidates().Count > 0)
@@ -277,7 +281,9 @@ namespace Halka.Poc2D3D
 
         protected override void Update()
         {
+            if (TravelHeld) return;
             WatchAir(Time.time);
+            WatchTravelReturn(Time.time);
             base.Update();
         }
 
