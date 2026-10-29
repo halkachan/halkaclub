@@ -120,8 +120,8 @@ World Registry（追加後）:
 |---|---|---|---|---|---|
 | `tree_stump_hollow` | nature | 不可 | `touch_stump`: 1つ南から上向きで「はっぱが くるくる まいあがった。」 | `World/stump_hollow.png` | `Models/V37/stump_hollow.fbx` |
 | `forest_bush` | nature | 不可 | なし | `World/forest_bush.png` | `Models/V37/forest_bush.fbx` |
-| `forest_fern` | nature | 可（`blockedCellOffsets: []`） | なし | `World/forest_fern.png` | `Models/V37/forest_fern.fbx` |
-| `fallen_leaves` | nature | 可（`blockedCellOffsets: []`） | なし | `World/fallen_leaves.png` | `Models/V37/fallen_leaves.fbx` |
+| `forest_fern` | nature | 可（`blockedCellOffsets: []`、草も生える） | なし | `World/forest_fern.png` | `Models/V37/forest_fern.fbx` |
+| `fallen_leaves` | nature | 可（`blockedCellOffsets: []`、草も生える） | なし | `World/fallen_leaves.png` | `Models/V37/fallen_leaves.fbx` |
 | `signpost_green` | fixture | 不可 | 正面から「にしの もり。 こもれびの こみちが つづく。」 | `World/sign_green.png` | `Models/V37/sign_green.fbx` |
 
 - `signpost_green` は旧名変換（`sign_west` → `sign_basic`）にかからない名前です。
@@ -132,6 +132,7 @@ World Registry（追加後）:
 ## 9. Collision
 
 - 木・茂み・切り株・道しるべ・石・白い花は、そのセルをふさぎます。しだ・落ち葉は歩けます。
+- 草（2D の草・3D の草の房）は、ゲームの既存の規則（ふさがれたセルにだけ生えない）のとおり、しだ・落ち葉のセルにも生えます。そのため Catalog の `excludeGrass` は false にしています（最初は true にしていましたが、ふさがないObjectでは規則上効かない値だったので、実際の動きに合わせました）。
 - 道・小道の上には、ふさぐObjectはありません。
 - AUTO の経路・カラスの地上経路と着地点・そらをとぶの安全着地探索は、どれも同じ通行判定を使います。
 
