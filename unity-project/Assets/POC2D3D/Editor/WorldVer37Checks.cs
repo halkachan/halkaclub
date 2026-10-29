@@ -347,8 +347,9 @@ namespace Halka.Poc2D3D.EditorTools
             var index = c.Session.OutdoorIndex;
             var definition = index.Definition;
             var west = West(c);
+            // ver3.8: more regions may follow (the South area is the fifth); these four come first, in this order.
             Check("the registry: first_field, east_area_01, north_area_01 and west_area_01 (in that order)",
-                index.Regions.Select(r => r.MapId).SequenceEqual(new[] { "first_field", V33.EastId, V36.NorthId, WestId }), string.Join(",", index.Regions.Select(r => r.MapId)));
+                index.Regions.Select(r => r.MapId).Take(4).SequenceEqual(new[] { "first_field", V33.EastId, V36.NorthId, WestId }), string.Join(",", index.Regions.Select(r => r.MapId)));
             Check("west_area_01: direction west, World offset (-35,-6), 25 x 13 cells: World (-35,-6)..(-11,6)",
                 west != null && west.Direction == "west" && west.Offset == WestOffset &&
                 west.Rect.Min == new Vector2Int(-35, -6) && west.Rect.Max == new Vector2Int(-11, 6), west != null ? $"{west.Offset} {west.Rect.Min}..{west.Rect.Max}" : "missing");
@@ -442,8 +443,10 @@ namespace Halka.Poc2D3D.EditorTools
                 };
                 s.UseOutdoorWorldForTest(withoutWest, primary, false);
             });
+            // ver3.8: the comparison world has the South area too (after these three); still no West area.
             Check("the comparison world: first_field, east_area_01, north_area_01 (no West area)",
-                o.Session.OutdoorIndex.Regions.Select(r => r.MapId).SequenceEqual(new[] { "first_field", V33.EastId, V36.NorthId }));
+                o.Session.OutdoorIndex.Regions.Select(r => r.MapId).Take(3).SequenceEqual(new[] { "first_field", V33.EastId, V36.NorthId }) &&
+                o.Session.OutdoorIndex.Regions.All(r => r.MapId != WestId));
             var before = cells.ToDictionary(cell => cell, cell => CameraFor(o, cell));
             var c = Begin(new HarukaMemoryStorage());
             var moved = cells.Where(cell => (CameraFor(c, cell) - before[cell]).magnitude > 0.005f).ToList();
@@ -795,7 +798,8 @@ namespace Halka.Poc2D3D.EditorTools
             var point = t.Registry.Find(Clearing);
             var west = West(c);
             Check("the registry has four places (home, East, North, West: the three of ver3.6 unchanged); the new one: landmark_west_forest_clearing 「にしのこもれび」",
-                t.Registry.points.Select(p => p.id).SequenceEqual(new[] { Home, Plaza, Pond, Clearing }) && point != null && point.name == "にしのこもれび" &&
+                // ver3.8: more places may follow (the South pinwheel is the fifth); these four come first.
+                t.Registry.points.Select(p => p.id).Take(4).SequenceEqual(new[] { Home, Plaza, Pond, Clearing }) && point != null && point.name == "にしのこもれび" &&
                 point.mapId == WestId && !point.unlockedAtStart && point.order == 30 && GameBitmapFont.HasAllGlyphs(point.name) &&
                 t.Registry.Find(Pond).arrivalCell == new Vector2Int(7, 8) && t.Registry.Find(Plaza).arrivalCell == new Vector2Int(16, 4),
                 string.Join(",", t.Registry.points.Select(p => p.id)));
