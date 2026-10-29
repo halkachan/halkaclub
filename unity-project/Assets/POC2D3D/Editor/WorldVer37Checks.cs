@@ -316,6 +316,19 @@ namespace Halka.Poc2D3D.EditorTools
             return list;
         }
 
+        // Meshes that exist only at run time (made by the game, not loaded from the project).
+        private static int RuntimeMeshes() =>
+            Resources.FindObjectsOfTypeAll<Mesh>().Count(m => m != null && !AssetDatabase.Contains(m) && (m.hideFlags & HideFlags.HideAndDontSave) == 0);
+
+        private static Dictionary<string, int> RuntimeMeshNames() =>
+            Resources.FindObjectsOfTypeAll<Mesh>().Where(m => m != null && !AssetDatabase.Contains(m) && (m.hideFlags & HideFlags.HideAndDontSave) == 0)
+                .GroupBy(m => System.Text.RegularExpressions.Regex.Replace(m.name, @"[-0-9, ()]+$", "").Trim()).ToDictionary(g => g.Key, g => g.Count());
+
+        // The kinds of runtime mesh there are more of now than before (name: how many more).
+        private static string LeftBehind(Dictionary<string, int> before) =>
+            string.Join(", ", RuntimeMeshNames().Where(p => p.Value > before.GetValueOrDefault(p.Key)).OrderByDescending(p => p.Value - before.GetValueOrDefault(p.Key))
+                .Take(12).Select(p => p.Key + " +" + (p.Value - before.GetValueOrDefault(p.Key))));
+
         // Every Transform under a drawn chunk's root.
         private static int ChunkTransforms() =>
             UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None)
@@ -1002,6 +1015,8 @@ namespace Halka.Poc2D3D.EditorTools
             Check($"the official world has {all} chunks (16 x 16): at the start every one is drawn (the views reach 40 cells), none failed",
                 atStart == all && streamer.Stats.Failed == 0 && streamer.Stats.FallbackChunks == 0, $"loaded {atStart} of {all}");
             var objectsAll = c.Presenter.LoadedChunkObjects;
+            var meshesAtStart = RuntimeMeshes();
+            var namesAtStart = RuntimeMeshNames();
             var waterAll = c.Presenter.WaterCellsDrawn;
             var lightAll = c.Presenter.KomorebiCellsDrawn;
             var unloads = streamer.Stats.TotalUnloads;
@@ -1030,6 +1045,32 @@ namespace Halka.Poc2D3D.EditorTools
             Check("no chunk was ever built in a hurry by the step gate (the prefetch was in time) and none failed",
                 streamer.Stats.SyncLoads == 0 && streamer.Stats.TotalFailures == 0, V32.ChunkSummary(c));
             Check("the chunks drawn never exceeded the world's (no growth without bound)", streamer.Records.Count <= all + 4, streamer.Records.Count.ToString());
+
+            // Meshes made at run time (not assets): the same state before and after the round trip must hold the
+            // same number (a freed chunk's meshes are destroyed with it, including each Object's outline copy).
+            Check("runtime meshes: back at the start with the same chunks drawn, as many as at first (nothing a freed chunk made is left behind)",
+                RuntimeMeshes() == meshesAtStart, $"{meshesAtStart} -> {RuntimeMeshes()}; left: " + LeftBehind(namesAtStart));
+            // Into the house and out again, three times (each map change rebuilds the presentation).
+            c.Session.OutdoorWorld.TryGetHouseDoor(out var houseDoor);
+            Walk(c, houseDoor + Vector2Int.down);
+            Settle(c, 0.5f);
+            var meshesOutside = RuntimeMeshes();
+            var namesOutside = RuntimeMeshNames();
+            for (var i = 0; i < 3; i++)
+            {
+                V32.Step(c, Vector2Int.up, 0.4f);
+                Settle(c, 0.3f);
+                V32.WalkTo(c, new Vector2Int(0, -3), null, 0.14f);
+                V32.Step(c, Vector2Int.down, 0.4f);
+                Settle(c, 0.5f);
+            }
+            Check("into the house and out again three times: as many runtime meshes as before (the rooms' and the outdoor world's are freed when the map changes)",
+                c.Session.World == c.Session.OutdoorWorld && RuntimeMeshes() == meshesOutside, $"{meshesOutside} -> {RuntimeMeshes()}; left: " + LeftBehind(namesOutside));
+            var catalog = AssetDatabase.LoadAssetAtPath<PocPresentationCatalog>(PocSceneBuilder.CatalogPath);
+            var models = catalog.Bindings.SelectMany(b => new[] { b.model }.Concat(b.variants ?? new List<GameObject>())).Where(m => m != null).ToList();
+            Check("the catalog's models are untouched by the freeing (every model mesh still there, an asset)",
+                models.Count > 20 && models.All(m => m.GetComponentsInChildren<MeshFilter>(true).All(f => f.sharedMesh != null && AssetDatabase.Contains(f.sharedMesh))),
+                models.Count + " models");
 
             // The ver3.2 256 x 256 test world, the same streamer as the game: a long walk East and back.
             var w = C6.Start(new HarukaMemoryStorage(), null, s =>

@@ -260,6 +260,7 @@ namespace Halka.Poc2D3D
                     }
                 }
                 BuildChunkOverlays(chunk, payload);
+                CollectMeshes(root, payload.Meshes, true);
                 if (Application.isPlaying && !fallback)
                 {
                     StaticBatchingUtility.Combine(root.gameObject);

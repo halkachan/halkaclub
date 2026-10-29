@@ -14,14 +14,17 @@ namespace Halka.Poc2D3D
         // A tiny strength that the composite shader replaces by the global grass setting.
         public const float MarkerStrength = 3f / 255f;
 
+        // The name a tagged copy carries (the presenter frees these copies with what it built).
+        public const string CopySuffix = " (outline)";
+
         public static void Apply(GameObject root, int id, float strength)
         {
             foreach (var filter in root.GetComponentsInChildren<MeshFilter>(true))
             {
                 var source = filter.sharedMesh;
                 if (source == null) continue;
-                var mesh = source.name.EndsWith(" (outline)") ? source : Object.Instantiate(source);
-                mesh.name = source.name.EndsWith(" (outline)") ? source.name : source.name + " (outline)";
+                var mesh = source.name.EndsWith(CopySuffix) ? source : Object.Instantiate(source);
+                mesh.name = source.name.EndsWith(CopySuffix) ? source.name : source.name + CopySuffix;
                 var tags = new Vector2[mesh.vertexCount];
                 var value = new Vector2(Mathf.Clamp(id, 0, 255), Mathf.Clamp01(strength));
                 for (var i = 0; i < tags.Length; i++) tags[i] = value;
