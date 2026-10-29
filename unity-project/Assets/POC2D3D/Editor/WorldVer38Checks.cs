@@ -636,6 +636,25 @@ namespace Halka.Poc2D3D.EditorTools
             var trail = new[] { TrailMouth, new Vector2Int(0, -13), new Vector2Int(-1, -13), new Vector2Int(-1, -14), new Vector2Int(-1, -15), HillGate, HillTop };
             Check("the trail: dirt from the road (2,-13) West and up to the hilltop (-1,-17), past the red sign", trail.All(cell => index.SurfaceAt(cell)?.StableId == "dirt") &&
                 objects.Any(o => o.DefinitionId == "south_signpost_red" && o.RootCell == new Vector2Int(0, -12)));
+            // The first local WebGL run showed a black gap East of the South area in 2D (and on both sides on a phone held
+            // sideways): the ground was dressed only 8 cells around each region. Now the world's whole rectangle is.
+            var dressedRect = index.Bounds.Expanded(index.DecorationMargin);
+            var undressed = new List<Vector2Int>();
+            for (var y = dressedRect.Min.y; y <= dressedRect.Max.y; y++)
+            for (var x = dressedRect.Min.x; x <= dressedRect.Max.x; x++)
+            {
+                var cell = new Vector2Int(x, y);
+                var chunk = index.ChunkAt(WorldGrid.ChunkOf(cell, index.ChunkSize));
+                if (index.RegionAt(cell) == null && index.DecorationRegionAt(cell) == null || chunk == null || !chunk.HasDecoration) undressed.Add(cell);
+            }
+            Check("no black gap: every cell of the world's rectangle and its margin has ground (the corners East and West of the South area too)",
+                undressed.Count == 0, $"{dressedRect.Min}..{dressedRect.Max}, undressed {undressed.Count} {string.Join(" ", undressed.Take(4))}");
+            var southCells = Enumerable.Range(-26, 20).SelectMany(y => Enumerable.Range(-10, 21).Select(x => new Vector2Int(x, y))).ToList();
+            Check("…from every cell of the South area, 20 cells to each side (wider than a phone held sideways) is ground; cells within 8 of a region keep their old dressing",
+                southCells.All(cell => Enumerable.Range(-20, 41).All(dx => index.DecorationRegionAt(cell + new Vector2Int(dx, 0)) != null || index.RegionAt(cell + new Vector2Int(dx, 0)) != null)) &&
+                index.DecorationRegionAt(new Vector2Int(18, -20))?.MapId == SouthId && index.DecorationRegionAt(new Vector2Int(12, -10))?.MapId == SouthId &&
+                index.DecorationRegionAt(new Vector2Int(20, -20))?.MapId == SouthId && index.DecorationRegionAt(new Vector2Int(30, -20))?.MapId == "east_area_01",
+                $"(20,-20) {index.DecorationRegionAt(new Vector2Int(20, -20))?.MapId} (30,-20) {index.DecorationRegionAt(new Vector2Int(30, -20))?.MapId}");
             Check("grass: none on the cells of rocks, ledges, the pinwheel, trees and the sign; the walkable decoration's cells as any walkable cell (the grass rule clears blocked cells only, as for ver3.7's ferns)",
                 objects.Where(o => o.Definition.BlocksMovement).All(o => !index.HasGrass(o.RootCell)) &&
                 objects.Where(o => !o.Definition.BlocksMovement).All(o => index.HasGrass(o.RootCell) == (index.SurfaceAt(o.RootCell)?.StableId != "dirt")) &&
@@ -1266,6 +1285,17 @@ namespace Halka.Poc2D3D.EditorTools
             // The South chunks freed too: a shorter view reach (checks only) frees the hill's chunk when she goes far North,
             // and draws it again (with the pinwheel's blades, where they stopped) when she comes back.
             Walk(c, TurnSpot);
+            var reach = c.Presenter.ReachCells3D;
+            var half = c.Presenter.ViewHalfCells2D;
+            c.Presenter.ReachCells3D = 12;
+            c.Presenter.ViewHalfCells2D = new Vector2Int(12, 8);
+            Settle(c, 1f);   // (the chunks beyond the shorter reach are freed here, before the measure)
+            // One trip there and back first, so the measure before and after is taken on the same way in (the corner
+            // chunks the world's rectangle dresses since ver3.8 stay or go with the one-chunk hysteresis by the way taken).
+            Walk(c, new Vector2Int(0, 20), null, 240f);
+            Settle(c, 1f);
+            Walk(c, TurnSpot, null, 240f);
+            Settle(c, 1f);
             c.Session.PlaceForCheck(TurnSpot, FacingDirection.Up);
             Settle(c, 0.5f);
             var pinwheel = PinwheelObject(c);
@@ -1275,11 +1305,6 @@ namespace Halka.Poc2D3D.EditorTools
             var axis = -GridSpace3D.Direction(Vector2Int.down);
             var bladesBefore = c.Presenter.PinwheelBladesOf(pinwheel.InstanceId);
             var restBefore = Quaternion.Inverse(Quaternion.AngleAxis(c.Presenter.PinwheelAngle(pinwheel.InstanceId), axis)) * bladesBefore.rotation;
-            var reach = c.Presenter.ReachCells3D;
-            var half = c.Presenter.ViewHalfCells2D;
-            c.Presenter.ReachCells3D = 12;
-            c.Presenter.ViewHalfCells2D = new Vector2Int(12, 8);
-            Settle(c, 1f);   // (the chunks beyond the shorter reach are freed here, before the measure)
             var hillChunk = index.ChunkOfCell(PinwheelCell);
             var hillLoads = streamer.Records[hillChunk].Loads;
             var meshesHere = RuntimeMeshes();

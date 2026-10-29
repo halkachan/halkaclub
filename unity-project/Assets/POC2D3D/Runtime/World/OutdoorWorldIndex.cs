@@ -202,6 +202,14 @@ namespace Halka.Poc2D3D.World
                     if (!overlap.IsEmpty) chunk.RegionCells += overlap.Width * overlap.Height;
                 }
             }
+            // ver3.8: the corners of the world's rectangle between the regions (East of the South area,
+            // and so on) are dressed too, so the 2D view never shows an undrawn (black) gap there.
+            var world = Bounds.Expanded(DecorationMargin);
+            var w0 = WorldGrid.ChunkOf(world.Min, ChunkSize);
+            var w1 = WorldGrid.ChunkOf(world.Max, ChunkSize);
+            for (var cy = w0.Y; cy <= w1.Y; cy++)
+            for (var cx = w0.X; cx <= w1.X; cx++)
+                Ensure(new ChunkCoord(cx, cy)).HasDecoration = true;
             foreach (var instance in objects)
             {
                 var owner = WorldGrid.ChunkOf(instance.RootCell, ChunkSize);
@@ -265,7 +273,8 @@ namespace Halka.Poc2D3D.World
             return null;
         }
 
-        // The region whose dressing a cell outside every region borrows (the nearest within the margin).
+        // The region whose dressing a cell outside every region borrows (the nearest within the margin;
+        // ver3.8: also the nearest for any cell of the world's rectangle and its margin).
         public OutdoorRegion DecorationRegionAt(Vector2Int world)
         {
             OutdoorRegion best = null;
@@ -273,9 +282,9 @@ namespace Halka.Poc2D3D.World
             foreach (var region in regions)
             {
                 var d = region.Rect.ChebyshevDistance(world);
-                if (d <= DecorationMargin && d < bestDistance) { best = region; bestDistance = d; }
+                if (d < bestDistance) { best = region; bestDistance = d; }
             }
-            return best;
+            return bestDistance <= DecorationMargin || Bounds.Expanded(DecorationMargin).Contains(world) ? best : null;
         }
 
         public bool Contains(Vector2Int world) => RegionAt(world) != null;
