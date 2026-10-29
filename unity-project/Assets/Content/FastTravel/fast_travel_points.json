@@ -28,6 +28,19 @@
       "landingSearchRadius": 4,
       "unlockedAtStart": false,
       "order": 10
+    },
+    {
+      "id": "landmark_north_blue_pond",
+      "name": "きたのみずべ",
+      "worldId": "outdoor_main",
+      "mapId": "north_area_01",
+      "discoverCell": { "x": 6, "y": 8 },
+      "discoverRadius": 2,
+      "arrivalCell": { "x": 7, "y": 8 },
+      "arrivalFacing": "up",
+      "landingSearchRadius": 4,
+      "unlockedAtStart": false,
+      "order": 20
     }
   ]
 }

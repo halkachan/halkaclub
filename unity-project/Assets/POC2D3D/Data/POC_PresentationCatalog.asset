@@ -427,6 +427,74 @@ MonoBehaviour:
     fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0
+  - definitionId: flower_blue
+    model: {fileID: 919132149155446097, guid: fa6e91be34a222045a98aab4428cc691, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0.3
+  - definitionId: signpost_blue
+    model: {fileID: 919132149155446097, guid: 635db6ddb3e90194db01cf3d06bc9e02, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: water_lily
+    model: {fileID: 919132149155446097, guid: 5238553dcf17d464e8055bf4f8ff1275, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 0
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 0.5
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0.3
+  - definitionId: pond_reeds
+    model: {fileID: 919132149155446097, guid: 3e18c89c75377544593f175a5b75437c, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0.3
   environment:
     grassTiles:
     - {fileID: 919132149155446097, guid: 63963ae3c0300124ca9d7edb73f246bc, type: 3}

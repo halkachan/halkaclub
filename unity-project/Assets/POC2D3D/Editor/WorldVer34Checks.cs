@@ -1002,10 +1002,12 @@ namespace Halka.Poc2D3D.EditorTools
         private static void ProtectChecks()
         {
             Check("WORLD EDITOR v1.0 unchanged since ver3.3 (tools/HalkaWorldMapEditor)", V32.Git("diff --quiet cae5bef -- tools/HalkaWorldMapEditor", out _));
-            Check("the official Maps and their Authoring JSON unchanged since ver3.3", V32.Git("diff --quiet cae5bef -- unity-project/Assets/Content/Maps", out _));
-            Check("direction_themes.json and the outdoor world registry unchanged", V32.Git("diff --quiet cae5bef -- unity-project/Assets/Content/Maps/World", out _));
+            // ver3.6: the existing files unchanged, the catalog and the registry only added to (a new Region).
+            Check("the official Maps and their Authoring JSON unchanged since ver3.3", WorldVer36Checks.MapsFolderKept("cae5bef"));
+            Check("direction_themes.json and the outdoor world registry unchanged", WorldVer36Checks.RegistryKept("cae5bef"));
             Check("the published ver3.3 (halkaworld/) unchanged", V32.Git("diff --quiet cae5bef -- halkaworld", out _));
-            Check("the crow's sprites, model and voice unchanged (no new crow made)", V32.Git("diff --quiet cae5bef -- unity-project/Assets/Content/World unity-project/Assets/Content/Audio unity-project/Assets/POC2D3D/Models", out _));
+            // ver3.6: the crow's own files (new pictures and models of other Objects may be there).
+            Check("the crow's sprites, model and voice unchanged (no new crow made)", WorldVer36Checks.CrowKept("cae5bef", false));
         }
     }
 }

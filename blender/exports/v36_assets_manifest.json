@@ -1,0 +1,108 @@
+{
+  "generator": "blender/scripts/build_v36_north.py",
+  "blenderVersion": "5.2.0 LTS",
+  "units": "1 Blender unit = 1 Unity unit, 1 cell = 0.5, origin = ground centre of the root cell",
+  "theme": {
+    "source": "unity-project/Assets/Content/Maps/World/direction_themes.json",
+    "north": [
+      "#5b84b1",
+      "#3d5f86"
+    ]
+  },
+  "approval": "pending: new ver3.6 designs, not approved by the user yet",
+  "models": [
+    {
+      "family": "flower_blue",
+      "name": "flower_blue",
+      "blend": "blender/sources/v36/flower_blue.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V36/flower_blue.fbx",
+      "triangles": 468,
+      "vertices": 284,
+      "materials": 1,
+      "boundsMin": [
+        -0.19,
+        -0.109,
+        -0.0024
+      ],
+      "boundsMax": [
+        0.2,
+        0.0822,
+        0.2408
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.6"
+      ]
+    },
+    {
+      "family": "sign_blue",
+      "name": "sign_blue",
+      "blend": "blender/sources/v36/sign_blue.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V36/sign_blue.fbx",
+      "triangles": 63,
+      "vertices": 47,
+      "materials": 1,
+      "boundsMin": [
+        -0.22,
+        -0.07,
+        0.0
+      ],
+      "boundsMax": [
+        0.22,
+        0.03,
+        0.56
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.6",
+        "back of the board"
+      ]
+    },
+    {
+      "family": "water_lily",
+      "name": "water_lily",
+      "blend": "blender/sources/v36/water_lily.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V36/water_lily.fbx",
+      "triangles": 260,
+      "vertices": 148,
+      "materials": 1,
+      "boundsMin": [
+        -0.1989,
+        -0.16,
+        0.014
+      ],
+      "boundsMax": [
+        0.1992,
+        0.1681,
+        0.0892
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.6 (the pond's examine spot)"
+      ]
+    },
+    {
+      "family": "pond_reeds",
+      "name": "pond_reeds",
+      "blend": "blender/sources/v36/pond_reeds.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V36/pond_reeds.fbx",
+      "triangles": 124,
+      "vertices": 82,
+      "materials": 1,
+      "boundsMin": [
+        -0.14,
+        -0.066,
+        -0.0013
+      ],
+      "boundsMax": [
+        0.1682,
+        0.092,
+        0.5
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.6 (waterside plants)"
+      ]
+    }
+  ]
+}

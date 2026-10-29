@@ -257,6 +257,19 @@ namespace Halka.Poc2D3D.Dev
             Num("relocations", session.Relocations);
             Num("crowHeld", crow != null && crow.TravelHeld ? 1 : 0); Num("crowHidden", crow != null && crow.HiddenForTravel ? 1 : 0);
             Num("crowLandings", crow != null ? crow.TravelLandings : 0);
+            // ver3.6: the Object she faces (where to click it), the water and its ripples, the last message.
+            var ahead = session.World != null && !session.IsMoving ? session.World.FindInteractionAhead(session.Cell, session.Facing, out _) : null;
+            var aheadScreen = new Vector3(-1f, -1f, 0f);
+            if (ahead != null)
+            {
+                var point = GridSpace3D.ToWorld(ahead.RootCell) + Vector3.up * 0.05f;
+                aheadScreen = views.Mode == PocViewMode.PixelView2D ? views.PixelView.WorldToScreenPoint(point)
+                    : views.ThirdPerson.ViewCamera.WorldToScreenPoint(point);
+            }
+            Str("ahead", ahead != null ? ahead.DefinitionId : "");
+            Num("aheadSX", aheadScreen.x); Num("aheadSY", aheadScreen.y);
+            Num("waterCells", presenter.WaterCellsDrawn); Num("ripples", presenter.RipplesStarted); Num("activeRipples", presenter.ActiveRipples);
+            Str("lastMessage", session.LastMessage ?? "");
             var log = gameplay != null ? gameplay.LifeLog : null;
             Num("lifeSteps", log != null ? log.TotalSteps : -1); Num("playSeconds", log != null ? log.TotalPlaySeconds : -1);
             var clock = GetComponent<WorldTimeController>();

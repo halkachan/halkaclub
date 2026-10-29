@@ -30,6 +30,10 @@ namespace Halka.Poc2D3D
             public PocEnvironmentStats Stats;
             public int Triangles;
             public bool Fallback;
+            // ver3.6: the chunk's water (PocWorldPresenter.Water.cs).
+            public Renderer GlintsA;
+            public Renderer GlintsB;
+            public int WaterCells;
         }
 
         private bool chunkMode;
@@ -112,6 +116,7 @@ namespace Halka.Poc2D3D
         private void Update()
         {
             if (chunkMode && Application.isPlaying) UpdateStreaming(false);
+            if (Application.isPlaying) TickWater(Time.time);
         }
 
         // Where she is and where she is going decide what is drawn. everythingNow builds every
@@ -160,6 +165,9 @@ namespace Halka.Poc2D3D
             if (streamer != null) streamer.ReleaseAll();
             foreach (var payload in new List<ChunkPayload>(payloads.Values)) FreePayload(payload);
             payloads.Clear();
+            WaterCellsDrawn = 0;
+            foreach (var ripple in ripples) FreeRipple(ripple);
+            ripples.Clear();
             streamer = null;
             chunkMode = false;
             chunkIndex = null;
@@ -272,6 +280,7 @@ namespace Halka.Poc2D3D
             payloads.Remove(payload.Coord);
             BuiltTriangles -= payload.Triangles;
             LoadedChunkObjects -= payload.Views.Count;
+            WaterCellsDrawn -= payload.WaterCells;
             FreePayload(payload);
             ChunksChanged?.Invoke();
         }
@@ -318,9 +327,13 @@ namespace Halka.Poc2D3D
         }
 
         // Blocking Surfaces (walls) outdoors: one box per cell, as BuildWalls does for a whole map.
+        // ver3.6: water is a blocking Surface too, drawn as water instead (BuildChunkWater).
+        private readonly List<Vector2Int> chunkWaterCells = new List<Vector2Int>();
+
         private void BuildChunkWalls(ChunkStatic chunk, ChunkPayload payload)
         {
             if (chunk.RegionCells == 0) return;
+            chunkWaterCells.Clear();
             for (var y = chunk.Rect.Min.y; y <= chunk.Rect.Max.y; y++)
             for (var x = chunk.Rect.Min.x; x <= chunk.Rect.Max.x; x++)
             {
@@ -328,6 +341,7 @@ namespace Halka.Poc2D3D
                 var region = chunkIndex.RegionAt(cell);
                 if (region == null || (region.FlagsAtWorld(cell) & OutdoorRegion.CellFlags.BlockingSurface) == 0) continue;
                 var surface = region.SurfaceAtWorld(cell);
+                if (surface.StableId == WaterSurfaceId) { chunkWaterCells.Add(cell); continue; }
                 var mesh = new PocMeshBuilder();
                 var center = GridSpace3D.ToWorld(cell);
                 var half = GridSpace3D.CellSize * 0.5f;
@@ -345,6 +359,7 @@ namespace Halka.Poc2D3D
                 payload.Views.Add(view);
                 payload.Triangles += mesh.TriangleCount;
             }
+            BuildChunkWater(payload, chunkWaterCells);
         }
 
         // Debug only (GridVisible, ChunkBordersVisible): the cell grid with blocked cells crossed,

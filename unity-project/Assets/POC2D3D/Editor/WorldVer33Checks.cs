@@ -121,8 +121,9 @@ namespace Halka.Poc2D3D.EditorTools
         private static void RegistryChecks()
         {
             var (world, problems) = LoadRegistry();
-            Check("outdoor_main: two regions, first_field at (0,0) (center), east_area_01 at (11,-6) (east), no problem",
-                world != null && problems.Count == 0 && world.regions.Count == 2 &&
+            // ver3.6: more regions may follow (north_area_01); these two stay first and where they were.
+            Check("outdoor_main: first_field at (0,0) (center), east_area_01 at (11,-6) (east), first in the registry, no problem",
+                world != null && problems.Count == 0 && world.regions.Count >= 2 &&
                 world.regions[0].mapId == "first_field" && world.regions[0].offset == Vector2Int.zero && world.regions[0].direction == "center" &&
                 world.regions[1].mapId == EastId && world.regions[1].offset == EastOffset && world.regions[1].direction == "east",
                 string.Join("; ", problems));
@@ -140,8 +141,10 @@ namespace Halka.Poc2D3D.EditorTools
             Check("RegionAt: (10,-1) first_field, (11,-1) east_area_01; (37,-1) and (11,7) belong to no region (undefined: blocked, no grass)",
                 index.RegionAt(FieldRoadEnd) == field && index.RegionAt(EastRoadStart) == east && index.RegionAt(new Vector2Int(37, -1)) == null &&
                 index.IsBlocked(new Vector2Int(37, -1)) && !index.HasGrass(new Vector2Int(37, -1)) && index.IsBlocked(new Vector2Int(11, 7)));
-            Check("the world's bounds: (-10,-6)..(36,6) (the field's height kept: the 2D camera frames first_field as before)",
-                index.Bounds.Equals(new CellRect(new Vector2Int(-10, -6), new Vector2Int(36, 6))));
+            // ver3.6: a region North widens the bounds upward; first_field's framing is kept by the 2D
+            // camera's own rule (WorldVer36Checks [walk]).
+            Check("the world's bounds: from (-10,-6) to x 36, at least up to y 6 (the field and the East area inside)",
+                index.Bounds.Min == new Vector2Int(-10, -6) && index.Bounds.Max.x == 36 && index.Bounds.Max.y >= 6);
 
             string Registry(string regions) => "{\"format\":\"halka-world-outdoor\",\"formatVersion\":1,\"worldId\":\"outdoor_main\",\"chunkSize\":16,\"regions\":[" + regions + "]}";
             const string field0 = "{\"mapId\":\"first_field\",\"offset\":{\"x\":0,\"y\":0},\"direction\":\"center\"}";
