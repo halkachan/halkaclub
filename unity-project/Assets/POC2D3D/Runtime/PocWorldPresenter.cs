@@ -220,6 +220,7 @@ namespace Halka.Poc2D3D
             if (session != null) session.MapChanged += Rebuild;
             if (session != null) session.Interacted += OnInteracted;
             if (session != null) session.Interacted += OnForestInteracted;
+            if (session != null) session.Interacted += OnPinwheelInteracted;
         }
 
         private void OnDisable()
@@ -227,6 +228,7 @@ namespace Halka.Poc2D3D
             if (session != null) session.MapChanged -= Rebuild;
             if (session != null) session.Interacted -= OnInteracted;
             if (session != null) session.Interacted -= OnForestInteracted;
+            if (session != null) session.Interacted -= OnPinwheelInteracted;
         }
 
         private void Start()

@@ -54,6 +54,19 @@
       "landingSearchRadius": 4,
       "unlockedAtStart": false,
       "order": 30
+    },
+    {
+      "id": "landmark_south_red_pinwheel",
+      "name": "みなみのかざぐるま",
+      "worldId": "outdoor_main",
+      "mapId": "south_area_01",
+      "discoverCell": { "x": 7, "y": 7 },
+      "discoverRadius": 2,
+      "arrivalCell": { "x": 7, "y": 6 },
+      "arrivalFacing": "up",
+      "landingSearchRadius": 4,
+      "unlockedAtStart": false,
+      "order": 40
     }
   ]
 }

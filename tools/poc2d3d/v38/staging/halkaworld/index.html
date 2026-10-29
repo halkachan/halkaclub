@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="ﾊﾙｶﾁｬﾝの小さな世界。" />
+    <title>はるかわーるど | HALKA</title>
+
+    <!-- X / Discord などでURLを貼ったときのカード表示 -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="HALKA" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:url" content="https://halkaclub.com/halkaworld/" />
+    <meta property="og:title" content="はるかわーるど | HALKA" />
+    <meta property="og:description" content="ﾊﾙｶﾁｬﾝの小さな世界を歩く、ブラウザで遊べるゲームです。" />
+    <meta property="og:image" content="https://halkaclub.com/assets/ogp/harukaworld_v3.png?v=1" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="はるかわーるど" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@halkamine" />
+    <meta name="twitter:creator" content="@halkamine" />
+    <link rel="icon" href="/favicon.png?v=2" type="image/png" />
+    <link rel="stylesheet" href="../style.css?v=1" />
+    <link rel="stylesheet" href="game-page.css?v=3.0" />
+    <style>.rc3-staging-note { position: sticky; top: 0; z-index: 5; padding: 6px 10px; background: #f6d55c; color: #2b2b2b; font: 700 12px/1.5 sans-serif; text-align: center; } body.game-filled .rc3-staging-note { display: none; }</style>
+  </head>
+  <body>
+    <div class="rc3-staging-note" role="note">ローカル確認用（はるかわーるど ver3.8・未公開）。ページの文章は公開中のver3.6のまま、枠の中のゲームだけがver3.8です。公開HPではありません。</div>
+    <main id="top">
+      <div class="yellow-tape" aria-hidden="true">
+        <span>はるかわーるど</span>
+        <span>small world, first day</span>
+      </div>
+
+      <div class="notebook game-notebook">
+        <header class="site-header">
+          <a class="small-sign" href="../index.html">HALKA</a>
+          <p>はるかわーるど</p>
+          <span class="header-doodle" aria-hidden="true">遊　〰</span>
+        </header>
+
+        <section class="game-page" aria-labelledby="game-title">
+          <h1 id="game-title">はるかわーるど</h1>
+          <p class="game-current-version">ver3.6</p>
+          <div class="unity-frame">
+            <iframe src="webgl/?v=3.8&build=__BUILD__" title="はるかわーるど" allow="fullscreen" loading="eager"></iframe>
+          </div>
+          <p class="game-fullscreen"><button type="button" id="game-fullscreen-button" hidden>全画面にする</button></p>
+          <p class="game-fill-bar" id="game-fill-bar"><button type="button" id="game-fill-back">もどす</button></p>
+          <section class="game-guide" aria-labelledby="game-guide-title">
+            <h2 id="game-guide-title">あそびかた</h2>
+            <dl class="game-guide-list">
+              <dt>パソコン</dt>
+              <dd>WASD・矢印キーで1マスずつ歩きます。近くのものをクリックすると、調べたり座ったりできます。3D では、ﾊﾙｶﾁｬﾝをクリックすると正面のものを調べます。</dd>
+              <dt>スマホ</dt>
+              <dd>十字キーで歩き、A ボタンで正面を調べます。縦向きでも横向きでも遊べます。</dd>
+              <dt>2D と 3D</dt>
+              <dd>右上の「3Dへ」「2Dへ」ボタンか、左上の ☰ メニューの「ひょうじ」で、ドット絵の 2D と、立体の 3D を切り替えられます。どちらも同じ世界です。</dd>
+              <dt>全画面</dt>
+              <dd>ゲームの下の「全画面にする」で大きく遊べます。iPhone などでは画面いっぱいに広がり、下の「もどす」で元に戻ります。</dd>
+              <dt>セーブ</dt>
+              <dd>セーブは自動です。次に開いたときは、前回いた場所から続きます。セーブは、このブラウザの中に保存されます。</dd>
+              <dt>バックアップ</dt>
+              <dd>☰ メニューの「セーブデータ」から、セーブをファイルに書き出す（エクスポート）・ファイルから戻す（インポート）ことができます。ブラウザのデータを消す前や、ほかの端末で続きを遊びたいときに使ってください。</dd>
+            </dl>
+            <p class="game-note">ブラウザのサイトデータを消したり、プライベートブラウズで遊んだりすると、セーブは残りません。同じゲームを2つのタブで開いたときは、あとからセーブしたタブのデータが残ります。</p>
+          </section>
+          <section class="update-history" aria-labelledby="update-history-title">
+            <h2 id="update-history-title">更新履歴</h2>
+            <details class="update-history-archive">
+              <summary>ver3.1 ～</summary>
+              <div class="update-history-entries">
+            <article class="update-entry">
+              <h3>ver3.6 <time datetime="2026-10-29">2026-10-29</time></h3>
+              <ul>
+                <li>草原の北の道の先に、新しい場所「きた」ができました。青い花と小さな池「あおいみずべ」があります。</li>
+                <li>池の岸辺で水を調べると「みずをのぞく」ことができます。</li>
+                <li>池の近くまで歩いて行くと、「そらをとぶ」で「きたのみずべ」へも行けるようになります。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver3.5 <time datetime="2026-10-28">2026-10-28</time></h3>
+              <ul>
+                <li>カラスに話しかけると「そらをとぶ」を選べるようになりました。見つけた場所へ、カラスといっしょに空を飛んで行けます。</li>
+                <li>東の黄色い花の広場は、歩いて行くと見つかります。</li>
+                <li>左上のメニューからも「そらをとぶ」が使えます（外にいるときだけ）。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver3.4 <time datetime="2026-10-28">2026-10-28</time></h3>
+              <ul>
+                <li>カラスに話しかけると「ついてきて」とお願いできるようになりました。いっしょに歩いたり、飛んで追いかけてきたりします。</li>
+                <li>家に入っているあいだ、カラスは扉の外で待っています。</li>
+                <li>「あそんでおいで」と言うと、いつもの暮らしに戻ります。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver3.3 <time datetime="2026-10-27">2026-10-27</time></h3>
+              <ul>
+                <li>東の道の先に、新しい場所「ひがし」ができました。道を歩いて、そのまま行き来できます。</li>
+                <li>ひがしには、黄色い花が集まる小さな広場があります。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver3.2 <time datetime="2026-10-24">2026-10-24</time></h3>
+              <ul>
+                <li>ﾊﾙｶﾁｬﾝの家にキッチンと、ラグ・ローテーブルを置きました。</li>
+                <li>防音室にギターを置きました。液タブとDTMデスクが広くなり、正面に立てるようになりました。</li>
+                <li>これから外の世界を広げていくための、しくみを作りました（外の見た目は今までと同じです）。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver3.1 <time datetime="2026-10-24">2026-10-24</time></h3>
+              <ul>
+                <li>ﾊﾙｶﾁｬﾝの家に黒い防音室ができました。歩いて入ると、DTMデスク・液タブ・マイクのある制作部屋です。</li>
+                <li>画面右上のボタンで、2Dと3Dをすぐに切り替えられるようになりました。</li>
+                <li>家の中の家具の配置を変えました。</li>
+              </ul>
+            </article>
+              </div>
+            </details>
+            <details class="update-history-archive">
+              <summary>ver2.1 ～ ver3.0</summary>
+              <div class="update-history-entries">
+            <article class="update-entry">
+              <h3>ver3.0 <time datetime="2026-10-21">2026-10-21</time></h3>
+              <ul>
+                <li>2Dと3Dを切り替えて遊べるようになりました。3Dでは、ローポリの世界をﾊﾙｶﾁｬﾝやカラスと歩けます。</li>
+                <li>朝と夜が切り替わるようになりました。</li>
+                <li>自動でセーブされ、次は前回の場所から続きを遊べるようになりました。セーブはファイルに書き出して、バックアップできます。</li>
+                <li>スマホの縦向き・横向きと、全画面表示に対応しました。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver2.9 <time datetime="2026-10-12">2026-10-12</time></h3>
+              <p>カラスが飛んで木に止まるようになりました。</p>
+            </article>
+            <article class="update-entry">
+              <h3>ver2.8 <time datetime="2026-10-12">2026-10-12</time></h3>
+              <p>家の中でもAUTOで歩くようになりました。</p>
+            </article>
+            <article class="update-entry">
+              <h3>ver2.7 <time datetime="2026-10-11">2026-10-11</time></h3>
+              <p>4方向の道の景観を整えました。</p>
+            </article>
+            <article class="update-entry">
+              <h3>ver2.6 <time datetime="2026-10-10">2026-10-10</time></h3>
+              <p>ドット絵と文字の表示品質、キャラクターの動きと画像表示を調整し、井戸を追加しました。</p>
+            </article>
+            <article class="update-entry">
+              <h3>ver2.5 <time datetime="2026-10-09">2026-10-09</time></h3>
+              <p>看板を読めるようになり、家具を配置しました。</p>
+            </article>
+            <article class="update-entry">
+              <h3>ver2.4 <time datetime="2026-10-08">2026-10-08</time></h3>
+              <p>ベンチに座れるようになりました。</p>
+            </article>
+            <article class="update-entry">
+              <h3>ver2.3 <time datetime="2026-10-07">2026-10-07</time></h3>
+              <p>家の中の家具に対応し、ゲーム内フォントを変更。</p>
+            </article>
+            <article class="update-entry">
+              <h3>ver2.2 <time datetime="2026-10-07">2026-10-07</time></h3>
+              <p>せいかつきろくを追加。</p>
+            </article>
+            <article class="update-entry">
+              <h3>ver2.1 <time datetime="2026-10-07">2026-10-07</time></h3>
+              <p>左上メニューを追加し、AUTO設定をメニュー内へ移動。</p>
+            </article>
+              </div>
+            </details>
+            <details class="update-history-archive">
+              <summary>ver0.1 ～ ver2.0</summary>
+              <div class="update-history-entries">
+            <article class="update-entry">
+              <h3>ver2.0 <time datetime="2026-10-03">2026-10-03</time></h3>
+              <ul>
+                <li>ﾊﾙｶﾁｬﾝの家ができました。</li>
+                <li>カラスがやってきました。</li>
+                <li>1分間操作しないと自動で動くようになりました。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver1.9 <time datetime="2026-10-02">2026-10-02</time></h3>
+              <ul>
+                <li>土の地面ができました。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver1.8 <time datetime="2026-10-02">2026-10-02</time></h3>
+              <ul>
+                <li>木が生えました。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver1.7 <time datetime="2026-10-01">2026-10-01</time></h3>
+              <ul>
+                <li>花が咲きました。</li>
+                <li>足音を変更しました。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver1.6 <time datetime="2026-10-01">2026-10-01</time></h3>
+              <ul>
+                <li>足音を追加しました。</li>
+                <li>メッセージ表示を見やすくしました。</li>
+                <li>スマホ版にアクションボタンを追加しました。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver1.5 <time datetime="2026-10-01">2026-10-01</time></h3>
+              <ul>
+                <li>草を踏むと動くようになりました。</li>
+                <li>草がフィールド一面に生えました。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver1.4 <time datetime="2026-10-01">2026-10-01</time></h3>
+              <ul>
+                <li>草を追加しました。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver1.3 <time datetime="2026-09-30">2026-09-30</time></h3>
+              <ul>
+                <li>1マスの大きさを32×32に変更しました。</li>
+                <li>マス目が分かるようになりました。</li>
+                <li>歩行アニメーションを追加しました。</li>
+                <li>移動時の不自然な位置ずれを修正しました。</li>
+                <li>対象の方を向いていないと調べられないようになりました。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver1.2 <time datetime="2026-09-30">2026-09-30</time></h3>
+              <ul>
+                <li>石の大きさを調整しました。</li>
+                <li>石に近づいた時の見た目を改善しました。</li>
+                <li>石を調べられるようになりました。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver1.1 <time datetime="2026-09-30">2026-09-30</time></h3>
+              <ul>
+                <li>石を追加しました。</li>
+                <li>歩行を1マスずつの移動に変更しました。</li>
+                <li>スマホ版に十字キーを追加しました。</li>
+              </ul>
+            </article>
+            <article class="update-entry">
+              <h3>ver1.0 <time datetime="2026-09-29">2026-09-29</time></h3>
+              <ul>
+                <li>ゲームを公開しました。</li>
+              </ul>
+            </article>
+              </div>
+            </details>
+          </section>
+          <a class="back-link" href="../index.html">← リンク集へ戻る</a>
+        </section>
+      </div>
+    </main>
+    <!-- アクセス解析（Cloudflare Web Analytics）。Cookie は使いません。 -->
+    <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "b477de71645a48dca466e57a6464c448"}'></script>
+    <script>
+      (() => {
+        const button = document.getElementById("game-fullscreen-button");
+        const box = document.querySelector(".unity-frame");
+        const frame = box && box.querySelector("iframe");
+        const bar = document.getElementById("game-fill-bar");
+        if (!frame) return;
+        const request = frame.requestFullscreen || frame.webkitRequestFullscreen;
+        const real = !!request && !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+        const focusGame = () => { if (frame.contentWindow) frame.contentWindow.focus(); };
+        const fit = () => { box.style.height = `${window.innerHeight - bar.offsetHeight}px`; };
+        function fill(on, fromHistory) {
+          if (document.body.classList.contains("game-filled") === on) return;
+          document.body.classList.toggle("game-filled", on);
+          if (on) {
+            fit();
+            window.addEventListener("resize", fit);
+            if (!fromHistory) history.pushState({ halkaGameFilled: true }, "");
+          } else {
+            box.style.height = "";
+            window.removeEventListener("resize", fit);
+            if (!fromHistory && history.state && history.state.halkaGameFilled) history.back();
+          }
+          focusGame();
+        }
+        window.addEventListener("popstate", () => fill(false, true));
+        document.getElementById("game-fill-back").addEventListener("click", () => fill(false, false));
+        button.hidden = false;
+        button.addEventListener("click", () => {
+          if (!real) { fill(true, false); return; }
+          const asked = request.call(frame);
+          if (asked && asked.catch) asked.catch(() => fill(true, false));
+          focusGame();
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,79 @@
+[
+  {
+    "sprite": "pinwheel_red",
+    "model": "pinwheel_red",
+    "width": 32,
+    "height": 96,
+    "pitch": 50.0,
+    "renderSize": [
+      256,
+      588
+    ]
+  },
+  {
+    "sprite": "rock_red",
+    "model": "rock_red",
+    "width": 32,
+    "height": 32,
+    "pitch": 50.0,
+    "renderSize": [
+      256,
+      196
+    ]
+  },
+  {
+    "sprite": "rock_ledge",
+    "model": "rock_ledge",
+    "width": 32,
+    "height": 32,
+    "pitch": 50.0,
+    "renderSize": [
+      256,
+      196
+    ]
+  },
+  {
+    "sprite": "rock_small",
+    "model": "rock_small",
+    "width": 32,
+    "height": 32,
+    "pitch": 50.0,
+    "renderSize": [
+      256,
+      196
+    ]
+  },
+  {
+    "sprite": "grass_short",
+    "model": "grass_short",
+    "width": 32,
+    "height": 32,
+    "pitch": 50.0,
+    "renderSize": [
+      256,
+      196
+    ]
+  },
+  {
+    "sprite": "ground_accent",
+    "model": "ground_accent",
+    "width": 32,
+    "height": 32,
+    "pitch": 50.0,
+    "renderSize": [
+      256,
+      196
+    ]
+  },
+  {
+    "sprite": "sign_red",
+    "model": "sign_red",
+    "width": 32,
+    "height": 32,
+    "pitch": 50.0,
+    "renderSize": [
+      256,
+      196
+    ]
+  }
+]

@@ -1,0 +1,881 @@
+{
+  "format": "halka-world-map",
+  "formatVersion": 4,
+  "mapId": "south_area_01",
+  "displayName": "南エリア",
+  "mapType": "outdoor",
+  "baseSurfaceDefinitionId": "base_ground",
+  "grassMode": "auto",
+  "backdropColor": "#101014",
+  "bounds": {
+    "minX": 0,
+    "maxX": 20,
+    "minY": 0,
+    "maxY": 19
+  },
+  "surfaces": [
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 13,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 13,
+        "y": 1
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 13,
+        "y": 2
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 13,
+        "y": 3
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 13,
+        "y": 4
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 13,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 13,
+        "y": 6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 13,
+        "y": 7
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 13,
+        "y": 8
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 9,
+        "y": 9
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 13,
+        "y": 9
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 9,
+        "y": 10
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 13,
+        "y": 10
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 9,
+        "y": 11
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 13,
+        "y": 11
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 9,
+        "y": 12
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 12,
+        "y": 12
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 13,
+        "y": 12
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 9,
+        "y": 13
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 13
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 11,
+        "y": 13
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 12,
+        "y": 13
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 12,
+        "y": 14
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 12,
+        "y": 15
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 12,
+        "y": 16
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 12,
+        "y": 17
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 12,
+        "y": 18
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 12,
+        "y": 19
+      }
+    }
+  ],
+  "objects": [
+    {
+      "instanceId": "obj_south_grass_short_v38_south_75",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 3,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v38_south_74",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 17,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v38_south_68",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 5,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v38_south_53",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 10,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v38_south_56",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 19,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v38_south_46",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 4,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v38_south_39",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 18,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v38_south_27",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 4,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v38_south_16",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 19,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v38_south_10",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 2,
+        "y": 13
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v38_south_11",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 16,
+        "y": 13
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v38_south_04",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 7,
+        "y": 15
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v38_south_05",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 14,
+        "y": 15
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v38_south_00",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 2,
+        "y": 18
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v38_south_01",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 18,
+        "y": 18
+      }
+    },
+    {
+      "instanceId": "obj_south_ground_accent_v38_south_51",
+      "definitionId": "south_ground_accent",
+      "rootCell": {
+        "x": 5,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_south_ground_accent_v38_south_52",
+      "definitionId": "south_ground_accent",
+      "rootCell": {
+        "x": 9,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_south_ground_accent_v38_south_47",
+      "definitionId": "south_ground_accent",
+      "rootCell": {
+        "x": 8,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_south_ground_accent_v38_south_41",
+      "definitionId": "south_ground_accent",
+      "rootCell": {
+        "x": 5,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_south_ground_accent_v38_south_34",
+      "definitionId": "south_ground_accent",
+      "rootCell": {
+        "x": 4,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_south_ground_accent_v38_south_36",
+      "definitionId": "south_ground_accent",
+      "rootCell": {
+        "x": 9,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_south_ground_accent_v38_south_28",
+      "definitionId": "south_ground_accent",
+      "rootCell": {
+        "x": 6,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_south_pinwheel_red_v38_south_35",
+      "definitionId": "south_pinwheel_red",
+      "rootCell": {
+        "x": 7,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_58",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 4,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_59",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 5,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_60",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 6,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_61",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 7,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_62",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 8,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_63",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 9,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_64",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 10,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_54",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 11,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_45",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 3,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_48",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 11,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_40",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 3,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_37",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 11,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_26",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 3,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_29",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 11,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_18",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 4,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_19",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 5,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_21",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 7,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_22",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 8,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_ledge_v38_south_23",
+      "definitionId": "south_rock_ledge",
+      "rootCell": {
+        "x": 10,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_78",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 7,
+        "y": 0
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_79",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 17,
+        "y": 0
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_72",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 5,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_73",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 9,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_70",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 16,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_57",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 3,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_65",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 11,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_50",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 3,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_55",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 15,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_43",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 11,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_44",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 19,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_33",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 3,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_38",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 15,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_17",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 3,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_20",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 6,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_24",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 11,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_25",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 17,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_14",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 4,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_13",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 16,
+        "y": 12
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_06",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 4,
+        "y": 14
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_09",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 19,
+        "y": 14
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v38_south_03",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 15,
+        "y": 17
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_small_v38_south_76",
+      "definitionId": "south_rock_small",
+      "rootCell": {
+        "x": 9,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_small_v38_south_67",
+      "definitionId": "south_rock_small",
+      "rootCell": {
+        "x": 2,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_small_v38_south_69",
+      "definitionId": "south_rock_small",
+      "rootCell": {
+        "x": 8,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_small_v38_south_66",
+      "definitionId": "south_rock_small",
+      "rootCell": {
+        "x": 17,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_small_v38_south_49",
+      "definitionId": "south_rock_small",
+      "rootCell": {
+        "x": 16,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_small_v38_south_42",
+      "definitionId": "south_rock_small",
+      "rootCell": {
+        "x": 10,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_small_v38_south_30",
+      "definitionId": "south_rock_small",
+      "rootCell": {
+        "x": 16,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_small_v38_south_15",
+      "definitionId": "south_rock_small",
+      "rootCell": {
+        "x": 15,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_small_v38_south_12",
+      "definitionId": "south_rock_small",
+      "rootCell": {
+        "x": 1,
+        "y": 12
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_small_v38_south_08",
+      "definitionId": "south_rock_small",
+      "rootCell": {
+        "x": 16,
+        "y": 14
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_small_v38_south_02",
+      "definitionId": "south_rock_small",
+      "rootCell": {
+        "x": 6,
+        "y": 17
+      }
+    },
+    {
+      "instanceId": "obj_south_signpost_red_v38_south_07",
+      "definitionId": "south_signpost_red",
+      "rootCell": {
+        "x": 10,
+        "y": 14
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v38_south_77",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 18,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v38_south_71",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 1,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v38_south_32",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 1,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v38_south_31",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 19,
+        "y": 9
+      }
+    }
+  ],
+  "markers": [
+    {
+      "id": "landmark_south_red_pinwheel",
+      "cell": {
+        "x": 7,
+        "y": 7
+      }
+    },
+    {
+      "id": "road_north",
+      "cell": {
+        "x": 12,
+        "y": 19
+      }
+    },
+    {
+      "id": "road_south",
+      "cell": {
+        "x": 13,
+        "y": 0
+      }
+    }
+  ],
+  "entitySpawns": [],
+  "areaTransitions": []
+}

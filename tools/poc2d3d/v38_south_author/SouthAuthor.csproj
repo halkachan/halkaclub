@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- はるかわーるど ver3.8: authors south_area_01.hwmap.json with WORLD EDITOR v1.0's Core (unchanged). Usage: see Program.cs. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\HalkaWorldMapEditor\HalkaWorldMapEditor.Core\HalkaWorldMapEditor.Core.csproj" />
+  </ItemGroup>
+</Project>

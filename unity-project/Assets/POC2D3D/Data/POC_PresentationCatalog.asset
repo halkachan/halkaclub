@@ -580,6 +580,125 @@ MonoBehaviour:
     fadeSeconds: 0.25
     partialOcclusion: 0
     minPickSize: 0
+  - definitionId: south_pinwheel_red
+    model: {fileID: 919132149155446097, guid: d6ebb1b5e6234e84396e49048a6c5774, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: south_rock_red
+    model: {fileID: 919132149155446097, guid: 9b5d84f9a765e4d4993c05db7135defd, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: south_rock_ledge
+    model: {fileID: 919132149155446097, guid: 23750160426bc334ba6220094a51a59f, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: south_rock_small
+    model: {fileID: 919132149155446097, guid: 74563d2bc3f39e540b244e413cca2d71, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0.3
+  - definitionId: south_grass_short
+    model: {fileID: 919132149155446097, guid: 39192799a3d24464e919575ea6722483, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0.3
+  - definitionId: south_ground_accent
+    model: {fileID: 919132149155446097, guid: 68deaa671ab2e2947956dc7b01f39080, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 0
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 0.5
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
+  - definitionId: south_signpost_red
+    model: {fileID: 919132149155446097, guid: d12b5c9fcf8958a40a433541c2e48ccd, type: 3}
+    variants: []
+    yawDegrees: 0
+    meshOffset: {x: 0, y: 0, z: 0}
+    uniformScale: 1
+    cameraOccluder: 0
+    castShadows: 1
+    perchAnchorName: 
+    placeholder: 0
+    outlineStrength: 1
+    fadeInFront2D: 0
+    fadeInFront3D: 0
+    fadeOpacity: 0.4
+    fadeSeconds: 0.25
+    partialOcclusion: 0
+    minPickSize: 0
   environment:
     grassTiles:
     - {fileID: 919132149155446097, guid: 63963ae3c0300124ca9d7edb73f246bc, type: 3}

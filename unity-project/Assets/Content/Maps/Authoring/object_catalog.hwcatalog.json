@@ -1362,6 +1362,183 @@
           "interactionText": "にしの もり。 こもれびの こみちが つづく。"
         }
       ]
+    },
+    {
+      "definitionId": "south_pinwheel_red",
+      "displayName": "あかねの かざぐるま（かざぐるまをまわす）",
+      "category": "fixture",
+      "previewSpritePath": "Assets/Content/World/pinwheel_red.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 96,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "allowedMapTypes": [],
+      "actionPoints": [
+        {
+          "id": "turn_pinwheel",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "かざぐるまが くるくる まわった！"
+        }
+      ]
+    },
+    {
+      "definitionId": "south_rock_red",
+      "displayName": "あかちゃいろの いわ",
+      "category": "nature",
+      "previewSpritePath": "Assets/Content/World/rock_red.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "allowedMapTypes": [],
+      "actionPoints": []
+    },
+    {
+      "definitionId": "south_rock_ledge",
+      "displayName": "いわの だん（おかの ふち）",
+      "category": "nature",
+      "previewSpritePath": "Assets/Content/World/rock_ledge.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "allowedMapTypes": [],
+      "actionPoints": []
+    },
+    {
+      "definitionId": "south_rock_small",
+      "displayName": "ちいさな いし",
+      "category": "nature",
+      "previewSpritePath": "Assets/Content/World/rock_small.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": false,
+      "excludeGrass": false,
+      "editorSelectable": true,
+      "blockedCellOffsets": [],
+      "allowedMapTypes": [],
+      "actionPoints": []
+    },
+    {
+      "definitionId": "south_grass_short",
+      "displayName": "みじかい くさ",
+      "category": "nature",
+      "previewSpritePath": "Assets/Content/World/grass_short.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": false,
+      "excludeGrass": false,
+      "editorSelectable": true,
+      "blockedCellOffsets": [],
+      "allowedMapTypes": [],
+      "actionPoints": []
+    },
+    {
+      "definitionId": "south_ground_accent",
+      "displayName": "あかい つち",
+      "category": "nature",
+      "previewSpritePath": "Assets/Content/World/ground_accent.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": false,
+      "excludeGrass": false,
+      "editorSelectable": true,
+      "blockedCellOffsets": [],
+      "allowedMapTypes": [],
+      "actionPoints": []
+    },
+    {
+      "definitionId": "south_signpost_red",
+      "displayName": "みちしるべ（みなみ）",
+      "category": "fixture",
+      "previewSpritePath": "Assets/Content/World/sign_red.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "allowedMapTypes": [],
+      "actionPoints": [
+        {
+          "id": "read_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "みなみの かぜのおか。 こみちの さきに かざぐるま。"
+        }
+      ]
     }
   ],
   "visuals": {

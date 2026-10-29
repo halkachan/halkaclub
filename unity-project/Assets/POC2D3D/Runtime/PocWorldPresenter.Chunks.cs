@@ -39,6 +39,8 @@ namespace Halka.Poc2D3D
             public Renderer KomorebiA;
             public Renderer KomorebiB;
             public int KomorebiCells;
+            // ver3.8: the chunk's pinwheels, whose blades turn (PocWorldPresenter.Pinwheel.cs).
+            public readonly List<PinwheelBlades> Pinwheels = new List<PinwheelBlades>();
         }
 
         private bool chunkMode;
@@ -123,6 +125,7 @@ namespace Halka.Poc2D3D
             if (chunkMode && Application.isPlaying) UpdateStreaming(false);
             if (Application.isPlaying) TickWater(Time.time);
             if (Application.isPlaying) TickForest(Time.time);
+            if (Application.isPlaying) TickPinwheels(Time.time);
         }
 
         // Where she is and where she is going decide what is drawn. everythingNow builds every
@@ -169,7 +172,11 @@ namespace Halka.Poc2D3D
         private void ReleaseChunks()
         {
             if (streamer != null) streamer.ReleaseAll();
-            foreach (var payload in new List<ChunkPayload>(payloads.Values)) FreePayload(payload);
+            foreach (var payload in new List<ChunkPayload>(payloads.Values))
+            {
+                ReleaseChunkPinwheels(payload);
+                FreePayload(payload);
+            }
             payloads.Clear();
             WaterCellsDrawn = 0;
             foreach (var ripple in ripples) FreeRipple(ripple);
@@ -261,9 +268,11 @@ namespace Halka.Poc2D3D
                 }
                 BuildChunkOverlays(chunk, payload);
                 CollectMeshes(root, payload.Meshes, true);
+                var batchable = RegisterChunkPinwheels(payload);   // ver3.8: turning blades stay unbatched
                 if (Application.isPlaying && !fallback)
                 {
-                    StaticBatchingUtility.Combine(root.gameObject);
+                    if (batchable == null) StaticBatchingUtility.Combine(root.gameObject);
+                    else StaticBatchingUtility.Combine(batchable, root.gameObject);
                     foreach (var filter in root.GetComponentsInChildren<MeshFilter>(true))
                         if (filter.sharedMesh != null && filter.sharedMesh.name.StartsWith("Combined Mesh", StringComparison.Ordinal) &&
                             !payload.Meshes.Contains(filter.sharedMesh)) payload.Meshes.Add(filter.sharedMesh);
@@ -271,6 +280,7 @@ namespace Halka.Poc2D3D
             }
             catch
             {
+                ReleaseChunkPinwheels(payload);
                 FreePayload(payload);
                 throw;
             }
@@ -291,6 +301,7 @@ namespace Halka.Poc2D3D
             LoadedChunkObjects -= payload.Views.Count;
             WaterCellsDrawn -= payload.WaterCells;
             ReleaseChunkKomorebi(payload);
+            ReleaseChunkPinwheels(payload);
             FreePayload(payload);
             ChunksChanged?.Invoke();
         }

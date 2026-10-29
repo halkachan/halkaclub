@@ -1,0 +1,185 @@
+{
+  "generator": "blender/scripts/build_v38_south.py",
+  "blenderVersion": "5.2.0 LTS",
+  "units": "1 Blender unit = 1 Unity unit, 1 cell = 0.5, origin = ground centre of the root cell",
+  "theme": {
+    "source": "unity-project/Assets/Content/Maps/World/direction_themes.json",
+    "south": [
+      "#c8564b",
+      "#953b33"
+    ]
+  },
+  "approval": "pending: new ver3.8 designs, not approved by the user yet",
+  "models": [
+    {
+      "family": "pinwheel_red",
+      "name": "pinwheel_red",
+      "blend": "blender/sources/v38/pinwheel_red.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V38/pinwheel_red.fbx",
+      "triangles": 128,
+      "vertices": 80,
+      "materials": 1,
+      "boundsMin": [
+        -0.2443,
+        -0.081,
+        0.0
+      ],
+      "boundsMax": [
+        0.2443,
+        0.06,
+        1.4443
+      ],
+      "children": {
+        "pinwheel_blades": {
+          "origin": [
+            0.0,
+            -0.045,
+            1.2
+          ]
+        }
+      },
+      "supplemented": [
+        "new design for ver3.8 (the hill's examine spot; its blades turn)"
+      ]
+    },
+    {
+      "family": "rock_red",
+      "name": "rock_red",
+      "blend": "blender/sources/v38/rock_red.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V38/rock_red.fbx",
+      "triangles": 40,
+      "vertices": 24,
+      "materials": 1,
+      "boundsMin": [
+        -0.2086,
+        -0.1594,
+        0.0
+      ],
+      "boundsMax": [
+        0.2035,
+        0.1929,
+        0.198
+      ],
+      "children": {},
+      "supplemented": [
+        "new design for ver3.8"
+      ]
+    },
+    {
+      "family": "rock_ledge",
+      "name": "rock_ledge",
+      "blend": "blender/sources/v38/rock_ledge.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V38/rock_ledge.fbx",
+      "triangles": 100,
+      "vertices": 60,
+      "materials": 1,
+      "boundsMin": [
+        -0.3006,
+        -0.223,
+        0.0
+      ],
+      "boundsMax": [
+        0.3086,
+        0.1942,
+        0.3051
+      ],
+      "children": {},
+      "supplemented": [
+        "new design for ver3.8 (the hill's edge)"
+      ]
+    },
+    {
+      "family": "rock_small",
+      "name": "rock_small",
+      "blend": "blender/sources/v38/rock_small.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V38/rock_small.fbx",
+      "triangles": 80,
+      "vertices": 48,
+      "materials": 1,
+      "boundsMin": [
+        -0.1592,
+        -0.151,
+        0.0
+      ],
+      "boundsMax": [
+        0.1564,
+        0.1502,
+        0.0566
+      ],
+      "children": {},
+      "supplemented": [
+        "new design for ver3.8 (walkable)"
+      ]
+    },
+    {
+      "family": "grass_short",
+      "name": "grass_short",
+      "blend": "blender/sources/v38/grass_short.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V38/grass_short.fbx",
+      "triangles": 27,
+      "vertices": 36,
+      "materials": 1,
+      "boundsMin": [
+        -0.138,
+        -0.0851,
+        0.0
+      ],
+      "boundsMax": [
+        0.1313,
+        0.1246,
+        0.16
+      ],
+      "children": {},
+      "supplemented": [
+        "new design for ver3.8 (walkable)"
+      ]
+    },
+    {
+      "family": "ground_accent",
+      "name": "ground_accent",
+      "blend": "blender/sources/v38/ground_accent.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V38/ground_accent.fbx",
+      "triangles": 104,
+      "vertices": 60,
+      "materials": 1,
+      "boundsMin": [
+        -0.24,
+        -0.2208,
+        0.002
+      ],
+      "boundsMax": [
+        0.24,
+        0.2208,
+        0.014
+      ],
+      "children": {},
+      "supplemented": [
+        "new design for ver3.8 (walkable)"
+      ]
+    },
+    {
+      "family": "sign_red",
+      "name": "sign_red",
+      "blend": "blender/sources/v38/sign_red.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V38/sign_red.fbx",
+      "triangles": 63,
+      "vertices": 47,
+      "materials": 1,
+      "boundsMin": [
+        -0.22,
+        -0.07,
+        0.0
+      ],
+      "boundsMax": [
+        0.22,
+        0.03,
+        0.56
+      ],
+      "children": {},
+      "supplemented": [
+        "new design for ver3.8",
+        "back of the board"
+      ]
+    }
+  ]
+}
