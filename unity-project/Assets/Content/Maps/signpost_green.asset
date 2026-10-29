@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7c55d63a6fbaf8488893bfe6c9abf3d, type: 3}
+  m_Name: signpost_green
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.WorldObjectDefinition
+  stableId: signpost_green
+  displayName: "\u307F\u3061\u3057\u308B\u3079\uFF08\u306B\u3057\uFF09"
+  previewSprite: {fileID: 21300000, guid: 3954735b617446458fe7b957ce68cd5c, type: 3}
+  examineMessage: "\u306B\u3057\u306E \u3082\u308A\u3002 \u3053\u3082\u308C\u3073\u306E
+    \u3053\u307F\u3061\u304C \u3064\u3065\u304F\u3002"
+  rootedArtwork: 0
+  clickColliderSize: {x: 0.5, y: 0.5}
+  footprint: {x: 1, y: 1}
+  blockedCellOffsets:
+  - {x: 0, y: 0}
+  actionPoints:
+  - id: read_front
+    playerCellOffset: {x: 0, y: -1}
+    playerFacing: 0
+    actionType: 1
+    poseKey: 
+    interactionText: "\u306B\u3057\u306E \u3082\u308A\u3002 \u3053\u3082\u308C\u3073\u306E
+      \u3053\u307F\u3061\u304C \u3064\u3065\u304F\u3002"
+  rootAnchor: bottom-center
+  behavior: 0
+  blocksMovement: 1
+  excludesGrass: 1
+  sortingOrder: 2

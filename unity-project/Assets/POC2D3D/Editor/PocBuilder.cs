@@ -18,10 +18,11 @@ namespace Halka.Poc2D3D.EditorTools
         // Phase 6: RC2 in its own folder (RC1 is kept as it is). Phase 7: RC3 (RC1 and RC2 kept).
         // ver3.1: a local check build in its own folder (RC3 = the published ver3.0 is kept as it
         // is); the kit has no publishing files.
-        public const string ReleaseCandidateFolderName = "HARUKA_WORLD_ver3.6_LOCAL";
-        public const string ReleaseCandidateKit = "v36";
+        public const string ReleaseCandidateFolderName = "HARUKA_WORLD_ver3.7_LOCAL";
+        public const string ReleaseCandidateKit = "v37";
         // ver3.2: the chunk test build (generated test worlds, memory saves) in its own folder.
-        public const string ChunkTestFolderName = "HARUKA_WORLD_ver3.2_CHUNKTEST";
+        // ver3.7: the chunk test is built again (the same test world, today's game) beside the ver3.2 one, which stays as it was.
+        public const string ChunkTestFolderName = "HARUKA_WORLD_ver3.7_CHUNKTEST";
         public const string ReleaseCandidateGamePath = "halkaworld/webgl";
 
         public static string ReleaseCandidatePath =>
@@ -125,12 +126,38 @@ namespace Halka.Poc2D3D.EditorTools
                 var output = Path.Combine(root, development ? "webgl_dev" : "webgl");
                 var report = BuildScene(PocSceneBuilder.ChunkTestScenePath, output, development);
                 var page = Path.Combine(output, "index.html");
-                File.WriteAllText(page, PreviewPage(File.ReadAllText(page), "はるかわーるど ver3.2 chunk test", false));
+                File.WriteAllText(page, PreviewPage(File.ReadAllText(page), "はるかわーるど ver3.7 chunk test", false));
                 File.WriteAllText(Path.Combine(root, development ? "BUILD_INFO_dev.txt" : "BUILD_INFO.txt"),
-                    "はるかわーるど ver3.2 chunk test build (" + (development ? "development" : "release settings") + ")\n" +
+                    "はるかわーるど ver3.7 chunk test build (the ver3.2 test world, the ver3.7 game; " + (development ? "development" : "release settings") + ")\n" +
                     "not for publishing; saves stay in memory (no browser save is read or written)\n" +
                     "URL: webgl/index.html?world=32|64|128|256&chunk=8..64&debug=1\n" +
                     "build: " + BuildId(output) + "\nsize: " + report.summary.totalSize + " bytes\n");
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        // ver3.7: the local check scene again as a development build, in its own folder outside the
+        // repository, for the profiler counters only (draw calls, GC Alloc); never published.
+        public const string MeasurementFolderName = "HARUKA_WORLD_ver3.7_LOCAL_DEV";
+
+        public static void BuildReleaseCandidateDevelopmentBatch()
+        {
+            try
+            {
+                var root = Path.GetFullPath(Path.Combine(PocSceneBuilder.RepositoryRoot, "..", MeasurementFolderName));
+                var output = Path.Combine(root, "webgl");
+                var report = BuildScene(PocSceneBuilder.RcScenePath, output, true);
+                var page = Path.Combine(output, "index.html");
+                File.WriteAllText(page, PreviewPage(File.ReadAllText(page), PocDebugPanel.ReleaseCandidateTitle, false));
+                File.WriteAllText(Path.Combine(root, "BUILD_INFO.txt"),
+                    PocDebugPanel.ReleaseCandidateName + " — development build for measurements only (draw calls, GC Alloc); not for publishing\n" +
+                    "scene: " + PocSceneBuilder.RcScenePath + "\nbuild: " + BuildId(output) + "\nsize: " + report.summary.totalSize + " bytes\n" +
+                    "URL: webgl/index.html?devstats=1\n");
                 EditorApplication.Exit(0);
             }
             catch (Exception exception)

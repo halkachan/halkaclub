@@ -34,6 +34,11 @@ namespace Halka.Poc2D3D
             public Renderer GlintsA;
             public Renderer GlintsB;
             public int WaterCells;
+            // ver3.7: the chunk's sunlight through the leaves (PocWorldPresenter.Forest.cs).
+            public Renderer Komorebi;
+            public Renderer KomorebiA;
+            public Renderer KomorebiB;
+            public int KomorebiCells;
         }
 
         private bool chunkMode;
@@ -117,6 +122,7 @@ namespace Halka.Poc2D3D
         {
             if (chunkMode && Application.isPlaying) UpdateStreaming(false);
             if (Application.isPlaying) TickWater(Time.time);
+            if (Application.isPlaying) TickForest(Time.time);
         }
 
         // Where she is and where she is going decide what is drawn. everythingNow builds every
@@ -168,6 +174,7 @@ namespace Halka.Poc2D3D
             WaterCellsDrawn = 0;
             foreach (var ripple in ripples) FreeRipple(ripple);
             ripples.Clear();
+            ReleaseForest();
             streamer = null;
             chunkMode = false;
             chunkIndex = null;
@@ -238,6 +245,7 @@ namespace Halka.Poc2D3D
                     payload.Triangles += payload.Stats.GroundTriangles + payload.Stats.TuftTriangles;
                 }
                 BuildChunkWalls(chunk, payload);
+                if (!fallback) BuildChunkKomorebi(chunk, payload);
                 foreach (var instance in chunk.OwnedObjects)
                 {
                     try
@@ -281,6 +289,7 @@ namespace Halka.Poc2D3D
             BuiltTriangles -= payload.Triangles;
             LoadedChunkObjects -= payload.Views.Count;
             WaterCellsDrawn -= payload.WaterCells;
+            ReleaseChunkKomorebi(payload);
             FreePayload(payload);
             ChunksChanged?.Invoke();
         }

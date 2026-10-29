@@ -277,8 +277,11 @@ namespace Halka.Poc2D3D.EditorTools
                 cells.All(cell => !env.RoadCellSet.Contains(cell)), $"{env.Tufts} tufts, {env.RoadsideTufts} along roads");
             Check("grass: tufts only where the 2D rule grows grass (MapPlacementRules.HasGrass)",
                 cells.All(cell => MapPlacementRules.HasGrass(map, cell)));
+            // ver3.7: walkable decoration (the West forest's ferns and fallen leaves: no blocked cell) grows
+            // grass under it by the game's own rule (MapPlacementRules.HasGrass, the same in 2D); every
+            // Object that blocks or keeps grass away still has none.
             Check("grass: no tuft on a blocked cell or an Object root", cells.All(cell => !c.Session.World.IsBlocked(cell) &&
-                c.Session.World.Objects.All(o => o.RootCell != cell)));
+                c.Session.World.Objects.Where(o => o.Definition == null || o.Definition.BlocksMovement || o.Definition.ExcludesGrass).All(o => o.RootCell != cell)));
             Check("grass: tufts have no collider and are not pickable Objects",
                 c.Presenter.TuftObject.GetComponent<Collider>() == null && c.Presenter.TuftObject.GetComponent<PocObjectView>() == null);
             var density = env.Tufts / (float)Enumerable.Range(map.MinCell.x, map.MaxCell.x - map.MinCell.x + 1)

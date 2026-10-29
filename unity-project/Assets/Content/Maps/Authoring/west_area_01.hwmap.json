@@ -1,0 +1,968 @@
+{
+  "format": "halka-world-map",
+  "formatVersion": 4,
+  "mapId": "west_area_01",
+  "displayName": "西エリア",
+  "mapType": "outdoor",
+  "baseSurfaceDefinitionId": "base_ground",
+  "grassMode": "auto",
+  "backdropColor": "#101014",
+  "bounds": {
+    "minX": 0,
+    "maxX": 24,
+    "minY": 0,
+    "maxY": 12
+  },
+  "surfaces": [
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 0,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 1,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 2,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 3,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 4,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 5,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 6,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 7,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 8,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 9,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 11,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 12,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 13,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 14,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 15,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 16,
+        "y": 5
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 11,
+        "y": 6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 16,
+        "y": 6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 17,
+        "y": 6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 18,
+        "y": 6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 19,
+        "y": 6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 20,
+        "y": 6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 21,
+        "y": 6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 22,
+        "y": 6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 23,
+        "y": 6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 24,
+        "y": 6
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 10,
+        "y": 7
+      }
+    },
+    {
+      "definitionId": "dirt",
+      "cell": {
+        "x": 11,
+        "y": 7
+      }
+    }
+  ],
+  "objects": [
+    {
+      "instanceId": "obj_fallen_leaves_v37_west_75",
+      "definitionId": "fallen_leaves",
+      "rootCell": {
+        "x": 16,
+        "y": 0
+      }
+    },
+    {
+      "instanceId": "obj_fallen_leaves_v37_west_73",
+      "definitionId": "fallen_leaves",
+      "rootCell": {
+        "x": 2,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_fallen_leaves_v37_west_70",
+      "definitionId": "fallen_leaves",
+      "rootCell": {
+        "x": 20,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_fallen_leaves_v37_west_71",
+      "definitionId": "fallen_leaves",
+      "rootCell": {
+        "x": 4,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_fallen_leaves_v37_west_72",
+      "definitionId": "fallen_leaves",
+      "rootCell": {
+        "x": 13,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_fallen_leaves_v37_west_02",
+      "definitionId": "fallen_leaves",
+      "rootCell": {
+        "x": 9,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_fallen_leaves_v37_west_74",
+      "definitionId": "fallen_leaves",
+      "rootCell": {
+        "x": 18,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_fallen_leaves_v37_west_01",
+      "definitionId": "fallen_leaves",
+      "rootCell": {
+        "x": 7,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_flower_basic_v37_west_82",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 10,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_flower_basic_v37_west_80",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 12,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_flower_basic_v37_west_81",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 22,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_45",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 2,
+        "y": 0
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_46",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 12,
+        "y": 0
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_47",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 20,
+        "y": 0
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_32",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 14,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_31",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 0,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_25",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 3,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_26",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 9,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_27",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 19,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_29",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 4,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_28",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 16,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_30",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 20,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_48",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 23,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_40",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 0,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_42",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 4,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_33",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 12,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_35",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 16,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_37",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 20,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_39",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 24,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_41",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 2,
+        "y": 12
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_43",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 6,
+        "y": 12
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_44",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 10,
+        "y": 12
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_34",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 14,
+        "y": 12
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_36",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 18,
+        "y": 12
+      }
+    },
+    {
+      "instanceId": "obj_forest_bush_v37_west_38",
+      "definitionId": "forest_bush",
+      "rootCell": {
+        "x": 22,
+        "y": 12
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_68",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 8,
+        "y": 0
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_69",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 17,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_53",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 7,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_54",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 12,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_55",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 22,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_52",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 19,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_49",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 5,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_50",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 8,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_51",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 15,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_58",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 1,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_57",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 11,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_65",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 1,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_59",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 17,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_62",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 21,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_66",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 3,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_56",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 6,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_67",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 10,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_60",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 13,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_61",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 19,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_63",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 23,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_forest_fern_v37_west_64",
+      "definitionId": "forest_fern",
+      "rootCell": {
+        "x": 15,
+        "y": 12
+      }
+    },
+    {
+      "instanceId": "obj_signpost_green_v37_west_03",
+      "definitionId": "signpost_green",
+      "rootCell": {
+        "x": 22,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v37_west_78",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 5,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v37_west_79",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 9,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v37_west_77",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 16,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v37_west_76",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 18,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_17",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 6,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_19",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 13,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_21",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 17,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_23",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 21,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_15",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 1,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_16",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 4,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_18",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 11,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_20",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 15,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_22",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 19,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_24",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 22,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_08",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 2,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_14",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 14,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_09",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 13,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_11",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 17,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_13",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 21,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_07",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 1,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_06",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 3,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_04",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 5,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_05",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 11,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_10",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 15,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v37_west_12",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 19,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_tree_stump_hollow_v37_west_00",
+      "definitionId": "tree_stump_hollow",
+      "rootCell": {
+        "x": 8,
+        "y": 10
+      }
+    }
+  ],
+  "markers": [
+    {
+      "id": "komorebi_01",
+      "cell": {
+        "x": 22,
+        "y": 6
+      }
+    },
+    {
+      "id": "komorebi_02",
+      "cell": {
+        "x": 17,
+        "y": 6
+      }
+    },
+    {
+      "id": "komorebi_03",
+      "cell": {
+        "x": 13,
+        "y": 5
+      }
+    },
+    {
+      "id": "komorebi_04",
+      "cell": {
+        "x": 6,
+        "y": 5
+      }
+    },
+    {
+      "id": "komorebi_05",
+      "cell": {
+        "x": 1,
+        "y": 5
+      }
+    },
+    {
+      "id": "komorebi_06",
+      "cell": {
+        "x": 11,
+        "y": 7
+      }
+    },
+    {
+      "id": "komorebi_07",
+      "cell": {
+        "x": 7,
+        "y": 10
+      }
+    },
+    {
+      "id": "komorebi_08",
+      "cell": {
+        "x": 9,
+        "y": 8
+      }
+    },
+    {
+      "id": "landmark_west_forest_clearing",
+      "cell": {
+        "x": 8,
+        "y": 9
+      }
+    },
+    {
+      "id": "road_east",
+      "cell": {
+        "x": 24,
+        "y": 6
+      }
+    },
+    {
+      "id": "road_west",
+      "cell": {
+        "x": 0,
+        "y": 5
+      }
+    }
+  ],
+  "entitySpawns": [],
+  "areaTransitions": []
+}

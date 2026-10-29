@@ -121,6 +121,11 @@ namespace Halka.Poc2D3D.Dev
                     var time = GetComponent<PocTimeOfDay>();
                     if (time != null) time.Override = on ? PocPhaseOverride.Night : PocPhaseOverride.Auto;
                     break;
+                // ver3.7: the morning look (pictures of the forest's light by day); "morning:0" back to the clock.
+                case "morning":
+                    var clock = GetComponent<PocTimeOfDay>();
+                    if (clock != null) clock.Override = on ? PocPhaseOverride.Morning : PocPhaseOverride.Auto;
+                    break;
             }
         }
 
@@ -269,6 +274,24 @@ namespace Halka.Poc2D3D.Dev
             Str("ahead", ahead != null ? ahead.DefinitionId : "");
             Num("aheadSX", aheadScreen.x); Num("aheadSY", aheadScreen.y);
             Num("waterCells", presenter.WaterCellsDrawn); Num("ripples", presenter.RipplesStarted); Num("activeRipples", presenter.ActiveRipples);
+            // ver3.7: the forest's light and leaves; the chunks built more than once (a chunk freed and
+            // drawn again) and Object views drawn twice (never: each Object belongs to one chunk).
+            Num("komorebiCells", presenter.KomorebiCellsDrawn); Num("komorebiChunks", presenter.KomorebiChunks);
+            Num("komorebiVisible", presenter.KomorebiVisible ? 1 : 0);
+            Num("leafBursts", presenter.LeafBurstsStarted); Num("leavesActive", presenter.LeavesActive ? 1 : 0);
+            Num("leafRetriggers", presenter.LeafRetriggersIgnored); Num("leafHighest", presenter.LeafHighest);
+            Num("leafWidest", presenter.LeafWidest);
+            var reloads = 0;
+            var reloadedChunks = 0;
+            if (presenter.Streamer != null)
+                foreach (var record in presenter.Streamer.Records.Values)
+                    if (record.Loads > 1) { reloads += record.Loads - 1; reloadedChunks++; }
+            Num("reloads", reloads); Num("reloadedChunks", reloadedChunks);
+            var seen = new System.Collections.Generic.HashSet<string>();
+            var duplicates = 0;
+            foreach (var view in presenter.Views)
+                if (view != null && !string.IsNullOrEmpty(view.InstanceId) && !seen.Add(view.InstanceId)) duplicates++;
+            Num("dupViews", duplicates);
             Str("lastMessage", session.LastMessage ?? "");
             var log = gameplay != null ? gameplay.LifeLog : null;
             Num("lifeSteps", log != null ? log.TotalSteps : -1); Num("playSeconds", log != null ? log.TotalPlaySeconds : -1);

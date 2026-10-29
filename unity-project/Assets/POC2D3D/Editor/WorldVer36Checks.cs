@@ -313,8 +313,9 @@ namespace Halka.Poc2D3D.EditorTools
             var index = c.Session.OutdoorIndex;
             var definition = index.Definition;
             var north = index.FindRegion(NorthId);
+            // ver3.7: more regions may follow (the West area is the fourth); these three come first, in this order.
             Check("the registry: first_field, east_area_01 and north_area_01 (in that order)",
-                index.Regions.Select(r => r.MapId).SequenceEqual(new[] { "first_field", V33.EastId, NorthId }), string.Join(",", index.Regions.Select(r => r.MapId)));
+                index.Regions.Select(r => r.MapId).Take(3).SequenceEqual(new[] { "first_field", V33.EastId, NorthId }), string.Join(",", index.Regions.Select(r => r.MapId)));
             Check("north_area_01: direction north, World offset (-10,7), 21 x 20 cells: World (-10,7)..(10,26)",
                 north != null && north.Direction == "north" && north.Offset == NorthOffset &&
                 north.Rect.Min == new Vector2Int(-10, 7) && north.Rect.Max == new Vector2Int(10, 26), north != null ? $"{north.Offset} {north.Rect.Min}..{north.Rect.Max}" : "missing");
@@ -608,8 +609,9 @@ namespace Halka.Poc2D3D.EditorTools
             var t = T(c);
             var point = t.Registry.Find(Pond);
             var north = c.Session.OutdoorIndex.FindRegion(NorthId);
+            // ver3.7: three places or more (the West clearing is the fourth).
             Check("the registry has three places; the new one: landmark_north_blue_pond 「きたのみずべ」 in north_area_01, not found at the start",
-                t.Registry.points.Count == 3 && point != null && point.name == "きたのみずべ" && point.mapId == NorthId && !point.unlockedAtStart &&
+                t.Registry.points.Count >= 3 && point != null && point.name == "きたのみずべ" && point.mapId == NorthId && !point.unlockedAtStart &&
                 !t.IsFound(Pond) && GameBitmapFont.HasAllGlyphs(point.name));
             Check("its places: discovered within 2 of the bank (-4,15) (the Map's marker), arriving on the bank (-3,15) facing the water",
                 north.ToWorld(point.discoverCell) == LookSpot && point.discoverRadius == 2 && north.ToWorld(point.arrivalCell) == PondArrival &&

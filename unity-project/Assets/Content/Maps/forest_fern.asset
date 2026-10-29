@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7c55d63a6fbaf8488893bfe6c9abf3d, type: 3}
+  m_Name: forest_fern
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.WorldObjectDefinition
+  stableId: forest_fern
+  displayName: "\u3057\u3060"
+  previewSprite: {fileID: 21300000, guid: 4e432b7558bc49e393345b1410127530, type: 3}
+  examineMessage: 
+  rootedArtwork: 0
+  clickColliderSize: {x: 0.5, y: 0.5}
+  footprint: {x: 1, y: 1}
+  blockedCellOffsets: []
+  actionPoints: []
+  rootAnchor: bottom-center
+  behavior: 2
+  blocksMovement: 0
+  excludesGrass: 0
+  sortingOrder: 2

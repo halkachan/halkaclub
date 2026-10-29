@@ -1228,6 +1228,140 @@
       "blockedCellOffsets": [],
       "allowedMapTypes": [],
       "actionPoints": []
+    },
+    {
+      "definitionId": "tree_stump_hollow",
+      "displayName": "おおきな きりかぶ（きりかぶにふれる）",
+      "category": "nature",
+      "previewSpritePath": "Assets/Content/World/stump_hollow.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "allowedMapTypes": [],
+      "actionPoints": [
+        {
+          "id": "touch_stump",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "はっぱが くるくる まいあがった。"
+        }
+      ]
+    },
+    {
+      "definitionId": "forest_bush",
+      "displayName": "もりの しげみ",
+      "category": "nature",
+      "previewSpritePath": "Assets/Content/World/forest_bush.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "allowedMapTypes": [],
+      "actionPoints": []
+    },
+    {
+      "definitionId": "forest_fern",
+      "displayName": "しだ",
+      "category": "nature",
+      "previewSpritePath": "Assets/Content/World/forest_fern.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": false,
+      "excludeGrass": false,
+      "editorSelectable": true,
+      "blockedCellOffsets": [],
+      "allowedMapTypes": [],
+      "actionPoints": []
+    },
+    {
+      "definitionId": "fallen_leaves",
+      "displayName": "おちば",
+      "category": "nature",
+      "previewSpritePath": "Assets/Content/World/fallen_leaves.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": false,
+      "excludeGrass": false,
+      "editorSelectable": true,
+      "blockedCellOffsets": [],
+      "allowedMapTypes": [],
+      "actionPoints": []
+    },
+    {
+      "definitionId": "signpost_green",
+      "displayName": "みちしるべ（にし）",
+      "category": "fixture",
+      "previewSpritePath": "Assets/Content/World/sign_green.png",
+      "visualWidthPixels": 32,
+      "visualHeightPixels": 32,
+      "rootAnchor": "bottom-center",
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "blocksMovement": true,
+      "excludeGrass": true,
+      "editorSelectable": true,
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "allowedMapTypes": [],
+      "actionPoints": [
+        {
+          "id": "read_front",
+          "playerCellOffset": {
+            "x": 0,
+            "y": -1
+          },
+          "playerFacing": "up",
+          "actionType": "examine",
+          "poseKey": null,
+          "interactionText": "にしの もり。 こもれびの こみちが つづく。"
+        }
+      ]
     }
   ],
   "visuals": {

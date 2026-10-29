@@ -41,6 +41,19 @@
       "landingSearchRadius": 4,
       "unlockedAtStart": false,
       "order": 20
+    },
+    {
+      "id": "landmark_west_forest_clearing",
+      "name": "にしのこもれび",
+      "worldId": "outdoor_main",
+      "mapId": "west_area_01",
+      "discoverCell": { "x": 8, "y": 9 },
+      "discoverRadius": 2,
+      "arrivalCell": { "x": 8, "y": 8 },
+      "arrivalFacing": "up",
+      "landingSearchRadius": 4,
+      "unlockedAtStart": false,
+      "order": 30
     }
   ]
 }

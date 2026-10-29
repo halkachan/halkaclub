@@ -924,11 +924,60 @@ namespace Halka.Poc2D3D
                 }
                 else z = Mathf.Clamp(position.z, bandLo, bandHi);
             }
-            return new Vector3(Mathf.Clamp(position.x, loX, hiX), 0f, z);
+            var x = Mathf.Clamp(position.x, loX, hiX);
+            if (world.OutdoorIndex != null && WestClamp(world, halfW, margin, out var keptLo, out var keptHi, out var edgeX))
+            {
+                // ver3.7: a region West of first_field. From first_field's West edge eastwards the camera
+                // keeps the framing it had without that region (first_field, the North and East areas
+                // unchanged); past the edge the distance it had kept from her shrinks to nothing over
+                // CatchUpRows columns, as the ver3.6 rule does over rows (no jump).
+                var reach = CatchUpRows * GridSpace3D.CellSize;
+                if (position.x < edgeX)
+                {
+                    var ahead = Mathf.Clamp(edgeX, keptLo, keptHi) - edgeX;
+                    x = Mathf.Clamp(position.x + ahead * (1f - Mathf.Clamp01((edgeX - position.x) / reach)), loX, hiX);
+                }
+                else x = Mathf.Clamp(position.x, keptLo, keptHi);
+            }
+            return new Vector3(x, 0f, z);
         }
 
         // ver3.6: rows past first_field's top or bottom over which the 2D camera catches up with her.
         public const int CatchUpRows = 12;
+
+        // ver3.7: the horizontal clamp the camera had before a region West of first_field existed (the
+        // same computation as ClampToMap over the other regions alone) and first_field's West edge.
+        // False when no region lies wholly West of first_field, or when first_field is wider than two
+        // screens' height (test worlds: there the camera already followed her to the world's edge).
+        private static bool WestClamp(SharedWorldModel world, float halfW, float margin, out float lo, out float hi, out float edgeX)
+        {
+            var primary = world.OutdoorIndex.PrimaryRegion.Rect;
+            lo = hi = edgeX = 0f;
+            var west = false;
+            int minX = primary.Min.x, maxX = primary.Max.x;
+            foreach (var region in world.OutdoorIndex.Regions)
+            {
+                var r = region.Rect;
+                if (r.Max.x < primary.Min.x) { west = true; continue; }
+                minX = Mathf.Min(minX, r.Min.x); maxX = Mathf.Max(maxX, r.Max.x);
+            }
+            if (!west || primary.Max.x - primary.Min.x + 1 > 2f * VisibleCellsTall) return false;
+            var left = minX * GridSpace3D.CellSize - margin;
+            var right = maxX * GridSpace3D.CellSize + margin;
+            var range = Mathf.Max(0f, (right - left) * 0.5f - halfW);
+            var centre = (left + right) * 0.5f;
+            lo = centre - range;
+            hi = centre + range;
+            foreach (var region in world.OutdoorIndex.Regions)
+            {
+                var r = region.Rect;
+                if (r.Max.x < primary.Min.x) continue;
+                var c = (r.Min.x + r.Max.x) * 0.5f * GridSpace3D.CellSize;
+                lo = Mathf.Min(lo, c); hi = Mathf.Max(hi, c);
+            }
+            edgeX = primary.Min.x * GridSpace3D.CellSize;
+            return true;
+        }
 
         // The vertical clamp of the regions in first_field's rows alone (what the camera did before a
         // region North or South existed), and those rows' edges. False (the ver3.3 rule alone) when every
