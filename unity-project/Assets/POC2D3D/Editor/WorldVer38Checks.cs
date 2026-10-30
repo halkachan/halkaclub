@@ -421,8 +421,9 @@ namespace Halka.Poc2D3D.EditorTools
             var index = c.Session.OutdoorIndex;
             var definition = index.Definition;
             var south = South(c);
+            // ver3.9: more regions follow (the four transition regions); these five come first, in this order.
             Check("the registry: first_field, east_area_01, north_area_01, west_area_01 and south_area_01 (in that order)",
-                index.Regions.Select(r => r.MapId).SequenceEqual(new[] { "first_field", V33.EastId, V36.NorthId, V37.WestId, SouthId }), string.Join(",", index.Regions.Select(r => r.MapId)));
+                index.Regions.Select(r => r.MapId).Take(5).SequenceEqual(new[] { "first_field", V33.EastId, V36.NorthId, V37.WestId, SouthId }), string.Join(",", index.Regions.Select(r => r.MapId)));
             Check("south_area_01: direction south, World offset (-10,-26), 21 x 20 cells: World (-10,-26)..(10,-7)",
                 south != null && south.Direction == "south" && south.Offset == SouthOffset &&
                 south.Rect.Min == new Vector2Int(-10, -26) && south.Rect.Max == new Vector2Int(10, -7), south != null ? $"{south.Offset} {south.Rect.Min}..{south.Rect.Max}" : "missing");
@@ -466,9 +467,12 @@ namespace Halka.Poc2D3D.EditorTools
                 road.Contains(SouthEnd) && index.SurfaceAt(FieldRoadEnd)?.StableId == "dirt", $"{road.Count} road cells");
             Check("nothing blocks the border rows next to the road (y -6 and -7, x 1..3)",
                 new[] { 1, 2, 3 }.All(x => index.CanEnter(new Vector2Int(x, -6)) && index.CanEnter(new Vector2Int(x, -7))));
+            // ver3.9: beside the South area (West and East of it) lie the South-West and South-East transition regions now
+            // (WorldVer39Checks [world]); outside the world's rectangle nothing is walkable, as before.
             Check("outside every region nothing is walkable (South of the area, and beside it: West of it below the forest, East of it)",
-                !index.CanEnter(new Vector2Int(0, -27)) && !index.CanEnter(new Vector2Int(-11, -7)) && !index.CanEnter(new Vector2Int(11, -7)) &&
-                index.RegionAt(new Vector2Int(0, -27)) == null && index.RegionAt(new Vector2Int(-11, -10)) == null && index.RegionAt(new Vector2Int(11, -10)) == null);
+                !index.CanEnter(new Vector2Int(0, -27)) && !index.CanEnter(new Vector2Int(-36, -10)) && !index.CanEnter(new Vector2Int(37, -10)) &&
+                index.RegionAt(new Vector2Int(0, -27)) == null && index.RegionAt(new Vector2Int(-36, -10)) == null && index.RegionAt(new Vector2Int(37, -10)) == null &&
+                index.RegionAt(new Vector2Int(-11, -10)) != null && index.RegionAt(new Vector2Int(-11, -10)) != South(c) && index.RegionAt(new Vector2Int(11, -10)) != South(c));
             var reach = Reach(c, RoadIn, cell => index.CanEnter(cell) && InSouth(c, cell));
             var walkable = 0;
             for (var y = south.Rect.Min.y; y <= south.Rect.Max.y; y++)
@@ -506,7 +510,8 @@ namespace Halka.Poc2D3D.EditorTools
                 var withoutSouth = new OutdoorWorldDefinition
                 {
                     worldId = full.worldId, chunkSize = full.chunkSize, themes = full.themes, formatVersion = full.formatVersion,
-                    regions = full.regions.Where(r => r.mapId != SouthId).ToList()
+                    // ver3.9: the transition regions left out too (they came after the South area): the ver3.7 world
+                    regions = full.regions.Where(r => r.mapId != SouthId && !r.mapId.EndsWith("_transition_01", StringComparison.Ordinal)).ToList()
                 };
                 s.UseOutdoorWorldForTest(withoutSouth, primary, false);
             });
@@ -650,10 +655,12 @@ namespace Halka.Poc2D3D.EditorTools
             Check("no black gap: every cell of the world's rectangle and its margin has ground (the corners East and West of the South area too)",
                 undressed.Count == 0, $"{dressedRect.Min}..{dressedRect.Max}, undressed {undressed.Count} {string.Join(" ", undressed.Take(4))}");
             var southCells = Enumerable.Range(-26, 20).SelectMany(y => Enumerable.Range(-10, 21).Select(x => new Vector2Int(x, y))).ToList();
+            // ver3.9: the corners beside the South area are the South-West and South-East transition regions' own ground now
+            // (region cells, not background); outside the world's rectangle the nearest region still lends its dressing.
             Check("…from every cell of the South area, 20 cells to each side (wider than a phone held sideways) is ground; cells within 8 of a region keep their old dressing",
                 southCells.All(cell => Enumerable.Range(-20, 41).All(dx => index.DecorationRegionAt(cell + new Vector2Int(dx, 0)) != null || index.RegionAt(cell + new Vector2Int(dx, 0)) != null)) &&
-                index.DecorationRegionAt(new Vector2Int(18, -20))?.MapId == SouthId && index.DecorationRegionAt(new Vector2Int(12, -10))?.MapId == SouthId &&
-                index.DecorationRegionAt(new Vector2Int(20, -20))?.MapId == SouthId && index.DecorationRegionAt(new Vector2Int(30, -20))?.MapId == "east_area_01",
+                index.RegionAt(new Vector2Int(18, -20)) != null && index.RegionAt(new Vector2Int(12, -10)) != null &&
+                index.DecorationRegionAt(new Vector2Int(0, -30))?.MapId == SouthId && index.DecorationRegionAt(new Vector2Int(40, -1))?.MapId == "east_area_01",
                 $"(20,-20) {index.DecorationRegionAt(new Vector2Int(20, -20))?.MapId} (30,-20) {index.DecorationRegionAt(new Vector2Int(30, -20))?.MapId}");
             Check("grass: none on the cells of rocks, ledges, the pinwheel, trees and the sign; the walkable decoration's cells as any walkable cell (the grass rule clears blocked cells only, as for ver3.7's ferns)",
                 objects.Where(o => o.Definition.BlocksMovement).All(o => !index.HasGrass(o.RootCell)) &&

@@ -389,9 +389,11 @@ namespace Halka.Poc2D3D.EditorTools
                 road.Contains(new Vector2Int(-19, -1)) && road.Contains(WestEnd), $"{road.Count} road cells");
             Check("nothing blocks the border columns next to the road (x -10 and -11, y -1..1)",
                 new[] { -1, 0, 1 }.All(y => index.CanEnter(new Vector2Int(-10, y)) && index.CanEnter(new Vector2Int(-11, y))));
+            // ver3.9: North and South of the forest lie the North-West and South-West transition regions now
+            // (WorldVer39Checks [world]); West of it, outside the world's rectangle, nothing is walkable, as before.
             Check("outside every region nothing is walkable (West of the forest, North and South of it)",
-                !index.CanEnter(new Vector2Int(-36, 0)) && !index.CanEnter(new Vector2Int(-20, 7)) && !index.CanEnter(new Vector2Int(-20, -7)) &&
-                index.RegionAt(new Vector2Int(-36, 0)) == null && index.RegionAt(new Vector2Int(-20, 7)) == null);
+                !index.CanEnter(new Vector2Int(-36, 0)) && !index.CanEnter(new Vector2Int(-20, 27)) && !index.CanEnter(new Vector2Int(-20, -27)) &&
+                index.RegionAt(new Vector2Int(-36, 0)) == null && index.RegionAt(new Vector2Int(-20, 7))?.MapId != WestId && index.RegionAt(new Vector2Int(-20, -7))?.MapId != WestId);
             var reach = new HashSet<Vector2Int> { new Vector2Int(-11, 0) };
             queue = new Queue<Vector2Int>(reach);
             while (queue.Count > 0)

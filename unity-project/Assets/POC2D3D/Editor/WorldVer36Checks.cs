@@ -336,9 +336,11 @@ namespace Halka.Poc2D3D.EditorTools
                 string.Join(" ", road.Where(cell => !index.CanEnter(cell) || index.SurfaceAt(cell)?.StableId != "dirt")));
             Check("no blocking Object on the border rows next to the road (y 6 and 7, x -1..1)",
                 new[] { -1, 0, 1 }.All(x => index.CanEnter(new Vector2Int(x, 6)) && index.CanEnter(new Vector2Int(x, 7))));
+            // ver3.9: West and East of the North area lie the North-West and North-East transition regions now
+            // (WorldVer39Checks [world]); North of it, outside the world's rectangle, nothing is walkable, as before.
             Check("outside every region nothing is walkable (West, East, North of the North area)",
-                !index.CanEnter(new Vector2Int(-11, 12)) && !index.CanEnter(new Vector2Int(11, 12)) && !index.CanEnter(new Vector2Int(0, 27)) &&
-                index.RegionAt(new Vector2Int(11, 12)) == null);
+                !index.CanEnter(new Vector2Int(0, 27)) && !index.CanEnter(new Vector2Int(-36, 12)) && !index.CanEnter(new Vector2Int(37, 12)) &&
+                index.RegionAt(new Vector2Int(0, 27)) == null && index.RegionAt(new Vector2Int(-11, 12))?.MapId != NorthId && index.RegionAt(new Vector2Int(11, 12))?.MapId != NorthId);
             // Every walkable cell of the North area can be reached on foot from the road.
             var reach = new HashSet<Vector2Int> { new Vector2Int(0, 7) };
             var queue = new Queue<Vector2Int>(reach);
@@ -831,7 +833,8 @@ namespace Halka.Poc2D3D.EditorTools
             const string Published = "d2441b7";
             Check("WORLD EDITOR v1.0 unchanged since ver3.5 (tools/HalkaWorldMapEditor)", V32.Git("diff --quiet " + Published + " -- tools/HalkaWorldMapEditor", out _));
             Check("first_field, east_area_01, the house and the booth Maps (Authoring JSON and caches) unchanged", OfficialMapsKept(Published));
-            Check("direction_themes.json unchanged", V32.Git("diff --quiet " + Published + " -- unity-project/Assets/Content/Maps/World/direction_themes.json", out _));
+            // ver3.9: only added to (the four diagonals after the five themes, which are as they were).
+            Check("direction_themes.json unchanged", OnlyAdded(Published, Themes));
             Check("the Object Catalog: the existing definitions unchanged (only new ones added)", CatalogKept());
             Check("the published ver3.5 (halkaworld/) unchanged", V32.Git("diff --quiet " + Published + " -- halkaworld", out _));
             Check("the crow's sprites, model and voice, and the font atlas unchanged", CrowKept(Published, true));
@@ -862,13 +865,16 @@ namespace Halka.Poc2D3D.EditorTools
 
         // The Maps folder since a commit: no file changed or removed but the catalog and the world
         // registry, and those two only added to (new Maps and their caches may be there).
+        // ver3.9: direction_themes.json may be added to as well (the four diagonals); its old themes as they were.
         internal static bool MapsFolderKept(string commit) =>
-            V32.Git("diff --quiet --diff-filter=MDR " + commit + " -- unity-project/Assets/Content/Maps :(exclude)" + Catalog + " :(exclude)" + Registry, out _) &&
-            OnlyAdded(commit, Catalog) && OnlyAdded(commit, Registry);
+            V32.Git("diff --quiet --diff-filter=MDR " + commit + " -- unity-project/Assets/Content/Maps :(exclude)" + Catalog + " :(exclude)" + Registry + " :(exclude)" + Themes, out _) &&
+            OnlyAdded(commit, Catalog) && OnlyAdded(commit, Registry) && OnlyAdded(commit, Themes);
 
-        // The world registry since a commit: only added to; direction_themes.json unchanged.
-        internal static bool RegistryKept(string commit) =>
-            OnlyAdded(commit, Registry) && V32.Git("diff --quiet " + commit + " -- unity-project/Assets/Content/Maps/World/direction_themes.json", out _);
+        // The world registry since a commit: only added to; direction_themes.json unchanged
+        // (ver3.9: or only added to: its themes as they were, new directions after them).
+        internal static bool RegistryKept(string commit) => OnlyAdded(commit, Registry) && OnlyAdded(commit, Themes);
+
+        private const string Themes = "unity-project/Assets/Content/Maps/World/direction_themes.json";
 
         // first_field, east_area_01, the house and the booth: Authoring JSON and caches unchanged.
         internal static bool OfficialMapsKept(string commit) =>

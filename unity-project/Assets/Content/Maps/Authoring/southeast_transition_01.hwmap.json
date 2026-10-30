@@ -1,0 +1,467 @@
+{
+  "format": "halka-world-map",
+  "formatVersion": 4,
+  "mapId": "southeast_transition_01",
+  "displayName": "南東エリア",
+  "mapType": "outdoor",
+  "baseSurfaceDefinitionId": "base_ground",
+  "grassMode": "auto",
+  "backdropColor": "#101014",
+  "bounds": {
+    "minX": 0,
+    "maxX": 25,
+    "minY": 0,
+    "maxY": 19
+  },
+  "surfaces": [],
+  "objects": [
+    {
+      "instanceId": "obj_flower_yellow_v39_se_004",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 12,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_006",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 6,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_009",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 17,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_012",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 21,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_014",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 5,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_015",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 23,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_021",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 19,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_025",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 5,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_026",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 23,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_030",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 6,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_035",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 23,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_039",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 25,
+        "y": 13
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_040",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 9,
+        "y": 14
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_041",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 12,
+        "y": 14
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_045",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 17,
+        "y": 15
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_046",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 23,
+        "y": 15
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_048",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 3,
+        "y": 16
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_049",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 25,
+        "y": 16
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_052",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 6,
+        "y": 18
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_053",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 18,
+        "y": 18
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_se_056",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 19,
+        "y": 19
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v39_se_013",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 23,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v39_se_017",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 23,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v39_se_027",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 1,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v39_se_033",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 10,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_south_grass_short_v39_se_044",
+      "definitionId": "south_grass_short",
+      "rootCell": {
+        "x": 25,
+        "y": 14
+      }
+    },
+    {
+      "instanceId": "obj_south_ground_accent_v39_se_010",
+      "definitionId": "south_ground_accent",
+      "rootCell": {
+        "x": 1,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_south_ground_accent_v39_se_016",
+      "definitionId": "south_ground_accent",
+      "rootCell": {
+        "x": 8,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_south_ground_accent_v39_se_018",
+      "definitionId": "south_ground_accent",
+      "rootCell": {
+        "x": 7,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_south_ground_accent_v39_se_022",
+      "definitionId": "south_ground_accent",
+      "rootCell": {
+        "x": 3,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_south_ground_accent_v39_se_036",
+      "definitionId": "south_ground_accent",
+      "rootCell": {
+        "x": 2,
+        "y": 12
+      }
+    },
+    {
+      "instanceId": "obj_south_ground_accent_v39_se_050",
+      "definitionId": "south_ground_accent",
+      "rootCell": {
+        "x": 0,
+        "y": 17
+      }
+    },
+    {
+      "instanceId": "obj_south_ground_accent_v39_se_051",
+      "definitionId": "south_ground_accent",
+      "rootCell": {
+        "x": 4,
+        "y": 17
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v39_se_007",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 8,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v39_se_011",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 3,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v39_se_019",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 8,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v39_se_020",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 14,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v39_se_023",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 9,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v39_se_028",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 2,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v39_se_042",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 22,
+        "y": 14
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_red_v39_se_054",
+      "definitionId": "south_rock_red",
+      "rootCell": {
+        "x": 15,
+        "y": 19
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_small_v39_se_003",
+      "definitionId": "south_rock_small",
+      "rootCell": {
+        "x": 11,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_small_v39_se_024",
+      "definitionId": "south_rock_small",
+      "rootCell": {
+        "x": 3,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_small_v39_se_032",
+      "definitionId": "south_rock_small",
+      "rootCell": {
+        "x": 16,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_south_rock_small_v39_se_047",
+      "definitionId": "south_rock_small",
+      "rootCell": {
+        "x": 24,
+        "y": 15
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v39_se_008",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 10,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v39_se_029",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 4,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v39_se_055",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 16,
+        "y": 19
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v39_se_002",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 3,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v39_se_005",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 20,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v39_se_031",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 22,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v39_se_037",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 18,
+        "y": 12
+      }
+    }
+  ],
+  "markers": [
+    {
+      "id": "trail_a_east",
+      "cell": {
+        "x": 13,
+        "y": 19
+      }
+    },
+    {
+      "id": "trail_a_south",
+      "cell": {
+        "x": 0,
+        "y": 12
+      }
+    },
+    {
+      "id": "trail_b_east",
+      "cell": {
+        "x": 20,
+        "y": 19
+      }
+    },
+    {
+      "id": "trail_b_south",
+      "cell": {
+        "x": 0,
+        "y": 5
+      }
+    }
+  ],
+  "entitySpawns": [],
+  "areaTransitions": []
+}

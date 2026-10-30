@@ -1,0 +1,224 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7333b7c63ac1a534d85d98463325eff1, type: 3}
+  m_Name: northeast_transition_01
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.MapDefinition
+  dataVersion: 4
+  mapId: northeast_transition_01
+  displayName: "\u5317\u6771\u30A8\u30EA\u30A2"
+  mapType: outdoor
+  baseSurface: {fileID: 11400000, guid: 0db760ea3a4879a479bdb2cc6cfd8c4d, type: 2}
+  grassMode: auto
+  backdropColor: {r: 0.0627451, g: 0.0627451, b: 0.078431375, a: 1}
+  minCell: {x: 0, y: 0}
+  maxCell: {x: 25, y: 19}
+  surfaces: []
+  objects:
+  - InstanceId: obj_flower_basic_v39_ne_031
+    RootCell: {x: 11, y: 8}
+    Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_basic_v39_ne_036
+    RootCell: {x: 6, y: 10}
+    Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_basic_v39_ne_060
+    RootCell: {x: 8, y: 19}
+    Definition: {fileID: 11400000, guid: 3c0eec4610714e2408bbef19497be0fe, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_blue_v39_ne_006
+    RootCell: {x: 0, y: 1}
+    Definition: {fileID: 11400000, guid: 89d3634dc5dd59842ab6f24aa1c29885, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_blue_v39_ne_014
+    RootCell: {x: 19, y: 3}
+    Definition: {fileID: 11400000, guid: 89d3634dc5dd59842ab6f24aa1c29885, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_blue_v39_ne_016
+    RootCell: {x: 23, y: 4}
+    Definition: {fileID: 11400000, guid: 89d3634dc5dd59842ab6f24aa1c29885, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_blue_v39_ne_034
+    RootCell: {x: 10, y: 9}
+    Definition: {fileID: 11400000, guid: 89d3634dc5dd59842ab6f24aa1c29885, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_blue_v39_ne_047
+    RootCell: {x: 4, y: 13}
+    Definition: {fileID: 11400000, guid: 89d3634dc5dd59842ab6f24aa1c29885, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_blue_v39_ne_048
+    RootCell: {x: 6, y: 13}
+    Definition: {fileID: 11400000, guid: 89d3634dc5dd59842ab6f24aa1c29885, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_blue_v39_ne_050
+    RootCell: {x: 2, y: 14}
+    Definition: {fileID: 11400000, guid: 89d3634dc5dd59842ab6f24aa1c29885, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_blue_v39_ne_052
+    RootCell: {x: 25, y: 14}
+    Definition: {fileID: 11400000, guid: 89d3634dc5dd59842ab6f24aa1c29885, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_blue_v39_ne_053
+    RootCell: {x: 20, y: 15}
+    Definition: {fileID: 11400000, guid: 89d3634dc5dd59842ab6f24aa1c29885, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_008
+    RootCell: {x: 5, y: 1}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_009
+    RootCell: {x: 9, y: 1}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_011
+    RootCell: {x: 17, y: 1}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_012
+    RootCell: {x: 4, y: 2}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_015
+    RootCell: {x: 12, y: 4}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_017
+    RootCell: {x: 24, y: 4}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_020
+    RootCell: {x: 14, y: 5}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_024
+    RootCell: {x: 18, y: 6}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_032
+    RootCell: {x: 3, y: 9}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_037
+    RootCell: {x: 7, y: 10}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_039
+    RootCell: {x: 9, y: 10}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_041
+    RootCell: {x: 18, y: 10}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_042
+    RootCell: {x: 20, y: 10}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_044
+    RootCell: {x: 8, y: 11}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_054
+    RootCell: {x: 24, y: 15}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_flower_yellow_v39_ne_058
+    RootCell: {x: 16, y: 18}
+    Definition: {fileID: 11400000, guid: 073b8c4ad9297244391e30bf67a9b878, type: 2}
+    SignText: 
+  - InstanceId: obj_pond_reeds_v39_ne_018
+    RootCell: {x: 10, y: 5}
+    Definition: {fileID: 11400000, guid: bcfc940d53521ce43bf048dd36eb4d1d, type: 2}
+    SignText: 
+  - InstanceId: obj_pond_reeds_v39_ne_030
+    RootCell: {x: 2, y: 8}
+    Definition: {fileID: 11400000, guid: bcfc940d53521ce43bf048dd36eb4d1d, type: 2}
+    SignText: 
+  - InstanceId: obj_pond_reeds_v39_ne_035
+    RootCell: {x: 12, y: 9}
+    Definition: {fileID: 11400000, guid: bcfc940d53521ce43bf048dd36eb4d1d, type: 2}
+    SignText: 
+  - InstanceId: obj_pond_reeds_v39_ne_046
+    RootCell: {x: 0, y: 13}
+    Definition: {fileID: 11400000, guid: bcfc940d53521ce43bf048dd36eb4d1d, type: 2}
+    SignText: 
+  - InstanceId: obj_pond_reeds_v39_ne_055
+    RootCell: {x: 0, y: 16}
+    Definition: {fileID: 11400000, guid: bcfc940d53521ce43bf048dd36eb4d1d, type: 2}
+    SignText: 
+  - InstanceId: obj_pond_reeds_v39_ne_061
+    RootCell: {x: 17, y: 19}
+    Definition: {fileID: 11400000, guid: bcfc940d53521ce43bf048dd36eb4d1d, type: 2}
+    SignText: 
+  - InstanceId: obj_stone_basic_v39_ne_013
+    RootCell: {x: 14, y: 3}
+    Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
+  - InstanceId: obj_stone_basic_v39_ne_022
+    RootCell: {x: 13, y: 6}
+    Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
+  - InstanceId: obj_stone_basic_v39_ne_028
+    RootCell: {x: 23, y: 7}
+    Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
+  - InstanceId: obj_stone_basic_v39_ne_043
+    RootCell: {x: 4, y: 11}
+    Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
+  - InstanceId: obj_stone_basic_v39_ne_045
+    RootCell: {x: 7, y: 12}
+    Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v39_ne_010
+    RootCell: {x: 15, y: 1}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v39_ne_019
+    RootCell: {x: 11, y: 5}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v39_ne_023
+    RootCell: {x: 17, y: 6}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v39_ne_025
+    RootCell: {x: 19, y: 6}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v39_ne_027
+    RootCell: {x: 10, y: 7}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v39_ne_040
+    RootCell: {x: 12, y: 10}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v39_ne_049
+    RootCell: {x: 12, y: 13}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  - InstanceId: obj_tree_basic_v39_ne_051
+    RootCell: {x: 8, y: 14}
+    Definition: {fileID: 11400000, guid: a3e492837076d194d9f9c4d73af5232b, type: 2}
+    SignText: 
+  markers:
+  - StableId: trail_a_east
+    Cell: {x: 13, y: 0}
+  - StableId: trail_a_north
+    Cell: {x: 0, y: 6}
+  - StableId: trail_b_east
+    Cell: {x: 21, y: 0}
+  - StableId: trail_b_north
+    Cell: {x: 0, y: 15}
+  entitySpawns: []
+  areaTransitions: []

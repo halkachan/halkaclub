@@ -16,6 +16,7 @@ namespace Halka.Poc2D3D.World
         // ver3.3: which direction of the world the region belongs to (center, north, east, south,
         // west): its accents use that direction's theme colour (North blue, East yellow, South red,
         // West green). The direction is the region's; the ground keeps the field's own colours.
+        // ver3.9: or one of the four diagonals between them (northwest ...), for the transition regions.
         public string direction = OutdoorWorldDefinition.Center;
     }
 
@@ -48,7 +49,9 @@ namespace Halka.Poc2D3D.World
         public List<DirectionTheme> themes = new List<DirectionTheme>();
 
         public const string Center = "center";
-        public static readonly string[] Directions = { Center, "north", "east", "south", "west" };
+        // ver3.9: the diagonals, for the transition regions between two directions (their theme's name is the
+        // place name the save menu shows: きたにし ..., never one of the two neighbours' names).
+        public static readonly string[] Directions = { Center, "north", "east", "south", "west", "northwest", "northeast", "southwest", "southeast" };
 
         public DirectionTheme ThemeOf(string direction)
         {

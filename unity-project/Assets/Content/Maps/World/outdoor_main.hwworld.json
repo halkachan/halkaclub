@@ -8,6 +8,10 @@
     { "mapId": "east_area_01", "offset": { "x": 11, "y": -6 }, "direction": "east" },
     { "mapId": "north_area_01", "offset": { "x": -10, "y": 7 }, "direction": "north" },
     { "mapId": "west_area_01", "offset": { "x": -35, "y": -6 }, "direction": "west" },
-    { "mapId": "south_area_01", "offset": { "x": -10, "y": -26 }, "direction": "south" }
+    { "mapId": "south_area_01", "offset": { "x": -10, "y": -26 }, "direction": "south" },
+    { "mapId": "northwest_transition_01", "offset": { "x": -35, "y": 7 }, "direction": "northwest" },
+    { "mapId": "northeast_transition_01", "offset": { "x": 11, "y": 7 }, "direction": "northeast" },
+    { "mapId": "southwest_transition_01", "offset": { "x": -35, "y": -26 }, "direction": "southwest" },
+    { "mapId": "southeast_transition_01", "offset": { "x": 11, "y": -26 }, "direction": "southeast" }
   ]
 }

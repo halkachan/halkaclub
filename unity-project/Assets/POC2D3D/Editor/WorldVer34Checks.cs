@@ -578,6 +578,7 @@ namespace Halka.Poc2D3D.EditorTools
             ResetWatch();
             var crowRegions = new List<string>();
             var crowXs = new HashSet<int>();
+            var crowAirXs = new SortedSet<int>();   // (the columns it passed in the air: the detail only)
             var loadsBefore = c.Session.MapLoads;
             Walk(c, V33.FieldRoadEnd);
             Walk(c, V33.PlazaFront, () =>
@@ -585,13 +586,16 @@ namespace Halka.Poc2D3D.EditorTools
                 var r = c.Session.OutdoorIndex.RegionAt(crow.Cell)?.MapId ?? "-";
                 if (crowRegions.Count == 0 || crowRegions[crowRegions.Count - 1] != r) crowRegions.Add(r);
                 crowXs.Add(crow.Cell.x);
+                if (crow.Airborne) crowAirXs.Add(crow.Cell.x);
             });
             Settle(c, 4f);
             Check("to the yellow flower plaza with the crow: it crossed the region border (10|11) with her (first_field -> east_area_01)",
                 crowRegions.Contains("first_field") && crowRegions.Contains(V33.EastId) && c.Session.OutdoorIndex.RegionAt(crow.Cell)?.MapId == V33.EastId,
                 string.Join(">", crowRegions));
-            Check("it crossed the chunk border (15|16) too, and is beside her at the plaza; no map load", crowXs.Contains(15) && crowXs.Contains(16) &&
-                crow.DistanceToPlayer <= 3 && c.Session.MapLoads == loadsBefore, Where(c));
+            // ver3.9: following, it may cross the border in the air (a flight is part of following since ver3.4): in the ver3.9
+            // run it walked to column 15 and flew on to her at the plaza. Crossed means seen at 15 and ending East of 16.
+            Check("it crossed the chunk border (15|16) too, and is beside her at the plaza; no map load", crowXs.Contains(15) && (crowXs.Contains(16) || crow.Cell.x >= 16) &&
+                crow.DistanceToPlayer <= 3 && c.Session.MapLoads == loadsBefore, Where(c) + " columns " + string.Join(",", crowXs.OrderBy(x => x)) + " in the air " + string.Join(",", crowAirXs));
             Check("still one crow (no second crow in the East area), following, not back at its spawn", Crows() == 1 && crow.Following, Where(c));
             // The far East and back to the far West: chunks are released and built again.
             var unloads = c.Presenter.Streamer.Stats.TotalUnloads;
