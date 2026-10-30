@@ -121,6 +121,11 @@ namespace Halka.Poc2D3D.Dev
                     var time = GetComponent<PocTimeOfDay>();
                     if (time != null) time.Override = on ? PocPhaseOverride.Night : PocPhaseOverride.Auto;
                     break;
+                // ver3.7: the morning look (pictures of the forest's light by day); "morning:0" back to the clock.
+                case "morning":
+                    var clock = GetComponent<PocTimeOfDay>();
+                    if (clock != null) clock.Override = on ? PocPhaseOverride.Morning : PocPhaseOverride.Auto;
+                    break;
             }
         }
 
@@ -269,6 +274,36 @@ namespace Halka.Poc2D3D.Dev
             Str("ahead", ahead != null ? ahead.DefinitionId : "");
             Num("aheadSX", aheadScreen.x); Num("aheadSY", aheadScreen.y);
             Num("waterCells", presenter.WaterCellsDrawn); Num("ripples", presenter.RipplesStarted); Num("activeRipples", presenter.ActiveRipples);
+            // ver3.7: the forest's light and leaves; the chunks built more than once (a chunk freed and
+            // drawn again) and Object views drawn twice (never: each Object belongs to one chunk).
+            Num("komorebiCells", presenter.KomorebiCellsDrawn); Num("komorebiChunks", presenter.KomorebiChunks);
+            Num("komorebiVisible", presenter.KomorebiVisible ? 1 : 0);
+            Num("leafBursts", presenter.LeafBurstsStarted); Num("leavesActive", presenter.LeavesActive ? 1 : 0);
+            Num("leafRetriggers", presenter.LeafRetriggersIgnored); Num("leafHighest", presenter.LeafHighest);
+            Num("leafWidest", presenter.LeafWidest);
+            var reloads = 0;
+            var reloadedChunks = 0;
+            if (presenter.Streamer != null)
+                foreach (var record in presenter.Streamer.Records.Values)
+                    if (record.Loads > 1) { reloads += record.Loads - 1; reloadedChunks++; }
+            Num("reloads", reloads); Num("reloadedChunks", reloadedChunks);
+            var seen = new System.Collections.Generic.HashSet<string>();
+            var duplicates = 0;
+            foreach (var view in presenter.Views)
+                if (view != null && !string.IsNullOrEmpty(view.InstanceId) && !seen.Add(view.InstanceId)) duplicates++;
+            Num("dupViews", duplicates);
+            // ver3.8: the South hill's pinwheel (spins, ignored retriggers, its blades' angle while drawn) and
+            // every Mesh in memory (counted every 2 s: the meshes made for chunks and rooms must not pile up).
+            Num("pinwheelSpins", presenter.PinwheelSpinsStarted); Num("pinwheelRetriggers", presenter.PinwheelRetriggersIgnored);
+            Num("pinwheelSpinning", presenter.PinwheelSpinning ? 1 : 0); Num("pinwheelsLoaded", presenter.PinwheelBladesLoaded);
+            var pinwheel = session.OutdoorWorld != null ? FirstPinwheel() : null;
+            Num("pinwheelAngle", pinwheel != null ? presenter.PinwheelAngle(pinwheel) : -1f);
+            if (Time.unscaledTime >= meshesCountedAt)
+            {
+                meshesCountedAt = Time.unscaledTime + 2f;
+                meshCount = Resources.FindObjectsOfTypeAll<Mesh>().Length;
+            }
+            Num("meshes", meshCount);
             Str("lastMessage", session.LastMessage ?? "");
             var log = gameplay != null ? gameplay.LifeLog : null;
             Num("lifeSteps", log != null ? log.TotalSteps : -1); Num("playSeconds", log != null ? log.TotalPlaySeconds : -1);
@@ -282,6 +317,18 @@ namespace Halka.Poc2D3D.Dev
             Num("padX", pad.x); Num("padY", pad.y); Num("padW", pad.width); Num("padH", pad.height);
             var a = actionButton != null && actionButton.Visible ? actionButton.ControlBoundsGui : default;
             Num("aX", a.center.x); Num("aY", a.center.y); Num("aW", a.width);
+        }
+
+        private float meshesCountedAt;
+        private int meshCount;
+        private string firstPinwheel;
+
+        private string FirstPinwheel()
+        {
+            if (firstPinwheel != null) return firstPinwheel;
+            foreach (var instance in session.OutdoorWorld.Objects)
+                if (instance.DefinitionId == PocWorldPresenter.PinwheelDefinitionId) return firstPinwheel = instance.InstanceId;
+            return null;
         }
 
         private static Vector2Int FacingVector(Halka.Game.Player.FacingDirection facing) =>

@@ -17,13 +17,13 @@ namespace Halka.Poc2D3D
         // Phase 5: the Release Candidate scene. Its page shows only the game; ?debug=1 brings the
         // panel back (with this title). Hidden, the component is disabled: no OnGUI, no recorders.
         // ver3.1: the studio update; ver3.2: the open-world base, built for a local check only (not published).
-        public const string ReleaseCandidateName = "はるかわーるど ver3.6 北・青エリア拡張アップデート (local check)";
+        public const string ReleaseCandidateName = "はるかわーるど ver3.8 南・赤エリア拡張アップデート (local check)";
         // RC1 feedback: the game's name is fixed as はるかわーるど (the page title shows only it).
         public const string ReleaseCandidateTitle = "はるかわーるど";
         // Phase 7: Release Candidate 3 is the release build itself, so the game shows the version
         // players will see (ver3.0); "RC3" only names the candidate (build info, staging, this title).
-        public const string ReleaseCandidateVersionLabel = "ver3.6";
-        public const string ReleaseCandidateShortName = "ver3.6 LOCAL";
+        public const string ReleaseCandidateVersionLabel = "ver3.8";
+        public const string ReleaseCandidateShortName = "ver3.8 LOCAL";
         [SerializeField] private bool releaseCandidate;
         public bool ReleaseCandidate => releaseCandidate;
         public void ConfigureReleaseCandidate(bool value) => releaseCandidate = value;

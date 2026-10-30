@@ -219,12 +219,16 @@ namespace Halka.Poc2D3D
         {
             if (session != null) session.MapChanged += Rebuild;
             if (session != null) session.Interacted += OnInteracted;
+            if (session != null) session.Interacted += OnForestInteracted;
+            if (session != null) session.Interacted += OnPinwheelInteracted;
         }
 
         private void OnDisable()
         {
             if (session != null) session.MapChanged -= Rebuild;
             if (session != null) session.Interacted -= OnInteracted;
+            if (session != null) session.Interacted -= OnForestInteracted;
+            if (session != null) session.Interacted -= OnPinwheelInteracted;
         }
 
         private void Start()
@@ -236,6 +240,7 @@ namespace Halka.Poc2D3D
         public void Rebuild(SharedWorldModel world)
         {
             ReleaseChunks();
+            FreeMeshes(roomMeshes);
             if (mapRoot != null)
             {
                 if (Application.isPlaying) Destroy(mapRoot.gameObject);
@@ -257,7 +262,41 @@ namespace Halka.Poc2D3D
             BuiltMapId = world.MapId;
             // Runtime static batching of the freshly built objects (one shared material), redone on
             // every rebuild so Map edits still move things. Edit Mode checks keep the meshes as is.
+            CollectMeshes(mapRoot, roomMeshes, false);
             if (Application.isPlaying) StaticBatchingUtility.Combine(mapRoot.gameObject);
+            CollectMeshes(mapRoot, roomMeshes, false);   // (the combined meshes static batching made)
+        }
+
+        // ver3.7: the meshes made for what was built belong to it and are destroyed with it: a chunk's
+        // when the chunk is freed, a room's (or a whole Map's) at the next map change. Every Object gets
+        // its own copy of its model's meshes for its outline id (PocOutlineTag.Apply); a room's floor,
+        // walls and grid are generated; static batching adds combined meshes. Before ver3.7 the outline
+        // copies (and a room's generated meshes) stayed in memory after their GameObjects were gone
+        // (found by the ver3.7 chunk round trips: about 220 meshes per visit to the house). The
+        // catalog's models are never touched: no mesh under a built root is one of theirs.
+        private readonly List<Mesh> roomMeshes = new List<Mesh>();
+
+        // outlineOnly: only the Objects' outline copies (a chunk tracks its generated meshes itself).
+        private static void CollectMeshes(Transform root, List<Mesh> into, bool outlineOnly)
+        {
+            foreach (var filter in root.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var mesh = filter.sharedMesh;
+                if (mesh == null || into.Contains(mesh)) continue;
+                if (outlineOnly && !mesh.name.EndsWith(PocOutlineTag.CopySuffix, System.StringComparison.Ordinal)) continue;
+                into.Add(mesh);
+            }
+        }
+
+        private static void FreeMeshes(List<Mesh> meshes)
+        {
+            foreach (var mesh in meshes)
+                if (mesh != null)
+                {
+                    if (Application.isPlaying) Destroy(mesh);
+                    else DestroyImmediate(mesh);
+                }
+            meshes.Clear();
         }
 
         public PocObjectView FindView(string instanceId)

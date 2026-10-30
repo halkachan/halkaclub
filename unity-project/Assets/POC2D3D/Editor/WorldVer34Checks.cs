@@ -502,6 +502,9 @@ namespace Halka.Poc2D3D.EditorTools
             ResetWatch();
             // She walks straight into the crow and keeps the key down.
             Settle(c, 1f);
+            // ver3.7: on the ground first (with a bigger world the shared random sequence differs, and the
+            // crow's own "settle" roll sometimes took a short flight just then: there was nothing to walk into).
+            WaitStanding(c);
             var cell = crow.Cell;
             Vector2Int push = default;
             foreach (var d in Dirs)
@@ -811,7 +814,8 @@ namespace Halka.Poc2D3D.EditorTools
             // Walking in 3D.
             Walk(c, V32.NearestWalkable(c, c.Session.Cell + new Vector2Int(-6, 0)));
             var walking = false;
-            for (var t = 0f; t < 2f && !walking; t += 1f / 60f) { Frame(c, 1f / 60f, V32.Raw(c, Vector2Int.right)); walking = crow.Activity == CrowActivity.GroundWalk; }
+            // ver3.7: up to 5 s (was 2 s): a random catch-up flight may come first; the switch is checked while it walks.
+            for (var t = 0f; t < 5f && !walking; t += 1f / 60f) { Frame(c, 1f / 60f, V32.Raw(c, Vector2Int.right)); walking = crow.Activity == CrowActivity.GroundWalk; }
             cell = crow.Cell; activity = crow.Activity; position = crow.transform.position;
             c.Menu.ActivateQuickItem(C6.Clock);
             Check("3D -> 2D while it walks: same cell, activity, position (the step goes on)", Same(cell, activity, position) && walking &&

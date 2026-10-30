@@ -238,10 +238,14 @@ namespace Halka.Poc2D3D.EditorTools
             Release(c, 0.6f);
         }
 
+        // ver3.7: searched in first_field (the area these checks were written for): the outdoor world now
+        // starts with the West forest, whose first open patch has a bush three cells West of it.
         private static Vector2Int OpenArea(SharedWorldModel world, int radius)
         {
-            for (var y = world.MinCell.y + radius; y <= world.MaxCell.y - radius; y++)
-            for (var x = world.MinCell.x + radius; x <= world.MaxCell.x - radius; x++)
+            var min = world.OutdoorIndex != null ? world.OutdoorIndex.PrimaryRegion.Rect.Min : world.MinCell;
+            var max = world.OutdoorIndex != null ? world.OutdoorIndex.PrimaryRegion.Rect.Max : world.MaxCell;
+            for (var y = min.y + radius; y <= max.y - radius; y++)
+            for (var x = min.x + radius; x <= max.x - radius; x++)
             {
                 var ok = true;
                 for (var dy = -radius; dy <= radius && ok; dy++)

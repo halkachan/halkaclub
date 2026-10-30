@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7c55d63a6fbaf8488893bfe6c9abf3d, type: 3}
+  m_Name: south_rock_small
+  m_EditorClassIdentifier: Assembly-CSharp::Halka.Game.World.WorldObjectDefinition
+  stableId: south_rock_small
+  displayName: "\u3061\u3044\u3055\u306A \u3044\u3057"
+  previewSprite: {fileID: 21300000, guid: 6d9e9bc544b0493c83d782506c74f52b, type: 3}
+  examineMessage: 
+  rootedArtwork: 0
+  clickColliderSize: {x: 0.5, y: 0.5}
+  footprint: {x: 1, y: 1}
+  blockedCellOffsets: []
+  actionPoints: []
+  rootAnchor: bottom-center
+  behavior: 2
+  blocksMovement: 0
+  excludesGrass: 0
+  sortingOrder: 2

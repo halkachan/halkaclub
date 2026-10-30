@@ -158,7 +158,7 @@ namespace Halka.Poc2D3D
                 var cell = new Vector2Int(x, y);
                 if (!worldRoad.Contains(cell)) continue;
                 stats.RoadCellSet.Add(cell);
-                var tint = index.Contains(cell) ? whiteTint : dressing.outsideTint;
+                var tint = index.Contains(cell) ? RoadTint(index, cell) : dressing.outsideTint;
                 for (var hx = -1; hx <= 1; hx += 2)
                 for (var hz = -1; hz <= 1; hz += 2)
                 {
@@ -209,6 +209,20 @@ namespace Halka.Poc2D3D
             tufts = tuftMesh.CreateObject("Grass tufts " + chunk.Coord + " (decoration only, no collider)", parent, material);
             tufts.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             return stats;
+        }
+
+        // ver3.8: the South area's road and trail are reddish soil (the South red as a hint in the earth, not
+        // paint), deepening over its first rows below first_field so the road shows no seam. Every other
+        // region keeps the field's road colour (white: the pieces' own colours).
+        public static readonly Color SouthSoilTint = new Color(1.08f, 0.86f, 0.82f, 1f);
+        public const int SouthSoilBlendRows = 4;
+
+        public static Color RoadTint(OutdoorWorldIndex index, Vector2Int cell)
+        {
+            var region = index.RegionAt(cell);
+            if (region == null || region.Direction != "south") return Color.white;
+            var k = Mathf.Clamp01((region.Rect.Max.y - cell.y + 1) / (float)SouthSoilBlendRows);
+            return Color.Lerp(Color.white, SouthSoilTint, k);
         }
 
         // Dirt Surfaces inside the bounds, plus roads continued straight out of the map from any

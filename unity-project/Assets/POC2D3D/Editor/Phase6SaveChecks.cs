@@ -365,6 +365,14 @@ namespace Halka.Poc2D3D.EditorTools
 
         internal static HarukaSaveData Latest(Ctx c) => c.Save.Store.Scan().Latest;
 
+        // The newest save names the place she is now (ver3.7: as Map ID + Map-local cell; in a region whose
+        // offset is not (0,0), such as the West area she can now walk into, that differs from her World cell).
+        internal static bool SavedHere(Ctx c)
+        {
+            var latest = Latest(c);
+            return c.Session.TryGetSavePlace(out var map, out var cell) && latest.MapId == map && latest.CellX == cell.x && latest.CellY == cell.y;
+        }
+
         internal static Vector2Int FreeNeighbour(Ctx c, out Vector2Int direction)
         {
             foreach (var d in new[] { Vector2Int.right, Vector2Int.left, Vector2Int.up, Vector2Int.down })
@@ -495,7 +503,7 @@ namespace Halka.Poc2D3D.EditorTools
             Release(c);
             Settle(c, 3.2f);
             Check("walking with a held key: few writes (at most one per 3 s), the final cell saved",
-                c.Save.Writes - writes <= 2 && Latest(c).CellX == c.Session.Cell.x && Latest(c).CellY == c.Session.Cell.y,
+                c.Save.Writes - writes <= 2 && SavedHere(c),
                 $"{c.Save.Writes - writes} writes");
             // A step into something solid.
             var blockedDir = new[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right }
@@ -504,7 +512,7 @@ namespace Halka.Poc2D3D.EditorTools
             var cellBefore = c.Session.Cell;
             if (blockedDir != Vector2Int.zero) Step(c, blockedDir, 3.5f);
             Check("a step into something solid: the cell stays, nothing new to save except the facing",
-                blockedDir == Vector2Int.zero || c.Session.Cell == cellBefore && Latest(c).CellX == cellBefore.x && Latest(c).CellY == cellBefore.y,
+                blockedDir == Vector2Int.zero || c.Session.Cell == cellBefore && SavedHere(c),
                 blockedDir.ToString());
             // The view and AUTO setting: saved within a second.
             c.Switcher.Toggle();
@@ -525,10 +533,10 @@ namespace Halka.Poc2D3D.EditorTools
             writes = c.Save.Writes;
             c.Save.OnPageHidden("");
             Check("page hidden / closing: saved at once, without waiting for the interval",
-                c.Save.Writes == writes + 1 && Latest(c).CellX == c.Session.Cell.x && Latest(c).CellY == c.Session.Cell.y);
+                c.Save.Writes == writes + 1 && SavedHere(c));
             // Mid-step: the logical cell.
             Settle(c, 1f);
-            var from = c.Session.Cell;
+            c.Session.TryGetSavePlace(out _, out var from);   // (the Map-local cell the save holds)
             var stepDir = FreeDirection(c);
             Release(c);
             for (var i = 0; i < 3; i++) Frame(c, 1f / 60f, RawFor(c, stepDir));
@@ -575,7 +583,7 @@ namespace Halka.Poc2D3D.EditorTools
             Settle(c, 3.5f);
             Check("AUTO walking: its completed steps are saved like the player's (cell and steps)",
                 autoSteps >= startSteps + 3 && Latest(c).TotalSteps == c.LifeLog.TotalSteps &&
-                Latest(c).CellX == c.Session.Cell.x && Latest(c).CellY == c.Session.Cell.y);
+                SavedHere(c));
         }
 
         internal static void ToOutdoor(Ctx c, Vector2Int cell)
@@ -797,7 +805,8 @@ namespace Halka.Poc2D3D.EditorTools
             Check("ふくげんする: done", result.StartsWith("ImportConfirm>ImportDone"), result);
             Check("after the import: the house, cell (2,0), facing up, 3D, AUTO off",
                 c.Session.World.MapId == "halka_house" && c.Session.Cell == new Vector2Int(2, 0) && c.Session.Facing == FacingDirection.Up &&
-                c.Switcher.Mode == PocViewMode.ThirdPerson3D && !c.Auto.AutoEnabled);
+                c.Switcher.Mode == PocViewMode.ThirdPerson3D && !c.Auto.AutoEnabled,
+                $"{c.Session.World.MapId} {c.Session.Cell} {c.Session.Facing} {c.Switcher.Mode} AUTO {c.Auto.AutoEnabled}");
             Check("after the import: steps 4,321, play time 3,725 s, the anchor from the file",
                 c.LifeLog.TotalSteps == 4321 && c.LifeLog.TotalPlaySeconds == 3725 && c.Clock.AnchorMilliseconds == 1760000000000L);
             var recovery = c.Save.Store.ReadRecovery();

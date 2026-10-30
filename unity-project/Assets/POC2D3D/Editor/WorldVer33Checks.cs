@@ -142,9 +142,12 @@ namespace Halka.Poc2D3D.EditorTools
                 index.RegionAt(FieldRoadEnd) == field && index.RegionAt(EastRoadStart) == east && index.RegionAt(new Vector2Int(37, -1)) == null &&
                 index.IsBlocked(new Vector2Int(37, -1)) && !index.HasGrass(new Vector2Int(37, -1)) && index.IsBlocked(new Vector2Int(11, 7)));
             // ver3.6: a region North widens the bounds upward; first_field's framing is kept by the 2D
-            // camera's own rule (WorldVer36Checks [walk]).
+            // camera's own rule (WorldVer36Checks [walk]). ver3.7: a region West widens them to the left
+            // (the West area from x -35); first_field's framing is kept the same way (WorldVer37Checks [walk]).
+            // ver3.8: a region South widens them downward (the South area to y -26); WorldVer38Checks [walk].
             Check("the world's bounds: from (-10,-6) to x 36, at least up to y 6 (the field and the East area inside)",
-                index.Bounds.Min == new Vector2Int(-10, -6) && index.Bounds.Max.x == 36 && index.Bounds.Max.y >= 6);
+                index.Bounds.Min.x <= -10 && index.Bounds.Min.y <= -6 && index.Bounds.Max.x == 36 && index.Bounds.Max.y >= 6,
+                index.Bounds.Min + ".." + index.Bounds.Max);
 
             string Registry(string regions) => "{\"format\":\"halka-world-outdoor\",\"formatVersion\":1,\"worldId\":\"outdoor_main\",\"chunkSize\":16,\"regions\":[" + regions + "]}";
             const string field0 = "{\"mapId\":\"first_field\",\"offset\":{\"x\":0,\"y\":0},\"direction\":\"center\"}";

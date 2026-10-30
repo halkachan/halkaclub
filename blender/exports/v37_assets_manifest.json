@@ -1,0 +1,131 @@
+{
+  "generator": "blender/scripts/build_v37_west.py",
+  "blenderVersion": "5.2.0 LTS",
+  "units": "1 Blender unit = 1 Unity unit, 1 cell = 0.5, origin = ground centre of the root cell",
+  "theme": {
+    "source": "unity-project/Assets/Content/Maps/World/direction_themes.json",
+    "west": [
+      "#6e9f57",
+      "#4b7a3b"
+    ]
+  },
+  "approval": "pending: new ver3.7 designs, not approved by the user yet",
+  "models": [
+    {
+      "family": "stump_hollow",
+      "name": "stump_hollow",
+      "blend": "blender/sources/v37/stump_hollow.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V37/stump_hollow.fbx",
+      "triangles": 276,
+      "vertices": 162,
+      "materials": 1,
+      "boundsMin": [
+        -0.2705,
+        -0.2529,
+        -0.0365
+      ],
+      "boundsMax": [
+        0.2763,
+        0.2824,
+        0.26
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.7 (the clearing's examine spot)"
+      ]
+    },
+    {
+      "family": "forest_bush",
+      "name": "forest_bush",
+      "blend": "blender/sources/v37/forest_bush.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V37/forest_bush.fbx",
+      "triangles": 120,
+      "vertices": 66,
+      "materials": 1,
+      "boundsMin": [
+        -0.2592,
+        -0.1432,
+        0.0007
+      ],
+      "boundsMax": [
+        0.2479,
+        0.2086,
+        0.3781
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.7"
+      ]
+    },
+    {
+      "family": "forest_fern",
+      "name": "forest_fern",
+      "blend": "blender/sources/v37/forest_fern.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V37/forest_fern.fbx",
+      "triangles": 336,
+      "vertices": 182,
+      "materials": 1,
+      "boundsMin": [
+        -0.1261,
+        -0.1542,
+        0.01
+      ],
+      "boundsMax": [
+        0.143,
+        0.1247,
+        0.1394
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.7 (walkable)"
+      ]
+    },
+    {
+      "family": "fallen_leaves",
+      "name": "fallen_leaves",
+      "blend": "blender/sources/v37/fallen_leaves.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V37/fallen_leaves.fbx",
+      "triangles": 140,
+      "vertices": 84,
+      "materials": 1,
+      "boundsMin": [
+        -0.2217,
+        -0.1764,
+        0.006
+      ],
+      "boundsMax": [
+        0.197,
+        0.1817,
+        0.019
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.7 (walkable)"
+      ]
+    },
+    {
+      "family": "sign_green",
+      "name": "sign_green",
+      "blend": "blender/sources/v37/sign_green.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V37/sign_green.fbx",
+      "triangles": 63,
+      "vertices": 47,
+      "materials": 1,
+      "boundsMin": [
+        -0.22,
+        -0.07,
+        0.0
+      ],
+      "boundsMax": [
+        0.22,
+        0.03,
+        0.56
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.7",
+        "back of the board"
+      ]
+    }
+  ]
+}
