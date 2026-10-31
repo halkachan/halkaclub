@@ -329,7 +329,13 @@ namespace Halka.Game.UI
                     var pageButton = PageButtonRect(index);
                     DrawTextButton(pageButton, page.Buttons[index], Color.white);
                     if (useMouse && GUI.Button(pageButton, GUIContent.none, GUIStyle.none))
+                    {
                         PressPageButton(index, Time.unscaledTime);
+                        // ver4.0: a press may close the menu or change the page (page is then null or
+                        // another list): stop here. The WebGL build checks no null, so reading page
+                        // again could read anything and halt the game.
+                        break;
+                    }
                 }
             }
             else if (IsLifeLogOpen)
