@@ -710,6 +710,13 @@ namespace Halka.Poc2D3D.EditorTools
             var looks = PocSceneBuilderVer40.Looks();
             Check("their 3D models, materials and 2D sprites (4 directions, idle and two walk frames) are all there",
                 looks.Length == 6 && looks.All(l => l.model != null && l.material != null && l.sprites.IsComplete));
+            // Like the original file, Rin and Len are drawn from both sides (one of Len's eyes and some hair strands face inward)
+            var tint = File.ReadAllText(Path.Combine(root, "unity-project/Assets/POC2D3D/Shaders/PocToonTextureTint.shader"));
+            var mask = File.ReadAllText(Path.Combine(root, "unity-project/Assets/POC2D3D/Shaders/PocOutlineMask.shader"));
+            var rinLenLooks = looks.Where(l => l.id == PocLife.RinId || l.id == PocLife.LenId).ToList();
+            Check("Rin and Len drawn from both sides, as in Blender (no eye or hair strand lost to back-face culling), the outline mask too, nothing else changed",
+                rinLenLooks.Count == 2 && rinLenLooks.All(l => l.material.shader.name == PocSceneBuilderVer40.TextureTintShader && l.material.GetTag("RenderType", false) == "OpaqueTwoSided") &&
+                tint.Contains("Cull Off") && tint.Contains("VFACE") && mask.Contains("\"RenderType\" = \"OpaqueTwoSided\"") && mask.Contains("\"RenderType\" = \"Opaque\""));
             var c = Begin(new HarukaMemoryStorage());
             var life = L(c);
             var rin = life.Rin;

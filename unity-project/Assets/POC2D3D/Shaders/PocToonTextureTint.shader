@@ -2,6 +2,9 @@
 // ToonVertexColor, for a model that keeps its own texture: colour = vertex rgb * lerp(1, texture,
 // vertex alpha). Alpha 1 marks the faces whose original material used the texture (multiplied by
 // the vertex colour for Len's, by white for Rin's); alpha 0 the plain vertex-colour faces.
+// Drawn from both sides, as in the original file (its materials do not cull back faces, and some
+// parts face inward: one of Len's eyes, some hair strands); a back face is lit with its normal
+// turned round, as Blender does. RenderType "OpaqueTwoSided" makes the outline mask do the same.
 Shader "HALKA/POC/ToonTextureTint"
 {
     Properties
@@ -13,8 +16,9 @@ Shader "HALKA/POC/ToonTextureTint"
     }
     SubShader
     {
-        Tags { "RenderType" = "Opaque" }
+        Tags { "RenderType" = "OpaqueTwoSided" }
         LOD 200
+        Cull Off
 
         CGPROGRAM
         #pragma surface surf Toon fullforwardshadows addshadow noforwardadd keepalpha
@@ -29,6 +33,7 @@ Shader "HALKA/POC/ToonTextureTint"
         {
             float2 uv_MainTex;
             float4 color : COLOR;
+            float facing : VFACE;
         };
 
         half4 LightingToon(SurfaceOutput s, half3 lightDir, half atten)
@@ -46,6 +51,7 @@ Shader "HALKA/POC/ToonTextureTint"
         {
             half3 tex = tex2D(_MainTex, IN.uv_MainTex).rgb;
             o.Albedo = IN.color.rgb * lerp(half3(1, 1, 1), tex, IN.color.a);
+            o.Normal = half3(0, 0, IN.facing > 0 ? 1 : -1);   // tangent space: a back face's normal turned round
             o.Alpha = _Alpha;
         }
         ENDCG
