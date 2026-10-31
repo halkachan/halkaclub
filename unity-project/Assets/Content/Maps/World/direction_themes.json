@@ -7,6 +7,10 @@
     { "direction": "north", "name": "きた", "color": "#5b84b1", "shade": "#3d5f86" },
     { "direction": "east", "name": "ひがし", "color": "#f2c443", "shade": "#c99425" },
     { "direction": "south", "name": "みなみ", "color": "#c8564b", "shade": "#953b33" },
-    { "direction": "west", "name": "にし", "color": "#6e9f57", "shade": "#4b7a3b" }
+    { "direction": "west", "name": "にし", "color": "#6e9f57", "shade": "#4b7a3b" },
+    { "direction": "northwest", "name": "きたにし", "color": "#649184", "shade": "#446c60" },
+    { "direction": "northeast", "name": "きたひがし", "color": "#a6a47a", "shade": "#837955" },
+    { "direction": "southwest", "name": "みなみにし", "color": "#9b7a51", "shade": "#705a37" },
+    { "direction": "southeast", "name": "みなみひがし", "color": "#dd8d47", "shade": "#af672c" }
   ]
 }

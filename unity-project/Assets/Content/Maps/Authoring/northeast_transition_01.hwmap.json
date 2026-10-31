@@ -1,0 +1,427 @@
+{
+  "format": "halka-world-map",
+  "formatVersion": 4,
+  "mapId": "northeast_transition_01",
+  "displayName": "北東エリア",
+  "mapType": "outdoor",
+  "baseSurfaceDefinitionId": "base_ground",
+  "grassMode": "auto",
+  "backdropColor": "#101014",
+  "bounds": {
+    "minX": 0,
+    "maxX": 25,
+    "minY": 0,
+    "maxY": 19
+  },
+  "surfaces": [],
+  "objects": [
+    {
+      "instanceId": "obj_flower_basic_v39_ne_031",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 11,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_flower_basic_v39_ne_036",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 6,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_flower_basic_v39_ne_060",
+      "definitionId": "flower_basic",
+      "rootCell": {
+        "x": 8,
+        "y": 19
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v39_ne_006",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 0,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v39_ne_014",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 19,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v39_ne_016",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 23,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v39_ne_034",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 10,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v39_ne_047",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 4,
+        "y": 13
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v39_ne_048",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 6,
+        "y": 13
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v39_ne_050",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 2,
+        "y": 14
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v39_ne_052",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 25,
+        "y": 14
+      }
+    },
+    {
+      "instanceId": "obj_flower_blue_v39_ne_053",
+      "definitionId": "flower_blue",
+      "rootCell": {
+        "x": 20,
+        "y": 15
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_008",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 5,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_009",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 9,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_011",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 17,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_012",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 4,
+        "y": 2
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_015",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 12,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_017",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 24,
+        "y": 4
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_020",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 14,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_024",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 18,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_032",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 3,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_037",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 7,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_039",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 9,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_041",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 18,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_042",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 20,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_044",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 8,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_054",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 24,
+        "y": 15
+      }
+    },
+    {
+      "instanceId": "obj_flower_yellow_v39_ne_058",
+      "definitionId": "flower_yellow",
+      "rootCell": {
+        "x": 16,
+        "y": 18
+      }
+    },
+    {
+      "instanceId": "obj_pond_reeds_v39_ne_018",
+      "definitionId": "pond_reeds",
+      "rootCell": {
+        "x": 10,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_pond_reeds_v39_ne_030",
+      "definitionId": "pond_reeds",
+      "rootCell": {
+        "x": 2,
+        "y": 8
+      }
+    },
+    {
+      "instanceId": "obj_pond_reeds_v39_ne_035",
+      "definitionId": "pond_reeds",
+      "rootCell": {
+        "x": 12,
+        "y": 9
+      }
+    },
+    {
+      "instanceId": "obj_pond_reeds_v39_ne_046",
+      "definitionId": "pond_reeds",
+      "rootCell": {
+        "x": 0,
+        "y": 13
+      }
+    },
+    {
+      "instanceId": "obj_pond_reeds_v39_ne_055",
+      "definitionId": "pond_reeds",
+      "rootCell": {
+        "x": 0,
+        "y": 16
+      }
+    },
+    {
+      "instanceId": "obj_pond_reeds_v39_ne_061",
+      "definitionId": "pond_reeds",
+      "rootCell": {
+        "x": 17,
+        "y": 19
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v39_ne_013",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 14,
+        "y": 3
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v39_ne_022",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 13,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v39_ne_028",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 23,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v39_ne_043",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 4,
+        "y": 11
+      }
+    },
+    {
+      "instanceId": "obj_stone_basic_v39_ne_045",
+      "definitionId": "stone_basic",
+      "rootCell": {
+        "x": 7,
+        "y": 12
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v39_ne_010",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 15,
+        "y": 1
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v39_ne_019",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 11,
+        "y": 5
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v39_ne_023",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 17,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v39_ne_025",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 19,
+        "y": 6
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v39_ne_027",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 10,
+        "y": 7
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v39_ne_040",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 12,
+        "y": 10
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v39_ne_049",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 12,
+        "y": 13
+      }
+    },
+    {
+      "instanceId": "obj_tree_basic_v39_ne_051",
+      "definitionId": "tree_basic",
+      "rootCell": {
+        "x": 8,
+        "y": 14
+      }
+    }
+  ],
+  "markers": [
+    {
+      "id": "trail_a_east",
+      "cell": {
+        "x": 13,
+        "y": 0
+      }
+    },
+    {
+      "id": "trail_a_north",
+      "cell": {
+        "x": 0,
+        "y": 6
+      }
+    },
+    {
+      "id": "trail_b_east",
+      "cell": {
+        "x": 21,
+        "y": 0
+      }
+    },
+    {
+      "id": "trail_b_north",
+      "cell": {
+        "x": 0,
+        "y": 15
+      }
+    }
+  ],
+  "entitySpawns": [],
+  "areaTransitions": []
+}

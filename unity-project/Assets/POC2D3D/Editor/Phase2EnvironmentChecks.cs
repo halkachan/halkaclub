@@ -280,8 +280,11 @@ namespace Halka.Poc2D3D.EditorTools
             // ver3.7: walkable decoration (the West forest's ferns and fallen leaves: no blocked cell) grows
             // grass under it by the game's own rule (MapPlacementRules.HasGrass, the same in 2D); every
             // Object that blocks or keeps grass away still has none.
+            // ver3.9: as the rule has it (MapPlacementRules.Covers: an Object keeps grass away from its blocked cells), a walkable
+            // Object marked excludeGrass (the North's waterside reeds, pond_reeds) has grass under it like the ferns; the more
+            // reeds of the transition regions showed it. Blocking Objects still have none.
             Check("grass: no tuft on a blocked cell or an Object root", cells.All(cell => !c.Session.World.IsBlocked(cell) &&
-                c.Session.World.Objects.Where(o => o.Definition == null || o.Definition.BlocksMovement || o.Definition.ExcludesGrass).All(o => o.RootCell != cell)));
+                c.Session.World.Objects.Where(o => o.Definition == null || o.Definition.BlocksMovement).All(o => o.RootCell != cell)));
             Check("grass: tufts have no collider and are not pickable Objects",
                 c.Presenter.TuftObject.GetComponent<Collider>() == null && c.Presenter.TuftObject.GetComponent<PocObjectView>() == null);
             var density = env.Tufts / (float)Enumerable.Range(map.MinCell.x, map.MaxCell.x - map.MinCell.x + 1)

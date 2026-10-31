@@ -138,9 +138,10 @@ namespace Halka.Poc2D3D.EditorTools
             Check("local <-> world: local (0,5) is world (11,-1) (the East road goes on), local (25,12) is world (36,6), round trip for every cell",
                 east.ToWorld(new Vector2Int(0, 5)) == EastRoadStart && east.ToWorld(new Vector2Int(25, 12)) == new Vector2Int(36, 6) &&
                 Enumerable.Range(0, 26).SelectMany(x => Enumerable.Range(0, 13).Select(y => new Vector2Int(x, y))).All(l => east.ToLocal(east.ToWorld(l)) == l));
+            // ver3.9: (11,7) is the North-East transition region's now; (37,7) is outside the world's rectangle.
             Check("RegionAt: (10,-1) first_field, (11,-1) east_area_01; (37,-1) and (11,7) belong to no region (undefined: blocked, no grass)",
                 index.RegionAt(FieldRoadEnd) == field && index.RegionAt(EastRoadStart) == east && index.RegionAt(new Vector2Int(37, -1)) == null &&
-                index.IsBlocked(new Vector2Int(37, -1)) && !index.HasGrass(new Vector2Int(37, -1)) && index.IsBlocked(new Vector2Int(11, 7)));
+                index.IsBlocked(new Vector2Int(37, -1)) && !index.HasGrass(new Vector2Int(37, -1)) && index.IsBlocked(new Vector2Int(37, 7)) && index.RegionAt(new Vector2Int(11, 7)) != east);
             // ver3.6: a region North widens the bounds upward; first_field's framing is kept by the 2D
             // camera's own rule (WorldVer36Checks [walk]). ver3.7: a region West widens them to the left
             // (the West area from x -35); first_field's framing is kept the same way (WorldVer37Checks [walk]).
