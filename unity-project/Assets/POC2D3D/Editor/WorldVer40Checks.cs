@@ -762,6 +762,15 @@ namespace Halka.Poc2D3D.EditorTools
             c.Session.LoadMapForCheck("first_field", c.Session.OutdoorWorld.TryGetHouseDoorCell() + Vector2Int.down, FacingDirection.Down);
             Settle(c, 2f);
             Check("back outdoors: they show again and follow", !rin.HiddenByGame && rin.Drawn && life.ModeOf(rin) == CompanionMode.Follow);
+            // Rin standing in her way below the door: she keeps walking into her, Rin steps aside
+            var her0 = c.Session.Cell;
+            var ahead = her0 + Vector2Int.down;
+            var placed = life.CharacterCanEnter(ahead, rin);
+            if (placed) rin.Place(ahead, FacingDirection.Up);
+            var yields0 = life.WalkerYields;
+            for (var i = 0; i < 90; i++) Frame(c, 1f / 60f, Vector2Int.down);
+            Check("she keeps walking into Rin in her way: Rin steps aside (as the crow does), she gets through", placed &&
+                life.WalkerYields > yields0 && c.Session.Cell != her0 && rin.Cell != c.Session.Cell, $"her {her0} -> {c.Session.Cell}, rin {rin.Cell}");
             // あそんでおいで from far: they go home
             Walk(c, new Vector2Int(22, -18), 160f);
             Settle(c, 3f);

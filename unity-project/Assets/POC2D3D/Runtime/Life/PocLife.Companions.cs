@@ -209,6 +209,32 @@ namespace Halka.Poc2D3D.Life
             }
         }
 
+        // She keeps walking into Rin, Len or a passer-by (as long as the crow waits, 0.3 s): it steps
+        // aside (or on), so a character standing in a narrow way (a door, a path) never shuts her in.
+        // A hider stays where it is (she finds it with A).
+        public int WalkerYields { get; private set; }
+
+        private void YieldToPush()
+        {
+            if (session.World != session.OutdoorWorld || session.PushSeconds < PocCrow.PushYieldSeconds) return;
+            foreach (var w in PocWalker.Active)
+            {
+                if (w == null || !w.Present || w.HiddenByGame || w.IsMoving || w.Cell != session.PushedCell) continue;
+                if (HideSeekActive && hideModes.ContainsKey(w)) return;
+                var push = session.PushedCell - session.Cell;
+                var side = new Vector2Int(push.y, -push.x);
+                foreach (var d in new[] { side, -side, push })
+                {
+                    if (!w.TryStep(d, c => c != session.Cell && CharacterCanEnter(c, w))) continue;
+                    WalkerYields++;
+                    if (paths.TryGetValue(w, out var path)) path.Clear();
+                    if (nextMove.ContainsKey(w)) nextMove[w] = lifeTime + 1f;
+                    return;
+                }
+                return;
+            }
+        }
+
         private void TickFollow(PocWalker w)
         {
             var her = session.Cell;

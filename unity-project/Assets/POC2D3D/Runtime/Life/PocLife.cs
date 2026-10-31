@@ -282,6 +282,7 @@ namespace Halka.Poc2D3D.Life
             TickCompanions(dt);
             TickHideSeek(dt);
             TickNpcs(dt, now);
+            YieldToPush();
             var outdoors = session.World != null && session.World == session.OutdoorWorld;
             var threeD = views != null && views.Mode == PocViewMode.ThirdPerson3D;
             foreach (var walker in PocWalker.Active)

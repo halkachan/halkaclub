@@ -115,6 +115,8 @@ namespace Halka.Poc2D3D.Life
 
         private Rect ButtonA() { var p = Panel(); return new Rect(p.x + 14f, p.yMax - 54f, p.width * 0.5f - 21f, 42f); }
         private Rect ButtonB() { var p = Panel(); return new Rect(p.center.x + 7f, p.yMax - 54f, p.width * 0.5f - 21f, 42f); }
+        // The result has one button (とじる) across the bottom.
+        private Rect ButtonWide() { var p = Panel(); return new Rect(p.x + 14f, p.yMax - 54f, p.width - 28f, 42f); }
 
         private static Vector2 Gui(Vector2 screen) => new Vector2(screen.x, Screen.height - screen.y);
 
@@ -172,7 +174,7 @@ namespace Halka.Poc2D3D.Life
                     else UpdateSinging();
                     break;
                 case Phase.Result:
-                    if (Pressed(ButtonA()) || Pressed(ButtonB()) || enter || escape) Cancel();
+                    if (Pressed(ButtonWide()) || enter || escape) Cancel();
                     break;
             }
         }
@@ -573,8 +575,7 @@ namespace Halka.Poc2D3D.Life
                     Text(new Rect(b.x, b.y + b.height * 0.12f, b.width, 44f), DoneLine(Skill), 34);
                     Text(new Rect(b.x, b.y + b.height * 0.12f + 56f, b.width, 36f), CreatorState.SkillNames[(int)Skill] + " +" + LastGain, 28);
                     Text(new Rect(b.x, b.y + b.height * 0.12f + 104f, b.width, 32f), "とくてん " + LastScore + "てん", 22);
-                    Button(ButtonA(), "とじる");
-                    Button(ButtonB(), "とじる");
+                    Button(ButtonWide(), "とじる");
                     break;
             }
         }
@@ -676,7 +677,7 @@ namespace Halka.Poc2D3D.Life
                 .Append(',').Append(r.width.ToString("0", inv)).Append(',').Append(r.height.ToString("0", inv)).Append(']');
             if (IsOpen)
             {
-                R("a", ButtonA());
+                R("a", Current == Phase.Result ? ButtonWide() : ButtonA());
                 R("b", ButtonB());
                 R("board", Board());
             }
