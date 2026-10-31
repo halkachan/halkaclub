@@ -235,6 +235,37 @@ namespace Halka.Poc2D3D.EditorTools
 
         private static void Face(C6.Ctx c, Vector2Int toward) => c.Session.SetFacing(FacingDirectionExtensions.FromVector(toward));
 
+        // As a player talks to someone who walks about: towards where it stands now, a step at a time (never
+        // pushing into it long enough for it to step aside), and A as soon as she is next to it.
+        private static bool ApproachAndTalk(C6.Ctx c, PocWalker who, float maxSeconds = 90f)
+        {
+            var frames = 0;
+            var limit = Mathf.CeilToInt(maxSeconds * 60f);
+            while (frames < limit)
+            {
+                while (c.Session.IsMoving && frames < limit) { Frame(c, 1f / 60f, Vector2Int.zero); frames++; }
+                var here = c.Session.Cell;
+                var toward = who.Cell - here;
+                if (Mathf.Abs(toward.x) + Mathf.Abs(toward.y) == 1)
+                {
+                    Face(c, toward);
+                    Frame(c, 1f / 60f, Vector2Int.zero);
+                    C6.Release(c);
+                    if (c.Session.InteractAhead()) return true;
+                }
+                var path = Route(c, here, who.Cell);
+                if (path == null || path.Count < 2) { Frame(c, 1f / 60f, Vector2Int.zero); frames++; continue; }
+                var step = path[0] - here;
+                for (var held = 0; held < 15 && c.Session.Cell == here && !c.Session.IsMoving && frames < limit; held++)
+                {
+                    Frame(c, 1f / 60f, V32.Raw(c, step));
+                    frames++;
+                }
+            }
+            C6.Release(c);
+            return false;
+        }
+
         // A free walkable cell next to the target from which she can face it.
         private static bool StandNextTo(C6.Ctx c, Vector2Int target)
         {
@@ -674,16 +705,16 @@ namespace Halka.Poc2D3D.EditorTools
             Check("a far passer-by: no model (its chunk not drawn), its cell and kind kept", far == null || far.ModelInstance == null && far.Present,
                 far != null ? far.Kind + " " + far.Cell : "all drawn");
             var near = life.NpcWalkers().First();
-            Walk(c, Route(c, c.Session.Cell, near.Cell)?.Count > 0 ? Route(c, c.Session.Cell, near.Cell).Last() : c.Session.Cell, 120f);
+            var toNear = Route(c, c.Session.Cell, near.Cell);
+            // up to the cell before it (walking into it would make it step aside)
+            Walk(c, toNear != null && toNear.Count > 1 ? toNear[toNear.Count - 2] : c.Session.Cell, 120f);
             Settle(c, 0.5f);
             var target = life.NpcWalkers().OrderBy(w => Mathf.Abs(w.Cell.x - c.Session.Cell.x) + Mathf.Abs(w.Cell.y - c.Session.Cell.y)).First();
             Check("walking there draws it (its chunk drawn: the model built)", target.Drawn && target.ModelInstance != null, target.Kind + " " + target.Cell);
-            // walked into it on the way, it steps aside (as the crow does): beside it again where it now stands
-            var talked = false;
-            for (var attempt = 0; attempt < 3 && !talked; attempt++)
-                talked = StandNextTo(c, target.Cell) && c.Session.InteractAhead();
+            var talked = ApproachAndTalk(c, target);
             Check("A in front of a fan or an anti: its line (ファン「いつもみてるよ！」 / アンチ「そんなに にんきなの？」)", talked && life.NpcTalks >= 1 &&
-                (PocLife.FanLines.Contains(life.LastNpcLine) || PocLife.AntiLines.Contains(life.LastNpcLine)), life.LastNpcLine);
+                (PocLife.FanLines.Contains(life.LastNpcLine) || PocLife.AntiLines.Contains(life.LastNpcLine)),
+                $"{life.LastNpcLine} (her {c.Session.Cell}, {target.Kind} {target.Cell})");
             var count = life.NpcCount;
             var ids = life.NpcWalkers().Select(w => w.Id).OrderBy(x => x).ToList();
             c.Save.Flush();
