@@ -1299,7 +1299,10 @@ namespace Halka.Poc2D3D.EditorTools
                     "unity-project/Assets/POC2D3D/Runtime/PocPixelView2D.cs unity-project/Assets/POC2D3D/Runtime/PocThirdPersonCamera.cs unity-project/Assets/POC2D3D/Runtime/PocTreeFade3D.cs " +
                     "unity-project/Assets/POC2D3D/Runtime/PocEnvironmentBuilder.cs", out _));
             Check("ver3.7's mesh freeing still there (chunks and rooms)",
-                File.ReadAllText(Path.Combine(PocSceneBuilder.RepositoryRoot, "unity-project/Assets/POC2D3D/Runtime/PocWorldPresenter.Chunks.cs")).Contains("CollectMeshes(root, payload.Meshes, true);") &&
+                (File.ReadAllText(Path.Combine(PocSceneBuilder.RepositoryRoot, "unity-project/Assets/POC2D3D/Runtime/PocWorldPresenter.Chunks.cs")).Contains("CollectMeshes(root, payload.Meshes, true);") ||
+                // ver4.0: the chunk keeps its outline copies through PocOutlineTag.ReleaseBatched (the copies static batching made
+                // redundant go at once, the rest with the chunk), the same freeing in another form.
+                File.ReadAllText(Path.Combine(PocSceneBuilder.RepositoryRoot, "unity-project/Assets/POC2D3D/Runtime/PocWorldPresenter.Chunks.cs")).Contains("PocOutlineTag.ReleaseBatched(root, copies, payload.Meshes);")) &&
                 File.ReadAllText(Path.Combine(PocSceneBuilder.RepositoryRoot, "unity-project/Assets/POC2D3D/Runtime/PocWorldPresenter.cs")).Contains("FreeMeshes(roomMeshes);"));
             Check("the old tests are all still there (none deleted since ver3.8's publication)",
                 V32.Git("diff --quiet --diff-filter=D " + Published + " -- unity-project/Assets/POC2D3D/Editor unity-project/Assets/Editor", out _));

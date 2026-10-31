@@ -240,6 +240,26 @@ namespace Halka.Poc2D3D.Life
             return false;
         }
 
+        // Development pictures only (PocLife.DevCommand "npchere"): one of this kind a few cells from her.
+        private bool SpawnNpcNear(string kind)
+        {
+            if (npcs.Count >= NpcTuning.Default.MaxPresent) { npcs[0].Walker.Remove(); Destroy(npcs[0].Walker.gameObject); npcs.RemoveAt(0); }
+            var her = session.Cell;
+            foreach (var d in new[] { new Vector2Int(3, 0), new Vector2Int(-3, 0), new Vector2Int(0, 3), new Vector2Int(0, -3), new Vector2Int(4, 1), new Vector2Int(-4, 1) })
+            {
+                var c = her + d;
+                if (!Reachable.Contains(c) || ActionCells.Contains(c) || !CharacterCanEnter(c, null)) continue;
+                var serial = ++State.NpcSerial;
+                var region = session.OutdoorIndex.RegionAt(c);
+                var record = new LifeSaveBlock.NpcRecord { Id = serial, Kind = kind, Region = region != null ? region.MapId : "", X = c.x, Y = c.y, LeaveAtUnixMs = NowMs + NpcTuning.Default.StayRealMsMax };
+                npcs.Add(MakeNpc(record, c));
+                NpcSpawns++;
+                Changed();
+                return true;
+            }
+            return false;
+        }
+
         private bool TryNearestFree(Vector2Int from, int radius, out Vector2Int cell)
         {
             for (var r = 0; r <= radius; r++)

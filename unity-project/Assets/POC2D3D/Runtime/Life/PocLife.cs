@@ -486,6 +486,40 @@ namespace Halka.Poc2D3D.Life
             }
         }
 
+        // Where the creator stations are on screen in a room (pixels from the bottom left; the checks click them).
+        private void AppendStationJson(StringBuilder b)
+        {
+            var inv = CultureInfo.InvariantCulture;
+            b.Append(",\"stations\":[");
+            var first = true;
+            if (session.World != null && session.World.IsInterior && views != null)
+            {
+                var presenter = FindFirstObjectByType<PocWorldPresenter>();
+                foreach (var instance in session.World.Objects)
+                {
+                    if (instance.DefinitionId != DtmDeskId && instance.DefinitionId != TabletId && instance.DefinitionId != MicId) continue;
+                    var view = presenter != null ? presenter.FindView(instance.InstanceId) : null;
+                    if (view == null) continue;
+                    var cam = views.Mode == PocViewMode.PixelView2D ? views.PixelView.WorldCamera : views.ThirdPerson.ViewCamera;
+                    var bounds = new Bounds(view.transform.position, Vector3.zero);
+                    foreach (var r in view.Renderers) if (r != null) bounds.Encapsulate(r.bounds);
+                    Vector3 p;
+                    if (views.Mode == PocViewMode.PixelView2D)
+                    {
+                        var v = cam.WorldToViewportPoint(bounds.center);
+                        var pv = views.PixelView;
+                        p = new Vector3(v.x * pv.Target.width * pv.Scale - pv.Offset.x, v.y * pv.Target.height * pv.Scale - pv.Offset.y, 1f);
+                    }
+                    else p = cam.WorldToScreenPoint(bounds.center);
+                    b.Append(first ? "" : ",").Append("{\"id\":\"").Append(instance.DefinitionId).Append("\",\"x\":").Append(instance.RootCell.x.ToString(inv))
+                        .Append(",\"y\":").Append(instance.RootCell.y.ToString(inv)).Append(",\"sx\":").Append(p.x.ToString("0", inv))
+                        .Append(",\"sy\":").Append(p.y.ToString("0", inv)).Append('}');
+                    first = false;
+                }
+            }
+            b.Append(']');
+        }
+
         // ---------------------------------------------------------------- mini games
 
         public int GamesFinished { get; private set; }
@@ -804,6 +838,10 @@ namespace Halka.Poc2D3D.Life
                     }
                     return "bad";
                 case "npceval": EvaluateNpcs("dev"); return "ok";
+                // a passer-by of this kind 3-6 cells from her (pictures of each kind): "life:npchere:fan_male"
+                case "npchere":
+                    if (parts.Length > 2 && Array.IndexOf(NpcKinds, parts[2]) >= 0) return SpawnNpcNear(parts[2]) ? "ok" : "no cell";
+                    return "bad";
                 case "npcclear": ClearNpcs(); return "ok";
                 case "hint": hideSeekHintAt = 0f; return "ok";
             }
@@ -840,6 +878,7 @@ namespace Halka.Poc2D3D.Life
             b.Append(",\"minigame\":").Append(minigames != null ? minigames.DevJson() : "null");
             AppendNpcJson(b);
             AppendCompanionJson(b);
+            AppendStationJson(b);
             b.Append('}');
             return b.ToString();
         }

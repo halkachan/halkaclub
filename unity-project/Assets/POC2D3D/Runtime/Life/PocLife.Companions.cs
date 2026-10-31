@@ -222,8 +222,10 @@ namespace Halka.Poc2D3D.Life
                 CompanionTeleports++;
                 return;
             }
+            // Close enough: it waits where it is (also while she takes a step toward it, so she can
+            // walk up to it and talk); it moves on only once she is further away.
             var close = w == rin ? 2 : 3;
-            if (distance <= close && !session.IsMoving)
+            if (distance <= close)
             {
                 path.Clear();
                 var d = her - w.Cell;

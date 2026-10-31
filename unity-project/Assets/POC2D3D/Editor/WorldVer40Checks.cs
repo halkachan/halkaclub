@@ -936,6 +936,8 @@ namespace Halka.Poc2D3D.EditorTools
                 V32.Git("diff --quiet " + Published + " -- unity-project/Assets/Content/Maps unity-project/Assets/Content/FastTravel", out _));
             Check("the existing models and the presentation catalog unchanged (ver4.0 only adds Models/V40)",
                 V32.Git("diff --quiet --diff-filter=MD " + Published + " -- unity-project/Assets/POC2D3D/Models unity-project/Assets/POC2D3D/Data", out _));
+            Check("the crow's sprites, model and voice unchanged (WorldVer36Checks.CrowKept without the font atlas, which ver4.0 extends)",
+                WorldVer36Checks.CrowKept(Published, false));
             Check("the font atlas: every earlier glyph in its place (only new glyphs appended)",
                 File.ReadAllText(Path.Combine(PocSceneBuilder.RepositoryRoot, "unity-project/Assets/Resources/asobi_ui_map.txt")).StartsWith("ぁあぃいぅうぇえぉお"));
             Check("the old tests are all still there (none deleted)", V32.Git("diff --quiet --diff-filter=D " + Published + " -- unity-project/Assets/POC2D3D/Editor unity-project/Assets/Editor", out _));
