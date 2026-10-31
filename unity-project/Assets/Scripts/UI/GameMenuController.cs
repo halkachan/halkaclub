@@ -56,6 +56,10 @@ namespace Halka.Game.UI
         private readonly System.Collections.Generic.HashSet<int> pageTouches = new System.Collections.Generic.HashSet<int>();
 
         public bool IsOpen { get; private set; }
+        // ver4.0 (the shared world only): while this says so (a mini game fills the screen), the menu
+        // button, the quick button and the panel are neither drawn nor pressed.
+        public System.Func<bool> HiddenWhile { get; set; }
+        private bool HiddenNow => HiddenWhile != null && HiddenWhile();
         public bool IsLifeLogOpen { get; private set; }
         public bool IsPageOpen => IsOpen && page != null;
         public IGameMenuPage Page => IsOpen ? page : null;
@@ -246,6 +250,7 @@ namespace Halka.Game.UI
         private void Update()
         {
             if (UnityEngine.Input.touchCount == 0) suppressTouchUntilRelease = false;
+            if (HiddenNow) return;
             for (var i = 0; i < UnityEngine.Input.touchCount; i++)
             {
                 var touch = UnityEngine.Input.GetTouch(i);
@@ -292,6 +297,7 @@ namespace Halka.Game.UI
         private void OnGUI()
         {
             GUI.depth = -100;
+            if (HiddenNow) return;
             EnsureStyles();
             var button = ButtonRect();
             Fill(button, Color.black);

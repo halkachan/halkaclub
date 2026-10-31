@@ -647,18 +647,57 @@ namespace Halka.Poc2D3D
         // Phase 4: the crow on the ground is ordered with the player by row (the one further
         // North first) and hidden by the world like the player; in the air it is drawn last, above
         // everything, like the 2D game's raised sorting order during a flight.
+        // ver4.0: Rin, Len and the passers-by (PocWalker) are cards on the ground too, ordered with
+        // the player and the crow by row (further North first), hidden by the world like them.
         public void DrawOverlays(int screenWidth, int screenHeight)
         {
             LastCrowRect = default;
             LastCrowSprite = null;
+            WalkerRects.Clear();
             DrawGrass(screenWidth, screenHeight);
             var crowCard = CrowCard(out var crowOnTop);
-            var crowFirst = crowCard.HasValue && !crowOnTop && crowCard.Value.Root.z > actor.transform.position.z;
-            if (crowFirst) DrawCrow(crowCard.Value, false, screenWidth, screenHeight);
-            DrawActorSprite(screenWidth, screenHeight);
-            if (crowCard.HasValue && !crowOnTop && !crowFirst) DrawCrow(crowCard.Value, false, screenWidth, screenHeight);
+            groundCards.Clear();
+            if (crowCard.HasValue && !crowOnTop) groundCards.Add((crowCard.Value.Root.z, -1, null));
+            groundCards.Add((actor.transform.position.z, 0, null));
+            foreach (var walker in Life.PocWalker.Active)
+                if (walker != null && walker.Drawn && walker.CurrentSprite != null)
+                    groundCards.Add((WalkerRoot(walker).z, 1, walker));
+            // North first (larger z); the player before a card on the same row (as the crow did).
+            groundCards.Sort((a, b) => a.z != b.z ? b.z.CompareTo(a.z) : a.kind.CompareTo(b.kind));
+            foreach (var (_, kind, walker) in groundCards)
+            {
+                if (kind == -1) DrawCrow(crowCard.Value, false, screenWidth, screenHeight);
+                else if (kind == 0) DrawActorSprite(screenWidth, screenHeight);
+                else DrawWalker(walker, screenWidth, screenHeight);
+            }
             DrawFadeLayer(screenWidth, screenHeight);
             if (crowCard.HasValue && crowOnTop) DrawCrow(crowCard.Value, true, screenWidth, screenHeight);
+        }
+
+        private readonly List<(float z, int kind, Life.PocWalker walker)> groundCards = new List<(float, int, Life.PocWalker)>();
+        // ver4.0: where each character was last drawn (destination pixels; clicks and the checks).
+        public readonly Dictionary<Life.PocWalker, RectInt> WalkerRects = new Dictionary<Life.PocWalker, RectInt>();
+
+        private Vector3 WalkerRoot(Life.PocWalker walker)
+        {
+            var root = GridSpace3D.ToWorld(walker.Position);
+            root.y = 0f;
+            if (actor != null && actor.PixelSnap.x > 0f)
+            {
+                root.x = Mathf.Round(root.x / actor.PixelSnap.x) * actor.PixelSnap.x;
+                root.z = Mathf.Round(root.z / actor.PixelSnap.y) * actor.PixelSnap.y;
+            }
+            return root;
+        }
+
+        private void DrawWalker(Life.PocWalker walker, int screenWidth, int screenHeight)
+        {
+            var card = new SpriteCard { Sprite = walker.CurrentSprite, Root = WalkerRoot(walker), OffsetNorth = walker.SpriteOffsetNorth };
+            if (!PlaceCard(card, out var rect, out _, out var depthBottom, out var depthTop)) return;
+            WalkerRects[walker] = rect;
+            var crop = OriginalGrass2D && HasGrass(walker.IsMoving && walker.StepProgressNormalized >= 0.5f ? walker.StepToCell : walker.Cell)
+                ? CrowGrassHiddenPixels : 0;
+            DrawCard(card, rect, depthBottom, depthTop, true, screenWidth, screenHeight, crop);
         }
 
         // One upright sprite card: the sprite's local origin goes to Root (x East, y height, z North),

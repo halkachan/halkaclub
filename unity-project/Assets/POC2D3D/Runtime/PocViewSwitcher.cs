@@ -144,6 +144,34 @@ namespace Halka.Poc2D3D
 
         // Phase 4: the crow under the pointer (its 2D sprite as drawn, or its 3D model), unless a
         // standing wall is nearer. Talking keeps ExamineInteractable's range rule (PocCrow.TryTalk).
+        // ver4.0: Rin, Len or a passer-by under the pointer (its sprite in 2D, its model in 3D).
+        public Life.PocWalker PickWalker(Vector2 screenPosition)
+        {
+            Life.PocWalker best = null;
+            var bestDistance = float.MaxValue;
+            if (Mode == PocViewMode.PixelView2D)
+            {
+                if (pixelView == null) return null;
+                var point = new Vector2Int(Mathf.FloorToInt(screenPosition.x), Mathf.FloorToInt(screenPosition.y));
+                foreach (var pair in pixelView.WalkerRects)
+                    if (pair.Key != null && pair.Key.Drawn && pair.Value.width > 0 && pair.Value.Contains(point))
+                    {
+                        var d = pair.Value.y; // the one further South (lower on screen) is in front
+                        if (d < bestDistance) { bestDistance = d; best = pair.Key; }
+                    }
+                return best;
+            }
+            if (thirdPerson == null || thirdPerson.ViewCamera == null) return null;
+            var ray = thirdPerson.ViewCamera.ScreenPointToRay(screenPosition);
+            foreach (var walker in Life.PocWalker.Active)
+                if (walker != null && walker.Drawn && walker.RayHits(ray, out var distance) && distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = walker;
+                }
+            return best;
+        }
+
         public PocCrow PickCrow(Vector2 screenPosition)
         {
             if (crow == null || !crow.isActiveAndEnabled) return null;

@@ -61,7 +61,12 @@ namespace Halka.Poc2D3D
 
         // GameInput's rules: an open menu (or a touch it just used) blocks gameplay input, and any
         // input counts as a user action that stops AUTO and restarts its 60-second idle clock.
-        private bool Blocked => menu != null && menu.BlocksGameplayInput || gameplay != null && (gameplay.Suspended || gameplay.TravelBusy);
+        private bool Blocked => menu != null && menu.BlocksGameplayInput ||
+            gameplay != null && (gameplay.Suspended || gameplay.TravelBusy || gameplay.ActivityOpen);
+
+        // ver4.0: a click on Rin, Len or a passer-by (PocLife answers: talk when she stands next to
+        // them facing them, as with the crow).
+        public System.Func<Vector2, bool> CharacterClick { get; set; }
 
         private void Update()
         {
@@ -99,6 +104,7 @@ namespace Halka.Poc2D3D
         {
             if (views == null || session == null) return;
             if (views.PickCrow(screenPosition) is ISharedTalkTarget crow && session.TalkTo(crow)) return;
+            if (CharacterClick != null && CharacterClick(screenPosition)) return;
             var target = views.PickObject(screenPosition);
             if (target != null) session.InteractWith(target);
         }

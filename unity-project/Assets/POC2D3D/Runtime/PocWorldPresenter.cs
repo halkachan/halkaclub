@@ -256,14 +256,18 @@ namespace Halka.Poc2D3D
                 return;
             }
             BuildGround(world);
-            foreach (var instance in world.Objects) views.Add(BuildObject(instance));
+            var copies = new PocOutlineTag.OutlineCopies();
+            foreach (var instance in world.Objects) views.Add(BuildObject(instance, mapRoot, views.Count, out _, copies));
             gridOverlay = BuildGridOverlay(world);
             gridOverlay.SetActive(gridVisible);
             BuiltMapId = world.MapId;
             // Runtime static batching of the freshly built objects (one shared material), redone on
             // every rebuild so Map edits still move things. Edit Mode checks keep the meshes as is.
-            CollectMeshes(mapRoot, roomMeshes, false);
+            // ver4.0: the outline copies are not collected before batching; afterwards only the ones
+            // a renderer still uses are kept (PocOutlineTag.ReleaseBatched), the rest are destroyed.
+            CollectMeshes(mapRoot, roomMeshes, false, true);
             if (Application.isPlaying) StaticBatchingUtility.Combine(mapRoot.gameObject);
+            PocOutlineTag.ReleaseBatched(mapRoot, copies, roomMeshes);
             CollectMeshes(mapRoot, roomMeshes, false);   // (the combined meshes static batching made)
         }
 
@@ -277,13 +281,15 @@ namespace Halka.Poc2D3D
         private readonly List<Mesh> roomMeshes = new List<Mesh>();
 
         // outlineOnly: only the Objects' outline copies (a chunk tracks its generated meshes itself).
-        private static void CollectMeshes(Transform root, List<Mesh> into, bool outlineOnly)
+        // ver4.0 skipOutline: everything but the outline copies (those are kept by ReleaseBatched).
+        private static void CollectMeshes(Transform root, List<Mesh> into, bool outlineOnly, bool skipOutline = false)
         {
             foreach (var filter in root.GetComponentsInChildren<MeshFilter>(true))
             {
                 var mesh = filter.sharedMesh;
                 if (mesh == null || into.Contains(mesh)) continue;
-                if (outlineOnly && !mesh.name.EndsWith(PocOutlineTag.CopySuffix, System.StringComparison.Ordinal)) continue;
+                var copy = mesh.name.EndsWith(PocOutlineTag.CopySuffix, System.StringComparison.Ordinal);
+                if (outlineOnly && !copy || skipOutline && copy) continue;
                 into.Add(mesh);
             }
         }
@@ -386,11 +392,11 @@ namespace Halka.Poc2D3D
             }
         }
 
-        private PocObjectView BuildObject(SharedObjectInstance instance) => BuildObject(instance, mapRoot, views.Count, out _);
-
         // ver3.2: parent is the chunk's root outdoors; outlineIndex keeps the ver3.1 id (the
         // Object's place in its Map's list); triangles: this Object's share.
-        private PocObjectView BuildObject(SharedObjectInstance instance, Transform parent, int outlineIndex, out int triangles)
+        // ver4.0: copies: the build's shared outline copies (PocOutlineTag.OutlineCopies).
+        private PocObjectView BuildObject(SharedObjectInstance instance, Transform parent, int outlineIndex, out int triangles,
+            PocOutlineTag.OutlineCopies copies)
         {
             var before = BuiltTriangles;
             var binding = catalog.Find(instance.DefinitionId);
@@ -429,7 +435,7 @@ namespace Halka.Poc2D3D
             }
             root.transform.position = GridSpace3D.ToWorld(instance.RootCell);
             // Object IDs 1..249 for the 2D outline; the order follows the Map's object list.
-            PocOutlineTag.Apply(root, outlineIndex % 249 + 1, binding != null ? binding.outlineStrength : 1f);
+            PocOutlineTag.Apply(root, outlineIndex % 249 + 1, binding != null ? binding.outlineStrength : 1f, copies);
             var view = root.AddComponent<PocObjectView>();
             view.InstanceId = instance.InstanceId;
             view.DefinitionId = instance.DefinitionId;

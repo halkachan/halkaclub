@@ -26,6 +26,8 @@ namespace Halka.Poc2D3D.Dev
         private PocGameplay gameplay;
         private PocCrow crow;
         private int crowCount;
+        // ver4.0: the life controller (its numbers under "life", its development commands "life:...").
+        private Life.PocLife life;
         private Halka.Game.Input.TouchDpad dpad;
         private Halka.Game.Input.TouchActionButton actionButton;
 
@@ -43,6 +45,7 @@ namespace Halka.Poc2D3D.Dev
 
         public bool Active { get; private set; }
         public string LastJson { get; private set; }
+        public string LastLifeAnswer { get; private set; }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")] private static extern void HalkaDevPublish(string text);
@@ -64,10 +67,13 @@ namespace Halka.Poc2D3D.Dev
 #else
             var url = Application.absoluteURL ?? "";
             Active = url.Contains("debug=1") || url.Contains("devstats=1");
+            // ver4.0: the outline copies kept as in ver3.9 (comparison pictures of the same build).
+            if (Active && url.Contains("outlinecopies=keep")) PocOutlineTag.KeepAllCopies = true;
 #endif
             if (!Active) enabled = false;
             gameplay = GetComponentInChildren<PocGameplay>(true) ?? FindFirstObjectByType<PocGameplay>(FindObjectsInactive.Include);
             crow = gameplay != null ? gameplay.Crow : null;
+            life = FindFirstObjectByType<Life.PocLife>(FindObjectsInactive.Include);
             dpad = FindFirstObjectByType<Halka.Game.Input.TouchDpad>(FindObjectsInactive.Include);
             actionButton = FindFirstObjectByType<Halka.Game.Input.TouchActionButton>(FindObjectsInactive.Include);
         }
@@ -113,6 +119,7 @@ namespace Halka.Poc2D3D.Dev
             switch (parts[0])
             {
                 case "borders": presenter.ChunkBordersVisible = on; break;
+                case "life": if (life != null) LastLifeAnswer = life.DevCommand(command); break;
                 case "regions": presenter.RegionBordersVisible = on; break;
                 case "grid": presenter.GridVisible = on; break;
                 case "view": views.SetMode(parts.Length > 1 && parts[1] == "3d" ? PocViewMode.ThirdPerson3D : PocViewMode.PixelView2D); break;
@@ -120,6 +127,11 @@ namespace Halka.Poc2D3D.Dev
                 case "night":
                     var time = GetComponent<PocTimeOfDay>();
                     if (time != null) time.Override = on ? PocPhaseOverride.Night : PocPhaseOverride.Auto;
+                    break;
+                // ver4.0: the 3D line boil stopped (comparison pictures); "boil:1" back.
+                case "boil":
+                    var boil = FindFirstObjectByType<PocLineBoil>();
+                    if (boil != null) boil.Mode = on ? PocLineBoilMode.Lines : PocLineBoilMode.Off;
                     break;
                 // ver3.7: the morning look (pictures of the forest's light by day); "morning:0" back to the clock.
                 case "morning":
@@ -189,6 +201,8 @@ namespace Halka.Poc2D3D.Dev
             }
             Str("readyList", ready.ToString());
             AppendCrow();
+            if (life != null && life.Started) json.Append("\"life\":").Append(life.DevJson()).Append(',');
+            Str("lifeAnswer", LastLifeAnswer ?? "");
             Num("t", Time.unscaledTime);
             json.Length--;   // the last comma
             json.Append('}');

@@ -236,6 +236,7 @@ namespace Halka.Poc2D3D
             var root = new GameObject("Chunk " + coord + (fallback ? " (fallback)" : "")).transform;
             root.SetParent(mapRoot, false);
             var payload = new ChunkPayload { Coord = coord, Root = root, Fallback = fallback };
+            var copies = new PocOutlineTag.OutlineCopies();
             try
             {
                 if (fallback) BuildFallbackGround(chunk, payload);
@@ -257,7 +258,7 @@ namespace Halka.Poc2D3D
                 {
                     try
                     {
-                        var view = BuildObject(instance, root, instance.OrderInMap, out var triangles);
+                        var view = BuildObject(instance, root, instance.OrderInMap, out var triangles, copies);
                         payload.Views.Add(view);
                         payload.Triangles += triangles;
                     }
@@ -267,7 +268,6 @@ namespace Halka.Poc2D3D
                     }
                 }
                 BuildChunkOverlays(chunk, payload);
-                CollectMeshes(root, payload.Meshes, true);
                 var batchable = RegisterChunkPinwheels(payload);   // ver3.8: turning blades stay unbatched
                 if (Application.isPlaying && !fallback)
                 {
@@ -277,10 +277,13 @@ namespace Halka.Poc2D3D
                         if (filter.sharedMesh != null && filter.sharedMesh.name.StartsWith("Combined Mesh", StringComparison.Ordinal) &&
                             !payload.Meshes.Contains(filter.sharedMesh)) payload.Meshes.Add(filter.sharedMesh);
                 }
+                // ver4.0: the outline copies batching made redundant go now; the rest go with the chunk.
+                PocOutlineTag.ReleaseBatched(root, copies, payload.Meshes);
             }
             catch
             {
                 ReleaseChunkPinwheels(payload);
+                PocOutlineTag.FreeAll(copies);
                 FreePayload(payload);
                 throw;
             }

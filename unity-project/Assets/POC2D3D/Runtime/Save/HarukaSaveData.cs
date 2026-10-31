@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using Halka.Game.Player;
+using Halka.Poc2D3D.Life;
 
 namespace Halka.Poc2D3D.Save
 {
@@ -33,6 +34,10 @@ namespace Halka.Poc2D3D.Save
     // belongs to a later version and is written back unchanged); a duplicate is read once. A wrong
     // type, a malformed id, more than 64 ids or a wrong checksum makes the file Corrupt (the snapshot
     // store then falls back to an older good snapshot). Both extensions can be present together.
+    // ver4.0: extensions.life40 (LifeSaveBlock) holds everything ver4.0 adds (the day count, the
+    // abilities, ﾆｺﾁｭｰﾌﾞ, the passers-by, Rin and Len, hide-and-seek), with its own checksum. A ver4.0
+    // game always writes it; older files have none (ver4.0 then starts its data from the defaults,
+    // once). ver3.x builds ignore it. A damaged one makes the file Corrupt, like the others.
     public sealed class HarukaSaveData
     {
         public const string Format = "harukaworld-save";
@@ -62,12 +67,15 @@ namespace Halka.Poc2D3D.Save
         public string CrowMode = CrowFree;
         // ver3.5: the found places beyond the start (null or empty: none, nothing written).
         public List<string> FastTravel;
+        // ver4.0 (null: none in the file).
+        public LifeSaveBlock Life;
         public string Checksum = "";
 
         public HarukaSaveData Copy()
         {
             var copy = (HarukaSaveData)MemberwiseClone();
             copy.FastTravel = FastTravel != null ? new List<string>(FastTravel) : null;
+            copy.Life = Life?.Copy();
             return copy;
         }
 
@@ -161,6 +169,7 @@ namespace Halka.Poc2D3D.Save
                 entries.Add("\"" + FastTravelExtension + "\": { \"discovered\": [" + ids + "], \"checksum\": " +
                     HarukaSaveJson.Quote(ComputeFastTravelChecksum()) + " }");
             }
+            if (Life != null) entries.Add("\"" + LifeSaveBlock.Extension + "\": " + Life.ToJson(Checksum));
             if (entries.Count == 0) b.Append("  \"extensions\": {},\n");
             else b.Append("  \"extensions\": { ").Append(string.Join(", ", entries)).Append(" },\n");
             b.Append("  \"checksum\": ").Append(HarukaSaveJson.Quote(Checksum)).Append('\n');
@@ -231,6 +240,11 @@ namespace Halka.Poc2D3D.Save
                 foreach (var id in ids)
                     if (!unique.Contains(id)) unique.Add(id);
                 d.FastTravel = unique.Count > 0 ? unique : null;
+            }
+            if (extensions is Dictionary<string, object> ext3 && ext3.TryGetValue(LifeSaveBlock.Extension, out var lifeValue))
+            {
+                if (!LifeSaveBlock.TryRead(lifeValue, d.Checksum, out d.Life, out var lifeProblem))
+                    return Bad("extensions." + LifeSaveBlock.Extension + " (" + lifeProblem + ")", out problem);
             }
             data = d;
             return HarukaSaveReadStatus.Valid;

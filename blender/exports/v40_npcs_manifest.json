@@ -1,0 +1,113 @@
+{
+  "pixel_m": 0.044,
+  "npcs": [
+    {
+      "id": "fan_male",
+      "blend": "blender/sources/v40/npc_fan_male.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V40/npc_fan_male.fbx",
+      "triangles": 360,
+      "height_m": 0.862,
+      "parts": [
+        "npc_fan_male",
+        "ArmL",
+        "ArmR",
+        "LegL",
+        "LegR",
+        "Penlight"
+      ],
+      "look": {
+        "hair": "#6b4a2e",
+        "hair_dark": "#4f3420",
+        "shirt": "#5fb36b",
+        "shirt_dark": "#478c52",
+        "mark": "#ffffff",
+        "legs": "#3f5f9a",
+        "shoes": "#2e2e34",
+        "hairstyle": "short",
+        "smile": true,
+        "prop": "penlight"
+      }
+    },
+    {
+      "id": "fan_female",
+      "blend": "blender/sources/v40/npc_fan_female.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V40/npc_fan_female.fbx",
+      "triangles": 384,
+      "height_m": 0.867,
+      "parts": [
+        "npc_fan_female",
+        "ArmL",
+        "ArmR",
+        "LegL",
+        "LegR"
+      ],
+      "look": {
+        "hair": "#8a5a3a",
+        "hair_dark": "#6a4229",
+        "shirt": "#f19ab8",
+        "shirt_dark": "#d77c9c",
+        "mark": "#ffffff",
+        "legs": "#f4f1ea",
+        "shoes": "#b05a6a",
+        "hairstyle": "long_side",
+        "smile": true,
+        "prop": null,
+        "skirt": true
+      }
+    },
+    {
+      "id": "anti_male",
+      "blend": "blender/sources/v40/npc_anti_male.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V40/npc_anti_male.fbx",
+      "triangles": 276,
+      "height_m": 0.889,
+      "parts": [
+        "npc_anti_male",
+        "ArmL",
+        "ArmR",
+        "LegL",
+        "LegR"
+      ],
+      "look": {
+        "hair": "#2c2a2a",
+        "hair_dark": "#1d1c1c",
+        "shirt": "#7c8088",
+        "shirt_dark": "#5f636b",
+        "mark": null,
+        "legs": "#2b2b30",
+        "shoes": "#1c1c20",
+        "hairstyle": "hood",
+        "smile": false,
+        "prop": null
+      }
+    },
+    {
+      "id": "anti_female",
+      "blend": "blender/sources/v40/npc_anti_female.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V40/npc_anti_female.fbx",
+      "triangles": 252,
+      "height_m": 0.898,
+      "parts": [
+        "npc_anti_female",
+        "ArmL",
+        "ArmR",
+        "LegL",
+        "LegR"
+      ],
+      "look": {
+        "hair": "#1f1d22",
+        "hair_dark": "#131215",
+        "shirt": "#6d5a86",
+        "shirt_dark": "#54456a",
+        "mark": null,
+        "legs": "#8a8a92",
+        "shoes": "#2a2a30",
+        "hairstyle": "bob_cap",
+        "smile": false,
+        "prop": null,
+        "skirt": true,
+        "cap": "#2f3340"
+      }
+    }
+  ]
+}

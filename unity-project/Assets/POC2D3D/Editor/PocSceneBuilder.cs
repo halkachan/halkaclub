@@ -24,7 +24,7 @@ namespace Halka.Poc2D3D.EditorTools
         // POC scene stays the technical verification scene with its options shown).
         // ver3.1: the game scene is HARUKA_WORLD_ver3.1 (the ver3.0 RC3 scene file is kept as the
         // published version's scene and no longer rebuilt).
-        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.9.unity";
+        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver4.0.unity";
         // ver3.2: the chunk test scene (the release scene + a generated test world; test builds only).
         public const string ChunkTestScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.2_CHUNKTEST.unity";
         public const string ChunkTestFixturePath = Root + "/Fixtures/ChunkTest/PocTestWorldFixture.asset";
@@ -362,7 +362,7 @@ namespace Halka.Poc2D3D.EditorTools
         // off unless ?debug=1, the HUD reads "ver3.0 RC1".
         private static void ConfigureReleaseCandidate(GameObject root)
         {
-            root.name = "HARUKA WORLD ver3.9";
+            root.name = "HARUKA WORLD ver4.0";
             var panel = root.GetComponent<PocDebugPanel>();
             var hud = root.GetComponentInChildren<GameHud>(true);
             var switcher = root.GetComponent<PocViewSwitcher>();
@@ -568,6 +568,8 @@ namespace Halka.Poc2D3D.EditorTools
             gameplay.ConfigureFastTravel(fastTravel);
             BuildPhase5Content(root, gameplay, pixelView);
             BuildPhase6Content(root, session, switcher, autoMode, lifeLog, menu, hud);
+            // ver4.0: そうさくせいかつ (the clock, the creator stations, ﾆｺﾁｭｰﾌﾞ, the passers-by, Rin and Len).
+            PocSceneBuilderVer40.Build(root);
         }
 
         // Phase 6: the save system (automatic save and load, backups, export / import). Its

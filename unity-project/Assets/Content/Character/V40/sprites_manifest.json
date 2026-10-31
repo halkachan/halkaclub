@@ -1,0 +1,128 @@
+[
+  {
+    "id": "rin",
+    "height_px": 42,
+    "canvas": 48,
+    "colours": 28,
+    "scale": 0.168,
+    "files": [
+      "back_idle_0.png",
+      "back_walk_0.png",
+      "back_walk_1.png",
+      "front_idle_0.png",
+      "front_walk_0.png",
+      "front_walk_1.png",
+      "left_idle_0.png",
+      "left_walk_0.png",
+      "left_walk_1.png",
+      "right_idle_0.png",
+      "right_walk_0.png",
+      "right_walk_1.png"
+    ]
+  },
+  {
+    "id": "len",
+    "height_px": 42,
+    "canvas": 48,
+    "colours": 28,
+    "scale": 0.185,
+    "files": [
+      "back_idle_0.png",
+      "back_walk_0.png",
+      "back_walk_1.png",
+      "front_idle_0.png",
+      "front_walk_0.png",
+      "front_walk_1.png",
+      "left_idle_0.png",
+      "left_walk_0.png",
+      "left_walk_1.png",
+      "right_idle_0.png",
+      "right_walk_0.png",
+      "right_walk_1.png"
+    ]
+  },
+  {
+    "id": "fan_male",
+    "height_px": 56,
+    "canvas": 64,
+    "colours": 20,
+    "scale": 0.2324,
+    "files": [
+      "back_idle_0.png",
+      "back_walk_0.png",
+      "back_walk_1.png",
+      "front_idle_0.png",
+      "front_walk_0.png",
+      "front_walk_1.png",
+      "left_idle_0.png",
+      "left_walk_0.png",
+      "left_walk_1.png",
+      "right_idle_0.png",
+      "right_walk_0.png",
+      "right_walk_1.png"
+    ]
+  },
+  {
+    "id": "fan_female",
+    "height_px": 56,
+    "canvas": 64,
+    "colours": 20,
+    "scale": 0.2324,
+    "files": [
+      "back_idle_0.png",
+      "back_walk_0.png",
+      "back_walk_1.png",
+      "front_idle_0.png",
+      "front_walk_0.png",
+      "front_walk_1.png",
+      "left_idle_0.png",
+      "left_walk_0.png",
+      "left_walk_1.png",
+      "right_idle_0.png",
+      "right_walk_0.png",
+      "right_walk_1.png"
+    ]
+  },
+  {
+    "id": "anti_male",
+    "height_px": 56,
+    "canvas": 64,
+    "colours": 20,
+    "scale": 0.2324,
+    "files": [
+      "back_idle_0.png",
+      "back_walk_0.png",
+      "back_walk_1.png",
+      "front_idle_0.png",
+      "front_walk_0.png",
+      "front_walk_1.png",
+      "left_idle_0.png",
+      "left_walk_0.png",
+      "left_walk_1.png",
+      "right_idle_0.png",
+      "right_walk_0.png",
+      "right_walk_1.png"
+    ]
+  },
+  {
+    "id": "anti_female",
+    "height_px": 56,
+    "canvas": 64,
+    "colours": 20,
+    "scale": 0.2276,
+    "files": [
+      "back_idle_0.png",
+      "back_walk_0.png",
+      "back_walk_1.png",
+      "front_idle_0.png",
+      "front_walk_0.png",
+      "front_walk_1.png",
+      "left_idle_0.png",
+      "left_walk_0.png",
+      "left_walk_1.png",
+      "right_idle_0.png",
+      "right_walk_0.png",
+      "right_walk_1.png"
+    ]
+  }
+]

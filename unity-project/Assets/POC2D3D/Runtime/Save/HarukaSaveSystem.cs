@@ -54,6 +54,10 @@ namespace Halka.Poc2D3D.Save
         [SerializeField] private PocFastTravel fastTravel;
 
         public HarukaSnapshotStore Store { get; private set; }
+        // ver4.0: the life data's owner (PocLife): it gives its block to every save, says when it
+        // changed (Version: saved within a second, like a setting) and takes an imported file's.
+        public IHarukaLifeHost LifeHost { get; set; }
+        public event Action<HarukaSaveData> Imported;
         public IHarukaSaveBrowser Browser { get; private set; }
         public HarukaSaveData Loaded { get; private set; }
         public HarukaSaveData LastWritten { get; private set; }
@@ -409,9 +413,10 @@ namespace Halka.Poc2D3D.Save
             public bool Auto;
             public string Crow;
             public int Places;
+            public int Life;   // ver4.0: the life data's version (an ability, a post, Rin's mode ...)
 
             public bool SameSettings(State other) => View == other.View && Auto == other.Auto && Crow == other.Crow &&
-                Places == other.Places;
+                Places == other.Places && Life == other.Life;
             public bool Same(State other) => SameSettings(other) && Map == other.Map && Cell == other.Cell &&
                 Facing == other.Facing && Steps == other.Steps;
         }
@@ -426,6 +431,7 @@ namespace Halka.Poc2D3D.Save
             Auto = autoMode != null && autoMode.AutoEnabled,
             Crow = CrowModeNow(),
             Places = fastTravel != null ? fastTravel.DiscoveryVersion : 0,
+            Life = LifeHost != null ? LifeHost.LifeVersion : 0,
         };
 
         public HarukaSaveData Capture()
@@ -447,6 +453,7 @@ namespace Halka.Poc2D3D.Save
                 Facing = HarukaSaveData.FacingName(SaveFacing()),
                 CrowMode = CrowModeNow(),
                 FastTravel = FastTravelNow(),
+                Life = LifeHost != null ? LifeHost.CaptureLife() : Loaded?.Life?.Copy(),
             };
         }
 
@@ -648,6 +655,7 @@ namespace Halka.Poc2D3D.Save
                 if (gameplay != null) gameplay.RefreshCrowAfterRestore();
             }
             if (fastTravel != null) fastTravel.SetFound(written.FastTravel);
+            if (LifeHost != null) LifeHost.ApplyLife(written.Life, true);
             if (views != null)
             {
                 if (views.PixelView != null) views.PixelView.SnapToTarget();
@@ -661,11 +669,13 @@ namespace Halka.Poc2D3D.Save
             if (after.MapId != written.MapId || after.CellX != written.CellX || after.CellY != written.CellY ||
                 after.Facing != written.Facing || after.ViewMode != written.ViewMode || after.AutoEnabled != written.AutoEnabled ||
                 after.TotalSteps != written.TotalSteps || after.TimeAnchorUnixMs != written.TimeAnchorUnixMs ||
-                after.CrowMode != written.CrowMode || fastTravel != null && !SameIds(after.FastTravel, Normalized(written.FastTravel)))
+                after.CrowMode != written.CrowMode || fastTravel != null && !SameIds(after.FastTravel, Normalized(written.FastTravel)) ||
+                LifeHost != null && written.Life != null && !LifeHost.SameAsApplied(written.Life, after.Life))
             {
                 problem = "the world does not match the imported data";
                 return false;
             }
+            Imported?.Invoke(written);
             return true;
         }
 
@@ -901,5 +911,17 @@ namespace Halka.Poc2D3D.Save
 #else
         public static int OffsetMinutes() => (int)TimeZoneInfo.Local.GetUtcOffset(DateTime.UtcNow).TotalMinutes;
 #endif
+    }
+
+    // ver4.0: what the save system needs from the life data's owner (PocLife).
+    public interface IHarukaLifeHost
+    {
+        int LifeVersion { get; }
+        Life.LifeSaveBlock CaptureLife();
+        // imported: from the save menu's import (else at the start, from the loaded file).
+        void ApplyLife(Life.LifeSaveBlock block, bool imported);
+        // The imported block as the game now holds it (repairs such as an NPC on a rock moved aside
+        // are allowed; the abilities, the channel and the records must be the same).
+        bool SameAsApplied(Life.LifeSaveBlock imported, Life.LifeSaveBlock captured);
     }
 }

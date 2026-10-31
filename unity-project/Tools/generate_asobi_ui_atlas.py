@@ -18,7 +18,12 @@ HIRAGANA = "".join(chr(code) for code in range(0x3041, 0x3097))
 KATAKANA = "".join(chr(code) for code in range(0x30A1, 0x30FB))
 ASCII = "".join(chr(code) for code in range(0x20, 0x7F))
 EXTRAS = "。、！？・「」『』ー～：；（）【】…漢字東西南北石花木机家井戸草土床壁羽歩時数間今入出上"
-OPTIONAL_CHARACTERS = "".join(dict.fromkeys(HIRAGANA + KATAKANA + ASCII + EXTRAS))
+# ver4.0 (appended after everything above, so every earlier glyph keeps its place in the atlas):
+# the arrows of the singing game, the kanji of the creator abilities and 「動画を投稿した！」「3日目」,
+# and the half-width katakana block (ﾆｺﾁｭｰﾌﾞ, ﾊﾙｶﾁｬﾝ).
+HALFWIDTH_KATAKANA = "".join(chr(code) for code in range(0xFF61, 0xFFA0))
+EXTRAS_V40 = "↑↓←→作曲力画歌唱動投稿日目" + HALFWIDTH_KATAKANA
+OPTIONAL_CHARACTERS = "".join(dict.fromkeys(HIRAGANA + KATAKANA + ASCII + EXTRAS + EXTRAS_V40))
 REQUIRED = "メニューAUTOONOFFせいかつきろくあるいたかずプレイじかんもどるベッド。つくえ。かんばん。いし。はな。き。カァ。ver2.30123456789:"
 CELL = 64
 COLUMNS = 32
@@ -27,12 +32,15 @@ SIZE = 50
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("official_zip", type=Path)
+    parser.add_argument("official_zip", type=Path, help="the official ZIP, or (ver4.0) the TTF itself")
     parser.add_argument("resources", type=Path)
     args = parser.parse_args()
-    with zipfile.ZipFile(args.official_zip) as archive:
-        name = next(name for name in archive.namelist() if name.lower().endswith(".ttf"))
-        source = archive.read(name)
+    if args.official_zip.suffix.lower() == ".ttf":
+        source = args.official_zip.read_bytes()
+    else:
+        with zipfile.ZipFile(args.official_zip) as archive:
+            name = next(name for name in archive.namelist() if name.lower().endswith(".ttf"))
+            source = archive.read(name)
     cmap = TTFont(io.BytesIO(source)).getBestCmap()
     missing = [character for character in REQUIRED if ord(character) not in cmap]
     if missing:

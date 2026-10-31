@@ -52,9 +52,24 @@ namespace Halka.Poc2D3D
         }
 
         // ver3.5: no input while the phone guide shows or a flight is under way.
+        // ver4.0: nor while a mini game, the video site or the start of hide-and-seek is open.
         public void RefreshInputSuspension()
         {
-            if (session != null) session.InputSuspended = suspended || TravelBusy;
+            if (session != null) session.InputSuspended = suspended || TravelBusy || ActivityOpen;
+        }
+
+        // ver4.0: set by PocLife (a mini game, ﾆｺﾁｭｰﾌﾞ's result, hide-and-seek's count). World
+        // Time keeps running; her walking, AUTO and the world's input wait.
+        private bool activityOpen;
+        public bool ActivityOpen
+        {
+            get => activityOpen;
+            set
+            {
+                activityOpen = value;
+                RefreshInputSuspension();
+                if (autoMode != null && value) autoMode.RecordUserAction(Time.unscaledTime);
+            }
         }
 
         public void ConfigureFootsteps(PlayerFootstepAudio footstepAudio) => footsteps = footstepAudio;
@@ -332,6 +347,6 @@ namespace Halka.Poc2D3D
         }
 
         // ver3.5: a flight pauses AUTO too (its setting is not changed).
-        public bool Suspended => owner != null && (owner.Suspended || owner.TravelBusy);
+        public bool Suspended => owner != null && (owner.Suspended || owner.TravelBusy || owner.ActivityOpen);
     }
 }
