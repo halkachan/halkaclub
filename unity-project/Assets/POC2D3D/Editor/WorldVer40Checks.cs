@@ -463,7 +463,7 @@ namespace Halka.Poc2D3D.EditorTools
             c.Session.LoadMapForCheck(SoundBoothMap(), DeskStand(c, PocLife.DtmDeskId), FacingDirection.Up);
             Frame(c, 1f / 60f, Vector2Int.zero);
             var pressed = c.Session.InteractAhead();
-            Check("the DTM desk (sound booth): A opens its window: its own text, さっきょくする, ﾆｺﾁｭｰﾌﾞをひらく, やめる",
+            Check("the DTM desk (sound booth): A opens its window: its own text, さっきょくする, ニコチューブをひらく, やめる",
                 pressed && Page(c) != null && Page(c).Title == "DTMデスク" && Page(c).Buttons.SequenceEqual(new[] { "さっきょくする", PocLife.NicoOpenLabel, PocLife.CloseLabel }),
                 Page(c) != null ? string.Join("/", Page(c).Lines) : "no page");
             Press(c, "さっきょくする");
@@ -939,9 +939,12 @@ namespace Halka.Poc2D3D.EditorTools
                 Page(c).Lines[0].StartsWith("さっきょくりょく") && Page(c).Lines[5] == life.ClockText);
             c.Menu.SetOpen(false, C6.Clock + 4f);
             Check("the house door and the sound booth still open (a room loads)", c.Session.FindWorld("halka_house") != null && c.Session.FindWorld("halka_soundbooth") != null);
-            Check("the font has every character ver4.0 writes (no ? boxes)", new[] { "動画を投稿した！", "ﾆｺﾁｭｰﾌﾞ", "3日目 14:35", "さっきょくりょく +4", "がりょく +3",
+            Check("the font has every character ver4.0 writes (no ? boxes)", new[] { "動画を投稿した！", PocLife.NicoName, PocLife.NicoOpenLabel, "3日目 14:35", "さっきょくりょく +4", "がりょく +3",
                 "かしょうりょく +5", "つぎのとうこうまで 05:42", "リンは きたのほうに いるみたい！", "ファン「いつもみてるよ！」", "アンチ「そんなに にんきなの？」",
                 "かくれんぼをやめる", "↑↓（W S）か ゆびで うえしたに" }.All(GameBitmapFont.HasAllGlyphs));
+            Check("ニコチューブ is written in full-width katakana (the font's half-width kana are squeezed and lose ﾌﾞ's voicing mark)",
+                PocLife.NicoName == "ニコチューブ" && PocLife.NicoOpenLabel.StartsWith("ニコチューブ") &&
+                !(PocLife.NicoName + PocLife.NicoOpenLabel).Any(ch => ch >= 'ｦ' && ch <= 'ﾟ'));
         }
 
         // ---------------------------------------------------------------- protect

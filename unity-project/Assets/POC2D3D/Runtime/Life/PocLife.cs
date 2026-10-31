@@ -559,8 +559,9 @@ namespace Halka.Poc2D3D.Life
 
         // ---------------------------------------------------------------- ﾆｺﾁｭｰﾌﾞ
 
-        public const string NicoName = "ﾆｺﾁｭｰﾌﾞ";
-        public const string NicoOpenLabel = "ﾆｺﾁｭｰﾌﾞをひらく";
+        // Shown in full-width katakana: the game font's half-width kana are squeezed and lose ﾌﾞ's voicing mark.
+        public const string NicoName = "ニコチューブ";
+        public const string NicoOpenLabel = "ニコチューブをひらく";
         public const string PostLabel = "動画を投稿する";
         public const string PostedLine = "動画を投稿した！";
         public const string PostReadyLine = "とうこうできる！";

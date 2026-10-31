@@ -133,6 +133,8 @@ p = min(1, sqrt(登録者数 / 1,000,000))
 4. FBX（前 −Z、上 Y、スケール適用、ﾊﾙｶﾁｬﾝと同じ向き）、512×512 のテクスチャ、ゲーム用の .blend（`blender/sources/v40/rin_onehead_game.blend` など）、記録（`blender/exports/v40_rin_onehead_manifest.json`）。
 5. ゲームでの大きさ: 0.25 倍（リン 約 0.69 m、レン 約 0.62 m。ﾊﾙｶﾁｬﾝは 0.97 m）。
 
+6. **面の両側を描く**（ユーザーの確認のあとで直しました）: 原本のマテリアルは裏面を消さない設定で、レンの片目（`Len_me 1`）と髪の房の一部（`チューブ.009` など）は面が内側を向いています。Unity は裏を向いた面を描かないので、それらが消えていました。リンレンのシェーダ（`HALKA/POC/ToonTextureTint`）を両面描き（`Cull Off`、裏の面は法線を返して Blender と同じ明るさ、`RenderType` = `OpaqueTwoSided`）にし、輪郭のマスク（`HALKA/POC/OutlineMask`）にも、その RenderType だけを両面で描く SubShader を足しました。ほかの物の描き方と、モデルの面の向きは変えていません。
+
 Blender の画面での比較（元／ゲームのモデル、5方向）は、レポートの図にあります。
 
 ### 3.4 2D のドット絵
