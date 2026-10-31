@@ -492,7 +492,14 @@ namespace Halka.Poc2D3D.Life
             var inv = CultureInfo.InvariantCulture;
             b.Append(",\"stations\":[");
             var first = true;
-            if (session.World != null && session.World.IsInterior && views != null)
+            // (Explicit null checks: the WebGL build catches no null reference, and the 2D view's target
+            // does not exist yet in the first frames.)
+            var pixel = views != null ? views.PixelView : null;
+            var third = views != null ? views.ThirdPerson : null;
+            var twoD = views != null && views.Mode == PocViewMode.PixelView2D;
+            var cam = twoD ? (pixel != null ? pixel.WorldCamera : null) : (third != null ? third.ViewCamera : null);
+            var ready = cam != null && (!twoD || pixel.Target != null);
+            if (ready && session.World != null && session.World.IsInterior)
             {
                 var presenter = FindFirstObjectByType<PocWorldPresenter>();
                 foreach (var instance in session.World.Objects)
@@ -500,15 +507,14 @@ namespace Halka.Poc2D3D.Life
                     if (instance.DefinitionId != DtmDeskId && instance.DefinitionId != TabletId && instance.DefinitionId != MicId) continue;
                     var view = presenter != null ? presenter.FindView(instance.InstanceId) : null;
                     if (view == null) continue;
-                    var cam = views.Mode == PocViewMode.PixelView2D ? views.PixelView.WorldCamera : views.ThirdPerson.ViewCamera;
                     var bounds = new Bounds(view.transform.position, Vector3.zero);
-                    foreach (var r in view.Renderers) if (r != null) bounds.Encapsulate(r.bounds);
+                    if (view.Renderers != null)
+                        foreach (var r in view.Renderers) if (r != null) bounds.Encapsulate(r.bounds);
                     Vector3 p;
-                    if (views.Mode == PocViewMode.PixelView2D)
+                    if (twoD)
                     {
                         var v = cam.WorldToViewportPoint(bounds.center);
-                        var pv = views.PixelView;
-                        p = new Vector3(v.x * pv.Target.width * pv.Scale - pv.Offset.x, v.y * pv.Target.height * pv.Scale - pv.Offset.y, 1f);
+                        p = new Vector3(v.x * pixel.Target.width * pixel.Scale - pixel.Offset.x, v.y * pixel.Target.height * pixel.Scale - pixel.Offset.y, 1f);
                     }
                     else p = cam.WorldToScreenPoint(bounds.center);
                     b.Append(first ? "" : ",").Append("{\"id\":\"").Append(instance.DefinitionId).Append("\",\"x\":").Append(instance.RootCell.x.ToString(inv))
