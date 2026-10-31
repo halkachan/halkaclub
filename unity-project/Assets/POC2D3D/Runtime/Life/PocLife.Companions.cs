@@ -177,6 +177,13 @@ namespace Halka.Poc2D3D.Life
         // A free cell 1-3 steps from her, behind her first, on her side of a wall (reachable).
         private bool TryFollowSpot(PocWalker w, out Vector2Int spot)
         {
+            foreach (var c in FollowSpots(w)) { spot = c; return true; }
+            return TryNearestFree(her: session.Cell, w, out spot);
+        }
+
+        // The places behind her in this one's order (free, reachable cells only).
+        private IEnumerable<Vector2Int> FollowSpots(PocWalker w)
+        {
             var her = session.Cell;
             var back = -session.Facing.ToVector();
             var side = new Vector2Int(back.y, back.x);
@@ -186,9 +193,23 @@ namespace Halka.Poc2D3D.Life
             foreach (var d in order)
             {
                 var c = her + d;
-                if (Reachable.Contains(c) && CharacterCanEnter(c, w)) { spot = c; return true; }
+                if (Reachable.Contains(c) && CharacterCanEnter(c, w)) yield return c;
             }
-            return TryNearestFree(her + back, 3, out spot) && spot != her;
+        }
+
+        private bool TryNearestFree(Vector2Int her, PocWalker w, out Vector2Int spot) =>
+            TryNearestFree(her - session.Facing.ToVector(), 3, out spot) && spot != her;
+
+        // A path to the first place behind her that can be walked to: a place boxed in by the others
+        // (a tree, her, the crow and the other one round it) is passed over, never waited for.
+        private bool FollowPath(PocWalker w, List<Vector2Int> path)
+        {
+            foreach (var spot in FollowSpots(w))
+            {
+                if (spot == w.Cell) return false;
+                if (TryPath(w, spot, 6, path) || TryPath(w, spot, 24, path)) return true;
+            }
+            return TryNearestFree(session.Cell, w, out var free) && free != w.Cell && (TryPath(w, free, 6, path) || TryPath(w, free, 24, path));
         }
 
         private void TickCompanions(float dt)
@@ -263,7 +284,9 @@ namespace Halka.Poc2D3D.Life
             if (path.Count == 0 || lifeTime >= nextMove[w])
             {
                 nextMove[w] = lifeTime + 0.5f;
-                if (TryFollowSpot(w, out var goal) && goal != w.Cell) TryPath(w, goal, 6, path);
+                // the first place behind her it can walk to (a small search box first; around a wood or a
+                // pond the way may go farther round)
+                FollowPath(w, path);
             }
             StepAlong(w, distance > 5 ? 0.15f : 0.2f);
         }

@@ -18,7 +18,7 @@ MonoBehaviour:
   examineMessage: 
   rootedArtwork: 0
   clickColliderSize: {x: 0.5, y: 0.5}
-  footprint: {x: 3, y: 2}
+  footprint: {x: 4, y: 3}
   blockedCellOffsets: []
   actionPoints: []
   rootAnchor: bottom-left

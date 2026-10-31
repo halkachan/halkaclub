@@ -15,6 +15,107 @@
   "interiorWallBase": 0.14,
   "models": [
     {
+      "family": "dtm_desk_large",
+      "name": "dtm_desk_large",
+      "blend": "blender/sources/v31/dtm_desk_large.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V31/dtm_desk_large.fbx",
+      "triangles": 936,
+      "vertices": 592,
+      "materials": 1,
+      "parts": {
+        "dtm_desk_large": {
+          "triangles": 576,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "monitor_speaker_L": {
+          "triangles": 180,
+          "materials": 1,
+          "pivot": [
+            0.13,
+            0.04,
+            0.41
+          ]
+        },
+        "monitor_speaker_R": {
+          "triangles": 180,
+          "materials": 1,
+          "pivot": [
+            1.37,
+            0.04,
+            0.41
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.22,
+        -0.2,
+        0.0
+      ],
+      "boundsMax": [
+        1.72,
+        0.2,
+        0.74
+      ],
+      "anchors": {
+        "WorkAnchor": [
+          0.75,
+          -0.45,
+          0.0
+        ]
+      },
+      "supplemented": [
+        "new design for ver3.1",
+        "speaker backs plain",
+        "interface knobs simplified"
+      ]
+    },
+    {
+      "family": "illust_desk_tablet",
+      "name": "illust_desk_tablet",
+      "blend": "blender/sources/v31/illust_desk_tablet.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V31/illust_desk_tablet.fbx",
+      "triangles": 192,
+      "vertices": 136,
+      "materials": 1,
+      "parts": {
+        "illust_desk_tablet": {
+          "triangles": 192,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.22,
+        -0.17,
+        0.0
+      ],
+      "boundsMax": [
+        0.72,
+        0.17,
+        0.5618
+      ],
+      "anchors": {
+        "WorkAnchor": [
+          0.0,
+          -0.45,
+          0.0
+        ]
+      },
+      "supplemented": [
+        "new design for ver3.1",
+        "stand simplified to two legs"
+      ]
+    },
+    {
       "family": "soundbooth_exterior",
       "name": "soundbooth_exterior",
       "blend": "blender/sources/v31/soundbooth_exterior.blend",
@@ -41,7 +142,7 @@
       "boundsMax": [
         0.747,
         1.267,
-        1.155
+        1.215
       ],
       "anchors": {
         "DoorAnchor": [
@@ -263,107 +364,6 @@
       "supplemented": [
         "new design for ver3.1",
         "foam panels on every face of a wall cell"
-      ]
-    },
-    {
-      "family": "dtm_desk_large",
-      "name": "dtm_desk_large",
-      "blend": "blender/sources/v31/dtm_desk_large.blend",
-      "fbx": "unity-project/Assets/POC2D3D/Models/V31/dtm_desk_large.fbx",
-      "triangles": 936,
-      "vertices": 592,
-      "materials": 1,
-      "parts": {
-        "dtm_desk_large": {
-          "triangles": 576,
-          "materials": 1,
-          "pivot": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        },
-        "monitor_speaker_L": {
-          "triangles": 180,
-          "materials": 1,
-          "pivot": [
-            0.13,
-            0.04,
-            0.41
-          ]
-        },
-        "monitor_speaker_R": {
-          "triangles": 180,
-          "materials": 1,
-          "pivot": [
-            1.37,
-            0.04,
-            0.41
-          ]
-        }
-      },
-      "boundsMin": [
-        -0.22,
-        -0.2,
-        0.0
-      ],
-      "boundsMax": [
-        1.72,
-        0.2,
-        0.74
-      ],
-      "anchors": {
-        "WorkAnchor": [
-          0.75,
-          -0.45,
-          0.0
-        ]
-      },
-      "supplemented": [
-        "new design for ver3.1",
-        "speaker backs plain",
-        "interface knobs simplified"
-      ]
-    },
-    {
-      "family": "illust_desk_tablet",
-      "name": "illust_desk_tablet",
-      "blend": "blender/sources/v31/illust_desk_tablet.blend",
-      "fbx": "unity-project/Assets/POC2D3D/Models/V31/illust_desk_tablet.fbx",
-      "triangles": 192,
-      "vertices": 136,
-      "materials": 1,
-      "parts": {
-        "illust_desk_tablet": {
-          "triangles": 192,
-          "materials": 1,
-          "pivot": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        }
-      },
-      "boundsMin": [
-        -0.22,
-        -0.17,
-        0.0
-      ],
-      "boundsMax": [
-        0.72,
-        0.17,
-        0.5618
-      ],
-      "anchors": {
-        "WorkAnchor": [
-          0.0,
-          -0.45,
-          0.0
-        ]
-      },
-      "supplemented": [
-        "new design for ver3.1",
-        "stand simplified to two legs"
       ]
     }
   ]

@@ -41,6 +41,14 @@ namespace Halka.Poc2D3D.Life
         {
             if (life == null || !life.Started || !Visible) return;
             GUI.depth = -90;
+            // sleeping: the screen goes dark and comes back (under the clock and the message)
+            var dark = life.SleepFade(Time.unscaledTime);
+            if (dark > 0f)
+            {
+                GUI.color = new Color(0.04f, 0.04f, 0.08f, dark);
+                GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+                GUI.color = Color.white;
+            }
             if (sun == null) { sun = Icon(false); moon = Icon(true); }
             LastNight = life.IsNightNow;
             LastText = life.ClockText;

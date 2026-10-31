@@ -180,7 +180,7 @@ MonoBehaviour:
     Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
     SignText: 
   - InstanceId: obj_a985098b726c4ca8823c9217e625dced
-    RootCell: {x: -4, y: -3}
+    RootCell: {x: -4, y: -1}
     Definition: {fileID: 11400000, guid: 26d9540be49f1f742a641f53abd8f1f5, type: 2}
     SignText: 
   - InstanceId: obj_b44948f3a19d5295a1092049156cd5e6

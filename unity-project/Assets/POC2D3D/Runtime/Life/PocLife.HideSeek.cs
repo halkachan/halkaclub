@@ -9,15 +9,16 @@ namespace Halka.Poc2D3D.Life
 {
     public enum HideSeekMode { Rin, Len, Both }
 
-    // ver4.0: hide-and-seek with Rin, Len or both, in the field around the house (指示書 13).
+    // ver4.0: hide-and-seek with Rin, Len or both, anywhere in the garden (庭: the whole outdoor world,
+    // its nine regions; the user's request after the first look, 指示書 13 had the field only).
     //   1. ﾊﾙｶﾁｬﾝ turns her back and counts (her input and AUTO wait; World Time runs on);
-    //   2. the hiders run to their places (fast steps; at most 10 s, then they are simply there);
+    //   2. the hiders dash to their places (very fast steps; at most 10 s, then they are simply there);
     //   3. 「もういいよ！」: she looks for them; A (or a click) in front of one finds it;
     //   4. a hint after 40 s, then every 30 s: 「リンは きたのほうに いるみたい！」 (no penalty);
     //   5. everyone found: the time, the records; each goes back to the mode it had.
-    // A hiding place: a free cell she can reach in the field, next to a tree, bush, rock, the house
-    // or other furniture (North of it first, where it hides them a little), never a door or a stand
-    // cell, at least 6 cells from her, the two hiders apart. Nobody hides inside anything.
+    // A hiding place: a free cell she can reach anywhere in the garden, next to a tree, bush, rock,
+    // the house or other furniture (North of it first, where it hides them a little), never a door or
+    // a stand cell, at least 8 cells from her, the two hiders apart. Nobody hides inside anything.
     // Stopped from the menu (かくれんぼをやめる) or by going indoors; a save during the game keeps
     // their modes from before it and their cells (a load never resumes the game: it starts normal).
     public sealed partial class PocLife
@@ -25,6 +26,8 @@ namespace Halka.Poc2D3D.Life
         public const float HideCountMaxSeconds = 10f;
         public const float FirstHintSeconds = 40f;
         public const float NextHintSeconds = 30f;
+        public const float HideDashStepSeconds = 0.05f;   // 「かなり速め」: four times her walk
+        public const int HideMinDistance = 8;
 
         private readonly Dictionary<PocWalker, CompanionMode> hideModes = new Dictionary<PocWalker, CompanionMode>();
         private readonly Dictionary<PocWalker, Vector2Int> hideSpots = new Dictionary<PocWalker, Vector2Int>();
@@ -41,6 +44,7 @@ namespace Halka.Poc2D3D.Life
         public int HideSeekStopped { get; private set; }
         public int HideSeekHints { get; private set; }
         public string LastHint { get; private set; } = "";
+        public IEnumerable<Vector2Int> HideSpotCells => hideSpots.Values;
         public float LastClearSeconds { get; private set; } = -1f;
 
         public bool CanStartHideSeek(out string why)
@@ -48,9 +52,8 @@ namespace Halka.Poc2D3D.Life
             why = null;
             if (HideSeekActive) { why = "いま かくれんぼ ちゅう！"; return false; }
             var world = session.OutdoorWorld;
-            var here = session.World == world ? session.OutdoorIndex.RegionAt(session.Cell) : null;
-            var field = session.OutdoorIndex != null ? session.OutdoorIndex.PrimaryRegion : null;
-            if (here == null || here != field) { why = "かくれんぼは いえのまえの くさはらで しよう！"; return false; }
+            var here = session.World == world && session.OutdoorIndex != null ? session.OutdoorIndex.RegionAt(session.Cell) : null;
+            if (here == null) { why = "かくれんぼは にわで しよう！"; return false; }
             return true;
         }
 
@@ -85,15 +88,14 @@ namespace Halka.Poc2D3D.Life
 
         private List<Vector2Int> PickHideSpots(int count)
         {
-            var field = session.OutdoorIndex.PrimaryRegion;
             var world = session.OutdoorWorld;
             var her = session.Cell;
             var scored = new List<(int score, Vector2Int cell)>();
             foreach (var c in Reachable)
             {
-                if (session.OutdoorIndex.RegionAt(c) != field || ActionCells.Contains(c) || IsDoorOrTransition(c)) continue;
+                if (session.OutdoorIndex.RegionAt(c) == null || ActionCells.Contains(c) || IsDoorOrTransition(c)) continue;
                 var distance = Mathf.Abs(c.x - her.x) + Mathf.Abs(c.y - her.y);
-                if (distance < 6 || distance > 18 || !CharacterCanEnter(c, null)) continue;
+                if (distance < HideMinDistance || !CharacterCanEnter(c, null)) continue;
                 var score = 0;
                 if (world.IsBlocked(c + Vector2Int.down)) score += 3;           // just North of something
                 foreach (var d in new[] { Vector2Int.left, Vector2Int.right, Vector2Int.up, new Vector2Int(1, -1), new Vector2Int(-1, -1) })
@@ -101,8 +103,11 @@ namespace Halka.Poc2D3D.Life
                 if (score == 0) continue;
                 scored.Add((score, c));
             }
+            // The whole garden: every good place (North of something, or beside two things) is a candidate,
+            // so a game can end up in any region; only plain one-side places when there are too few.
             scored.Sort((a, b) => a.score != b.score ? b.score.CompareTo(a.score) : a.cell.x != b.cell.x ? a.cell.x.CompareTo(b.cell.x) : a.cell.y.CompareTo(b.cell.y));
-            var top = scored.GetRange(0, Mathf.Min(24, scored.Count));
+            var good = scored.FindAll(s => s.score >= 3);
+            var top = good.Count >= 24 ? good : scored;
             var result = new List<Vector2Int>();
             var seed = State.Channel.Seed + HideSeekGames * 131 + (long)lifeTime;
             for (var attempt = 0; attempt < 60 && result.Count < count && top.Count > 0; attempt++)
@@ -153,7 +158,17 @@ namespace Halka.Poc2D3D.Life
 
         private void TickHider(PocWalker w)
         {
-            if (HideSeekCounting) { StepAlong(w, 0.12f); return; }
+            if (HideSeekCounting)
+            {
+                // someone in the way cleared its path: a new way to its place (a moment later)
+                if (paths[w].Count == 0 && hideSpots.TryGetValue(w, out var spot) && w.Cell != spot && lifeTime >= nextMove[w])
+                {
+                    nextMove[w] = lifeTime + 0.3f;
+                    TryPath(w, spot, 10, paths[w]);
+                }
+                StepAlong(w, HideDashStepSeconds);
+                return;
+            }
             if (hideFound.Contains(w)) return;
             w.Face(FacingDirection.Down);
         }
@@ -171,7 +186,7 @@ namespace Halka.Poc2D3D.Life
                 {
                     var ns = d.y > Mathf.Abs(d.x) / 2 ? "きた" : -d.y > Mathf.Abs(d.x) / 2 ? "みなみ" : "";
                     var ew = d.x > Mathf.Abs(d.y) / 2 ? "ひがし" : -d.x > Mathf.Abs(d.y) / 2 ? "にし" : "";
-                    where = ns + ew + "のほうに";
+                    where = (Mathf.Abs(d.x) + Mathf.Abs(d.y) > 24 ? "とおくの " : "") + ns + ew + "のほうに";
                 }
                 LastHint = name + "は " + where + " いるみたい！";
                 HideSeekHints++;

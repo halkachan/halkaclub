@@ -227,7 +227,7 @@ namespace Halka.Poc2D3D.EditorTools
                 new PocPresentationBinding { definitionId = "recording_mic_basic", model = Phase3("recording_mic_basic"),
                     cameraOccluder = false },
                 new PocPresentationBinding { definitionId = "art_easel_basic", model = Phase3("art_easel_basic"),
-                    cameraOccluder = false, fadeInFront3D = true, fadeOpacity = 0.4f, fadeSeconds = 0.25f },
+                    cameraOccluder = false },   // ver4.0: only trees are drawn see-through (user's request)
                 new PocPresentationBinding { definitionId = "sofa_basic", model = LoadModel(SofaModelPath), cameraOccluder = false },
                 new PocPresentationBinding { definitionId = "studio_shelf_basic", model = Phase3("studio_shelf_basic"),
                     cameraOccluder = false },
@@ -242,8 +242,11 @@ namespace Halka.Poc2D3D.EditorTools
                     cameraOccluder = false },
                 new PocPresentationBinding { definitionId = "illust_desk_tablet", model = V32("illust_desk_tablet"),
                     cameraOccluder = false },
+                // ver4.0 (the user's layout): the kitchen along the house's South wall, facing North; the
+                // ver3.2 model (made facing West, its cells running North) turned a quarter to the right,
+                // so its cells run East from the root: hob, sink, fridge.
                 new PocPresentationBinding { definitionId = "kitchen_counter", model = V32("kitchen_counter"),
-                    cameraOccluder = false },
+                    cameraOccluder = false, yawDegrees = 90f },
                 new PocPresentationBinding { definitionId = "living_rug", model = V32("living_rug"),
                     cameraOccluder = false, castShadows = false, outlineStrength = 0.5f },
                 new PocPresentationBinding { definitionId = "low_table_living", model = V32("low_table_living"),
@@ -255,7 +258,7 @@ namespace Halka.Poc2D3D.EditorTools
                 new PocPresentationBinding { definitionId = "flower_yellow", model = V33("flower_yellow"),
                     cameraOccluder = false, minPickSize = SmallPickSize },
                 new PocPresentationBinding { definitionId = "sunflower_cluster", model = V33("sunflower_cluster"),
-                    cameraOccluder = false, fadeInFront2D = true, fadeInFront3D = true, fadeOpacity = 0.4f, fadeSeconds = 0.25f },
+                    cameraOccluder = false },   // ver4.0: only trees are drawn see-through (user's request)
                 new PocPresentationBinding { definitionId = "signpost_yellow", model = V33("sign_yellow"), cameraOccluder = false },
                 // ver3.6, the North area: a blue flower, the blue signpost (its model: sign_blue), and at the
                 // pond the lily pads (flat on the water: no shadow, a soft outline) and the reeds.

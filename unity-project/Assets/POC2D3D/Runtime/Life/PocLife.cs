@@ -146,6 +146,7 @@ namespace Halka.Poc2D3D.Life
                 StartedUnixMs = now,
             };
             State.Channel.BasisUnixMs = now;
+            State.WakeMinute = LifeClock.AbsoluteMinute(AnchorMs, now);   // up since the game began
             State.Channel.Seed = (now ^ 0x5DEECE66DL) & 0x7FFFFFFFFFFFL;
             if (State.Channel.Seed == 0) State.Channel.Seed = 1;
         }
@@ -241,6 +242,12 @@ namespace Halka.Poc2D3D.Life
             if (ch.BasisUnixMs <= 0 || ch.BasisUnixMs > nowMs) { ch.BasisUnixMs = nowMs; Repairs++; }
             if (ch.LastPostUnixMs < 0 || ch.LastPostUnixMs > nowMs) { ch.LastPostUnixMs = ch.LastPostUnixMs > 0 ? nowMs : 0; Repairs++; }
             if (ch.Seed == 0) { ch.Seed = 1; Repairs++; }
+            // sleep: an older ver4.0 block counts her day from the life's start; never in the future
+            var nowMinute = LifeClock.AbsoluteMinute(AnchorMs, nowMs);
+            if (!block.HasSleep)
+                block.WakeMinute = System.Math.Max(0L, System.Math.Min(nowMinute,
+                    LifeClock.AbsoluteMinute(AnchorMs, block.StartedUnixMs > 0 ? block.StartedUnixMs : nowMs)));
+            else if (block.WakeMinute > nowMinute || block.WakeMinute < 0) { block.WakeMinute = nowMinute; Repairs++; }
             for (var i = 0; i < CreatorState.SkillCount; i++)
                 if (block.Creator.Skills[i].Sign < 0) { block.Creator.Skills[i] = BigInteger.Zero; Repairs++; }
             for (var i = block.Npcs.Count - 1; i >= 0; i--)
@@ -379,6 +386,7 @@ namespace Halka.Poc2D3D.Life
         private bool OnInteract(SharedObjectInstance target)
         {
             if (target == null || session.World == null || !session.World.IsInterior) return false;
+            if (target.DefinitionId == BedId) return TryBed(target);
             if (target.DefinitionId == DtmDeskId || target.DefinitionId == TabletId)
             {
                 // Only from where the furniture answers (its action points), as before.
@@ -505,7 +513,8 @@ namespace Halka.Poc2D3D.Life
                 var presenter = FindFirstObjectByType<PocWorldPresenter>();
                 foreach (var instance in session.World.Objects)
                 {
-                    if (instance.DefinitionId != DtmDeskId && instance.DefinitionId != TabletId && instance.DefinitionId != MicId) continue;
+                    if (instance.DefinitionId != DtmDeskId && instance.DefinitionId != TabletId && instance.DefinitionId != MicId &&
+                        instance.DefinitionId != BedId && instance.DefinitionId != "kitchen_counter") continue;
                     var view = presenter != null ? presenter.FindView(instance.InstanceId) : null;
                     if (view == null) continue;
                     var bounds = new Bounds(view.transform.position, Vector3.zero);
@@ -543,9 +552,10 @@ namespace Halka.Poc2D3D.Life
         // A finished game (never a cancelled one): its records and ability, saved at once.
         private int OnGameFinished(CreatorSkill skill, int score)
         {
-            var gain = State.Creator.ApplyScore(skill, score);
+            var difficulty = minigames != null ? minigames.Difficulty : MinigameDifficulty.Normal;
+            var gain = State.Creator.ApplyScore(skill, score, difficulty);
             GamesFinished++;
-            LastGameResult = CreatorState.SkillIds[(int)skill] + " " + score + " +" + gain;
+            LastGameResult = CreatorState.SkillIds[(int)skill] + " " + CreatorState.DifficultyIds[(int)difficulty] + " " + score + " +" + gain;
             Changed();
             if (saveSystem != null) saveSystem.Write("mini game", Time.unscaledTime);
             return gain;
@@ -829,6 +839,15 @@ namespace Halka.Poc2D3D.Life
                         return "ok";
                     }
                     return "bad";
+                case "awake":
+                    // up for this many game minutes (the sleep checks): life:awake:720
+                    if (parts.Length > 2 && long.TryParse(parts[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out var awake))
+                    {
+                        State.WakeMinute = AbsoluteMinuteNow - Math.Max(0L, awake);
+                        Changed();
+                        return "ok";
+                    }
+                    return "bad";
                 case "ready":
                     // the 24 game hours as over (the reference time moved back by a real 20 minutes)
                     if (State.Channel.LastPostUnixMs > 0) State.Channel.LastPostUnixMs = NowMs - LifeClock.RealMilliseconds(NicoTubeTuning.CooldownGameMinutes);
@@ -870,6 +889,9 @@ namespace Halka.Poc2D3D.Life
             b.Append("\"day\":").Append(ShownDay.ToString(inv)).Append(",\"minute\":").Append(MinuteOfDay.ToString(inv));
             b.Append(",\"clock\":\"").Append(ClockText).Append("\",\"night\":").Append(IsNightNow ? 1 : 0);
             b.Append(",\"phase\":\"").Append(worldTime != null ? worldTime.CurrentPhase.ToString() : "").Append('"');
+            b.Append(",\"awake\":").Append(AwakeMinutes.ToString(inv)).Append(",\"sleepy\":").Append(Sleepy ? 1 : 0)
+                .Append(",\"sleeps\":").Append(State.Sleeps.ToString(inv)).Append(",\"sleepRefusals\":").Append(SleepRefusals.ToString(inv))
+                .Append(",\"anchor\":").Append(AnchorMs.ToString(inv));
             for (var i = 0; i < CreatorState.SkillCount; i++)
                 b.Append(",\"").Append(CreatorState.SkillIds[i]).Append("\":\"").Append(LifeNumbers.ToSave(State.Creator.Skills[i])).Append('"')
                     .Append(",\"").Append(CreatorState.SkillIds[i]).Append("Plays\":").Append(State.Creator.Plays[i].ToString(inv))

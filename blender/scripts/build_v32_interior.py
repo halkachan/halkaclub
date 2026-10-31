@@ -233,23 +233,23 @@ def build_kitchen_counter():
 
 
 def build_living_rug():
-    """living_rug, 3 x 2 cells from the root (South-West) cell, walkable (blocks nothing): a thin rose
-    rug with a cream border and two stripes."""
+    """living_rug, 4 x 3 cells from the root (South-West) cell (ver4.0, was 3 x 2: the table now stands in
+    its middle), walkable (blocks nothing): a thin rose rug with a cream border and two stripes."""
     g = Geo()
-    x0, x1, y0, y1, h = -0.23, 1.23, -0.23, 0.73, 0.012
+    x0, x1, y0, y1, h = -0.23, 1.73, -0.23, 1.23, 0.012
     g.box((x0, y0, 0.0), (x1, y1, h), RUG_EDGE, top=RUG_BORDER)
     g.face([(x0 + 0.05, y0 + 0.05, h + 0.001), (x1 - 0.05, y0 + 0.05, h + 0.001),
             (x1 - 0.05, y1 - 0.05, h + 0.001), (x0 + 0.05, y1 - 0.05, h + 0.001)], RUG, (0, 0, 1))
     for ya, yb in ((y0 + 0.14, y0 + 0.17), (y1 - 0.17, y1 - 0.14)):
         g.face([(x0 + 0.05, ya, h + 0.002), (x1 - 0.05, ya, h + 0.002), (x1 - 0.05, yb, h + 0.002),
                 (x0 + 0.05, yb, h + 0.002)], RUG_STRIPE, (0, 0, 1))
-    for i in range(7):  # a row of small diamonds down the middle
-        cx, cy, r = x0 + 0.2 + i * (x1 - x0 - 0.4) / 6, (y0 + y1) / 2, 0.04
+    for i in range(9):  # a row of small diamonds down the middle
+        cx, cy, r = x0 + 0.2 + i * (x1 - x0 - 0.4) / 8, (y0 + y1) / 2 - 0.36, 0.04
         g.face([(cx, cy - r, h + 0.002), (cx + r, cy, h + 0.002), (cx, cy + r, h + 0.002), (cx - r, cy, h + 0.002)],
                RUG_BORDER, (0, 0, 1))
     rug = g.obj("living_rug")
-    hl.add_cell_guides("living_rug", [(x, y) for x in range(3) for y in range(2)])
-    return [rug], [], {"living_rug": ["new design for ver3.2"]}
+    hl.add_cell_guides("living_rug", [(x, y) for x in range(4) for y in range(3)])
+    return [rug], [], {"living_rug": ["new design for ver3.2", "ver4.0: 4 x 3"]}
 
 
 def build_low_table():
@@ -347,7 +347,10 @@ def main():
         "approval": "pending: new ver3.2 interior designs, not approved by the user yet",
         "models": [],
     }
+    only = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     for family, build in FAMILIES:
+        if only and family not in only:
+            continue  # ver4.0: rebuild only the families named after "--"
         hl.reset_scene()
         objects, anchors, supplemented = build()
         roots = [o for o in objects if o.parent is None]
@@ -374,6 +377,10 @@ def main():
             }
             manifest["models"].append(entry)
             print(f"HARUKA_V32_ASSET {obj.name}: {entry['triangles']} tris, bounds {lo} {hi}")
+    if only:  # the other families' entries as they were
+        with open(os.path.join(EXPORTS, "v32_assets_manifest.json"), encoding="utf-8") as f:
+            kept = [m for m in json.load(f)["models"] if m["family"] not in only]
+        manifest["models"] = kept + manifest["models"]
     with open(os.path.join(EXPORTS, "v32_assets_manifest.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2, ensure_ascii=False)
         f.write("\n")

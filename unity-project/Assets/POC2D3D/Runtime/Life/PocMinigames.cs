@@ -16,8 +16,10 @@ namespace Halka.Poc2D3D.Life
     //                  the line is on the model (a finger gets a wider tolerance).
     //   うた (歌唱力)   keep the voice (a dot) on the melody bar with ↑ ↓ (W S) or by dragging; 24 s;
     //                  how close it stays. No microphone (指示書 8.3: a later addition).
-    // Each: スタート / やめる first, 0-100 points, やめる at any time (nothing is given or saved),
-    // then the result (「さっきょくした！」「さっきょくりょく +4」) and とじる.
+    // Each: the difficulty first (かんたん / ふつう / やばい, or やめる), 0-100 points, やめる at any time
+    // (nothing is given or saved), then the result (「さっきょくした！」「さっきょくりょく +4」) and とじる.
+    // ふつう is the first version's game; かんたん is slower and kinder, やばい faster, tighter and
+    // denser (CreatorState: かんたん +0〜3, ふつう +0〜5, やばい +0〜12 by the same score bands).
     // The sounds are made here (sine tones and a click), no recorded music.
     public sealed class PocMinigames : MonoBehaviour
     {
@@ -29,6 +31,24 @@ namespace Halka.Poc2D3D.Life
         public const float NoteTravelSeconds = 1.6f;
         public const float PerfectWindow = 0.08f;
         public const float GoodWindow = 0.16f;
+
+        // かんたん / ふつう / やばい (ふつう: the constants above).
+        private static readonly float[] TravelByDifficulty = { 2.1f, NoteTravelSeconds, 1.15f };
+        private static readonly float[] PerfectByDifficulty = { 0.1f, PerfectWindow, 0.06f };
+        private static readonly float[] GoodByDifficulty = { 0.2f, GoodWindow, 0.12f };
+        private static readonly float[] DrawSecondsByDifficulty = { 30f, DrawSeconds, 18f };
+        private static readonly float[] ToleranceByDifficulty = { 0.14f, 0.1f, 0.07f };
+        private static readonly float[] SingToleranceByDifficulty = { 1.7f, 1.25f, 0.85f };
+        private static readonly float[] SingGapByDifficulty = { 1.9f, 1.2f, 0.7f };
+        private static readonly float[] SingGapRandomByDifficulty = { 0.6f, 0.6f, 0.4f };
+        private static readonly int[] SingJumpByDifficulty = { 1, 2, 3 };
+
+        public MinigameDifficulty Difficulty { get; private set; } = MinigameDifficulty.Normal;
+        public float NoteTravel => TravelByDifficulty[(int)Difficulty];
+        public float PerfectWindowNow => PerfectByDifficulty[(int)Difficulty];
+        public float GoodWindowNow => GoodByDifficulty[(int)Difficulty];
+        public float DrawSecondsNow => DrawSecondsByDifficulty[(int)Difficulty];
+        public float SingTolerance => SingToleranceByDifficulty[(int)Difficulty];
 
         [SerializeField] private Font fallbackFont;
 
@@ -75,8 +95,9 @@ namespace Halka.Poc2D3D.Life
             closed?.Invoke(!wasResult);
         }
 
-        private void StartPlaying()
+        private void StartPlaying(MinigameDifficulty difficulty)
         {
+            Difficulty = difficulty;
             Current = Phase.Playing;
             startedAt = Time.unscaledTime;
             Plays++;
@@ -117,6 +138,13 @@ namespace Halka.Poc2D3D.Life
         private Rect ButtonB() { var p = Panel(); return new Rect(p.center.x + 7f, p.yMax - 54f, p.width * 0.5f - 21f, 42f); }
         // The result has one button (とじる) across the bottom.
         private Rect ButtonWide() { var p = Panel(); return new Rect(p.x + 14f, p.yMax - 54f, p.width - 28f, 42f); }
+        // The first screen: かんたん / ふつう / やばい in a row above やめる.
+        private Rect DifficultyButton(int i)
+        {
+            var p = Panel();
+            var w = (p.width - 28f - 20f) / 3f;
+            return new Rect(p.x + 14f + i * (w + 10f), p.yMax - 54f - 52f, w, 42f);
+        }
 
         private static Vector2 Gui(Vector2 screen) => new Vector2(screen.x, Screen.height - screen.y);
 
@@ -164,8 +192,10 @@ namespace Halka.Poc2D3D.Life
             switch (Current)
             {
                 case Phase.Intro:
-                    if (Pressed(ButtonA()) || enter) StartPlaying();
-                    else if (Pressed(ButtonB()) || escape) Cancel();
+                    if (Pressed(DifficultyButton(0)) || Input.GetKeyDown(KeyCode.Alpha1)) StartPlaying(MinigameDifficulty.Easy);
+                    else if (Pressed(DifficultyButton(1)) || enter || Input.GetKeyDown(KeyCode.Alpha2)) StartPlaying(MinigameDifficulty.Normal);
+                    else if (Pressed(DifficultyButton(2)) || Input.GetKeyDown(KeyCode.Alpha3)) StartPlaying(MinigameDifficulty.Hard);
+                    else if (Pressed(ButtonWide()) || escape) Cancel();
                     break;
                 case Phase.Playing:
                     if (Pressed(ButtonB()) || escape) { Cancel(); break; }
@@ -200,10 +230,17 @@ namespace Halka.Poc2D3D.Life
             Perfect = Good = Missed = 0;
             var rng = new System.Random(seed);
             // 120 BPM, a bar of rest first, then notes on beats and some half beats, never two at once.
-            for (var t = 2f; t <= DtmSeconds - 1.5f; t += 0.5f)
+            // かんたん: beats only, fewer; やばい: more beats and half beats, and some quarter beats.
+            var step = Difficulty == MinigameDifficulty.Hard ? 0.25f : 0.5f;
+            for (var t = 2f; t <= DtmSeconds - 1.5f; t += step)
             {
-                var beatInBar = Mathf.RoundToInt(t / 0.5f) % 8;
-                if (rng.NextDouble() < (beatInBar % 2 == 0 ? 0.85 : 0.35))
+                var quarter = Mathf.RoundToInt(t / 0.25f);
+                double chance;
+                if (quarter % 2 != 0) chance = 0.3;
+                else if ((quarter / 2) % 2 == 0)
+                    chance = Difficulty == MinigameDifficulty.Easy ? 0.7 : Difficulty == MinigameDifficulty.Hard ? 0.95 : 0.85;
+                else chance = Difficulty == MinigameDifficulty.Easy ? 0.0 : Difficulty == MinigameDifficulty.Hard ? 0.6 : 0.35;
+                if (rng.NextDouble() < chance)
                     notes.Add(new Note { Time = t, Lane = rng.Next(4) });
             }
             nextBeat = 0f;
@@ -234,7 +271,7 @@ namespace Halka.Poc2D3D.Life
                 if (hit) JudgeLane(lane, t);
             }
             foreach (var n in notes)
-                if (n.Judged == 0 && t > n.Time + GoodWindow) { n.Judged = 3; Missed++; }
+                if (n.Judged == 0 && t > n.Time + GoodWindowNow) { n.Judged = 3; Missed++; }
             if (t >= DtmSeconds) Finish(DtmScore());
         }
 
@@ -242,11 +279,11 @@ namespace Halka.Poc2D3D.Life
         {
             Note best = null;
             foreach (var n in notes)
-                if (n.Judged == 0 && n.Lane == lane && Mathf.Abs(n.Time - t) <= GoodWindow && (best == null || Mathf.Abs(n.Time - t) < Mathf.Abs(best.Time - t)))
+                if (n.Judged == 0 && n.Lane == lane && Mathf.Abs(n.Time - t) <= GoodWindowNow && (best == null || Mathf.Abs(n.Time - t) < Mathf.Abs(best.Time - t)))
                     best = n;
             if (best == null) return;
             best.Error = t - best.Time;
-            if (Mathf.Abs(best.Error) <= PerfectWindow) { best.Judged = 1; Perfect++; }
+            if (Mathf.Abs(best.Error) <= PerfectWindowNow) { best.Judged = 1; Perfect++; }
             else { best.Judged = 2; Good++; }
             PlayClip(hitClip, 0.6f, 1f + best.Lane * 0.125f);
         }
@@ -374,10 +411,10 @@ namespace Halka.Poc2D3D.Life
                 }
             foreach (var e in ended)
                 if (e.id == drawFinger) drawFinger = int.MinValue;
-            if (Elapsed >= DrawSeconds) Finish(DrawingScore());
+            if (Elapsed >= DrawSecondsNow) Finish(DrawingScore());
         }
 
-        public float Tolerance => touchUsed ? 0.13f : 0.1f;
+        public float Tolerance => ToleranceByDifficulty[(int)Difficulty] * (touchUsed ? 1.3f : 1f);
 
         // Coverage: share of the model's points with the line within the tolerance; precision: share
         // of the line's points within the tolerance of the model. 70 % / 30 %.
@@ -423,10 +460,11 @@ namespace Halka.Poc2D3D.Life
             melody.Clear();
             var rng = new System.Random(seed);
             var level = 3f + rng.Next(3);
-            for (var t = 1.5f; t < SingSeconds; t += 1.2f + (float)rng.NextDouble() * 0.6f)
+            var d = (int)Difficulty;
+            for (var t = 1.5f; t < SingSeconds; t += SingGapByDifficulty[d] + (float)rng.NextDouble() * SingGapRandomByDifficulty[d])
             {
                 melody.Add((t, level));
-                level = Mathf.Clamp(level + rng.Next(-2, 3), 0f, Levels);
+                level = Mathf.Clamp(level + rng.Next(-SingJumpByDifficulty[d], SingJumpByDifficulty[d] + 1), 0f, Levels);
             }
             Voice = 3.5f;
             closeness = counted = 0f;
@@ -460,7 +498,7 @@ namespace Halka.Poc2D3D.Life
             TargetNow = MelodyAt(t);
             if (TargetNow >= 0f)
             {
-                closeness += Mathf.Clamp01(1f - Mathf.Abs(Voice - TargetNow) / 1.25f) * dt;
+                closeness += Mathf.Clamp01(1f - Mathf.Abs(Voice - TargetNow) / SingTolerance) * dt;
                 counted += dt;
             }
             if (t >= SingSeconds) Finish(SingingScore());
@@ -557,7 +595,8 @@ namespace Halka.Poc2D3D.Life
             var p = Panel();
             Fill(p, Ink);
             Fill(new Rect(p.x + 3f, p.y + 3f, p.width - 6f, p.height - 6f), Paper);
-            Text(new Rect(p.x + 12f, p.y + 8f, p.width - 24f, 34f), GameTitle(Skill) + (Skill == CreatorSkill.Drawing && Current != Phase.Intro ? "：" + Subject : ""), 26);
+            Text(new Rect(p.x + 12f, p.y + 8f, p.width - 24f, 34f), GameTitle(Skill) + (Skill == CreatorSkill.Drawing && Current != Phase.Intro ? "：" + Subject : "") +
+                (Current != Phase.Intro ? "（" + CreatorState.DifficultyNames[(int)Difficulty] + "）" : ""), 26);
             switch (Current)
             {
                 case Phase.Intro: DrawIntro(); break;
@@ -567,7 +606,7 @@ namespace Halka.Poc2D3D.Life
                     else DrawSinging();
                     if (Skill == CreatorSkill.Drawing) Button(ButtonA(), "できた");
                     Button(ButtonB(), "やめる");
-                    var left = Mathf.Max(0f, (Skill == CreatorSkill.Composition ? DtmSeconds : Skill == CreatorSkill.Drawing ? DrawSeconds : SingSeconds) - Elapsed);
+                    var left = Mathf.Max(0f, (Skill == CreatorSkill.Composition ? DtmSeconds : Skill == CreatorSkill.Drawing ? DrawSecondsNow : SingSeconds) - Elapsed);
                     Text(new Rect(p.xMax - 92f, p.y + 10f, 80f, 30f), Mathf.CeilToInt(left).ToString(CultureInfo.InvariantCulture) + "びょう", 18, TextAnchor.MiddleRight);
                     break;
                 case Phase.Result:
@@ -587,12 +626,19 @@ namespace Halka.Poc2D3D.Life
             if (Skill == CreatorSkill.Composition)
                 lines = new[] { "ながれてくる おとが せんに きたら", "D F J K（やじるし）か タップで たたく！", "やく24びょう" };
             else if (Skill == CreatorSkill.Drawing)
-                lines = new[] { "うすい せんを なぞって かこう！", "マウスで ドラッグ / ゆびで なぞる", "やく25びょう（できたら「できた」）" };
+                lines = new[] { "うすい せんを なぞって かこう！", "マウスで ドラッグ / ゆびで なぞる", "できたら「できた」" };
             else
                 lines = new[] { "まるを メロディの バーに あわせよう！", "↑↓（W S）か ゆびで うえしたに", "やく24びょう" };
             for (var i = 0; i < lines.Length; i++) Text(new Rect(b.x, b.y + 20f + i * 40f, b.width, 34f), lines[i], 20);
-            Button(ButtonA(), "スタート");
-            Button(ButtonB(), "やめる");
+            Text(new Rect(b.x, b.y + 20f + lines.Length * 40f, b.width, 30f), "むずかしさを えらんでね", 18);
+            for (var i = 0; i < 3; i++)
+            {
+                var r = DifficultyButton(i);
+                var difficulty = (MinigameDifficulty)i;
+                Text(new Rect(r.x, r.y - 26f, r.width, 24f), "+0～" + CreatorState.MaxGain(difficulty).ToString(CultureInfo.InvariantCulture), 16);
+                Button(r, CreatorState.DifficultyNames[i]);
+            }
+            Button(ButtonWide(), "やめる");
         }
 
         private void DrawDtm()
@@ -613,8 +659,8 @@ namespace Halka.Poc2D3D.Life
             {
                 if (n.Judged != 0) continue;
                 var dt = n.Time - t;
-                if (dt > NoteTravelSeconds || dt < -GoodWindow) continue;
-                var y = judge - dt / NoteTravelSeconds * (judge - b.y);
+                if (dt > NoteTravel || dt < -GoodWindowNow) continue;
+                var y = judge - dt / NoteTravel * (judge - b.y);
                 var r = LaneRect(n.Lane);
                 Fill(new Rect(r.x + 8f, y - 8f, r.width - 16f, 16f), colors[n.Lane]);
             }
@@ -672,13 +718,21 @@ namespace Halka.Poc2D3D.Life
             var b = new StringBuilder(512);
             b.Append("{\"phase\":\"").Append(Current).Append("\",\"skill\":\"").Append(Skill).Append("\",\"t\":").Append(Elapsed.ToString("0.###", inv))
                 .Append(",\"score\":").Append(LastScore.ToString(inv)).Append(",\"gain\":").Append(LastGain.ToString(inv)).Append(",\"plays\":").Append(Plays.ToString(inv))
-                .Append(",\"subject\":\"").Append(Subject).Append('"');
+                .Append(",\"subject\":\"").Append(Subject).Append('"')
+                .Append(",\"difficulty\":\"").Append(CreatorState.DifficultyIds[(int)Difficulty]).Append('"');
             void R(string name, Rect r) => b.Append(",\"").Append(name).Append("\":[").Append(r.x.ToString("0", inv)).Append(',').Append(r.y.ToString("0", inv))
                 .Append(',').Append(r.width.ToString("0", inv)).Append(',').Append(r.height.ToString("0", inv)).Append(']');
             if (IsOpen)
             {
-                R("a", Current == Phase.Result ? ButtonWide() : ButtonA());
-                R("b", ButtonB());
+                // a: the button that goes on (ふつう on the first screen, とじる on the result); b: やめる
+                R("a", Current == Phase.Result ? ButtonWide() : Current == Phase.Intro ? DifficultyButton(1) : ButtonA());
+                R("b", Current == Phase.Intro ? ButtonWide() : ButtonB());
+                if (Current == Phase.Intro)
+                {
+                    R("easy", DifficultyButton(0));
+                    R("normal", DifficultyButton(1));
+                    R("hard", DifficultyButton(2));
+                }
                 R("board", Board());
             }
             if (Current == Phase.Playing && Skill == CreatorSkill.Composition)
@@ -688,7 +742,7 @@ namespace Halka.Poc2D3D.Life
                 var first = true;
                 foreach (var n in notes)
                 {
-                    if (n.Judged != 0 || n.Time < Elapsed - GoodWindow) continue;
+                    if (n.Judged != 0 || n.Time < Elapsed - GoodWindowNow) continue;
                     b.Append(first ? "" : ",").Append('[').Append(n.Time.ToString("0.###", inv)).Append(',').Append(n.Lane.ToString(inv)).Append(']');
                     first = false;
                 }
@@ -721,6 +775,17 @@ namespace Halka.Poc2D3D.Life
             return b.ToString();
         }
 
+        // For the editor checks: the first screen's choice without a click (what the difficulty buttons do).
+        public bool StartForCheck(MinigameDifficulty difficulty)
+        {
+            if (Current != Phase.Intro) return false;
+            StartPlaying(difficulty);
+            return true;
+        }
+
+        public int NoteCount => notes.Count;
+        public int MelodyCount => melody.Count;
+
         // For the editor checks: the scores of made-up plays (no window, no input).
         public int ScoreDtmFor(IList<float> hitErrors, int noteCount)
         {
@@ -732,7 +797,7 @@ namespace Halka.Poc2D3D.Life
                 if (i < hitErrors.Count)
                 {
                     var e = Mathf.Abs(hitErrors[i]);
-                    n.Judged = e <= PerfectWindow ? 1 : e <= GoodWindow ? 2 : 3;
+                    n.Judged = e <= PerfectWindowNow ? 1 : e <= GoodWindowNow ? 2 : 3;
                 }
                 else n.Judged = 3;
                 notes.Add(n);
@@ -752,7 +817,7 @@ namespace Halka.Poc2D3D.Life
 
         public int ScoreSingingFor(float averageError)
         {
-            closeness = Mathf.Clamp01(1f - Mathf.Abs(averageError) / 1.25f) * 10f;
+            closeness = Mathf.Clamp01(1f - Mathf.Abs(averageError) / SingTolerance) * 10f;
             counted = 10f;
             return SingingScore();
         }

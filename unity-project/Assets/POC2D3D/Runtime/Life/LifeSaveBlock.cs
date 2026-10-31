@@ -38,6 +38,12 @@ namespace Halka.Poc2D3D.Life
         public readonly CompanionRecord Rin = new CompanionRecord();
         public readonly CompanionRecord Len = new CompanionRecord();
         public readonly HideSeekRecords HideSeek = new HideSeekRecords();
+        // Sleep (added after the first look): the game minute (World Time, absolute) she last woke up
+        // or the life began, and how often she slept. -1: not known yet (an older ver4.0 block: the
+        // "sleep" object is then simply absent, and its checksum stays as it was).
+        public long WakeMinute = -1;
+        public long Sleeps;
+        public bool HasSleep => WakeMinute >= 0 || Sleeps > 0;
 
         public sealed class NpcRecord
         {
@@ -82,6 +88,7 @@ namespace Halka.Poc2D3D.Life
             {
                 DayOrigin = DayOrigin, StartedUnixMs = StartedUnixMs, Creator = Creator.Copy(), Channel = Channel.Copy(),
                 NpcSerial = NpcSerial, NpcEvalSerial = NpcEvalSerial, NpcEvalDay = NpcEvalDay,
+                WakeMinute = WakeMinute, Sleeps = Sleeps,
             };
             foreach (var n in Npcs) c.Npcs.Add(n.Copy());
             c.Rin.From(Rin);
@@ -129,6 +136,7 @@ namespace Halka.Poc2D3D.Life
             b.Append('|').Append(h.RinFound.ToString(inv)).Append(',').Append(h.LenFound.ToString(inv)).Append(',').Append(h.BothCleared.ToString(inv))
                 .Append(',').Append(h.BestRinSeconds.ToString(inv)).Append(',').Append(h.BestLenSeconds.ToString(inv)).Append(',')
                 .Append(h.BestBothSeconds.ToString(inv));
+            if (HasSleep) b.Append("|sleep,").Append(WakeMinute.ToString(inv)).Append(',').Append(Sleeps.ToString(inv));
             return b.ToString();
         }
 
@@ -184,6 +192,8 @@ namespace Halka.Poc2D3D.Life
                 .Append(", \"bothCleared\": ").Append(h.BothCleared.ToString(inv)).Append(", \"bestRinSeconds\": ").Append(h.BestRinSeconds.ToString(inv))
                 .Append(", \"bestLenSeconds\": ").Append(h.BestLenSeconds.ToString(inv)).Append(", \"bestBothSeconds\": ").Append(h.BestBothSeconds.ToString(inv))
                 .Append(" }");
+            if (HasSleep)
+                b.Append(", \"sleep\": { \"wakeMinute\": ").Append(WakeMinute.ToString(inv)).Append(", \"sleeps\": ").Append(Sleeps.ToString(inv)).Append(" }");
             b.Append(", \"checksum\": ").Append(Q(ComputeChecksum(mainChecksum))).Append(" }");
             return b.ToString();
         }
@@ -245,6 +255,9 @@ namespace Halka.Poc2D3D.Life
                 !Long(h, "bestLenSeconds", out b.HideSeek.BestLenSeconds) || !Long(h, "bestBothSeconds", out b.HideSeek.BestBothSeconds) ||
                 b.HideSeek.RinFound < 0 || b.HideSeek.LenFound < 0 || b.HideSeek.BothCleared < 0)
                 return Fail("hideAndSeek", out problem);
+            if (o.ContainsKey("sleep") && (!Obj(o, "sleep", out var sleep) || !Long(sleep, "wakeMinute", out b.WakeMinute) ||
+                !Long(sleep, "sleeps", out b.Sleeps) || b.Sleeps < 0))
+                return Fail("sleep", out problem);
             if (!Str(o, "checksum", out var checksum) || checksum != b.ComputeChecksum(mainChecksum)) return Fail("checksum", out problem);
             block = b;
             return true;

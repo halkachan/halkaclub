@@ -77,6 +77,10 @@ namespace Halka.Poc2D3D.EditorTools
                 Run("npc", NpcChecks);
                 Run("companions", CompanionChecks);
                 Run("hide", HideChecks);
+                Run("garden", GardenChecks);
+                Run("house", HouseChecks);
+                Run("sleep", SleepChecks);
+                Run("difficulty", DifficultyChecks);
                 Run("save", SaveChecks);
                 Run("existing", ExistingChecks);
                 Run("protect", ProtectChecks);
@@ -777,11 +781,22 @@ namespace Halka.Poc2D3D.EditorTools
             Walk(c, new Vector2Int(-25, 15), 160f);
             Settle(c, 4f);
             Walk(c, new Vector2Int(-27, 2), 120f);
+            var lenSteps = len.StepsTaken;
             Settle(c, 4f);
+            var lenPaths = (Dictionary<PocWalker, List<Vector2Int>>)typeof(PocLife).GetField("paths", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(life);
+            var lenWhy = $" mode {life.ModeOf(len)} moving {len.IsMoving} steps {len.StepsTaken - lenSteps} path {lenPaths[len].Count} drawn {len.Drawn}";
+            {
+                var spotArgs = new object[] { len, Vector2Int.zero };
+                var spotOk = (bool)typeof(PocLife).GetMethod("TryFollowSpot", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).Invoke(life, spotArgs);
+                var probe = new List<Vector2Int>();
+                var pathOk = life.TryPath(len, (Vector2Int)spotArgs[1], 24, probe);
+                lenWhy += $" spot {spotOk} {(Vector2Int)spotArgs[1]} path {pathOk} {probe.Count} reachable {life.Reachable.Contains(len.Cell)} canEnterHere {life.CharacterCanEnter(len.Cell, len)}";
+                foreach (var dd in Dirs) lenWhy += $" {len.Cell + dd}:{life.CharacterCanEnter(len.Cell + dd, len)}";
+            }
             var dl = Mathf.Abs(len.Cell.x - c.Session.Cell.x) + Mathf.Abs(len.Cell.y - c.Session.Cell.y);
             var dr = Mathf.Abs(rin.Cell.x - c.Session.Cell.x) + Mathf.Abs(rin.Cell.y - c.Session.Cell.y);
             Check("Rin, Len and the crow all following: over North → North-West → West, all close", dr <= 4 && dl <= 4 && c.Crow.Following,
-                $"rin {dr} len {dl}");
+                $"rin {dr} len {dl} (len {len.Cell} her {c.Session.Cell} rin {rin.Cell})" + lenWhy);
             Check("nobody ever shared a cell with her, the crow or each other (standing)", sharedCellFrames == 0, sharedCellFrames + " frames");
             // そらをとぶ
             var travel = c.Gameplay.FastTravel;
@@ -851,11 +866,12 @@ namespace Halka.Poc2D3D.EditorTools
                 Settle(c, PocLife.HideCountMaxSeconds + 0.5f);
                 var hiders = mode == HideSeekMode.Rin ? new[] { rin } : mode == HideSeekMode.Len ? new[] { len } : new[] { rin, len };
                 var her = c.Session.Cell;
-                Check(mode + ": 「もういいよ！」 — hidden on free walkable cells in the field, at least 6 cells away, next to something, never a door or stand cell",
+                Check(mode + ": 「もういいよ！」 — hidden on free walkable cells in the garden, at least 8 cells away, next to something, never a door or stand cell",
                     !life.HideSeekCounting && !c.Gameplay.ActivityOpen && hiders.All(h => c.Session.OutdoorWorld.CanEnter(h.Cell) &&
-                        Mathf.Abs(h.Cell.x - her.x) + Mathf.Abs(h.Cell.y - her.y) >= 6 && !life.ActionCells.Contains(h.Cell) &&
+                        Mathf.Abs(h.Cell.x - her.x) + Mathf.Abs(h.Cell.y - her.y) >= PocLife.HideMinDistance && !life.ActionCells.Contains(h.Cell) &&
                         Dirs.Concat(new[] { new Vector2Int(1, -1), new Vector2Int(-1, -1) }).Any(dd => c.Session.OutdoorWorld.IsBlocked(h.Cell + dd)) &&
-                        c.Session.OutdoorIndex.RegionAt(h.Cell)?.MapId == "first_field"), string.Join(" ", hiders.Select(h => h.Cell)));
+                        c.Session.OutdoorIndex.RegionAt(h.Cell) != null),
+                    string.Join(" ", hiders.Select(h => h.Cell + " " + c.Session.OutdoorIndex.RegionAt(h.Cell)?.MapId)));
                 var spots = hiders.Select(h => h.Cell).ToList();
                 Settle(c, 5f);
                 Check(mode + ": they stay hidden (no wandering during the game)", hiders.Select(h => h.Cell).SequenceEqual(spots));
@@ -873,6 +889,31 @@ namespace Halka.Poc2D3D.EditorTools
                 Check(mode + ": everyone found: the game ends, the time recorded, each back to its own mode", !life.HideSeekActive && life.LastClearSeconds >= 0f &&
                     life.ModeOf(rin) == CompanionMode.Free && life.ModeOf(len) == CompanionMode.Free);
             }
+            // the whole garden: many games' places spread over the regions; a game can start anywhere outdoors
+            var regions = new HashSet<string>();
+            var far = 0;
+            for (var game = 0; game < 16; game++)
+            {
+                Settle(c, 0.3f);
+                if (!life.StartHideSeek(HideSeekMode.Both)) continue;
+                foreach (var spot in life.HideSpotCells)
+                {
+                    regions.Add(c.Session.OutdoorIndex.RegionAt(spot)?.MapId ?? "?");
+                    if (Mathf.Abs(spot.x - c.Session.Cell.x) + Mathf.Abs(spot.y - c.Session.Cell.y) > 18) far++;
+                }
+                life.StopHideSeek(false);
+            }
+            Check("the whole garden: 16 games' places in several regions (the field alone before), some farther than the old 18 cells",
+                regions.Count >= 3 && far > 0, string.Join(", ", regions) + " | far " + far);
+            Check("the hiders dash (a step in 0.05 s: four times her walk, the user's 「かなり速め」)", PocLife.HideDashStepSeconds <= 0.06f);
+            var hereBefore = c.Session.Cell;
+            c.Session.PlaceForCheck(new Vector2Int(0, 16), FacingDirection.Up);   // the North area
+            Frame(c, 1f / 60f, Vector2Int.zero);
+            var northOk = life.CanStartHideSeek(out var northWhy);
+            c.Session.PlaceForCheck(hereBefore, FacingDirection.Up);
+            Frame(c, 1f / 60f, Vector2Int.zero);
+            Check("a game can begin in another region too (the North area); indoors it says 「かくれんぼは にわで しよう！」",
+                northOk && northWhy == null, northWhy);
             var h2 = life.State.HideSeek;
             Check("the records: Rin found 2, Len found 2, both cleared 1, the best times", h2.RinFound == 2 && h2.LenFound == 2 && h2.BothCleared == 1 &&
                 h2.BestRinSeconds >= 0 && h2.BestLenSeconds >= 0 && h2.BestBothSeconds >= 0, life.LastHint);
@@ -890,15 +931,18 @@ namespace Halka.Poc2D3D.EditorTools
             c.Menu.SetOpen(true, C6.Clock + 5f);
             var link = c.Menu.LinkLabels.ToList().IndexOf(PocLife.HideSeekStopLabel);
             Check("the menu shows かくれんぼをやめる during the game", link >= 0 && c.Menu.IsLinkShown(link));
+            var stoppedBefore = life.HideSeekStopped;
             c.Menu.ActivateLink(link, C6.Clock + 6f);
             Frame(c, 1f / 60f, Vector2Int.zero);
             Check("かくれんぼをやめる: stopped, Len follows again, Rin free again, nobody left hidden", !life.HideSeekActive && life.ModeOf(len) == CompanionMode.Follow &&
-                life.ModeOf(rin) == CompanionMode.Free && life.HideSeekStopped == 1);
+                life.ModeOf(rin) == CompanionMode.Free && life.HideSeekStopped == stoppedBefore + 1);
             var c2 = Begin(c.Storage, fakeNow + 1000);
             var life2 = L(c2);
             Check("a restart after a save in the middle: no game going on, both visible and walking normally", !life2.HideSeekActive &&
                 life2.Rin.Present && life2.Len.Present && !life2.Rin.HiddenByGame);
-            Check("hide-and-seek only in the field by the house", true);
+            c2.Session.LoadMapForCheck("halka_house", new Vector2Int(0, -3), FacingDirection.Up);
+            Frame(c2, 1f / 60f, Vector2Int.zero);
+            Check("indoors: no hide-and-seek (「かくれんぼは にわで しよう！」)", !life2.CanStartHideSeek(out var indoorWhy) && indoorWhy == "かくれんぼは にわで しよう！", indoorWhy);
         }
 
         // ---------------------------------------------------------------- save
@@ -972,10 +1016,256 @@ namespace Halka.Poc2D3D.EditorTools
             Check("the house door and the sound booth still open (a room loads)", c.Session.FindWorld("halka_house") != null && c.Session.FindWorld("halka_soundbooth") != null);
             Check("the font has every character ver4.0 writes (no ? boxes)", new[] { "動画を投稿した！", PocLife.NicoName, PocLife.NicoOpenLabel, "3日目 14:35", "さっきょくりょく +4", "がりょく +3",
                 "かしょうりょく +5", "つぎのとうこうまで 05:42", "リンは きたのほうに いるみたい！", "ファン「いつもみてるよ！」", "アンチ「そんなに にんきなの？」",
-                "かくれんぼをやめる", "↑↓（W S）か ゆびで うえしたに" }.All(GameBitmapFont.HasAllGlyphs));
+                "かくれんぼをやめる", "↑↓（W S）か ゆびで うえしたに", "+0～12", "むずかしさを えらんでね", "かんたん", "ふつう", "やばい",
+                "（やばい）", PocLife.NotSleepyLine, PocLife.SleptLine + " 01:00", "かくれんぼは にわで しよう！", "リンは とおくの きたにしのほうに いるみたい！" }
+                .All(GameBitmapFont.HasAllGlyphs));
             Check("ニコチューブ is written in full-width katakana (the font's half-width kana are squeezed and lose ﾌﾞ's voicing mark)",
                 PocLife.NicoName == "ニコチューブ" && PocLife.NicoOpenLabel.StartsWith("ニコチューブ") &&
                 !(PocLife.NicoName + PocLife.NicoOpenLabel).Any(ch => ch >= 'ｦ' && ch <= 'ﾟ'));
+        }
+
+        // ---------------------------------------------------------------- the garden (after the user's first look)
+
+        private static WorldObjectDefinition Def(string id) =>
+            AssetDatabase.LoadAssetAtPath<WorldObjectDefinition>("Assets/Content/Maps/" + id + ".asset");
+
+        private static readonly string[] FlowerIds = { "flower_basic", "flower_yellow", "flower_blue", "sunflower_cluster" };
+
+        private static void GardenChecks()
+        {
+            Check("the flowers are passable (no blocking, no blocked cell); trees, stones and signs still block",
+                FlowerIds.All(id => Def(id) != null && !Def(id).BlocksMovement && !Def(id).EffectiveBlockedOffsets().Any()) &&
+                Def("tree_basic").BlocksMovement && Def("stone_basic").BlocksMovement && Def("sign_basic").BlocksMovement);
+            var c = Begin(new HarukaMemoryStorage());
+            var world = c.Session.OutdoorWorld;
+            var flowers = world.Objects.Where(o => FlowerIds.Contains(o.DefinitionId)).Select(o => o.RootCell).ToList();
+            Check("every flower in the garden can be walked on", flowers.Count >= 10 && flowers.All(world.CanEnter), flowers.Count + " flowers");
+            var target = flowers.OrderBy(f => Mathf.Abs(f.x - c.Session.Cell.x) + Mathf.Abs(f.y - c.Session.Cell.y)).First();
+            Check("she walks onto a flower", Walk(c, target, 60f), target.ToString());
+            var catalog = AssetDatabase.LoadAssetAtPath<PocPresentationCatalog>(PocSceneBuilder.CatalogPath);
+            var fading = catalog.Bindings.Where(b => b.fadeInFront2D || b.fadeInFront3D).Select(b => b.definitionId).ToList();
+            Check("only the trees are drawn see-through in front of her, in 2D and 3D (the sunflowers and the easel no longer)",
+                fading.SequenceEqual(new[] { "tree_basic" }), string.Join(", ", fading));
+        }
+
+        // ---------------------------------------------------------------- the house and the booth
+
+        private static Vector2 Centre(SharedObjectInstance o) =>
+            new Vector2(o.RootCell.x + (o.Definition.Footprint.x - 1) * 0.5f, o.RootCell.y + (o.Definition.Footprint.y - 1) * 0.5f);
+
+        // No vertex of the model inside the door's opening (she is 0.53 wide and 0.97 tall).
+        private static int VerticesInOpening(string modelPath, string part, float halfWidth, float height, float z0, float z1, float depthSign)
+        {
+            if (depthSign < 0f) { var flipped = -z1; z1 = -z0; z0 = flipped; }   // Blender's North as Unity's -Z
+            var root = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+            var inside = 0;
+            foreach (var filter in root.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (part != null && filter.name != part) continue;
+                var m = filter.transform.localToWorldMatrix;
+                foreach (var v in filter.sharedMesh.vertices)
+                {
+                    var p = m.MultiplyPoint3x4(v);
+                    if (Mathf.Abs(p.x) < halfWidth && p.y > 0.05f && p.y < height && p.z > z0 && p.z < z1) inside++;
+                }
+            }
+            return inside;
+        }
+
+        private static void HouseChecks()
+        {
+            var c = Begin(new HarukaMemoryStorage());
+            var field = c.Session.OutdoorWorld;
+            Check("the house: 7 x 3 cells (was 5 x 2), its door cell where it was (-7, -4)", Def("house_main").Footprint == new Vector2Int(7, 3) &&
+                field.TryGetHouseDoorCell() == new Vector2Int(-7, -4));
+            var player = AssetDatabase.LoadAssetAtPath<GameObject>(PocSceneBuilder.OfficialPlayerModelPath);
+            var bounds = new Bounds();
+            var first = true;
+            foreach (var r in player.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var b = GeometryUtility.CalculateBounds(r.sharedMesh.vertices, r.transform.localToWorldMatrix);
+                if (first) { bounds = b; first = false; } else bounds.Encapsulate(b);
+            }
+            var house = AssetDatabase.LoadAssetAtPath<GameObject>(PocSceneBuilder.Phase3Models + "house_main.fbx");
+            var doorAnchor = house.GetComponentsInChildren<Transform>(true).First(tr => tr.name == "DoorAnchor");
+            var depthSign = Mathf.Sign(doorAnchor.position.z);   // the door plane lies behind the front (Blender +Y)
+            var door = house.GetComponentsInChildren<MeshFilter>(true).First(f => f.name == "HouseDoor");
+            var doorSize = GeometryUtility.CalculateBounds(door.sharedMesh.vertices, UnityEngine.Matrix4x4.identity).size;
+            Check("the house door is bigger than ﾊﾙｶﾁｬﾝ (door " + doorSize.x.ToString("0.00") + " x " + doorSize.y.ToString("0.00") + ", she " +
+                  bounds.size.x.ToString("0.00") + " x " + bounds.size.y.ToString("0.00") + ")",
+                doorSize.y > bounds.size.y + 0.08f && doorSize.x > bounds.size.x + 0.08f);
+            Check("nothing of the house in the doorway up to her height (the alcove and the arch clear her)",
+                VerticesInOpening(PocSceneBuilder.Phase3Models + "house_main.fbx", "house_main", 0.26f, bounds.size.y, -0.15f, 0.4f, depthSign) == 0 && Mathf.Abs(doorAnchor.position.z) > 0.3f);
+            Check("nothing of the sound booth in its doorway up to her height (door 0.53 x 1.05, was 0.29 x 0.84)",
+                VerticesInOpening("Assets/POC2D3D/Models/V31/soundbooth_exterior.fbx", null, 0.26f, bounds.size.y, -0.18f, 0.12f, depthSign) == 0);
+            var room = c.Session.FindWorld("halka_house");
+            var rug = room.Objects.First(o => o.DefinitionId == "living_rug");
+            var table = room.Objects.First(o => o.DefinitionId == "low_table_living");
+            Check("the rug is 4 x 3 and the low table stands in its middle", rug.Definition.Footprint == new Vector2Int(4, 3) && Centre(rug) == Centre(table),
+                Centre(rug) + " " + Centre(table));
+            var kitchen = room.Objects.First(o => o.DefinitionId == "kitchen_counter");
+            var points = kitchen.Definition.ActionPoints;
+            Check("the kitchen: along the South wall (the wall right below each of its cells), facing North, hob - sink - fridge West to East, each used from the North",
+                kitchen.Definition.Footprint == new Vector2Int(3, 1) && kitchen.BlockedCells().All(cell => room.Map.SurfaceAt(cell + Vector2Int.down) != null &&
+                    room.Map.SurfaceAt(cell + Vector2Int.down).BlocksMovement || cell + Vector2Int.down == new Vector2Int(0, -4)) &&
+                points.All(p => p.PlayerCellOffset.y == 1 && p.PlayerFacing == WorldFacing.Down) &&
+                points.Select(p => p.Id).SequenceEqual(new[] { "sink_center", "hob", "fridge" }) &&
+                points.First(p => p.Id == "hob").PlayerCellOffset.x == 0 && points.First(p => p.Id == "fridge").PlayerCellOffset.x == 2);
+            var catalog = AssetDatabase.LoadAssetAtPath<PocPresentationCatalog>(PocSceneBuilder.CatalogPath);
+            Check("the kitchen's model is turned to face North (a quarter turn)", Mathf.Approximately(catalog.Find("kitchen_counter").yawDegrees, 90f));
+            c.Session.LoadMapForCheck("halka_house", kitchen.RootCell + new Vector2Int(2, 1), FacingDirection.Down);
+            Frame(c, 1f / 60f, Vector2Int.zero);
+            Check("A at the fridge (from the North): its words", c.Session.InteractAhead() && !string.IsNullOrEmpty(c.Session.LastMessage), c.Session.LastMessage);
+            var booth = c.Session.FindWorld("halka_soundbooth");
+            var floor = 0;
+            for (var y = booth.Map.MinCell.y; y <= booth.Map.MaxCell.y; y++)
+            for (var x = booth.Map.MinCell.x; x <= booth.Map.MaxCell.x; x++)
+            {
+                var s = booth.Map.SurfaceAt(new Vector2Int(x, y));
+                if (s == null || !s.BlocksMovement) floor++;
+            }
+            Check("the sound booth's room: 9 x 6 cells of floor (was 13 x 8, about half), the door in the South wall",
+                floor == 9 * 6 + 1 && booth.TryGetMarker("interior_exit", out var exit) && exit == new Vector2Int(0, -4), floor + " floor cells (with the door)");
+            booth.TryGetMarker("interior_entry", out var entry);
+            var reach = new HashSet<Vector2Int> { entry };
+            var queue = new Queue<Vector2Int>(reach);
+            while (queue.Count > 0)
+            {
+                var cell = queue.Dequeue();
+                foreach (var d in Dirs)
+                    if (!reach.Contains(cell + d) && booth.CanEnter(cell + d)) { reach.Add(cell + d); queue.Enqueue(cell + d); }
+            }
+            var stands = booth.Objects.Where(o => o.Definition.ActionPoints.Count > 0).SelectMany(o => o.Definition.ActionPoints.Select(p => o.RootCell + p.PlayerCellOffset)).ToList();
+            var mic = booth.Objects.First(o => o.DefinitionId == PocLife.MicId);
+            Check("the booth: the DTM desk, the tablet, the mic and the guitar all inside, each reached on foot from the door",
+                booth.Objects.Count == 4 && stands.All(reach.Contains) && Dirs.Any(d => reach.Contains(mic.RootCell + d)), string.Join(" ", stands));
+        }
+
+        // ---------------------------------------------------------------- sleeping
+
+        private static void SleepChecks()
+        {
+            var storage = new HarukaMemoryStorage();
+            var c = Begin(storage);
+            var life = L(c);
+            var room = c.Session.FindWorld("halka_house");
+            var bed = room.Objects.First(o => o.DefinitionId == PocLife.BedId);
+            var stand = bed.RootCell + bed.Definition.ActionPoints[0].PlayerCellOffset;
+            c.Session.LoadMapForCheck("halka_house", stand, FacingDirection.Up);
+            Frame(c, 1f / 60f, Vector2Int.zero);
+            var minute0 = life.AbsoluteMinuteNow;
+            var asked = c.Session.InteractAhead();
+            Check("a new game, just begun: A at the bed says 「ねむくないよ」 and nothing moves", asked && life.SleepRefusals == 1 &&
+                c.Session.LastMessage == PocLife.NotSleepyLine && life.State.Sleeps == 0 && life.AbsoluteMinuteNow - minute0 <= 1);
+            Advance(c, LifeClock.RealMilliseconds(11L * 60L));
+            Check("11 game hours up: still not sleepy", c.Session.InteractAhead() && life.SleepRefusals == 2 && life.State.Sleeps == 0, life.AwakeMinutes + " min");
+            Advance(c, LifeClock.RealMilliseconds(61L));
+            var ch = life.State.Channel;
+            ch.LastPostUnixMs = life.NowMs;   // a post just now: the wait is 24:00
+            var waitBefore = ch.RemainingGameMinutes(life.NowMs);
+            var anchorBefore = c.Clock.AnchorMilliseconds;
+            var minuteBefore = life.AbsoluteMinuteNow;
+            var writes = c.Save.Writes;
+            var slept = c.Session.InteractAhead();
+            Check("12 game hours up: she sleeps; the world moves on 6 game hours (World Time's anchor 5 real minutes back: clock, sky and day together)",
+                slept && life.State.Sleeps == 1 && life.AbsoluteMinuteNow - minuteBefore >= 360 && life.AbsoluteMinuteNow - minuteBefore <= 361 &&
+                anchorBefore - c.Clock.AnchorMilliseconds == LifeClock.RealMilliseconds(360) &&
+                c.Clock.CurrentPhase == WorldTimeCycle.PhaseAt(c.Clock.AnchorMilliseconds, fakeNow) &&
+                c.Session.LastMessage.StartsWith(PocLife.SleptLine), c.Session.LastMessage);
+            Check("ニコチューブ's wait is 6 hours shorter too (it counts the same game time)", waitBefore - ch.RemainingGameMinutes(life.NowMs) == 360,
+                waitBefore + " -> " + ch.RemainingGameMinutes(life.NowMs));
+            Check("saved at once: the wake time and the count", c.Save.Writes == writes + 1 && c.Save.LastWritten.Life.Sleeps == 1 &&
+                c.Save.LastWritten.Life.WakeMinute == life.State.WakeMinute && PocLife.SleepFadeSeconds > 0f);
+            Check("just woken: not sleepy again (12 game hours from now)", c.Session.InteractAhead() && life.State.Sleeps == 1 && !life.Sleepy);
+            Check("from elsewhere in the room the bed does not answer", PocLife.BedId == bed.DefinitionId && bed.Definition.ActionPoints.Count == 1);
+            var anchor = c.Clock.AnchorMilliseconds;
+            var c2 = Begin(storage, fakeNow + 1000);
+            var life2 = L(c2);
+            Check("a restart: the moved world clock, the wake time and the count all kept", c2.Clock.AnchorMilliseconds == anchor &&
+                life2.State.WakeMinute == life.State.WakeMinute && life2.State.Sleeps == 1);
+            // an earlier ver4.0 block (before sleeping existed): no "sleep" in it, its checksum still good
+            var old = life2.State.Copy();
+            old.WakeMinute = -1;
+            old.Sleeps = 0;
+            var json = old.ToJson("main");
+            HarukaSaveJson.TryParse(json, out var parsed, out _);
+            var read = LifeSaveBlock.TryRead(parsed, "main", out var back, out var problem);
+            Check("an earlier ver4.0 save (no sleep data) still reads (its checksum unchanged)", read && !json.Contains("\"sleep\"") && !back.HasSleep, problem);
+            back.StartedUnixMs = life2.NowMs - LifeClock.RealMilliseconds(8L * 60L);
+            life2.Sanitize(back, life2.NowMs);
+            Check("…and counts her day from the life's start (that life began 8 game hours ago: up 8 hours)", back.WakeMinute >= 0 &&
+                life2.AbsoluteMinuteNow - back.WakeMinute >= 479 && life2.AbsoluteMinuteNow - back.WakeMinute <= 481,
+                (life2.AbsoluteMinuteNow - back.WakeMinute).ToString());
+        }
+
+        // ---------------------------------------------------------------- the mini games' difficulties
+
+        private static void DifficultyChecks()
+        {
+            int[] Gains(MinigameDifficulty d) => new[] { 0, 20, 40, 60, 80, 100 }.Select(s => CreatorState.GainFor(s, d)).ToArray();
+            Check("the gains by score band: かんたん 0 0 1 1 2 3, ふつう 0 1 2 3 4 5 (as before), やばい 0 1 3 5 8 12",
+                Gains(MinigameDifficulty.Easy).SequenceEqual(new[] { 0, 0, 1, 1, 2, 3 }) && Gains(MinigameDifficulty.Normal).SequenceEqual(new[] { 0, 1, 2, 3, 4, 5 }) &&
+                Gains(MinigameDifficulty.Hard).SequenceEqual(new[] { 0, 1, 3, 5, 8, 12 }) && CreatorState.GainFor(87) == 4);
+            var host = new GameObject("ver40 difficulty checks");
+            var g = host.AddComponent<PocMinigames>();
+            var notes = new Dictionary<MinigameDifficulty, int>();
+            var melody = new Dictionary<MinigameDifficulty, int>();
+            var travel = new Dictionary<MinigameDifficulty, float>();
+            var window = new Dictionary<MinigameDifficulty, float>();
+            var tolerance = new Dictionary<MinigameDifficulty, float>();
+            var drawTime = new Dictionary<MinigameDifficulty, float>();
+            var singScore = new Dictionary<MinigameDifficulty, int>();
+            var intro = "";
+            foreach (MinigameDifficulty d in Enum.GetValues(typeof(MinigameDifficulty)))
+            {
+                g.Begin(CreatorSkill.Composition, null, null);
+                if (d == MinigameDifficulty.Easy) intro = g.DevJson();
+                g.StartForCheck(d);
+                notes[d] = g.NoteCount;
+                travel[d] = g.NoteTravel;
+                window[d] = g.GoodWindowNow;
+                g.Cancel();
+                g.Begin(CreatorSkill.Drawing, null, null);
+                g.StartForCheck(d);
+                tolerance[d] = g.Tolerance;
+                drawTime[d] = g.DrawSecondsNow;
+                g.Cancel();
+                g.Begin(CreatorSkill.Singing, null, null);
+                g.StartForCheck(d);
+                melody[d] = g.MelodyCount;
+                singScore[d] = g.ScoreSingingFor(0.8f);
+                g.Cancel();
+            }
+            var e = MinigameDifficulty.Easy;
+            var n = MinigameDifficulty.Normal;
+            var h = MinigameDifficulty.Hard;
+            Check("the first screen: かんたん / ふつう / やばい and やめる", intro.Contains("\"easy\"") && intro.Contains("\"normal\"") && intro.Contains("\"hard\"") && intro.Contains("\"b\""));
+            Check("DTM: かんたん fewer and slower notes with a wider window, やばい more, faster and tighter",
+                notes[e] < notes[n] && notes[n] < notes[h] && travel[e] > travel[n] && travel[n] > travel[h] && window[e] > window[n] && window[n] > window[h],
+                $"notes {notes[e]}/{notes[n]}/{notes[h]}");
+            Check("おえかき: かんたん a wider line and more time, やばい a narrower line and less time",
+                tolerance[e] > tolerance[n] && tolerance[n] > tolerance[h] && drawTime[e] > drawTime[n] && drawTime[n] > drawTime[h]);
+            Check("うた: かんたん a slower melody that forgives more, やばい a faster one that forgives less",
+                melody[e] < melody[n] && melody[n] < melody[h] && singScore[e] > singScore[n] && singScore[n] > singScore[h],
+                $"melody {melody[e]}/{melody[n]}/{melody[h]} score {singScore[e]}/{singScore[n]}/{singScore[h]}");
+            Check("ふつう is the first version's game (its windows, travel, line and times as before)", Mathf.Approximately(travel[n], PocMinigames.NoteTravelSeconds) &&
+                Mathf.Approximately(window[n], PocMinigames.GoodWindow) && Mathf.Approximately(drawTime[n], PocMinigames.DrawSeconds) && Mathf.Approximately(tolerance[n], 0.1f));
+            UnityEngine.Object.DestroyImmediate(host);
+            // in the game: the difficulty chosen is the one paid
+            var c = Begin(new HarukaMemoryStorage());
+            var life = L(c);
+            var games = life.Minigames;
+            var finish = typeof(PocLife).GetMethod("OnGameFinished", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            games.Begin(CreatorSkill.Singing, null, null);
+            games.StartForCheck(MinigameDifficulty.Hard);
+            var hard = (int)finish.Invoke(life, new object[] { CreatorSkill.Singing, 100 });
+            games.Cancel();
+            games.Begin(CreatorSkill.Singing, null, null);
+            games.StartForCheck(MinigameDifficulty.Easy);
+            var easy = (int)finish.Invoke(life, new object[] { CreatorSkill.Singing, 100 });
+            games.Cancel();
+            Check("in the game: 100 points on やばい +12, on かんたん +3 (かしょうりょく 15)", hard == 12 && easy == 3 && life.State.Creator.Skills[2] == 15,
+                hard + " / " + easy);
         }
 
         // ---------------------------------------------------------------- protect
@@ -985,10 +1275,24 @@ namespace Halka.Poc2D3D.EditorTools
             Check("WORLD EDITOR v1.0 unchanged (tools/HalkaWorldMapEditor)", V32.Git("diff --quiet " + Published + " -- tools/HalkaWorldMapEditor", out _));
             Check("the published ver3.9 (halkaworld/) unchanged", V32.Git("diff --quiet " + Published + " -- halkaworld", out _));
             Check("みねはうす (minehouse/) unchanged", V32.Git("diff --quiet " + Published + " -- minehouse", out _));
-            Check("the nine Maps, the house, the booth, the catalog, the registry and the そらをとぶ places unchanged",
-                V32.Git("diff --quiet " + Published + " -- unity-project/Assets/Content/Maps unity-project/Assets/Content/FastTravel", out _));
-            Check("the existing models and the presentation catalog unchanged (ver4.0 only adds Models/V40)",
-                V32.Git("diff --quiet --diff-filter=MD " + Published + " -- unity-project/Assets/POC2D3D/Models unity-project/Assets/POC2D3D/Data", out _));
+            // After the user's first look the user asked for: the house bigger, its room's rug, table and kitchen,
+            // the booth half the size, the flowers passable, bigger doors. Only those files changed.
+            var allowedMaps = new HashSet<string>(new[] { "first_field", "halka_house", "halka_soundbooth" }
+                .SelectMany(m => new[] { "unity-project/Assets/Content/Maps/Authoring/" + m + ".hwmap.json", "unity-project/Assets/Content/Maps/" + m + ".asset" })
+                .Concat(new[] { "unity-project/Assets/Content/Maps/Authoring/object_catalog.hwcatalog.json" })
+                .Concat(new[] { "flower_basic", "flower_yellow", "flower_blue", "sunflower_cluster", "house_main", "kitchen_counter", "living_rug" }
+                    .Select(d => "unity-project/Assets/Content/Maps/" + d + ".asset")));
+            V32.Git("diff --name-only " + Published + " -- unity-project/Assets/Content/Maps unity-project/Assets/Content/FastTravel", out var changedMaps);
+            var unexpectedMaps = changedMaps.Split('\n').Select(s => s.Trim()).Where(s => s.Length > 0 && !allowedMaps.Contains(s)).ToList();
+            Check("the Maps: only the user's changes (the house's place in the field, its room, the booth, the catalog's house, kitchen, rug and flowers); the other Maps, the registry and the そらをとぶ places unchanged",
+                unexpectedMaps.Count == 0, string.Join(", ", unexpectedMaps));
+            var allowedModels = new HashSet<string>(new[] { "Phase3/house_main.fbx", "Phase3/interior_doorway_base.fbx", "Phase3/interior_doorway_upper.fbx",
+                    "V31/soundbooth_exterior.fbx", "V31/booth_doorway_base.fbx", "V31/booth_doorway_upper.fbx", "V32/living_rug.fbx" }
+                .Select(m => "unity-project/Assets/POC2D3D/Models/" + m).Concat(new[] { "unity-project/Assets/POC2D3D/Data/POC_PresentationCatalog.asset" }));
+            V32.Git("diff --name-only --diff-filter=MD " + Published + " -- unity-project/Assets/POC2D3D/Models unity-project/Assets/POC2D3D/Data", out var changedModels);
+            var unexpectedModels = changedModels.Split('\n').Select(s => s.Trim()).Where(s => s.Length > 0 && !allowedModels.Contains(s)).ToList();
+            Check("the models: only the house, the doorways, the booth's front and the rug (the user's changes) and the presentation catalog; everything else as it was",
+                unexpectedModels.Count == 0, string.Join(", ", unexpectedModels));
             Check("the crow's sprites, model and voice unchanged (WorldVer36Checks.CrowKept without the font atlas, which ver4.0 extends)",
                 WorldVer36Checks.CrowKept(Published, false));
             Check("the font atlas: every earlier glyph in its place (only new glyphs appended)",

@@ -67,7 +67,9 @@ PEN, PEN_TIP = "#2b2a30", "#d9d6dd"
 
 INTERIOR_WALL_HEIGHT = p3.INTERIOR_WALL_HEIGHT
 INTERIOR_WALL_BASE = p3.INTERIOR_WALL_BASE
-BOOTH_HEIGHT = 1.12     # a little lower than the room's walls (1.2): it reads as a small room inside the room
+BOOTH_HEIGHT = 1.18     # a little lower than the room's walls (1.2): it reads as a small room inside the room
+BOOTH_DOOR_TOP = 1.05   # ver4.0: the door taller than ﾊﾙｶﾁｬﾝ (0.97), was 0.84
+BOOTH_ALCOVE = 0.29     # ver4.0: the alcove (door) half width, was 0.17 (she is 0.53 wide)
 BOOTH_DOOR_PLANE = 0.17  # the door at the back of a walkable alcove in the root (door) cell, like house_main
 
 
@@ -84,25 +86,26 @@ def build_soundbooth_exterior():
     (User feedback 2026-10-24: a square, the entrance in the middle.)"""
     g = Geo()
     x0, x1, y0, y1, h = -0.735, 0.735, -0.215, 1.255, BOOTH_HEIGHT
-    ax0, ax1 = -0.17, 0.17  # the alcove (door) inside the root cell, centred on the front
+    ax0, ax1 = -BOOTH_ALCOVE, BOOTH_ALCOVE  # the alcove (door), centred on the front of the root cell
     # Walls around the alcove: the left and right blocks, the part behind the door, the lintel.
     g.box((x0, y0, 0.0), (ax0, y1, h), BOOTH_BODY, top=BOOTH_TOP, front=BOOTH_BODY)
     g.box((ax1, y0, 0.0), (x1, y1, h), BOOTH_BODY, top=BOOTH_TOP, front=BOOTH_BODY)
     g.box((ax0, BOOTH_DOOR_PLANE, 0.0), (ax1, y1, h), BOOTH_BODY, top=BOOTH_TOP)
-    g.box((ax0, y0, 0.84), (ax1, BOOTH_DOOR_PLANE, h), BOOTH_BODY, top=BOOTH_TOP, bottom=BOOTH_SHADE)
+    g.box((ax0, y0, BOOTH_DOOR_TOP), (ax1, BOOTH_DOOR_PLANE, h), BOOTH_BODY, top=BOOTH_TOP, bottom=BOOTH_SHADE)
     # A thin lighter trim along the top edge and the plinth, so the square reads in 2D.
     g.box((x0 - 0.012, y0 - 0.012, h), (x1 + 0.012, y1 + 0.012, h + 0.035), BOOTH_TRIM, top=BOOTH_TOP)
     g.box((x0 - 0.008, y0 - 0.008, 0.0), (ax0, y0 + 0.02, 0.05), BOOTH_TRIM)
     g.box((ax1, y0 - 0.008, 0.0), (x1 + 0.008, y0 + 0.02, 0.05), BOOTH_TRIM)
     # Door frame and the door at the back of the alcove.
-    g.box((ax0, BOOTH_DOOR_PLANE - 0.01, 0.0), (ax0 + 0.025, BOOTH_DOOR_PLANE, 0.84), DOOR_FRAME)
-    g.box((ax1 - 0.025, BOOTH_DOOR_PLANE - 0.01, 0.0), (ax1, BOOTH_DOOR_PLANE, 0.84), DOOR_FRAME)
-    g.box((ax0, BOOTH_DOOR_PLANE - 0.01, 0.815), (ax1, BOOTH_DOOR_PLANE, 0.84), DOOR_FRAME)
-    g.box((ax0 + 0.025, BOOTH_DOOR_PLANE - 0.006, 0.0), (ax1 - 0.025, BOOTH_DOOR_PLANE, 0.815), BOOTH_DOOR)
-    g.box((ax0 + 0.06, BOOTH_DOOR_PLANE - 0.011, 0.5), (ax1 - 0.06, BOOTH_DOOR_PLANE - 0.006, 0.72), BOOTH_GLASS)
-    g.box((ax1 - 0.06, BOOTH_DOOR_PLANE - 0.016, 0.38), (ax1 - 0.035, BOOTH_DOOR_PLANE - 0.006, 0.42), GOLD)
+    top = BOOTH_DOOR_TOP
+    g.box((ax0, BOOTH_DOOR_PLANE - 0.01, 0.0), (ax0 + 0.025, BOOTH_DOOR_PLANE, top), DOOR_FRAME)
+    g.box((ax1 - 0.025, BOOTH_DOOR_PLANE - 0.01, 0.0), (ax1, BOOTH_DOOR_PLANE, top), DOOR_FRAME)
+    g.box((ax0, BOOTH_DOOR_PLANE - 0.01, top - 0.025), (ax1, BOOTH_DOOR_PLANE, top), DOOR_FRAME)
+    g.box((ax0 + 0.025, BOOTH_DOOR_PLANE - 0.006, 0.0), (ax1 - 0.025, BOOTH_DOOR_PLANE, top - 0.025), BOOTH_DOOR)
+    g.box((ax0 + 0.08, BOOTH_DOOR_PLANE - 0.011, 0.62), (ax1 - 0.08, BOOTH_DOOR_PLANE - 0.006, 0.9), BOOTH_GLASS)
+    g.box((ax1 - 0.07, BOOTH_DOOR_PLANE - 0.016, 0.46), (ax1 - 0.045, BOOTH_DOOR_PLANE - 0.006, 0.5), GOLD)
     # The recording lamp over the door (the house's yellow accent): the one decoration.
-    g.box((-0.05, y0 - 0.02, 0.92), (0.05, y0 + 0.005, 0.98), BOOTH_TRIM)
+    g.box((-0.05, y0 - 0.02, 1.08), (0.05, y0 + 0.005, 1.14), BOOTH_TRIM)
     g.box((-0.035, y0 - 0.026, 0.93), (0.035, y0 - 0.02, 0.97), LAMP_ON)
     # Quiet panel seams on both sides of the door, mirrored, matching the room's dark wall shades.
     for x in (-0.58, -0.38, 0.38, 0.58):
@@ -153,19 +156,20 @@ def build_soundbooth_interior():
     # Doorway (interior_exit): threshold, posts and the closed dark door on the South edge.
     g = Geo()
     g.face([(-HALF, -HALF, 0.0), (HALF, -HALF, 0.0), (HALF, HALF, 0.0), (-HALF, HALF, 0.0)], CARPET_A, (0, 0, 1))
-    g.box((-0.22, -HALF, 0.0), (0.22, -0.16, 0.02), BOOTH_TRIM, top=BOOTH_TOP)
-    for xa, xb in ((-HALF, -0.2), (0.2, HALF)):
+    dw, dh = 0.235, 1.05   # ver4.0: as wide as the cell allows, taller than she is
+    g.box((-dw, -HALF, 0.0), (dw, -0.16, 0.02), BOOTH_TRIM, top=BOOTH_TOP)
+    for xa, xb in ((-HALF, -dw), (dw, HALF)):
         g.box((xa, -HALF, 0.0), (xb, HALF, INTERIOR_WALL_BASE), FOAM_BASE, top=FOAM_TOP)
     models.append(g.obj("booth_doorway_base"))
     g = Geo()
-    for xa, xb in ((-HALF, -0.2), (0.2, HALF)):
+    for xa, xb in ((-HALF, -dw), (dw, HALF)):
         g.box((xa, -HALF, INTERIOR_WALL_BASE), (xb, HALF, INTERIOR_WALL_HEIGHT), FOAM_WALL, top=FOAM_TOP)
-        g.box((xa + (0.0 if xa < 0 else -0.02), -HALF + 0.02, INTERIOR_WALL_BASE),
-              (xb + (0.02 if xa < 0 else 0.0), HALF - 0.02, 0.8), BOOTH_TRIM)
-    g.box((-0.2, -HALF, 0.8), (0.2, HALF, INTERIOR_WALL_HEIGHT), FOAM_WALL, top=FOAM_TOP, bottom=BOOTH_TRIM)
-    g.box((-0.2, -HALF, 0.0), (0.2, -HALF + 0.03, 0.8), BOOTH_DOOR)
-    g.box((-0.12, -HALF + 0.03, 0.5), (0.12, -HALF + 0.036, 0.7), BOOTH_GLASS)
-    g.box((0.12, -HALF + 0.03, 0.36), (0.16, -HALF + 0.05, 0.4), GOLD)
+        g.box((xa + (0.0 if xa < 0 else -0.015), -HALF + 0.02, INTERIOR_WALL_BASE),
+              (xb + (0.015 if xa < 0 else 0.0), HALF - 0.02, dh), BOOTH_TRIM)
+    g.box((-dw, -HALF, dh), (dw, HALF, INTERIOR_WALL_HEIGHT), FOAM_WALL, top=FOAM_TOP, bottom=BOOTH_TRIM)
+    g.box((-dw, -HALF, 0.0), (dw, -HALF + 0.03, dh), BOOTH_DOOR)
+    g.box((-0.14, -HALF + 0.03, 0.62), (0.14, -HALF + 0.036, 0.88), BOOTH_GLASS)
+    g.box((0.15, -HALF + 0.03, 0.46), (0.19, -HALF + 0.05, 0.5), GOLD)
     models.append(g.obj("booth_doorway_upper"))
     return models, [], {"soundbooth_interior": ["new design for ver3.1", "foam panels on every face of a wall cell"]}
 
@@ -312,7 +316,10 @@ def main():
         "interiorWallBase": INTERIOR_WALL_BASE,
         "models": [],
     }
+    only = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     for family, build in FAMILIES:
+        if only and family not in only:
+            continue  # ver4.0: rebuild only the families named after "--"
         hl.reset_scene()
         objects, anchors, supplemented = build()
         roots = [o for o in objects if o.parent is None]
@@ -345,6 +352,10 @@ def main():
             }
             manifest["models"].append(entry)
             print(f"HARUKA_V31_ASSET {obj.name}: {entry['triangles']} tris, parts {list(entry['parts'])}")
+    if only:  # the other families' entries as they were
+        with open(os.path.join(EXPORTS, "v31_assets_manifest.json"), encoding="utf-8") as f:
+            kept = [m for m in json.load(f)["models"] if m["family"] not in only]
+        manifest["models"] = kept + manifest["models"]
     with open(os.path.join(EXPORTS, "v31_assets_manifest.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2, ensure_ascii=False)
         f.write("\n")

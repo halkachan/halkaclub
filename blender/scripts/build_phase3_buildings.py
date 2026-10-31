@@ -365,6 +365,32 @@ def build_house():
                        "door inside face", "entrance step"]}
 
 
+# ver4.0 (the user: the door was smaller than ﾊﾙｶﾁｬﾝ, the house may be bigger): the whole house 1.55 times
+# as big, its front where it was. Door 0.65 x 1.10 (she is 0.53 x 0.97); footprint 7 x 3 cells.
+HOUSE_SCALE_V40 = 1.55
+
+
+def build_house_v40():
+    from mathutils import Matrix
+    objects, anchors, supplemented = build_house()
+    s = HOUSE_SCALE_V40
+    dy = HOUSE_FRONT * (1.0 - s)          # keeps the front (and the door cell) in place
+    house = objects[0]
+    house.data.transform(Matrix.Translation((0.0, dy, 0.0)) @ Matrix.Scale(s, 4))
+    for child in objects[1:] + anchors:
+        loc = child.location.copy()
+        child.location = (loc.x * s, loc.y * s + dy, loc.z * s)
+        if child.type == "MESH":
+            child.data.transform(Matrix.Scale(s, 4))
+    for a in anchors:
+        if a.name == "EntranceAnchor":
+            a.location = (0.0, 0.0, 0.025 * s)   # she stands on the step in the root cell
+    hl.add_cell_guides("house_main", [(x, y) for x in range(-3, 4) for y in range(0, 3)])
+    supplemented = dict(supplemented)
+    supplemented["house_main"] = supplemented["house_main"] + ["ver4.0: 1.55 times as big (door 0.65 x 1.10)"]
+    return objects, anchors, supplemented
+
+
 STEP_COLOR = "#5e5e64"
 ALCOVE = "#3e3e44"
 
@@ -467,20 +493,22 @@ def build_interior():
     # door on the outer (South) edge are the upper part.
     g = Geo()
     g.face([(-HALF, -HALF, 0.0), (HALF, -HALF, 0.0), (HALF, HALF, 0.0), (-HALF, HALF, 0.0)], FLOOR_A, (0, 0, 1))
-    g.box((-0.22, -HALF, 0.0), (0.22, -0.16, 0.02), STONE_LIGHT, top=STEP_COLOR)
-    for x0, x1 in ((-HALF, -0.2), (0.2, HALF)):
+    # ver4.0: the opening as wide as the cell allows (0.47) and 1.05 high (she is 0.97).
+    dw, dh = 0.235, 1.05
+    g.box((-dw, -HALF, 0.0), (dw, -0.16, 0.02), STONE_LIGHT, top=STEP_COLOR)
+    for x0, x1 in ((-HALF, -dw), (dw, HALF)):
         g.box((x0, -HALF, 0.0), (x1, HALF, INTERIOR_WALL_BASE), IWALL_BASE, top=IWALL_TOP)
     models.append(g.obj("interior_doorway_base"))
     g = Geo()
-    for x0, x1 in ((-HALF, -0.2), (0.2, HALF)):
+    for x0, x1 in ((-HALF, -dw), (dw, HALF)):
         g.box((x0, -HALF, INTERIOR_WALL_BASE), (x1, HALF, INTERIOR_WALL_HEIGHT), IWALL_FACE, top=IWALL_TOP)
-        g.box((x0 + (0.0 if x0 < 0 else -0.02), -HALF + 0.02, INTERIOR_WALL_BASE),
-              (x1 + (0.02 if x0 < 0 else 0.0), HALF - 0.02, 0.78), TIMBER)
-    g.box((-0.2, -HALF, 0.78), (0.2, HALF, INTERIOR_WALL_HEIGHT), IWALL_FACE, top=IWALL_TOP, bottom=TIMBER)
-    g.box((-0.2, -HALF, 0.0), (0.2, -HALF + 0.03, 0.78), DOOR)
-    for x in (-0.1, 0.0, 0.1):
-        g.box((x - 0.006, -HALF + 0.03, 0.02), (x + 0.006, -HALF + 0.036, 0.74), DOOR_DARK)
-    g.box((-0.15, -HALF + 0.03, 0.34), (-0.11, -HALF + 0.05, 0.38), GOLD)
+        g.box((x0 + (0.0 if x0 < 0 else -0.015), -HALF + 0.02, INTERIOR_WALL_BASE),
+              (x1 + (0.015 if x0 < 0 else 0.0), HALF - 0.02, dh), TIMBER)
+    g.box((-dw, -HALF, dh), (dw, HALF, INTERIOR_WALL_HEIGHT), IWALL_FACE, top=IWALL_TOP, bottom=TIMBER)
+    g.box((-dw, -HALF, 0.0), (dw, -HALF + 0.03, dh), DOOR)
+    for x in (-0.12, 0.0, 0.12):
+        g.box((x - 0.006, -HALF + 0.03, 0.02), (x + 0.006, -HALF + 0.036, dh - 0.04), DOOR_DARK)
+    g.box((-0.19, -HALF + 0.03, 0.46), (-0.15, -HALF + 0.05, 0.5), GOLD)
     models.append(g.obj("interior_doorway_upper"))
     return models, [], {"interior": ["wall faces (the 2D room shows wall tops only)", "doorway frame and door",
                                      "baseboard"]}
@@ -669,7 +697,7 @@ def build_studio_shelf():
 
 
 FAMILIES = (
-    ("house_main", build_house),
+    ("house_main", build_house_v40),
     ("bench_basic", build_bench),
     ("sign_basic", build_sign),
     ("well_basic", build_well),
@@ -702,7 +730,10 @@ def main():
         "interiorWallBase": INTERIOR_WALL_BASE,
         "models": [],
     }
+    only = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     for family, build in FAMILIES:
+        if only and family not in only:
+            continue  # ver4.0: rebuild only the families named after "--"
         hl.reset_scene()
         objects, anchors, supplemented = build()
         roots = [o for o in objects if o.parent is None]
@@ -735,6 +766,10 @@ def main():
             }
             manifest["models"].append(entry)
             print(f"HARUKA_PHASE3_ASSET {obj.name}: {entry['triangles']} tris, parts {list(entry['parts'])}")
+    if only:  # the other families' entries as they were
+        with open(os.path.join(EXPORTS, "phase3_assets_manifest.json"), encoding="utf-8") as f:
+            kept = [m for m in json.load(f)["models"] if m["family"] not in only]
+        manifest["models"] = kept + manifest["models"]
     with open(os.path.join(EXPORTS, "phase3_assets_manifest.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2, ensure_ascii=False)
         f.write("\n")
