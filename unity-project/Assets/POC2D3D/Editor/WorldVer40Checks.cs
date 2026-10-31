@@ -678,7 +678,10 @@ namespace Halka.Poc2D3D.EditorTools
             Settle(c, 0.5f);
             var target = life.NpcWalkers().OrderBy(w => Mathf.Abs(w.Cell.x - c.Session.Cell.x) + Mathf.Abs(w.Cell.y - c.Session.Cell.y)).First();
             Check("walking there draws it (its chunk drawn: the model built)", target.Drawn && target.ModelInstance != null, target.Kind + " " + target.Cell);
-            var talked = StandNextTo(c, target.Cell) && c.Session.InteractAhead();
+            // walked into it on the way, it steps aside (as the crow does): beside it again where it now stands
+            var talked = false;
+            for (var attempt = 0; attempt < 3 && !talked; attempt++)
+                talked = StandNextTo(c, target.Cell) && c.Session.InteractAhead();
             Check("A in front of a fan or an anti: its line (ファン「いつもみてるよ！」 / アンチ「そんなに にんきなの？」)", talked && life.NpcTalks >= 1 &&
                 (PocLife.FanLines.Contains(life.LastNpcLine) || PocLife.AntiLines.Contains(life.LastNpcLine)), life.LastNpcLine);
             var count = life.NpcCount;
