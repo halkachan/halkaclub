@@ -49,7 +49,7 @@ namespace Halka.Poc2D3D.Life
             if (HideSeekActive) { why = "いま かくれんぼ ちゅう！"; return false; }
             var world = session.OutdoorWorld;
             var here = session.World == world ? session.OutdoorIndex.RegionAt(session.Cell) : null;
-            var field = session.OutdoorIndex != null ? session.OutdoorIndex.RegionAt(homeCenter) : null;
+            var field = session.OutdoorIndex != null ? session.OutdoorIndex.PrimaryRegion : null;
             if (here == null || here != field) { why = "かくれんぼは いえのまえの くさはらで しよう！"; return false; }
             return true;
         }
@@ -74,7 +74,7 @@ namespace Halka.Poc2D3D.Life
             }
             HideSeekGames++;
             HideSeekCounting = true;
-            hideCountStarted = Time.time;
+            hideCountStarted = lifeTime;
             hideCountShown = 0;
             if (gameplay != null) gameplay.ActivityOpen = true;
             session.SetFacing(FacingDirection.Up);   // her back to them
@@ -85,7 +85,7 @@ namespace Halka.Poc2D3D.Life
 
         private List<Vector2Int> PickHideSpots(int count)
         {
-            var field = session.OutdoorIndex.RegionAt(homeCenter);
+            var field = session.OutdoorIndex.PrimaryRegion;
             var world = session.OutdoorWorld;
             var her = session.Cell;
             var scored = new List<(int score, Vector2Int cell)>();
@@ -104,7 +104,7 @@ namespace Halka.Poc2D3D.Life
             scored.Sort((a, b) => a.score != b.score ? b.score.CompareTo(a.score) : a.cell.x != b.cell.x ? a.cell.x.CompareTo(b.cell.x) : a.cell.y.CompareTo(b.cell.y));
             var top = scored.GetRange(0, Mathf.Min(24, scored.Count));
             var result = new List<Vector2Int>();
-            var seed = State.Channel.Seed + HideSeekGames * 131 + (long)Time.time;
+            var seed = State.Channel.Seed + HideSeekGames * 131 + (long)lifeTime;
             for (var attempt = 0; attempt < 60 && result.Count < count && top.Count > 0; attempt++)
             {
                 var pick = top[(int)(Unit(seed, attempt) * top.Count) % top.Count].cell;
@@ -121,7 +121,7 @@ namespace Halka.Poc2D3D.Life
             if (!HideSeekActive) return;
             if (HideSeekCounting)
             {
-                var elapsed = Time.time - hideCountStarted;
+                var elapsed = lifeTime - hideCountStarted;
                 var count = Mathf.FloorToInt(elapsed / 1.5f) + 1;
                 if (count > hideCountShown && count <= 6)
                 {
@@ -138,15 +138,15 @@ namespace Halka.Poc2D3D.Life
                             pair.Key.Place(pair.Value, FacingDirection.Down);
                     HideSeekCounting = false;
                     if (gameplay != null) gameplay.ActivityOpen = false;
-                    hideSeekStarted = Time.time;
-                    hideSeekHintAt = Time.time + FirstHintSeconds;
+                    hideSeekStarted = lifeTime;
+                    hideSeekHintAt = lifeTime + FirstHintSeconds;
                     session.ShowMessage("もういいよ！");
                 }
                 return;
             }
-            if (Time.time >= hideSeekHintAt)
+            if (lifeTime >= hideSeekHintAt)
             {
-                hideSeekHintAt = Time.time + NextHintSeconds;
+                hideSeekHintAt = lifeTime + NextHintSeconds;
                 ShowHint();
             }
         }
@@ -190,7 +190,7 @@ namespace Halka.Poc2D3D.Life
             session.ShowMessage(NameOf(w) + " みつけた！");
             Changed();
             if (hideFound.Count < hideModes.Count) return true;
-            var seconds = Mathf.Max(0f, Time.time - hideSeekStarted);
+            var seconds = Mathf.Max(0f, lifeTime - hideSeekStarted);
             LastClearSeconds = seconds;
             var whole = (long)Mathf.Round(seconds);
             var h = State.HideSeek;
@@ -226,7 +226,7 @@ namespace Halka.Poc2D3D.Life
             {
                 RecordOf(pair.Key).Mode = pair.Value;
                 paths[pair.Key].Clear();
-                nextMove[pair.Key] = Time.time + 1f;
+                nextMove[pair.Key] = lifeTime + 1f;
             }
             hideModes.Clear();
             hideSpots.Clear();

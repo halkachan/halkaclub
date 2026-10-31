@@ -45,6 +45,7 @@ namespace Halka.Poc2D3D.Life
         public static double NpcChance(BigInteger subscribers, NpcTuning tuning)
         {
             if (subscribers.Sign <= 0) return 0d;
+            if (subscribers >= new BigInteger(tuning.FullAtSubscribers)) return 1d; // exactly 100 % from 1,000,000
             var ratioLog = LifeNumbers.Log10OnePlus(subscribers - BigInteger.One) - Math.Log10(tuning.FullAtSubscribers);
             if (ratioLog >= 0d) return 1d;
             var p = Math.Sqrt(Math.Pow(10d, ratioLog));
@@ -127,7 +128,7 @@ namespace Halka.Poc2D3D.Life
             if (look != null) walker.SpriteOffsetNorth = look.spriteOffsetNorth;
             walker.StepSeconds = 0.32f;
             walker.Place(cell, FacingDirection.Down);
-            return new Npc { Record = record, Walker = walker, Home = cell, NextMoveAt = Time.time + 1f + (float)Unit(record.Id, 3) * 3f };
+            return new Npc { Record = record, Walker = walker, Home = cell, NextMoveAt = lifeTime + 1f + (float)Unit(record.Id, 3) * 3f };
         }
 
         private void CaptureNpcs(LifeSaveBlock block)
@@ -284,19 +285,19 @@ namespace Halka.Poc2D3D.Life
                     var d = session.Cell - w.Cell;
                     w.Face(Mathf.Abs(d.x) >= Mathf.Abs(d.y) ? (d.x > 0 ? FacingDirection.Right : FacingDirection.Left)
                         : (d.y > 0 ? FacingDirection.Up : FacingDirection.Down));
-                    n.NextMoveAt = Mathf.Max(n.NextMoveAt, Time.time + 0.8f);
+                    n.NextMoveAt = Mathf.Max(n.NextMoveAt, lifeTime + 0.8f);
                     continue;
                 }
-                if (Time.time < n.NextMoveAt) continue;
-                var roll = Unit(n.Record.Id, w.StepsTaken * 7 + (long)(Time.time * 10f));
-                n.NextMoveAt = Time.time + 1.2f + (float)roll * 3.5f;
+                if (lifeTime < n.NextMoveAt) continue;
+                var roll = Unit(n.Record.Id, w.StepsTaken * 7 + (long)(lifeTime * 10f));
+                n.NextMoveAt = lifeTime + 1.2f + (float)roll * 3.5f;
                 if (n.Leaving)
                 {
                     // away from her, a few cells at a time
                     var away = w.Cell + ((Vector2)(w.Cell - session.Cell)).normalized.ToVector2IntRounded() * 6;
                     if (!TryPath(w, away, 6, n.Path)) n.Path.Clear();
                     if (n.Path.Count > 8) n.Path.RemoveRange(8, n.Path.Count - 8);
-                    n.NextMoveAt = Time.time + 0.2f;
+                    n.NextMoveAt = lifeTime + 0.2f;
                     continue;
                 }
                 if (roll < 0.3)
@@ -338,7 +339,7 @@ namespace Halka.Poc2D3D.Life
                 LastNpcLine = lines[n.Talks % lines.Length];
                 n.Talks++;
                 NpcTalks++;
-                n.NextMoveAt = Time.time + 2.5f;
+                n.NextMoveAt = lifeTime + 2.5f;
                 session.ShowMessage((fan ? "ファン「" : "アンチ「") + LastNpcLine + "」");
                 return true;
             }

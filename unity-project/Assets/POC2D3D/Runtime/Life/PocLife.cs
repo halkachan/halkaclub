@@ -114,6 +114,7 @@ namespace Halka.Poc2D3D.Life
         {
             if (Started || session == null) return;
             Started = true;
+            PocWalker.Prune();
             session.Initialize();
             var loaded = saveSystem != null && saveSystem.Loaded != null ? saveSystem.Loaded.Life : null;
             if (loaded != null)
@@ -257,11 +258,20 @@ namespace Halka.Poc2D3D.Life
         // ---------------------------------------------------------------- every frame
 
         private long lastDay;
+        // The life's own clock (Time.time in play; the checks drive Tick with theirs).
+        private float lifeTime;
+        public float LifeTime => lifeTime;
 
         private void Update()
         {
+            if (Started) Tick(Time.deltaTime, Time.time);
+        }
+
+        public void Tick(float dt, float time)
+        {
             if (!Started) return;
-            var dt = Time.deltaTime;
+            lifeTime = time;
+            PocWalker.Prune();
             var now = NowMs;
             var day = AbsoluteDay;
             if (day != lastDay)
@@ -277,7 +287,7 @@ namespace Halka.Poc2D3D.Life
             foreach (var walker in PocWalker.Active)
             {
                 walker.UpdateDrawn(outdoors, session.CellReady);
-                walker.Present3D(threeD, Time.deltaTime);
+                walker.Present3D(threeD, dt);
             }
             if (stationPage != null) stationPage.Watch(Time.unscaledTime);
         }
@@ -307,14 +317,14 @@ namespace Halka.Poc2D3D.Life
         public bool WalkersReserve(Vector2Int cell)
         {
             foreach (var walker in PocWalker.Active)
-                if (walker.ReservesGround(cell)) return true;
+                if (walker != null && walker.ReservesGround(cell)) return true;
             return false;
         }
 
         public bool WalkersReserveExcept(Vector2Int cell, PocWalker except)
         {
             foreach (var walker in PocWalker.Active)
-                if (walker != except && walker.ReservesGround(cell)) return true;
+                if (walker != null && walker != except && walker.ReservesGround(cell)) return true;
             return false;
         }
 
@@ -325,7 +335,7 @@ namespace Halka.Poc2D3D.Life
             if (session.World != session.OutdoorWorld || playerMoving) return false;
             foreach (var walker in PocWalker.Active)
             {
-                if (!walker.Present || walker.HiddenByGame || walker.IsMoving) continue;
+                if (walker == null || !walker.Present || walker.HiddenByGame || walker.IsMoving) continue;
                 if (!ExamineInteractable.IsInRange(playerCell, playerMoving, facing, walker.Cell)) continue;
                 return TalkTo(walker);
             }

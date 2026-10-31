@@ -15,6 +15,9 @@ namespace Halka.Poc2D3D.Life
     {
         public static readonly List<PocWalker> Active = new List<PocWalker>();
 
+        // Characters destroyed without OnDestroy (a scene closed in the editor) leave the list.
+        public static void Prune() => Active.RemoveAll(w => w == null);
+
         public string Id { get; private set; }
         public string Kind { get; private set; }
         public FacingDirection Facing { get; private set; } = FacingDirection.Down;
@@ -62,7 +65,7 @@ namespace Halka.Poc2D3D.Life
             modelScale = scale;
             sprites = spriteSet;
             OutlineId = outlineId;
-            name = "Walker " + id;
+            if (!Active.Contains(this)) Active.Add(this);   // (OnEnable does not run in Edit Mode checks)
         }
 
         private void OnEnable() { if (!Active.Contains(this)) Active.Add(this); }

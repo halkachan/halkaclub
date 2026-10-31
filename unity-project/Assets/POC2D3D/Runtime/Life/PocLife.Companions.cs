@@ -50,9 +50,17 @@ namespace Halka.Poc2D3D.Life
             var world = session.OutdoorWorld;
             if (world == null) return;
             entryCell = world.TryGetHouseDoor(out var door) ? door + Vector2Int.down : (Vector2Int?)null;
-            homeCenter = (entryCell ?? Vector2Int.zero) + new Vector2Int(3, -2);
+            // Home: the field's open ground just North-East of where she starts (the crossroads by the
+            // house), inside first_field (the region the game starts in).
+            var field = session.OutdoorIndex.PrimaryRegion;
+            var start = field.Map.TryGetEntitySpawn("player_main", out var spawn) ? field.ToWorld(spawn.Cell) : Vector2Int.zero;
+            homeCenter = start + new Vector2Int(4, 2);
+            if (!Reachable.Contains(homeCenter) || session.OutdoorIndex.RegionAt(homeCenter) != field)
+                foreach (var c in Reachable)
+                    if (session.OutdoorIndex.RegionAt(c) == field && (Mathf.Abs(c.x - start.x - 4) + Mathf.Abs(c.y - start.y - 2)) <
+                        (Mathf.Abs(homeCenter.x - start.x - 4) + Mathf.Abs(homeCenter.y - start.y - 2) + (Reachable.Contains(homeCenter) ? 0 : 99)))
+                        homeCenter = c;
             homeCells.Clear();
-            var field = session.OutdoorIndex.RegionAt(homeCenter);
             foreach (var c in Reachable)
                 if (Mathf.Abs(c.x - homeCenter.x) <= 6 && Mathf.Abs(c.y - homeCenter.y) <= 5 &&
                     session.OutdoorIndex.RegionAt(c) == field && !ActionCells.Contains(c) && !IsDoorOrTransition(c))
@@ -126,7 +134,7 @@ namespace Halka.Poc2D3D.Life
         {
             RecordOf(w).Mode = mode;
             paths[w].Clear();
-            nextMove[w] = Time.time + 0.3f;
+            nextMove[w] = lifeTime + 0.3f;
             Changed();
         }
 
@@ -224,9 +232,9 @@ namespace Halka.Poc2D3D.Life
                 return;
             }
             if (distance <= 1) return;
-            if (path.Count == 0 || Time.time >= nextMove[w])
+            if (path.Count == 0 || lifeTime >= nextMove[w])
             {
-                nextMove[w] = Time.time + 0.5f;
+                nextMove[w] = lifeTime + 0.5f;
                 if (TryFollowSpot(w, out var goal) && goal != w.Cell) TryPath(w, goal, 6, path);
             }
             StepAlong(w, distance > 5 ? 0.15f : 0.2f);
@@ -235,6 +243,18 @@ namespace Halka.Poc2D3D.Life
         private void TickFree(PocWalker w)
         {
             var path = paths[w];
+            // She is next to it (to talk): it stops and looks at her.
+            if (session.World == session.OutdoorWorld && path.Count == 0)
+            {
+                var d = session.Cell - w.Cell;
+                if (Mathf.Abs(d.x) + Mathf.Abs(d.y) <= 2)
+                {
+                    w.Face(Mathf.Abs(d.x) >= Mathf.Abs(d.y) ? (d.x > 0 ? FacingDirection.Right : FacingDirection.Left)
+                        : (d.y > 0 ? FacingDirection.Up : FacingDirection.Down));
+                    nextMove[w] = Mathf.Max(nextMove[w], lifeTime + 1.5f);
+                    return;
+                }
+            }
             var dist = Mathf.Abs(w.Cell.x - homeCenter.x) + Mathf.Abs(w.Cell.y - homeCenter.y);
             if (dist > 9)
             {
@@ -245,9 +265,9 @@ namespace Halka.Poc2D3D.Life
                     path.Clear();
                     return;
                 }
-                if (path.Count == 0 && Time.time >= nextMove[w])
+                if (path.Count == 0 && lifeTime >= nextMove[w])
                 {
-                    nextMove[w] = Time.time + 1f;
+                    nextMove[w] = lifeTime + 1f;
                     var goal = HomeSpot(w == rin ? 0 : 1);
                     TryPath(w, goal, 8, path);
                     if (path.Count > 12) path.RemoveRange(12, path.Count - 12);
@@ -256,9 +276,9 @@ namespace Halka.Poc2D3D.Life
                 return;
             }
             if (path.Count > 0) { StepAlong(w, 0.26f); return; }
-            if (Time.time < nextMove[w]) return;
-            var roll = Unit(w.StepsTaken + (w == rin ? 17 : 31), (long)(Time.time * 7f));
-            nextMove[w] = Time.time + 1.5f + (float)roll * 3.5f;
+            if (lifeTime < nextMove[w]) return;
+            var roll = Unit(w.StepsTaken + (w == rin ? 17 : 31), (long)(lifeTime * 7f));
+            nextMove[w] = lifeTime + 1.5f + (float)roll * 3.5f;
             if (roll < 0.25) { w.Face((FacingDirection)((int)(roll * 1000) % 4)); return; }
             var dirs = new[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
             var dir = dirs[(int)(roll * 997) % 4];
@@ -277,7 +297,7 @@ namespace Halka.Poc2D3D.Life
             {
                 // someone in the way: wait a moment, then look for another way
                 path.Clear();
-                nextMove[w] = Time.time + 0.4f;
+                nextMove[w] = lifeTime + 0.4f;
             }
         }
 
