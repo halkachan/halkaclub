@@ -3,8 +3,9 @@
     "id": "rin",
     "height_px": 42,
     "canvas": 48,
-    "colours": 28,
+    "colours": 24,
     "scale": 0.168,
+    "two_tone": true,
     "files": [
       "back_idle_0.png",
       "back_walk_0.png",
@@ -24,8 +25,9 @@
     "id": "len",
     "height_px": 42,
     "canvas": 48,
-    "colours": 28,
+    "colours": 24,
     "scale": 0.185,
+    "two_tone": true,
     "files": [
       "back_idle_0.png",
       "back_walk_0.png",
@@ -47,6 +49,7 @@
     "canvas": 64,
     "colours": 20,
     "scale": 0.2324,
+    "two_tone": false,
     "files": [
       "back_idle_0.png",
       "back_walk_0.png",
@@ -68,6 +71,7 @@
     "canvas": 64,
     "colours": 20,
     "scale": 0.2324,
+    "two_tone": false,
     "files": [
       "back_idle_0.png",
       "back_walk_0.png",
@@ -89,6 +93,7 @@
     "canvas": 64,
     "colours": 20,
     "scale": 0.2324,
+    "two_tone": false,
     "files": [
       "back_idle_0.png",
       "back_walk_0.png",
@@ -110,6 +115,7 @@
     "canvas": 64,
     "colours": 20,
     "scale": 0.2276,
+    "two_tone": false,
     "files": [
       "back_idle_0.png",
       "back_walk_0.png",

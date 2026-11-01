@@ -8,6 +8,13 @@ their common box, scaled down (box filter) so the character is HEIGHT pixels tal
 alpha, reduced to at most COLORS colours, outlined with the game's line colour (#252b39, the outline
 of the 2D view) and placed bottom-centre on a square canvas. Frame 0 is the idle frame; 10 and 20
 are the two walk frames. Same density as ﾊﾙｶﾁｬﾝ's sprites (64 pixels per unit, 32 per cell).
+
+ver4.0 (the user's look after the second round: Rin and Len looked too 3D-real in 2D; the user chose
+"B 2トーン"): Rin and Len are drawn from a FLAT render (render_v40_character_sprites.py with
+HALKA_SPRITE_FLAT=1: each material's own colour, unlit) in two tones: where the lit render is darker
+than the flat colour by more than CEL_CUT, the colour times CEL_SHADOW, else the colour itself (anime
+cel shading, no gradients). When scaling down, a texel whose block is a quarter or more very dark
+keeps that dark colour (their eyes and mouths would otherwise blur away).
 """
 import json
 import os
@@ -16,10 +23,14 @@ import sys
 from PIL import Image
 
 OUTLINE = (0x25, 0x2B, 0x39, 255)
+CEL_SHADOW = 0.8
+CEL_CUT = 0.82
+DARK_LUMA = 70
+DARK_SHARE = 0.25
 CHARACTERS = {
-    # id: (render folder, character height in pixels, canvas, colours)
-    "rin": ("spr_rin", 42, 48, 28),
-    "len": ("spr_len", 42, 48, 28),
+    # id: (render folder, character height in pixels, canvas, colours[, flat render folder for two tones])
+    "rin": ("spr_rin", 42, 48, 24, "flat_spr_rin"),
+    "len": ("spr_len", 42, 48, 24, "flat_spr_len"),
     "fan_male": ("spr_fan_male", 56, 64, 20),
     "fan_female": ("spr_fan_female", 56, 64, 20),
     "anti_male": ("spr_anti_male", 56, 64, 20),
@@ -29,9 +40,31 @@ DIRECTIONS = ("front", "back", "left", "right")
 FRAMES = (0, 10, 20)
 
 
-def build(root, out_root, cid, folder, height, canvas_size, colors):
+def luma(c):
+    return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
+
+
+def two_tone(lit, flat):
+    """The flat colours, darkened by one step where the lit render is in shade."""
+    lp, fp = lit.load(), flat.load()
+    out = Image.new("RGBA", flat.size, (0, 0, 0, 0))
+    op = out.load()
+    for y in range(flat.height):
+        for x in range(flat.width):
+            f = fp[x, y]
+            if f[3] < 128:
+                continue
+            k = 1.0 if (luma(lp[x, y]) + 1) / (luma(f) + 1) >= CEL_CUT else CEL_SHADOW
+            op[x, y] = (int(f[0] * k), int(f[1] * k), int(f[2] * k), 255)
+    return out
+
+
+def build(root, out_root, cid, folder, height, canvas_size, colors, flat_folder=None):
     images = {(d, f): Image.open(os.path.join(root, folder, "%s_%02d.png" % (d, f))).convert("RGBA")
               for d in DIRECTIONS for f in FRAMES}
+    if flat_folder:
+        images = {key: two_tone(im, Image.open(os.path.join(root, flat_folder, "%s_%02d.png" % key)).convert("RGBA"))
+                  for key, im in images.items()}
     box = None
     for im in images.values():
         alpha = im.getchannel("A").point(lambda a: 255 if a >= 128 else 0)
@@ -64,6 +97,27 @@ def build(root, out_root, cid, folder, height, canvas_size, colors):
                     px[x, y] = (min(255, int(pr * k)), min(255, int(pg * k)), min(255, int(pb * k)), 255)
                 else:
                     px[x, y] = (0, 0, 0, 0)
+        if flat_folder:
+            # small dark features (eyes, mouth) keep their dark colour
+            src = crop.load()
+            bw, bh = crop.width / w, crop.height / h
+            for y in range(h):
+                for x in range(w):
+                    if px[x, y][3] == 0:
+                        continue
+                    total = dark = 0
+                    acc = [0, 0, 0]
+                    for yy in range(int(y * bh), max(int(y * bh) + 1, int((y + 1) * bh))):
+                        for xx in range(int(x * bw), max(int(x * bw) + 1, int((x + 1) * bw))):
+                            c = src[xx, yy]
+                            if c[3] < 128:
+                                continue
+                            total += 1
+                            if luma(c) < DARK_LUMA:
+                                dark += 1
+                                acc = [acc[0] + c[0], acc[1] + c[1], acc[2] + c[2]]
+                    if total and dark >= total * DARK_SHARE:
+                        px[x, y] = (acc[0] // dark, acc[1] // dark, acc[2] // dark, 255)
         small[key] = reduced
     strip = Image.new("RGB", (sum(im.width for im in small.values()), max(im.height for im in small.values())), (0, 0, 0))
     mask = Image.new("L", strip.size, 0)
@@ -103,7 +157,7 @@ def build(root, out_root, cid, folder, height, canvas_size, colors):
         canvas.save(os.path.join(out_dir, name))
         written.append(name)
     return {"id": cid, "height_px": height, "canvas": canvas_size, "colours": colors, "scale": round(scale, 4),
-            "files": sorted(written)}
+            "two_tone": bool(flat_folder), "files": sorted(written)}
 
 
 def main():

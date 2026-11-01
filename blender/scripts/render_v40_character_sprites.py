@@ -33,6 +33,40 @@ for o in sc.objects:
 roots = [o for o in sc.objects if o.parent is None and (o.type in ("ARMATURE", "EMPTY") or o.type == "MESH" and not o.hide_render)]
 try: sc.render.engine = "BLENDER_EEVEE"
 except TypeError: sc.render.engine = "BLENDER_EEVEE_NEXT"
+# ver4.0 (the user's look after the second round: Rin and Len looked too 3D-real in 2D): with
+# HALKA_SPRITE_FLAT=1 every material shows its own base colour unlit (an emission of whatever feeds
+# its Principled / Diffuse colour: a texture, the vertex colours or a plain colour; its alpha kept),
+# so the pixel-art step gets clean areas of colour with no light-and-shade gradients.
+FLAT = os.environ.get("HALKA_SPRITE_FLAT") == "1"
+if FLAT:
+    for m in bpy.data.materials:
+        if not m.use_nodes or m.node_tree is None:
+            continue
+        nodes, links = m.node_tree.nodes, m.node_tree.links
+        shader = next((nd for nd in nodes if nd.type in ("BSDF_PRINCIPLED", "BSDF_DIFFUSE")), None)
+        output = next((nd for nd in nodes if nd.type == "OUTPUT_MATERIAL" and nd.is_active_output), None) or             next((nd for nd in nodes if nd.type == "OUTPUT_MATERIAL"), None)
+        if shader is None or output is None:
+            continue
+        colour = shader.inputs["Base Color" if shader.type == "BSDF_PRINCIPLED" else "Color"]
+        emit = nodes.new("ShaderNodeEmission")
+        emit.inputs["Strength"].default_value = 1.0
+        if colour.is_linked:
+            links.new(colour.links[0].from_socket, emit.inputs["Color"])
+        else:
+            emit.inputs["Color"].default_value = colour.default_value
+        surface = emit.outputs["Emission"]
+        if shader.type == "BSDF_PRINCIPLED" and (shader.inputs["Alpha"].is_linked or shader.inputs["Alpha"].default_value < 0.999):
+            clear = nodes.new("ShaderNodeBsdfTransparent")
+            mix = nodes.new("ShaderNodeMixShader")
+            alpha = shader.inputs["Alpha"]
+            if alpha.is_linked:
+                links.new(alpha.links[0].from_socket, mix.inputs["Fac"])
+            else:
+                mix.inputs["Fac"].default_value = alpha.default_value
+            links.new(clear.outputs[0], mix.inputs[1])
+            links.new(surface, mix.inputs[2])
+            surface = mix.outputs[0]
+        links.new(surface, output.inputs["Surface"])
 sc.render.resolution_x = size; sc.render.resolution_y = size
 sc.render.film_transparent = True
 sc.view_settings.view_transform = "Standard"
