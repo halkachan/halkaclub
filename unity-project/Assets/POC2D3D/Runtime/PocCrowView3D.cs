@@ -72,6 +72,7 @@ namespace Halka.Poc2D3D
         {
             for (var i = transform.childCount - 1; i >= 0; i--) DestroyImmediate(transform.GetChild(i).gameObject);
             instance = Instantiate(modelPrefab, transform, false);
+            PocWorn.Exempt(instance);   // ver4.0: the crow keeps its colours in the worn world
             instance.name = modelPrefab.name;
             PocOutlineTag.Apply(instance, PocOutlineTag.CrowId, 1f); // the 3D view's outline
             // Blender fronts face South; turn the model so it looks along this transform's forward.

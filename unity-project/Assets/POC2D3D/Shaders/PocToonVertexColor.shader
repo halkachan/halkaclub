@@ -6,6 +6,7 @@ Shader "HALKA/POC/ToonVertexColor"
     {
         _Bands ("Light bands", Range(1, 6)) = 3
         _ShadowFloor ("Lowest direct light", Range(0, 1)) = 0.35
+        _WornExempt ("ver4.0: 1 = keeps its colours (characters), 0 = worn scenery", Range(0, 1)) = 0
         // Written to the alpha channel only (opaque rendering is unchanged). The 2D Pixel
         // View's see-through tree layer reads it (set per renderer with a property block).
         _Alpha ("Alpha written to the target", Range(0, 1)) = 1
@@ -18,6 +19,7 @@ Shader "HALKA/POC/ToonVertexColor"
         CGPROGRAM
         #pragma surface surf Toon fullforwardshadows addshadow noforwardadd keepalpha
         #pragma target 3.0
+        #include "PocWorn.cginc"
 
         half _Bands;
         half _ShadowFloor;
@@ -26,6 +28,8 @@ Shader "HALKA/POC/ToonVertexColor"
         struct Input
         {
             float4 color : COLOR;
+            float3 worldPos;
+            float3 worldNormal;
         };
 
         half4 LightingToon(SurfaceOutput s, half3 lightDir, half atten)
@@ -41,7 +45,7 @@ Shader "HALKA/POC/ToonVertexColor"
 
         void surf(Input IN, inout SurfaceOutput o)
         {
-            o.Albedo = IN.color.rgb;
+            o.Albedo = PocWorn(IN.color.rgb, IN.worldPos, IN.worldNormal);
             o.Alpha = _Alpha;
         }
         ENDCG

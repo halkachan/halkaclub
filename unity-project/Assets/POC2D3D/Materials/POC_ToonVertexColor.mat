@@ -28,6 +28,7 @@ Material:
     - _Alpha: 1
     - _Bands: 3
     - _ShadowFloor: 0.35
+    - _WornExempt: 0
     m_Colors: []
   m_BuildTextureStacks: []
   m_AllowLocking: 1

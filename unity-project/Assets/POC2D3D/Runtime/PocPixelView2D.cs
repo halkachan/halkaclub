@@ -344,6 +344,7 @@ namespace Halka.Poc2D3D
             spriteMaterial.SetFloat("_GroundOnly", outlineMask != null ? 1f : 0f);
             spriteMaterial.SetFloat("_Thickness", 0f);
             spriteMaterial.SetFloat("_GroundLayerId", PocOutlineTag.DecorationId);
+            spriteMaterial.SetFloat("_Worn", Mathf.Max(0f, PocWorn.Current));   // ver4.0: the grass is scenery
             GL.PushMatrix();
             GL.LoadPixelMatrix(0f, screenWidth, 0f, screenHeight);
             spriteMaterial.SetPass(0);
@@ -895,6 +896,7 @@ namespace Halka.Poc2D3D
             spriteMaterial.SetTexture("_MaskTex", outlineMask);
             spriteMaterial.SetFloat("_UseMask", useMask ? 1f : 0f);
             spriteMaterial.SetFloat("_GroundOnly", 0f);
+            spriteMaterial.SetFloat("_Worn", 0f);   // characters keep their colours
             spriteMaterial.SetColor("_OutlineColor", OutlineColor);
             spriteMaterial.SetFloat("_Thickness", OutlineReady ? OutlinePixels : 0);
             spriteMaterial.SetFloat("_MarkerStrength", GrassOutline);

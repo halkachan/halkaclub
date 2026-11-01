@@ -129,6 +129,7 @@ namespace Halka.Poc2D3D.Life
             if (modelMaterial != null)
                 foreach (var renderer in instance.GetComponentsInChildren<Renderer>(true))
                     renderer.sharedMaterial = modelMaterial;
+            PocWorn.Exempt(instance);   // ver4.0: characters keep their colours in the worn world
             PocOutlineTag.Apply(instance, OutlineId, 1f);
             limbs.Clear();
             foreach (var child in instance.GetComponentsInChildren<Transform>(true))

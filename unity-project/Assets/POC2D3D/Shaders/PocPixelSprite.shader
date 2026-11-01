@@ -21,6 +21,7 @@ Shader "HALKA/POC/PixelSprite"
         _GroundOnly ("Phase 5: draw only where the world shows ground (the 2D game's grass layer)", Float) = 0
         _Shadow ("ver4.0: draw the texture's shape as a see-through shadow of _ShadowColor", Float) = 0
         _ShadowColor ("ver4.0: the shadow's color and opacity", Color) = (0.09, 0.1, 0.14, 0.45)
+        _Worn ("ver4.0: the worn palette for the 2D game's grass (not the characters)", Range(0, 1)) = 0
     }
     SubShader
     {
@@ -47,6 +48,7 @@ Shader "HALKA/POC/PixelSprite"
             float _GroundOnly;
             float _Shadow;
             float4 _ShadowColor;
+            float _Worn;
 
             struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; float3 mask : TEXCOORD1; };
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float3 mask : TEXCOORD1; };
@@ -118,6 +120,13 @@ Shader "HALKA/POC/PixelSprite"
                     }
                 }
                 if (_Shadow > 0.5) return _ShadowColor;
+                if (_Worn > 0.001)
+                {
+                    // the scenery's worn palette (PocWorn.cginc step 1): muted, olive grey, faded
+                    float l = dot(color.rgb, float3(0.299, 0.587, 0.114));
+                    color.rgb = lerp(color.rgb, l * float3(1.0, 1.02, 0.9), 0.4 * _Worn);
+                    color.rgb *= lerp(float3(1, 1, 1), float3(0.95, 0.94, 0.84), _Worn) * (1.0 - 0.08 * _Worn);
+                }
                 color.a = 1.0;
                 return color;
             }

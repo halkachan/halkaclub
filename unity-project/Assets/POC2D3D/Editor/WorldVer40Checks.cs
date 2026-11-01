@@ -1424,6 +1424,21 @@ namespace Halka.Poc2D3D.EditorTools
             Check("…all five traced on やばい: a high score; only one of the five: half or less", all >= 95 && oneOfFive <= 50, $"{all} / {oneOfFive}");
             UnityEngine.Object.DestroyImmediate(host);
 
+            // the worn world in the models themselves (the full-screen pass was taken out again); the game
+            // sets the strength in PocTimeOfDay's LateUpdate (the harness's frame does not run it)
+            Frame(c, 1f / 60f, Vector2Int.zero);
+            PocWorn.Apply(0f);
+            c.Time.Apply(UnityEngine.Time.unscaledTime);
+            var sceneryRenderers = c.Presenter.Views.Where(v => v != null).SelectMany(v => v.GetComponentsInChildren<Renderer>(true)).ToList();
+            var characterRenderers = c.Actor.GetComponentsInChildren<Renderer>(true)
+                .Concat(c.Switcher.CrowView != null ? c.Switcher.CrowView.GetComponentsInChildren<Renderer>(true) : new Renderer[0]).ToList();
+            Check("the worn world: scenery models worn (one global strength, 1), characters keep their colours (ﾊﾙｶﾁｬﾝ, the crow); no full-screen pass",
+                Mathf.Approximately(PocWorn.Current, PocWorn.Strength) && Mathf.Approximately(Shader.GetGlobalFloat("_PocWorn"), 1f) &&
+                sceneryRenderers.Count > 20 && sceneryRenderers.Count(r => !PocWorn.IsExempt(r)) > sceneryRenderers.Count / 2 &&
+                characterRenderers.Count > 0 && characterRenderers.All(PocWorn.IsExempt) &&
+                UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsSortMode.None).All(cam => cam.GetComponents<MonoBehaviour>().All(m => m == null || m.GetType().Name != "PocMoodGrade")),
+                $"scenery {sceneryRenderers.Count(r => !PocWorn.IsExempt(r))}/{sceneryRenderers.Count} worn, characters {characterRenderers.Count(PocWorn.IsExempt)}/{characterRenderers.Count} kept");
+
             // the house: windows on the front now (the Blender script's manifest for house_main.fbx: the
             // note and the triangles the two windows and sills added: 1418 before)
             var manifest = File.ReadAllText(Path.Combine(PocSceneBuilder.RepositoryRoot, "blender/exports/phase3_assets_manifest.json"));
