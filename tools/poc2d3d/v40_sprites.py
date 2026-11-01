@@ -22,9 +22,9 @@ I2): the shade is warm (hair amber, skin peach: CEL_WARM) and covers about four 
 the bangs: SKIN_CUT). Gaps of one to three texels between a strand and the face are filled with the
 colour beside them (outlined, they became black dots). The outline is drawn as on ﾊﾙｶﾁｬﾝ's sprites:
 on the character's own edge texels, in her line colour (#12121e), not as an extra ring outside.
-Rin's front frames: scaled down, her left eye fell half a texel off and took an extra row (a black
-blob beside the cheek); her eyes are drawn as one pair there, the left a mirror of the right
-(MIRROR_EYES).
+Rin's front frames: scaled down, her left eye fell half a texel off and took an extra row, and the
+thin strand hanging beside her left cheek came out two texels wide and all outline (a black block);
+there the left eye and the strand's corner are drawn as mirrors of the right ones (MIRROR_EYES).
 """
 import json
 import os
@@ -129,6 +129,23 @@ def mirror_eyes(im):
             m = 2 * centre - x
             if 0 <= x < w and 0 <= m < w and (dark(p[x, y]) or dark(p[m, y])) and p[x, y][3] and p[m, y][3]:
                 p[x, y] = p[m, y]
+    im.info["eye_rows"] = (eye_rows[-1], centre)
+    return im
+
+
+def mirror_strand(im):
+    """After the outline: the strand hanging beside the left cheek (the outer corner of the rows from
+    the eyes down) as the mirror of the right one, as drawn, transparency and all."""
+    if "eye_rows" not in im.info:
+        return im
+    bottom, centre = im.info["eye_rows"]
+    p = im.load()
+    w, h = im.size
+    for y in range(bottom - 1, min(h, bottom + 3)):
+        for x in range(0, centre - 9):
+            m = 2 * centre - x
+            if 0 <= m < w:
+                p[x, y] = p[m, y]
     return im
 
 
@@ -228,6 +245,8 @@ def build(root, out_root, cid, folder, height, canvas_size, colors, flat_folder=
             if d == "front" and cid in MIRROR_EYES:
                 mirror_eyes(out)
             inner_outline(close_gaps(out))
+            if d == "front" and cid in MIRROR_EYES:
+                mirror_strand(out)
             canvas = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
             canvas.paste(out, ((canvas_size - out.width - 2) // 2 + 1, canvas_size - 1 - out.height), out)   
             state = "idle" if f == 0 else "walk"
