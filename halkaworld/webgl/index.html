@@ -18,7 +18,7 @@
     <div id="safe-area-probe" aria-hidden="true"></div>
     <div id="loading">Loading...</div>
     <div id="error" role="alert"></div>
-    <script src="Build/ffff7837b09bd7340941d8ed388483cf.loader.js"></script>
+    <script src="Build/fa6006119b55c231bc62636203d79f86.loader.js"></script>
     <script>
       const canvas = document.getElementById("unity-canvas");
       const loading = document.getElementById("loading");
@@ -59,22 +59,18 @@
       window.addEventListener("orientationchange", layoutCanvas);
       document.addEventListener("fullscreenchange", layoutCanvas);
       layoutCanvas();
-      // Keep the world near whole multiples of its 576-pixel outdoor art height.
+      // ver4.0 (the user: the crow's eyes were of different sizes): the picture is drawn at the
+      // screen's own pixels, never resized by the browser (stretching or shrinking by a factor like
+      // 1.33 made a 1-pixel eye 1 or 2 screen pixels). The game keeps the world's pixels at a whole
+      // size and draws the characters' dots evenly at in-between sizes (PocPixelSprite "_Smooth").
       function pixelRatio() {
-        const bounds = canvas.getBoundingClientRect();
-        const cssHeight = bounds.height;
-        const nativeRatio = Math.min(window.devicePixelRatio || 1, 2);
-        // Keep mobile controls at their original UI scale and avoid overlap.
-        if (!cssHeight || bounds.width < 800 || cssHeight > bounds.width) return nativeRatio;
-        const physicalHeight = cssHeight * nativeRatio;
-        const renderHeight = physicalHeight >= 576
-          ? 576 * Math.floor(physicalHeight / 576) : physicalHeight;
-        return renderHeight / cssHeight;
+        canvas.style.imageRendering = "pixelated";
+        return Math.min(window.devicePixelRatio || 1, 2);
       }
       createUnityInstance(canvas, {
-        dataUrl: "Build/fdbc42d6232ea85a5455098c108c9a6b.data",
-        frameworkUrl: "Build/203051a26c1fed2a1b92b65a3c0e25fd.framework.js",
-        codeUrl: "Build/f7d3aa8c1d0f14a68fd7b1dd635c8a04.wasm",
+        dataUrl: "Build/cdaf90d86a9f51d00af508fada050600.data",
+        frameworkUrl: "Build/2b23dc802ecea88b37135458ef00c4e5.framework.js",
+        codeUrl: "Build/1c409b76ad901238f27e2def005e6c44.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "HALKA",
         productName: "HALKA WORLD",
