@@ -1424,6 +1424,43 @@ namespace Halka.Poc2D3D.EditorTools
             Check("…all five traced on やばい: a high score; only one of the five: half or less", all >= 95 && oneOfFive <= 50, $"{all} / {oneOfFive}");
             UnityEngine.Object.DestroyImmediate(host);
 
+            // the worn mood (one pass over both views): a flat grey picture through it, read back
+            var mood = c.Third.GetComponent<PocMoodGrade>();
+            var presenterMood = UnityEngine.Object.FindObjectsByType<PocPixelPresenter>(FindObjectsSortMode.None)
+                .Select(pp => typeof(PocPixelPresenter).GetField("mood", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(pp))
+                .FirstOrDefault();
+            var probe = new Texture2D(64, 36, TextureFormat.RGBA32, false);
+            probe.SetPixels(Enumerable.Repeat(new Color(0.5f, 0.5f, 0.5f, 1f), 64 * 36).ToArray());
+            probe.Apply();
+            var graded = RenderTexture.GetTemporary(64, 36, 0, RenderTextureFormat.ARGB32);
+            Color centre = Color.clear, corner = Color.clear;
+            if (mood != null)
+            {
+                var keepGrain = mood.Grain;
+                mood.Grain = 0f;
+                var moodSource = RenderTexture.GetTemporary(64, 36, 0, RenderTextureFormat.ARGB32);
+                Graphics.Blit(probe, moodSource);
+                mood.Blit(moodSource, graded);
+                mood.Grain = keepGrain;
+                RenderTexture.ReleaseTemporary(moodSource);
+                var previous = RenderTexture.active;
+                RenderTexture.active = graded;
+                var read = new Texture2D(64, 36, TextureFormat.RGBA32, false);
+                read.ReadPixels(new Rect(0, 0, 64, 36), 0, 0);
+                read.Apply();
+                RenderTexture.active = previous;
+                centre = read.GetPixel(32, 18);
+                corner = read.GetPixel(0, 0);
+                UnityEngine.Object.DestroyImmediate(read);
+            }
+            RenderTexture.ReleaseTemporary(graded);
+            UnityEngine.Object.DestroyImmediate(probe);
+            Check("the worn mood (the user's \"中\" with grain): on the 3D camera and the 2D presenter; grey 0.5 comes out darker and warm in the middle, dark in the corners",
+                mood != null && ReferenceEquals(presenterMood, mood) && Mathf.Approximately(mood.Strength, PocMoodGrade.StandardStrength) &&
+                Mathf.Approximately(mood.Grain, PocMoodGrade.StandardGrain) && centre.r < 0.48f && centre.r > 0.36f && centre.b < centre.r - 0.03f &&
+                corner.r < 0.25f && corner.g < 0.27f,
+                $"centre {centre} corner {corner}");
+
             // the house: windows on the front now (the Blender script's manifest for house_main.fbx: the
             // note and the triangles the two windows and sills added: 1418 before)
             var manifest = File.ReadAllText(Path.Combine(PocSceneBuilder.RepositoryRoot, "blender/exports/phase3_assets_manifest.json"));
