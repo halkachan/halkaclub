@@ -20,7 +20,7 @@ Shader "HALKA/POC/PixelSprite"
         _GroundLayerId ("Object ID drawn under the player besides the ground (grass tufts)", Float) = 250
         _GroundOnly ("Phase 5: draw only where the world shows ground (the 2D game's grass layer)", Float) = 0
         _Shadow ("ver4.0: draw the texture's shape as a see-through shadow of _ShadowColor", Float) = 0
-        _ShadowColor ("ver4.0: the shadow's color and opacity", Color) = (0.09, 0.1, 0.14, 0.32)
+        _ShadowColor ("ver4.0: the shadow's color and opacity", Color) = (0.09, 0.1, 0.14, 0.45)
     }
     SubShader
     {

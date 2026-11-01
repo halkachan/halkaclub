@@ -66,6 +66,7 @@ namespace Halka.Poc2D3D.EditorTools
             var keys = new[] { LifeLogController.SaveKey, WorldTimeController.SaveKey };
             var saved = keys.ToDictionary(k => k, k => PlayerPrefs.HasKey(k) ? PlayerPrefs.GetString(k) : null);
             var randomState = UnityEngine.Random.state;
+            var shadowDistance = QualitySettings.shadowDistance;   // the 3D view shortens it (PocViewSwitcher)
             UnityEngine.Random.InitState(4040);
             try
             {
@@ -90,6 +91,7 @@ namespace Halka.Poc2D3D.EditorTools
             {
                 C6.DisposeHarness();
                 UnityEngine.Random.state = randomState;
+                QualitySettings.shadowDistance = shadowDistance;
                 foreach (var pair in saved)
                 {
                     if (pair.Value == null) PlayerPrefs.DeleteKey(pair.Key);
@@ -1324,6 +1326,25 @@ namespace Halka.Poc2D3D.EditorTools
                 Mathf.Approximately(c.Third.OutdoorDistance, 4.1f) && Mathf.Approximately(c.Third.IndoorDistance, 3.6f) &&
                 Mathf.Approximately(PocThirdPersonCamera.StandardOutdoorDistance, 4.1f), c.Third.OutdoorDistance + " / " + c.Third.IndoorDistance);
 
+            // shadows: soft and nearer in 3D (the jagged edges on the bigger house), hard and as far as before in 2D
+            c.Switcher.SetMode(PocViewMode.PixelView2D);
+            Frame(c, 1f / 60f, Vector2Int.zero);
+            var far2D = QualitySettings.shadowDistance;
+            var hard2D = c.Switcher.Sun != null ? c.Switcher.Sun.shadows : LightShadows.None;
+            c.Switcher.SetMode(PocViewMode.ThirdPerson3D);
+            Frame(c, 1f / 60f, Vector2Int.zero);
+            var near3D = QualitySettings.shadowDistance;
+            var soft3D = c.Switcher.Sun != null ? c.Switcher.Sun.shadows : LightShadows.None;
+            c.Switcher.SetMode(PocViewMode.PixelView2D);
+            Frame(c, 1f / 60f, Vector2Int.zero);
+            var back2D = QualitySettings.shadowDistance;
+            Check("3D shadows soft and drawn to 24 m (finer near her: no jagged edges on the house); 2D hard and as far as before",
+                soft3D == LightShadows.Soft && near3D <= PocViewSwitcher.Shadow3DDistance && hard2D == LightShadows.Hard &&
+                c.Switcher.Sun.shadows == LightShadows.Hard && Mathf.Approximately(back2D, far2D) && far2D > near3D,
+                $"2D {hard2D} {far2D} m, 3D {soft3D} {near3D} m");
+            c.Switcher.SetMode(PocViewMode.ThirdPerson3D);
+            Frame(c, 1f / 60f, Vector2Int.zero);
+
             // footsteps: two soft sounds in turn, a little quieter, a slightly different pitch each
             var steps = c.Gameplay.Footsteps;
             var source = steps.GetComponent<AudioSource>();
@@ -1435,8 +1456,17 @@ namespace Halka.Poc2D3D.EditorTools
             var unexpectedModels = changedModels.Split('\n').Select(s => s.Trim()).Where(s => s.Length > 0 && !allowedModels.Contains(s)).ToList();
             Check("the models: only the house, the doorways, the booth's front and the rug (the user's changes) and the presentation catalog; everything else as it was",
                 unexpectedModels.Count == 0, string.Join(", ", unexpectedModels));
-            Check("the crow's sprites, model and voice unchanged (WorldVer36Checks.CrowKept without the font atlas, which ver4.0 extends)",
-                WorldVer36Checks.CrowKept(Published, false));
+            // (after the second look the soft footsteps were added to Content/Audio, so the crow's voice is
+            // compared on its own and the folder may only gain those two files)
+            V32.Git("diff --name-only --diff-filter=MDR " + Published + " -- unity-project/Assets/Content/Audio", out var changedAudio);
+            V32.Git("diff --name-only --diff-filter=A " + Published + " -- unity-project/Assets/Content/Audio", out var addedAudio);
+            var addedOk = addedAudio.Split('\n').Select(x => x.Trim()).Where(x => x.Length > 0)
+                .All(x => System.Text.RegularExpressions.Regex.IsMatch(x, @"Content/Audio/footstep_soft_[01]\.wav(\.meta)?$"));
+            Check("the crow's sprites, model and voice unchanged (the crow's files; Content/Audio only gained the two soft footsteps)",
+                V32.Git("diff --quiet " + Published + " -- unity-project/Assets/POC2D3D/Models/Phase4/crow_basic.fbx unity-project/Assets/Content/Audio/crow_voice.mp3 unity-project/Assets/Content/Audio/crow_voice.mp3.meta", out _) &&
+                V32.Git("diff --quiet " + Published + " -- " + string.Join(" ", Directory.GetFiles(Path.Combine(PocSceneBuilder.RepositoryRoot, "unity-project/Assets/Content/World"), "crow*")
+                    .Select(f => "unity-project/Assets/Content/World/" + Path.GetFileName(f))), out _) &&
+                changedAudio.Trim().Length == 0 && addedOk, (changedAudio + " " + addedAudio).Trim());
             Check("the font atlas: every earlier glyph in its place (only new glyphs appended)",
                 File.ReadAllText(Path.Combine(PocSceneBuilder.RepositoryRoot, "unity-project/Assets/Resources/asobi_ui_map.txt")).StartsWith("ぁあぃいぅうぇえぉお"));
             Check("the old tests are all still there (none deleted)", V32.Git("diff --quiet --diff-filter=D " + Published + " -- unity-project/Assets/POC2D3D/Editor unity-project/Assets/Editor", out _));

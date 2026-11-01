@@ -680,9 +680,9 @@ namespace Halka.Poc2D3D
         // the air, a fainter one on the ground). Drawn after the grass and before every character,
         // through the same mask as the sprites, so whatever covers a character's feet covers its
         // shadow too. The oval is drawn in sprite pixels, so it is as blocky as the sprites.
-        public static readonly Color ShadowColor = new Color(0.09f, 0.1f, 0.14f, 0.32f);
-        public const float ShadowWidthOfSprite = 0.31f;  // 64 px sprites: 20 x 6; Rin and Len (48 px): 15 x 5
-        public const int ShadowFeetPixels = 2;           // the sprites' feet stand about 2 px above their bottom
+        public static readonly Color ShadowColor = new Color(0.09f, 0.1f, 0.14f, 0.45f);
+        public const float ShadowWidthOfSprite = 0.38f;  // 64 px sprites: 24 x 8; Rin and Len (48 px): 18 x 6; the crow 12 x 4
+        public const int ShadowFeetPixels = 1;           // a pixel under the feet (they stand about 2 px above the sprite's bottom)
         public readonly List<RectInt> ShadowRects = new List<RectInt>();
         private readonly Dictionary<Vector2Int, Texture2D> shadowTextures = new Dictionary<Vector2Int, Texture2D>();
 
@@ -709,7 +709,7 @@ namespace Halka.Poc2D3D
         {
             if (!PlaceCard(card, out var rect, out var pixelSize, out var depthBottom, out _)) return;
             var w = Mathf.Max(6, Mathf.RoundToInt(card.Sprite.rect.width * ShadowWidthOfSprite));
-            var h = Mathf.Max(3, Mathf.RoundToInt(w * 0.3f));
+            var h = Mathf.Max(3, Mathf.RoundToInt(w * 0.33f));
             var width = Mathf.Max(1, Mathf.RoundToInt(w * pixelSize));
             var height = Mathf.Max(1, Mathf.RoundToInt(h * pixelSize));
             var feet = rect.y + Mathf.RoundToInt(ShadowFeetPixels * pixelSize);

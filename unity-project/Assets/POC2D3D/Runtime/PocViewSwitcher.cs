@@ -86,8 +86,38 @@ namespace Halka.Poc2D3D
             if (pixel) thirdPerson.ShowAll();
             if (pixel) pixelView.SnapToTarget();
             else thirdPerson.SnapToTarget();
+            ApplyShadows(pixel);
             if (input != null) input.RequireRelease();
             LastSwitchMilliseconds = (float)((Time.realtimeSinceStartupAsDouble - started) * 1000.0);
+        }
+
+        // ver4.0 (the user's look after the second round: the shadows on the bigger house were jagged
+        // in 3D): in 3D the sun's shadows are filtered (soft) and reach 24 m from the camera instead of
+        // the quality level's 40, so the same shadow map is finer near her (no bigger map: phones'
+        // memory). The 2D view keeps hard shadows to the full distance (its camera stands 30 m away,
+        // and its pixels want hard edges).
+        public const float Shadow3DDistance = 24f;
+        private float shadowDistance2D = -1f;
+        private Light sun;
+
+        public Light Sun
+        {
+            get
+            {
+                if (sun != null) return sun;
+                sun = RenderSettings.sun;
+                if (sun == null)
+                    foreach (var light in FindObjectsByType<Light>(FindObjectsSortMode.None))
+                        if (light.type == LightType.Directional) { sun = light; break; }
+                return sun;
+            }
+        }
+
+        private void ApplyShadows(bool pixel)
+        {
+            if (shadowDistance2D < 0f) shadowDistance2D = QualitySettings.shadowDistance;
+            QualitySettings.shadowDistance = pixel ? shadowDistance2D : Mathf.Min(shadowDistance2D, Shadow3DDistance);
+            if (Sun != null && Sun.shadows != LightShadows.None) Sun.shadows = pixel ? LightShadows.Hard : LightShadows.Soft;
         }
 
         // Shared picking for clicks: a ray from whichever camera is visible, tested against the
