@@ -1365,7 +1365,7 @@ namespace Halka.Poc2D3D.EditorTools
                 return data.Max(Mathf.Abs);
             }
             var old = AssetDatabase.LoadAssetAtPath<AudioClip>(PocSceneBuilder.FootstepPath);
-            Check("…softer than the first footstep (peak 0.45 against 0.68; the old file kept for the 2D game)",
+            Check("…softer than the first footstep (the cute short 「ぷっ」 the user picked: peak 0.4 against 0.68; the old file kept for the 2D game)",
                 old != null && clips[0] != null && Loudest(clips[0]) < 0.5f && Loudest(old) > 0.6f, $"{Loudest(clips[0]):0.00} / {(old != null ? Loudest(old) : 0f):0.00}");
 
             // 2D: a small dark oval at the feet of everyone drawn
