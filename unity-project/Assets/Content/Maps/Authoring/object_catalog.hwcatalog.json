@@ -1081,10 +1081,15 @@
         "width": 1,
         "height": 1
       },
-      "blocksMovement": false,
+      "blocksMovement": true,
       "excludeGrass": true,
       "editorSelectable": true,
-      "blockedCellOffsets": [],
+      "blockedCellOffsets": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
       "allowedMapTypes": [],
       "actionPoints": [
         {

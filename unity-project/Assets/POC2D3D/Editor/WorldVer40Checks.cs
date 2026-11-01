@@ -1043,17 +1043,21 @@ namespace Halka.Poc2D3D.EditorTools
         private static WorldObjectDefinition Def(string id) =>
             AssetDatabase.LoadAssetAtPath<WorldObjectDefinition>("Assets/Content/Maps/" + id + ".asset");
 
-        private static readonly string[] FlowerIds = { "flower_basic", "flower_yellow", "flower_blue", "sunflower_cluster" };
+        // (the big sunflowers of the East block again: the user, after playing)
+        private static readonly string[] FlowerIds = { "flower_basic", "flower_yellow", "flower_blue" };
 
         private static void GardenChecks()
         {
-            Check("the flowers are passable (no blocking, no blocked cell); trees, stones and signs still block",
+            Check("the flowers are passable (no blocking, no blocked cell); the big sunflowers of the East, trees, stones and signs block",
                 FlowerIds.All(id => Def(id) != null && !Def(id).BlocksMovement && !Def(id).EffectiveBlockedOffsets().Any()) &&
+                Def("sunflower_cluster").BlocksMovement && Def("sunflower_cluster").EffectiveBlockedOffsets().Any() &&
                 Def("tree_basic").BlocksMovement && Def("stone_basic").BlocksMovement && Def("sign_basic").BlocksMovement);
             var c = Begin(new HarukaMemoryStorage());
             var world = c.Session.OutdoorWorld;
             var flowers = world.Objects.Where(o => FlowerIds.Contains(o.DefinitionId)).Select(o => o.RootCell).ToList();
-            Check("every flower in the garden can be walked on", flowers.Count >= 10 && flowers.All(world.CanEnter), flowers.Count + " flowers");
+            var sunflowers = world.Objects.Where(o => o.DefinitionId == "sunflower_cluster").Select(o => o.RootCell).ToList();
+            Check("every flower in the garden can be walked on; the big sunflowers cannot", flowers.Count >= 10 && flowers.All(world.CanEnter) &&
+                sunflowers.Count > 0 && sunflowers.All(cell => !world.CanEnter(cell)), flowers.Count + " flowers, " + sunflowers.Count + " sunflowers");
             var target = flowers.OrderBy(f => Mathf.Abs(f.x - c.Session.Cell.x) + Mathf.Abs(f.y - c.Session.Cell.y)).First();
             Check("she walks onto a flower", Walk(c, target, 60f), target.ToString());
             var catalog = AssetDatabase.LoadAssetAtPath<PocPresentationCatalog>(PocSceneBuilder.CatalogPath);
