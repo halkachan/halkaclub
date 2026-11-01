@@ -683,8 +683,40 @@ namespace Halka.Poc2D3D
         // shadow too. The oval is drawn in sprite pixels, so it is as blocky as the sprites.
         public static readonly Color ShadowColor = new Color(0.09f, 0.1f, 0.14f, 0.45f);
         public const float ShadowWidthOfSprite = 0.38f;  // 64 px sprites: 24 x 8; Rin and Len (48 px): 18 x 6; the crow 12 x 4
-        public const int ShadowFeetPixels = 1;           // a pixel under the feet (they stand about 2 px above the sprite's bottom)
+        public const int ShadowFeetPixels = 1;           // the oval's middle a pixel under the frame's lowest opaque row
         public readonly List<RectInt> ShadowRects = new List<RectInt>();
+        private readonly Dictionary<Sprite, int> bottomPadding = new Dictionary<Sprite, int>();
+
+        // Transparent rows under a sprite frame's lowest opaque texel. The sprites are not CPU-readable,
+        // so each frame is read back once through a small render texture and remembered.
+        public int BottomPadding(Sprite sprite)
+        {
+            if (sprite == null) return 0;
+            if (bottomPadding.TryGetValue(sprite, out var known)) return known;
+            var texture = sprite.texture;
+            var rt = RenderTexture.GetTemporary(texture.width, texture.height, 0, RenderTextureFormat.ARGB32);
+            var previous = RenderTexture.active;
+            Graphics.Blit(texture, rt);
+            RenderTexture.active = rt;
+            var area = sprite.textureRect;
+            var read = new Texture2D(Mathf.CeilToInt(area.width), Mathf.CeilToInt(area.height), TextureFormat.RGBA32, false);
+            read.ReadPixels(new Rect(area.x, area.y, read.width, read.height), 0, 0);
+            read.Apply();
+            RenderTexture.active = previous;
+            RenderTexture.ReleaseTemporary(rt);
+            var pixels = read.GetPixels32();
+            var rows = 0;
+            for (var y = 0; y < read.height; y++, rows++)
+            {
+                var any = false;
+                for (var x = 0; x < read.width && !any; x++) any = pixels[y * read.width + x].a >= 128;
+                if (any) break;
+            }
+            if (Application.isPlaying) Destroy(read);
+            else DestroyImmediate(read);
+            bottomPadding[sprite] = rows;
+            return rows;
+        }
         private readonly Dictionary<Vector2Int, Texture2D> shadowTextures = new Dictionary<Vector2Int, Texture2D>();
 
         private void DrawShadows(SpriteCard? crowCard, bool crowOnTop, int screenWidth, int screenHeight)
@@ -713,7 +745,9 @@ namespace Halka.Poc2D3D
             var h = Mathf.Max(3, Mathf.RoundToInt(w * 0.33f));
             var width = Mathf.Max(1, Mathf.RoundToInt(w * pixelSize));
             var height = Mathf.Max(1, Mathf.RoundToInt(h * pixelSize));
-            var feet = rect.y + Mathf.RoundToInt(ShadowFeetPixels * pixelSize);
+            // a pixel under this frame's own lowest opaque row (the frames differ: Len's back view stands
+            // 5 px above its sprite's bottom, ﾊﾙｶﾁｬﾝ 2 px; at a fixed height his shadow looked like he floated)
+            var feet = rect.y + Mathf.RoundToInt(Mathf.Max(0, BottomPadding(card.Sprite) - ShadowFeetPixels) * pixelSize);
             var shadow = new RectInt(rect.x + (rect.width - width) / 2, feet - height / 2, width, height);
             ShadowRects.Add(shadow);
             var color = ShadowColor;

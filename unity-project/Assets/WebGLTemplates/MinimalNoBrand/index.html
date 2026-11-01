@@ -37,15 +37,24 @@
       }
       layoutCanvas();
       // Keep the world near whole multiples of its 576-pixel outdoor art height.
+      // ver4.0 (the user: the crow's eyes were of different sizes): the picture used to be rendered at
+      // the multiple BELOW the screen and stretched up by the browser with hard pixels, so at a factor
+      // like 1.33 some art pixels became 1 screen pixel and others 2 (a 1-pixel eye could be either,
+      // changing as the character moved). Now it is rendered at the multiple AT OR ABOVE the screen and
+      // shrunk smoothly: every art pixel the same size. An exact fit stays sharp (pixelated).
       function pixelRatio() {
         const bounds = canvas.getBoundingClientRect();
         const cssHeight = bounds.height;
         const nativeRatio = Math.min(window.devicePixelRatio || 1, 2);
         // Keep mobile controls at their original UI scale and avoid overlap.
-        if (!cssHeight || bounds.width < 800 || cssHeight > bounds.width) return nativeRatio;
+        if (!cssHeight || bounds.width < 800 || cssHeight > bounds.width) {
+          canvas.style.imageRendering = "pixelated";
+          return nativeRatio;
+        }
         const physicalHeight = cssHeight * nativeRatio;
         const renderHeight = physicalHeight >= 576
-          ? 576 * Math.floor(physicalHeight / 576) : physicalHeight;
+          ? 576 * Math.ceil(physicalHeight / 576 - 0.001) : physicalHeight;
+        canvas.style.imageRendering = Math.abs(renderHeight - physicalHeight) < 0.5 ? "pixelated" : "auto";
         return renderHeight / cssHeight;
       }
       createUnityInstance(canvas, {

@@ -1384,6 +1384,13 @@ namespace Halka.Poc2D3D.EditorTools
                 shadows.Count == expected && walkers.Count >= 2 && shadows.Count > 0 && Under(player, shadows[0]) &&
                 walkers.All(w => shadows.Any(sh => Under(w, sh))),
                 $"shadows {shadows.Count} expected {expected}; her {player} shadow {(shadows.Count > 0 ? shadows[0].ToString() : "-")}");
+            // each frame's own feet: Len's back view stands 5 px above its sprite's bottom, ﾊﾙｶﾁｬﾝ 2 px
+            var lenBack = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/Character/V40/len/back_idle_0.png");
+            var harukaFront = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Content/Character/front_idle/00.png");
+            var padLen = c.Pixel.BottomPadding(lenBack);
+            var padHaruka = c.Pixel.BottomPadding(harukaFront);
+            Check("2D shadows sit a pixel under each frame's own lowest row (Len from behind no longer floats: 5 px above his sprite's bottom, ﾊﾙｶﾁｬﾝ 2)",
+                padLen == 5 && padHaruka == 2, $"Len back {padLen}, ﾊﾙｶﾁｬﾝ front {padHaruka}");
             c.Switcher.SetMode(PocViewMode.ThirdPerson3D);
             Frame(c, 1f / 60f, Vector2Int.zero);
 
