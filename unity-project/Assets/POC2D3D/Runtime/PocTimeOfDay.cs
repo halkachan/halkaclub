@@ -14,7 +14,7 @@ namespace Halka.Poc2D3D
         public const float DaySunIntensity = 0.6f;
         // ver4.0 (the worn world): an overcast grey-green sky and a mossier ambient (was 0.62 0.78 0.92 / 0.5 0.52 0.55)
         public static readonly Color DayAmbient = new Color(0.5f, 0.53f, 0.5f);
-        public static readonly Color DaySky = new Color(0.64f, 0.69f, 0.66f);
+        public static Color DaySky => PocWorn.CurrentPalette.Sky;
         public static readonly Color NightSky = new Color(0.07f, 0.09f, 0.2f);
 
         [SerializeField] private WorldTimeController worldTime;

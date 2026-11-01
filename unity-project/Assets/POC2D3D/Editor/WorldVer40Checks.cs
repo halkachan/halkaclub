@@ -1445,8 +1445,9 @@ namespace Halka.Poc2D3D.EditorTools
             var sceneryRenderers = c.Presenter.Views.Where(v => v != null).SelectMany(v => v.GetComponentsInChildren<Renderer>(true)).ToList();
             var characterRenderers = c.Actor.GetComponentsInChildren<Renderer>(true)
                 .Concat(c.Switcher.CrowView != null ? c.Switcher.CrowView.GetComponentsInChildren<Renderer>(true) : new Renderer[0]).ToList();
-            Check("the worn world: scenery models worn (one global strength, 1), characters keep their colours (ﾊﾙｶﾁｬﾝ, the crow); no full-screen pass",
+            Check("the worn world: scenery models worn (one global strength, 1) in the user's palette (D 夕暮れ, not the green moss), characters keep their colours (ﾊﾙｶﾁｬﾝ, the crow); no full-screen pass",
                 Mathf.Approximately(PocWorn.Current, PocWorn.Strength) && Mathf.Approximately(Shader.GetGlobalFloat("_PocWorn"), 1f) &&
+                PocWorn.CurrentPalette.Name == "dusk" && Shader.GetGlobalVector("_PocWornGrey") == PocWorn.Palettes[3].Grey &&
                 sceneryRenderers.Count > 20 && sceneryRenderers.Count(r => !PocWorn.IsExempt(r)) > sceneryRenderers.Count / 2 &&
                 characterRenderers.Count > 0 && characterRenderers.All(PocWorn.IsExempt) &&
                 UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsSortMode.None).All(cam => cam.GetComponents<MonoBehaviour>().All(m => m == null || m.GetType().Name != "PocMoodGrade")),

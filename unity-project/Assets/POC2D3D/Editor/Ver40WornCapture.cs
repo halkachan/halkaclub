@@ -107,6 +107,44 @@ namespace Halka.Poc2D3D.EditorTools
             EditorApplication.Exit(ok ? 0 : 1);
         }
 
+        // ver4.0: the same places in each palette (PocWorn.Palettes), for the user to compare.
+        //   -executeMethod Halka.Poc2D3D.EditorTools.Ver40WornCapture.CapturePaletteBatch
+        public static void CapturePaletteBatch()
+        {
+            var ok = false;
+            try
+            {
+                var output = Path.GetFullPath(Path.Combine(PocSceneBuilder.RepositoryRoot, "..", "HARUKA_WORLD_V40_LOGS", "palette_preview"));
+                Directory.CreateDirectory(output);
+                var c = C6.Start(new HarukaMemoryStorage());
+                c.Time.Override = PocPhaseOverride.Morning;
+                c.Presenter.ReachCells3D = 40;
+                foreach (var (name, cell, facing) in new[] { ("field", new Vector2Int(-4, -7), FacingDirection.Up), ("forest", new Vector2Int(-30, 2), FacingDirection.Left) })
+                {
+                    c.Session.PlaceForCheck(cell, facing);
+                    for (var i = 0; i < 20; i++) C6.Frame(c, 1f / 30f, Vector2Int.zero);
+                    for (var p = 0; p < PocWorn.Palettes.Length; p++)
+                    {
+                        PocWorn.PaletteIndex = p;
+                        Shot2D(c, PocWorn.Strength, Path.Combine(output, $"{name}_2d_{PocWorn.Palettes[p].Name}.png"));
+                        c.Third.ViewCamera.backgroundColor = PocTimeOfDay.DaySky;
+                        Shot3D(c, PocWorn.Strength, Path.Combine(output, $"{name}_3d_{PocWorn.Palettes[p].Name}.png"));
+                    }
+                }
+                c.Session.LoadMapForCheck("halka_house", new Vector2Int(0, -2), FacingDirection.Up);
+                for (var i = 0; i < 20; i++) C6.Frame(c, 1f / 30f, Vector2Int.zero);
+                for (var p = 0; p < PocWorn.Palettes.Length; p++)
+                {
+                    PocWorn.PaletteIndex = p;
+                    Shot2D(c, PocWorn.Strength, Path.Combine(output, $"room_2d_{PocWorn.Palettes[p].Name}.png"));
+                }
+                ok = true;
+            }
+            catch (Exception exception) { Debug.LogException(exception); }
+            finally { PocWorn.PaletteIndex = PocWorn.ChosenPalette; C6.DisposeHarness(); PocWorn.Apply(); }
+            EditorApplication.Exit(ok ? 0 : 1);
+        }
+
         private static void Shot2D(C6.Ctx c, float k, string path)
         {
             c.Switcher.SetMode(PocViewMode.PixelView2D);

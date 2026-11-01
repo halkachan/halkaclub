@@ -55,6 +55,9 @@ Shader "HALKA/POC/PixelSprite"
             float _Shadow;
             float4 _ShadowColor;
             float _Worn;
+            float4 _PocWornGrey;
+            float4 _PocWornTint;
+            float4 _PocWornGreen;
 
             struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; float3 mask : TEXCOORD1; };
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float3 mask : TEXCOORD1; };
@@ -177,8 +180,9 @@ Shader "HALKA/POC/PixelSprite"
                 {
                     // the scenery's worn palette (PocWorn.cginc step 1): muted, olive grey, faded
                     float l = dot(color.rgb, float3(0.299, 0.587, 0.114));
-                    color.rgb = lerp(color.rgb, l * float3(1.0, 1.02, 0.9), 0.4 * _Worn);
-                    color.rgb *= lerp(float3(1, 1, 1), float3(0.95, 0.94, 0.84), _Worn) * (1.0 - 0.08 * _Worn);
+                    float greenness = saturate((color.g - max(color.r, color.b)) * 4.0);
+                    color.rgb = lerp(color.rgb, l * _PocWornGrey.rgb, saturate(_PocWornGrey.a + _PocWornGreen.a * greenness) * _Worn);
+                    color.rgb *= lerp(float3(1, 1, 1), _PocWornTint.rgb, _Worn) * (1.0 - 0.08 * _Worn);
                 }
                 color.a = 1.0;
                 return color;
