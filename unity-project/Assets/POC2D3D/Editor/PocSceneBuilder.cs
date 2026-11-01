@@ -83,7 +83,6 @@ namespace Halka.Poc2D3D.EditorTools
         public const string CrowVoicePath = "Assets/Content/Audio/crow_voice.mp3";
         // Phase 5: the 2D game's footstep and grass (same files, same settings).
         public const string FootstepPath = "Assets/Content/Audio/footstep_one_step.wav";
-        public const string MoodGradeShader = "HALKA/POC/MoodGrade";
         // ver4.0 (the user's request after the second look): two soft footsteps in turn, a little
         // quieter, each at a slightly different pitch (tools/audio/make_soft_footsteps.py).
         public static readonly string[] SoftFootstepPaths =
@@ -509,10 +508,6 @@ namespace Halka.Poc2D3D.EditorTools
             pixelView.ConfigureSprite(AssetDatabase.LoadAssetAtPath<Material>(SpriteMaterialPath));
             pixelView.ConfigureFade(presenter, AssetDatabase.LoadAssetAtPath<Material>(FadeMaterialPath));
             pixelPresenter.Configure(pixelView, time, screenOverlay);
-            // ver4.0: the worn mood over both views (after the 3D outline; the 2D presenter uses the same one)
-            var mood = thirdCamera.gameObject.AddComponent<PocMoodGrade>();
-            mood.Configure(Shader.Find(MoodGradeShader), session);
-            pixelPresenter.ConfigureMood(mood);
             thirdPerson.Configure(thirdCamera, session, presenter, input);
             switcher.Configure(pixelView, presenterCamera, thirdPerson, actor, presenter, session, input);
             time.Configure(worldTime, session, switcher, sun, thirdCamera);

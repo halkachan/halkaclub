@@ -14,7 +14,6 @@ namespace Halka.Poc2D3D
         [SerializeField] private PocPixelView2D pixelView;
         [SerializeField] private PocTimeOfDay timeOfDay;
         [SerializeField] private Material overlayMaterial;
-        [SerializeField] private PocMoodGrade mood;
 
         public void Configure(PocPixelView2D view, PocTimeOfDay time, Material overlay)
         {
@@ -22,9 +21,6 @@ namespace Halka.Poc2D3D
             timeOfDay = time;
             overlayMaterial = overlay;
         }
-
-        // ver4.0: the finished 2D picture goes through the mood pass (the same one as the 3D view's).
-        public void ConfigureMood(PocMoodGrade moodGrade) => mood = moodGrade;
 
         // Screen pixel x maps to texture pixel (x + offset) / scale: an integer scale with an
         // even crop of the few extra texture pixels, so every texel covers scale x scale pixels.
@@ -41,28 +37,8 @@ namespace Halka.Poc2D3D
             var texture = pixelView.ComposeOutline();
             UvTransform(Screen.width, Screen.height, texture.width, texture.height, pixelView.Scale,
                 pixelView.Offset, out var uvScale, out var uvOffset);
-            if (mood != null && mood.Active)
-            {
-                // the view, the characters and the night tint into one picture, then the mood to the screen
-                var picture = RenderTexture.GetTemporary(Screen.width, Screen.height, 0, RenderTextureFormat.ARGB32);
-                picture.filterMode = FilterMode.Point;
-                Graphics.Blit(texture, picture, uvScale, uvOffset);
-                var previous = RenderTexture.active;
-                RenderTexture.active = picture;
-                pixelView.DrawOverlays(Screen.width, Screen.height);
-                DrawNight();
-                RenderTexture.active = previous;
-                mood.Blit(picture, null);
-                RenderTexture.ReleaseTemporary(picture);
-                return;
-            }
             Graphics.Blit(texture, (RenderTexture)null, uvScale, uvOffset);
             pixelView.DrawOverlays(Screen.width, Screen.height);
-            DrawNight();
-        }
-
-        private void DrawNight()
-        {
             var alpha = timeOfDay != null ? timeOfDay.PixelOverlayAlpha : 0f;
             if (alpha <= 0.001f || overlayMaterial == null) return;
             GL.PushMatrix();
