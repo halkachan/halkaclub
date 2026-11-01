@@ -266,7 +266,19 @@ namespace Halka.Poc2D3D
             // ver4.0: the outline copies are not collected before batching; afterwards only the ones
             // a renderer still uses are kept (PocOutlineTag.ReleaseBatched), the rest are destroyed.
             CollectMeshes(mapRoot, roomMeshes, false, true);
-            if (Application.isPlaying) StaticBatchingUtility.Combine(mapRoot.gameObject);
+            if (Application.isPlaying)
+            {
+                // ver4.0: furniture the 2D view draws low (the kitchen on the South wall) changes its
+                // scale with the view, so it is left out of the static batch (a batched mesh cannot).
+                var batch = new List<GameObject>();
+                foreach (var item in mapRoot.GetComponentsInChildren<MeshRenderer>())
+                {
+                    var owner = item.GetComponentInParent<PocObjectView>();
+                    if (owner != null && PocPixelView2D.LowIn2D.Contains(owner.DefinitionId)) continue;
+                    batch.Add(item.gameObject);
+                }
+                StaticBatchingUtility.Combine(batch.ToArray(), mapRoot.gameObject);
+            }
             PocOutlineTag.ReleaseBatched(mapRoot, copies, roomMeshes);
             CollectMeshes(mapRoot, roomMeshes, false);   // (the combined meshes static batching made)
         }
