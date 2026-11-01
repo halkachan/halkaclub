@@ -63,6 +63,45 @@ namespace Halka.Poc2D3D.EditorTools
             }
         }
 
+        // ver4.0: close-ups of ﾊﾙｶﾁｬﾝ in the room (the kitchen, the bottom wall row), 2D, at the game's strength.
+        //   -executeMethod Halka.Poc2D3D.EditorTools.Ver40WornCapture.CaptureRoomBatch
+        public static void CaptureRoomBatch()
+        {
+            var ok = false;
+            try
+            {
+                var output = Path.GetFullPath(Path.Combine(PocSceneBuilder.RepositoryRoot, "..", "HARUKA_WORLD_V40_LOGS", "room_closeups"));
+                Directory.CreateDirectory(output);
+                var c = C6.Start(new HarukaMemoryStorage());
+                c.Time.Override = PocPhaseOverride.Morning;
+                foreach (var (cell, facing) in new[] { (new Vector2Int(3, -2), FacingDirection.Down), (new Vector2Int(4, -2), FacingDirection.Down),
+                             (new Vector2Int(5, -2), FacingDirection.Down), (new Vector2Int(-3, -3), FacingDirection.Down), (new Vector2Int(1, -3), FacingDirection.Down) })
+                {
+                    if (c.Session.World == null || c.Session.World.MapId != "halka_house") c.Session.LoadMapForCheck("halka_house", cell, facing);
+                    c.Session.PlaceForCheck(cell, facing);
+                    for (var i = 0; i < 20; i++) C6.Frame(c, 1f / 30f, Vector2Int.zero);
+                    var path = Path.Combine(output, $"room_{cell.x}_{cell.y}_{facing}.png");
+                    Shot2D(c, PocWorn.Strength, path);
+                    // a close-up around her sprite (the sprite rectangle counts from the bottom)
+                    var full = new Texture2D(2, 2);
+                    full.LoadImage(File.ReadAllBytes(path));
+                    var r = c.Pixel.LastSpriteRect;
+                    int x0 = Mathf.Clamp(r.x - 48, 0, full.width - 1), y0 = Mathf.Clamp(r.y - 48, 0, full.height - 1);
+                    int cw = Mathf.Min(r.width + 96, full.width - x0), ch = Mathf.Min(r.height + 96, full.height - y0);
+                    var crop = new Texture2D(cw, ch, TextureFormat.RGB24, false);
+                    crop.SetPixels(full.GetPixels(x0, y0, cw, ch));
+                    crop.Apply();
+                    File.WriteAllBytes(path.Replace(".png", "_closeup.png"), crop.EncodeToPNG());
+                    UnityEngine.Object.DestroyImmediate(full);
+                    UnityEngine.Object.DestroyImmediate(crop);
+                }
+                ok = true;
+            }
+            catch (Exception exception) { Debug.LogException(exception); }
+            finally { C6.DisposeHarness(); PocWorn.Apply(); }
+            EditorApplication.Exit(ok ? 0 : 1);
+        }
+
         private static void Shot2D(C6.Ctx c, float k, string path)
         {
             c.Switcher.SetMode(PocViewMode.PixelView2D);

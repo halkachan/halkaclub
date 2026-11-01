@@ -256,6 +256,31 @@ namespace Halka.Poc2D3D
         // base's top edge (seen from the camera) are behind the wall and are left out, as the wall
         // in front of her feet would hide them. Only where a cut wall is under the sprite (not at
         // the doorway), and never while seated.
+        // ver4.0: the screen height of the room's bottom wall top above a world x, or -1 where there is
+        // no wall there (outdoors, the doorway). A character's feet under it are behind the wall.
+        public float BottomWallLine(float worldX)
+        {
+            if (session == null || worldPresenter == null || session.World == null || !session.World.IsInterior) return -1f;
+            var world = session.World;
+            var column = Mathf.RoundToInt(worldX / GridSpace3D.CellSize);
+            if (!world.IsBlocked(new Vector2Int(column, world.MinCell.y))) return -1f;
+            var baseTop = WallBaseTop();
+            if (float.IsNaN(baseTop)) return -1f;
+            var cell = GridSpace3D.ToWorld(new Vector2Int(column, world.MinCell.y));
+            return ScreenPoint(new Vector3(cell.x, baseTop, cell.z + GridSpace3D.CellSize * 0.5f)).y;
+        }
+
+        // ver4.0: a sprite's dots at an in-between size on screen (e.g. 1.5 screen pixels: the 2D view at an
+        // odd scale) are drawn evenly (PocPixelSprite "_Smooth"); at whole sizes they stay plain nearest.
+        public float SpriteDotSize(Sprite sprite) =>
+            sprite == null ? 0f : Scale * PixelsPerCell / (GridSpace3D.CellSize * sprite.pixelsPerUnit);
+
+        public bool EvenDots(Sprite sprite)
+        {
+            var size = SpriteDotSize(sprite);
+            return size > 0f && Mathf.Abs(size - Mathf.Round(size)) > 0.01f;
+        }
+
         public int WallCropPixels(Sprite sprite, RectInt placed, float pixelSize)
         {
             if (session == null || session.IsSeated || worldPresenter == null || !session.World.IsInterior ||
@@ -345,6 +370,7 @@ namespace Halka.Poc2D3D
             spriteMaterial.SetFloat("_Thickness", 0f);
             spriteMaterial.SetFloat("_GroundLayerId", PocOutlineTag.DecorationId);
             spriteMaterial.SetFloat("_Worn", Mathf.Max(0f, PocWorn.Current));   // ver4.0: the grass is scenery
+            spriteMaterial.SetFloat("_Smooth", 0f);
             GL.PushMatrix();
             GL.LoadPixelMatrix(0f, screenWidth, 0f, screenHeight);
             spriteMaterial.SetPass(0);
@@ -457,13 +483,35 @@ namespace Halka.Poc2D3D
         // their base, like the flat wall rows of the 2D room (walls never hide the floor).
         public int CutWalls { get; private set; }
 
+        // ver4.0 (the user: she sank into the kitchen): furniture on the room's South wall stands
+        // between the 2D camera and her when she uses it, so in 2D it is drawn low, like the South
+        // wall's base (the 3D view and collision are unchanged).
+        public static readonly HashSet<string> LowIn2D = new HashSet<string> { "kitchen_counter" };
+        public const float Low2DScale = 0.3f;
+        public int LowViews { get; private set; }
+
+        public void RestoreLowViews()
+        {
+            if (worldPresenter == null) return;
+            foreach (var view in worldPresenter.Views)
+                if (view != null && LowIn2D.Contains(view.DefinitionId))
+                    view.transform.localScale = Vector3.one;
+            LowViews = 0;
+        }
+
         private void UpdateWallCutaway()
         {
             CutWalls = 0;
+            LowViews = 0;
             if (worldPresenter == null) return;
             var interior = session.World.IsInterior;
             foreach (var view in worldPresenter.Views)
             {
+                if (view != null && LowIn2D.Contains(view.DefinitionId))
+                {
+                    view.transform.localScale = new Vector3(1f, interior ? Low2DScale : 1f, 1f);
+                    if (interior) LowViews++;
+                }
                 if (view == null || !view.IsWall) continue;
                 var cut = interior && Vector2.Dot(view.WallOutward, Vector2.down) > PocThirdPersonCamera.CutawayFacing;
                 view.SetCutaway(cut);
@@ -748,6 +796,9 @@ namespace Halka.Poc2D3D
             // a pixel under this frame's own lowest opaque row (the frames differ: Len's back view stands
             // 5 px above its sprite's bottom, ﾊﾙｶﾁｬﾝ 2 px; at a fixed height his shadow looked like he floated)
             var feet = rect.y + Mathf.RoundToInt(Mathf.Max(0, BottomPadding(card.Sprite) - ShadowFeetPixels) * pixelSize);
+            // feet behind the room's bottom wall: no shadow (it would show on the wall's face)
+            var wallLine = BottomWallLine(card.Root.x);
+            if (wallLine >= 0f && wallLine > feet - h * pixelSize * 0.5f) return;
             var shadow = new RectInt(rect.x + (rect.width - width) / 2, feet - height / 2, width, height);
             ShadowRects.Add(shadow);
             var color = ShadowColor;
@@ -758,6 +809,7 @@ namespace Halka.Poc2D3D
             spriteMaterial.SetFloat("_GroundOnly", 0f);
             spriteMaterial.SetFloat("_Thickness", 0f);
             spriteMaterial.SetFloat("_GroundLayerId", PocOutlineTag.DecorationId);
+            spriteMaterial.SetFloat("_Smooth", 0f);
             spriteMaterial.SetFloat("_Shadow", 1f);
             spriteMaterial.SetColor("_ShadowColor", color);
             var maskW = (float)target.width * Scale;
@@ -931,6 +983,7 @@ namespace Halka.Poc2D3D
             spriteMaterial.SetFloat("_UseMask", useMask ? 1f : 0f);
             spriteMaterial.SetFloat("_GroundOnly", 0f);
             spriteMaterial.SetFloat("_Worn", 0f);   // characters keep their colours
+            spriteMaterial.SetFloat("_Smooth", EvenDots(card.Sprite) ? 1f : 0f);
             spriteMaterial.SetColor("_OutlineColor", OutlineColor);
             spriteMaterial.SetFloat("_Thickness", OutlineReady ? OutlinePixels : 0);
             spriteMaterial.SetFloat("_MarkerStrength", GrassOutline);

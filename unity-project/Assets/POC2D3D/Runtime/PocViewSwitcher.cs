@@ -82,6 +82,8 @@ namespace Halka.Poc2D3D
             if (!pixel) actor.PixelSnap = Vector2.zero;
             // Trees made see-through for the 2D sprite are opaque again in 3D.
             if (!pixel) pixelView.RestoreAllFades();
+            // the kitchen drawn low in 2D stands at its full height again in 3D
+            if (!pixel) pixelView.RestoreLowViews();
             // Occluders hidden for the 3D camera must never stay hidden in the 2D view.
             if (pixel) thirdPerson.ShowAll();
             if (pixel) pixelView.SnapToTarget();

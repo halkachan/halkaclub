@@ -1328,6 +1328,12 @@ namespace Halka.Poc2D3D.EditorTools
             Check("the 3D camera stands farther back outdoors (4.1, was 3.4; the house is 1.55x), indoors as before (3.6)",
                 Mathf.Approximately(c.Third.OutdoorDistance, 4.1f) && Mathf.Approximately(c.Third.IndoorDistance, 3.6f) &&
                 Mathf.Approximately(PocThirdPersonCamera.StandardOutdoorDistance, 4.1f), c.Third.OutdoorDistance + " / " + c.Third.IndoorDistance);
+            var viewBefore = c.Switcher.Mode;
+            c.Menu.ActivateQuickItem(C6.Clock);
+            var switched = c.Switcher.Mode != viewBefore;
+            c.Menu.ActivateQuickItem(C6.Clock);
+            Check("the menu has no 「ひょうじ」 row any more; the 2D / 3D button at the top right still switches the view",
+                c.Menu.ExtraItems.Count == 0 && switched && c.Switcher.Mode == viewBefore, string.Join(", ", c.Menu.ExtraItems.Select(i => i.Label)));
 
             // shadows: soft and nearer in 3D (the jagged edges on the bigger house), hard and as far as before in 2D
             c.Switcher.SetMode(PocViewMode.PixelView2D);
@@ -1454,6 +1460,32 @@ namespace Halka.Poc2D3D.EditorTools
             var triangles = int.Parse(System.Text.RegularExpressions.Regex.Match(entry, "\"triangles\": (\\d+)").Groups[1].Value);
             Check("the house has windows on its front, one on each side of the door (house_main.fbx, built by build_phase3_buildings.py)",
                 entry.Contains("ver4.0: windows on the front") && triangles >= 1418 + 150, triangles + " triangles");
+
+            // the room: the kitchen on the South wall drawn low in 2D (she no longer sinks into it), full
+            // height in 3D; no shadow on the South wall's face when her feet are behind it
+            c.Session.LoadMapForCheck("halka_house", new Vector2Int(4, -2), FacingDirection.Down);
+            c.Switcher.SetMode(PocViewMode.PixelView2D);
+            Frame(c, 1f / 60f, Vector2Int.zero);
+            var kitchen = c.Presenter.Views.FirstOrDefault(v => v != null && v.DefinitionId == "kitchen_counter");
+            var low2D = kitchen != null ? kitchen.transform.localScale.y : -1f;
+            c.Switcher.SetMode(PocViewMode.ThirdPerson3D);
+            Frame(c, 1f / 60f, Vector2Int.zero);
+            var full3D = kitchen != null ? kitchen.transform.localScale.y : -1f;
+            c.Switcher.SetMode(PocViewMode.PixelView2D);
+            c.Session.PlaceForCheck(new Vector2Int(-3, -3), FacingDirection.Down);
+            Frame(c, 1f / 60f, Vector2Int.zero);
+            c.Pixel.ComposeScreen(960, 540);
+            var shadowsBottomRow = c.Pixel.ShadowRects.Count;
+            c.Session.PlaceForCheck(new Vector2Int(-3, -1), FacingDirection.Down);
+            Frame(c, 1f / 60f, Vector2Int.zero);
+            c.Pixel.ComposeScreen(960, 540);
+            var shadowsInside = c.Pixel.ShadowRects.Count;
+            Check("the room in 2D: the kitchen drawn low (x0.3, as the South wall's base), at full height in 3D; on the bottom row (feet behind the South wall) no shadow on the wall, further in her shadow as usual",
+                kitchen != null && Mathf.Approximately(low2D, PocPixelView2D.Low2DScale) && Mathf.Approximately(full3D, 1f) &&
+                shadowsBottomRow == 0 && shadowsInside >= 1, $"kitchen 2D {low2D} 3D {full3D}; shadows on the bottom row {shadowsBottomRow}, inside {shadowsInside}");
+            Check("the 2D sprites' dots are drawn evenly only at in-between sizes (x1.5 at an odd scale); at whole sizes plain nearest",
+                !c.Pixel.EvenDots(lenBack) == Mathf.Approximately(c.Pixel.SpriteDotSize(lenBack), Mathf.Round(c.Pixel.SpriteDotSize(lenBack))),
+                $"dot size {c.Pixel.SpriteDotSize(lenBack)} at scale {c.Pixel.Scale}");
         }
 
         // ---------------------------------------------------------------- protect

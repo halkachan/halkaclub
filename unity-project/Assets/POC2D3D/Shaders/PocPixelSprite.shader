@@ -22,6 +22,7 @@ Shader "HALKA/POC/PixelSprite"
         _Shadow ("ver4.0: draw the texture's shape as a see-through shadow of _ShadowColor", Float) = 0
         _ShadowColor ("ver4.0: the shadow's color and opacity", Color) = (0.09, 0.1, 0.14, 0.45)
         _Worn ("ver4.0: the worn palette for the 2D game's grass (not the characters)", Range(0, 1)) = 0
+        _Smooth ("ver4.0: dots drawn evenly at an in-between size (each dot's edge blended over one screen pixel)", Float) = 0
     }
     SubShader
     {
@@ -37,6 +38,8 @@ Shader "HALKA/POC/PixelSprite"
             #include "UnityCG.cginc"
 
             sampler2D _MainTex;
+            float4 _MainTex_TexelSize;
+            float _Smooth;
             sampler2D _MaskTex;
             float4 _MaskTex_TexelSize;
             float _UseMask;
@@ -80,9 +83,34 @@ Shader "HALKA/POC/PixelSprite"
                 return (strength > 0.0 && depth < depth0 - _DepthEpsilon) ? strength : 0.0;
             }
 
+            // ver4.0 (the user: the crow's eyes looked different sizes): at an in-between dot size (1.5
+            // screen pixels per dot) plain nearest sampling gives some dots 1 pixel and others 2. Here
+            // the dot's inside is its own colour and only its edge is blended over one screen pixel, so
+            // every dot shows at the same size ("sharp bilinear", by hand: the texture is point-filtered).
+            float4 SampleEven(float2 uv)
+            {
+                float2 size = _MainTex_TexelSize.zw;
+                float2 t = uv * size - 0.5;
+                float2 b = floor(t);
+                float2 f = t - b;
+                float2 w = max(fwidth(uv * size), 1e-4);
+                float2 k = saturate((f - 0.5) / w + 0.5);
+                float2 uv0 = (b + 0.5) * _MainTex_TexelSize.xy;
+                float2 uv1 = (b + 1.5) * _MainTex_TexelSize.xy;
+                float4 c00 = tex2D(_MainTex, uv0);
+                float4 c10 = tex2D(_MainTex, float2(uv1.x, uv0.y));
+                float4 c01 = tex2D(_MainTex, float2(uv0.x, uv1.y));
+                float4 c11 = tex2D(_MainTex, uv1);
+                // premultiplied, so a transparent neighbour never darkens the edge colour
+                c00.rgb *= c00.a; c10.rgb *= c10.a; c01.rgb *= c01.a; c11.rgb *= c11.a;
+                float4 c = lerp(lerp(c00, c10, k.x), lerp(c01, c11, k.x), k.y);
+                c.rgb /= max(c.a, 1e-4);
+                return c;
+            }
+
             float4 frag(v2f i) : SV_Target
             {
-                float4 color = tex2D(_MainTex, i.uv);
+                float4 color = _Smooth > 0.5 ? SampleEven(i.uv) : tex2D(_MainTex, i.uv);
                 clip(color.a - 0.5);
                 if (_GroundOnly > 0.5)
                 {
