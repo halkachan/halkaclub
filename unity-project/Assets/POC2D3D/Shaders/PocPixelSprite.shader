@@ -22,6 +22,8 @@ Shader "HALKA/POC/PixelSprite"
         _Shadow ("ver4.0: draw the texture's shape as a see-through shadow of _ShadowColor", Float) = 0
         _ShadowColor ("ver4.0: the shadow's color and opacity", Color) = (0.09, 0.1, 0.14, 0.45)
         _Worn ("ver4.0: the worn palette for the 2D game's grass (not the characters)", Range(0, 1)) = 0
+        _FrontId ("ver4.0: an object id always drawn over this card (the kitchen, for a character behind it); -1 none", Float) = -1
+        _FrontThick ("ver4.0: the 2D outline's thickness around that object (texels)", Float) = 1
         _Smooth ("ver4.0: dots drawn evenly at an in-between size (each dot's edge blended over one screen pixel)", Float) = 0
     }
     SubShader
@@ -40,6 +42,7 @@ Shader "HALKA/POC/PixelSprite"
             sampler2D _MainTex;
             float4 _MainTex_TexelSize;
             float _Smooth;
+            float _FrontId;
             sampler2D _MaskTex;
             float4 _MaskTex_TexelSize;
             float _UseMask;
@@ -74,6 +77,14 @@ Shader "HALKA/POC/PixelSprite"
                 depth = (floor(m.b * 255.0 + 0.5) + m.a) / 255.0;
                 // Ground layer: treated as far away, so it never covers or outlines the sprite.
                 if (id == 0.0 || id == _GroundLayerId) { strength = 0.0; depth = 2.0; }
+            }
+
+            float _FrontThick;
+
+            float IsFront(float2 uv, float2 offset)
+            {
+                float id = floor(tex2D(_MaskTex, uv + offset * _MaskTex_TexelSize.xy).r * 255.0 + 0.5);
+                return abs(id - _FrontId) < 0.5 ? 1.0 : 0.0;
             }
 
             float Cover(float2 uv, float2 offset, float depth0)
@@ -126,6 +137,20 @@ Shader "HALKA/POC/PixelSprite"
                     float strength0, depth0;
                     Read(uv, strength0, depth0);
                     clip(depth0 + _DepthEpsilon - i.mask.z);
+                    // ver4.0: the kitchen as a layer over her when she stands behind it (no depth test),
+                    // its outline too (drawn on the floor texels just above its top edge)
+                    if (_FrontId >= 0.0)
+                    {
+                        float front = 0.0;
+                        front = max(front, IsFront(uv, float2(0, 0)));
+                        front = max(front, IsFront(uv, float2(0, -1)));
+                        front = max(front, IsFront(uv, float2(1, -1)));
+                        front = max(front, IsFront(uv, float2(-1, -1)));
+                        front = max(front, IsFront(uv, float2(1, 0)));
+                        front = max(front, IsFront(uv, float2(-1, 0)));
+                        if (_Thickness > 1.5 || _FrontThick > 1.5) front = max(front, IsFront(uv, float2(0, -2)));
+                        clip(0.5 - front);
+                    }
                     if (_Thickness > 0.5)
                     {
                         float ink = 0.0;

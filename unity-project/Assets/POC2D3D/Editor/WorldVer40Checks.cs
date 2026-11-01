@@ -1480,9 +1480,14 @@ namespace Halka.Poc2D3D.EditorTools
             Frame(c, 1f / 60f, Vector2Int.zero);
             c.Pixel.ComposeScreen(960, 540);
             var shadowsInside = c.Pixel.ShadowRects.Count;
-            Check("the room in 2D: the kitchen drawn low (x0.3, as the South wall's base), at full height in 3D; on the bottom row (feet behind the South wall) no shadow on the wall, further in her shadow as usual",
-                kitchen != null && Mathf.Approximately(low2D, PocPixelView2D.Low2DScale) && Mathf.Approximately(full3D, 1f) &&
-                shadowsBottomRow == 0 && shadowsInside >= 1, $"kitchen 2D {low2D} 3D {full3D}; shadows on the bottom row {shadowsBottomRow}, inside {shadowsInside}");
+            var frontBehind = c.Pixel.FrontIdFor(GridSpace3D.ToWorld(new Vector2Int(4, -2)));
+            var frontBeside = c.Pixel.FrontIdFor(GridSpace3D.ToWorld(new Vector2Int(2, -3)));
+            var kitchenId = kitchen != null ? kitchen.GetComponentsInChildren<MeshFilter>().Where(f => f.sharedMesh != null && f.sharedMesh.uv2.Length > 0).Select(f => Mathf.RoundToInt(f.sharedMesh.uv2[0].x)).FirstOrDefault() : -1;
+            Check("the room in 2D: the kitchen at full height, a layer over her (with its outline) when she stands behind it, not when beside it; on the bottom row (feet behind the South wall) no shadow on the wall, further in her shadow as usual",
+                kitchen != null && Mathf.Approximately(low2D, 1f) && Mathf.Approximately(full3D, 1f) &&
+                Mathf.Approximately(frontBehind, PocOutlineTag.FrontFurnitureId) && frontBeside < 0f && kitchenId == PocOutlineTag.FrontFurnitureId &&
+                shadowsBottomRow == 0 && shadowsInside >= 1,
+                $"kitchen 2D {low2D} 3D {full3D} id {kitchenId}; front behind {frontBehind} beside {frontBeside}; shadows on the bottom row {shadowsBottomRow}, inside {shadowsInside}");
             Check("the 2D sprites' dots are drawn evenly only at in-between sizes (x1.5 at an odd scale); at whole sizes plain nearest",
                 !c.Pixel.EvenDots(lenBack) == Mathf.Approximately(c.Pixel.SpriteDotSize(lenBack), Mathf.Round(c.Pixel.SpriteDotSize(lenBack))),
                 $"dot size {c.Pixel.SpriteDotSize(lenBack)} at scale {c.Pixel.Scale}");

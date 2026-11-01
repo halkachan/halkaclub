@@ -19,6 +19,9 @@ namespace Halka.Poc2D3D
         public const int CrowId = 252;
         // ver4.0: Rin, Len and the fans / antis (one id for the characters that walk around).
         public const int CharacterId = 253;
+        // ver4.0: furniture on a room's South wall (the kitchen): in 2D always drawn over a character
+        // standing behind it (North of it), whatever the depth (PocPixelSprite "_FrontId").
+        public const int FrontFurnitureId = 254;
         // A tiny strength that the composite shader replaces by the global grass setting.
         public const float MarkerStrength = 3f / 255f;
 

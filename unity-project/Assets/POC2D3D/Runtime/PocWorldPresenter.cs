@@ -447,7 +447,8 @@ namespace Halka.Poc2D3D
             }
             root.transform.position = GridSpace3D.ToWorld(instance.RootCell);
             // Object IDs 1..249 for the 2D outline; the order follows the Map's object list.
-            PocOutlineTag.Apply(root, outlineIndex % 249 + 1, binding != null ? binding.outlineStrength : 1f, copies);
+            var outlineId = PocPixelView2D.LowIn2D.Contains(instance.DefinitionId) ? PocOutlineTag.FrontFurnitureId : outlineIndex % 249 + 1;
+            PocOutlineTag.Apply(root, outlineId, binding != null ? binding.outlineStrength : 1f, copies);
             var view = root.AddComponent<PocObjectView>();
             view.InstanceId = instance.InstanceId;
             view.DefinitionId = instance.DefinitionId;

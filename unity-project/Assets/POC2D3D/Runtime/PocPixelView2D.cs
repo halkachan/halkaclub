@@ -371,6 +371,7 @@ namespace Halka.Poc2D3D
             spriteMaterial.SetFloat("_GroundLayerId", PocOutlineTag.DecorationId);
             spriteMaterial.SetFloat("_Worn", Mathf.Max(0f, PocWorn.Current));   // ver4.0: the grass is scenery
             spriteMaterial.SetFloat("_Smooth", 0f);
+            spriteMaterial.SetFloat("_FrontId", -1f);
             GL.PushMatrix();
             GL.LoadPixelMatrix(0f, screenWidth, 0f, screenHeight);
             spriteMaterial.SetPass(0);
@@ -483,19 +484,36 @@ namespace Halka.Poc2D3D
         // their base, like the flat wall rows of the 2D room (walls never hide the floor).
         public int CutWalls { get; private set; }
 
-        // ver4.0 (the user: she sank into the kitchen): furniture on the room's South wall stands
-        // between the 2D camera and her when she uses it, so in 2D it is drawn low, like the South
-        // wall's base (the 3D view and collision are unchanged).
+        // ver4.0 (the user: she sank into the kitchen / the user's idea: "the kitchen as a layer over
+        // her"): furniture on the room's South wall stands between the 2D camera and her when she uses
+        // it. Per-pixel depth let a strip of her show inside its outline (the back of its top is farther
+        // than her feet); now, while she stands North of it, it and its outline are always drawn over
+        // her (PocOutlineTag.FrontFurnitureId, PocPixelSprite "_FrontId"). At its full height, the
+        // user's choice (lower versions looked as if she stood on it); Low2DScale stays for trying.
         public static readonly HashSet<string> LowIn2D = new HashSet<string> { "kitchen_counter" };
-        public const float Low2DScale = 0.3f;
+        public static float Low2DScale = 1f;
+        public static float Low2DShift = 0f;   // world units South (into the wall's base) in 2D
         public int LowViews { get; private set; }
+
+        // The kitchen's id when a character at this root stands North of (behind) it, else -1.
+        public float FrontIdFor(Vector3 root)
+        {
+            if (worldPresenter == null || session == null || session.World == null || !session.World.IsInterior) return -1f;
+            var row = Mathf.RoundToInt(root.z / GridSpace3D.CellSize);
+            foreach (var view in worldPresenter.Views)
+                if (view != null && LowIn2D.Contains(view.DefinitionId) && view.RootCell.y < row) return PocOutlineTag.FrontFurnitureId;
+            return -1f;
+        }
 
         public void RestoreLowViews()
         {
             if (worldPresenter == null) return;
             foreach (var view in worldPresenter.Views)
                 if (view != null && LowIn2D.Contains(view.DefinitionId))
+                {
                     view.transform.localScale = Vector3.one;
+                    view.transform.position = GridSpace3D.ToWorld(view.RootCell);
+                }
             LowViews = 0;
         }
 
@@ -510,6 +528,7 @@ namespace Halka.Poc2D3D
                 if (view != null && LowIn2D.Contains(view.DefinitionId))
                 {
                     view.transform.localScale = new Vector3(1f, interior ? Low2DScale : 1f, 1f);
+                    view.transform.position = GridSpace3D.ToWorld(view.RootCell) + Vector3.back * (interior ? Low2DShift : 0f);
                     if (interior) LowViews++;
                 }
                 if (view == null || !view.IsWall) continue;
@@ -810,6 +829,8 @@ namespace Halka.Poc2D3D
             spriteMaterial.SetFloat("_Thickness", 0f);
             spriteMaterial.SetFloat("_GroundLayerId", PocOutlineTag.DecorationId);
             spriteMaterial.SetFloat("_Smooth", 0f);
+            spriteMaterial.SetFloat("_FrontId", FrontIdFor(card.Root));
+            spriteMaterial.SetFloat("_FrontThick", OutlinePixels);
             spriteMaterial.SetFloat("_Shadow", 1f);
             spriteMaterial.SetColor("_ShadowColor", color);
             var maskW = (float)target.width * Scale;
@@ -970,7 +991,7 @@ namespace Halka.Poc2D3D
             LastSpriteDepthTop = depthTop;
             LastWallCropPixels = WallCropPixels(sprite, placed, pixelSize);
             LastPlayerCropPixels = Mathf.Max(PlayerCropPixels(), LastWallCropPixels);
-            DrawCard(new SpriteCard { Sprite = sprite }, placed, depthBottom, depthTop, true, screenWidth, screenHeight,
+            DrawCard(new SpriteCard { Sprite = sprite, Root = actor.SpriteRoot }, placed, depthBottom, depthTop, true, screenWidth, screenHeight,
                 LastPlayerCropPixels);
         }
 
@@ -984,6 +1005,8 @@ namespace Halka.Poc2D3D
             spriteMaterial.SetFloat("_GroundOnly", 0f);
             spriteMaterial.SetFloat("_Worn", 0f);   // characters keep their colours
             spriteMaterial.SetFloat("_Smooth", EvenDots(card.Sprite) ? 1f : 0f);
+            spriteMaterial.SetFloat("_FrontId", FrontIdFor(card.Root));
+            spriteMaterial.SetFloat("_FrontThick", OutlinePixels);
             spriteMaterial.SetColor("_OutlineColor", OutlineColor);
             spriteMaterial.SetFloat("_Thickness", OutlineReady ? OutlinePixels : 0);
             spriteMaterial.SetFloat("_MarkerStrength", GrassOutline);

@@ -74,13 +74,18 @@ namespace Halka.Poc2D3D.EditorTools
                 Directory.CreateDirectory(output);
                 var c = C6.Start(new HarukaMemoryStorage());
                 c.Time.Override = PocPhaseOverride.Morning;
+                var heights = Environment.GetEnvironmentVariable("HALKA_LOW2D");
+                foreach (var h in (string.IsNullOrEmpty(heights) ? "0.3" : heights).Split(','))
                 foreach (var (cell, facing) in new[] { (new Vector2Int(3, -2), FacingDirection.Down), (new Vector2Int(4, -2), FacingDirection.Down),
-                             (new Vector2Int(5, -2), FacingDirection.Down), (new Vector2Int(-3, -3), FacingDirection.Down), (new Vector2Int(1, -3), FacingDirection.Down) })
+                             (new Vector2Int(5, -2), FacingDirection.Down) })
                 {
+                    var hs = h.Split('/');
+                    PocPixelView2D.Low2DScale = float.Parse(hs[0], System.Globalization.CultureInfo.InvariantCulture);
+                    PocPixelView2D.Low2DShift = hs.Length > 1 ? float.Parse(hs[1], System.Globalization.CultureInfo.InvariantCulture) : 0f;
                     if (c.Session.World == null || c.Session.World.MapId != "halka_house") c.Session.LoadMapForCheck("halka_house", cell, facing);
                     c.Session.PlaceForCheck(cell, facing);
                     for (var i = 0; i < 20; i++) C6.Frame(c, 1f / 30f, Vector2Int.zero);
-                    var path = Path.Combine(output, $"room_{cell.x}_{cell.y}_{facing}.png");
+                    var path = Path.Combine(output, $"room_h{h.Replace('/', 's')}_{cell.x}_{cell.y}_{facing}.png");
                     Shot2D(c, PocWorn.Strength, path);
                     // a close-up around her sprite (the sprite rectangle counts from the bottom)
                     var full = new Texture2D(2, 2);
