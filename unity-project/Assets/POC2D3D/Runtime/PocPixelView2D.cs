@@ -256,6 +256,31 @@ namespace Halka.Poc2D3D
         // base's top edge (seen from the camera) are behind the wall and are left out, as the wall
         // in front of her feet would hide them. Only where a cut wall is under the sprite (not at
         // the doorway), and never while seated.
+        // ver4.0: the screen height of the room's bottom wall top above a world x, or -1 where there is
+        // no wall there (outdoors, the doorway). A character's feet under it are behind the wall.
+        public float BottomWallLine(float worldX)
+        {
+            if (session == null || worldPresenter == null || session.World == null || !session.World.IsInterior) return -1f;
+            var world = session.World;
+            var column = Mathf.RoundToInt(worldX / GridSpace3D.CellSize);
+            if (!world.IsBlocked(new Vector2Int(column, world.MinCell.y))) return -1f;
+            var baseTop = WallBaseTop();
+            if (float.IsNaN(baseTop)) return -1f;
+            var cell = GridSpace3D.ToWorld(new Vector2Int(column, world.MinCell.y));
+            return ScreenPoint(new Vector3(cell.x, baseTop, cell.z + GridSpace3D.CellSize * 0.5f)).y;
+        }
+
+        // ver4.0: a sprite's dots at an in-between size on screen (e.g. 1.5 screen pixels: the 2D view at an
+        // odd scale) are drawn evenly (PocPixelSprite "_Smooth"); at whole sizes they stay plain nearest.
+        public float SpriteDotSize(Sprite sprite) =>
+            sprite == null ? 0f : Scale * PixelsPerCell / (GridSpace3D.CellSize * sprite.pixelsPerUnit);
+
+        public bool EvenDots(Sprite sprite)
+        {
+            var size = SpriteDotSize(sprite);
+            return size > 0f && Mathf.Abs(size - Mathf.Round(size)) > 0.01f;
+        }
+
         public int WallCropPixels(Sprite sprite, RectInt placed, float pixelSize)
         {
             if (session == null || session.IsSeated || worldPresenter == null || !session.World.IsInterior ||
@@ -344,6 +369,9 @@ namespace Halka.Poc2D3D
             spriteMaterial.SetFloat("_GroundOnly", outlineMask != null ? 1f : 0f);
             spriteMaterial.SetFloat("_Thickness", 0f);
             spriteMaterial.SetFloat("_GroundLayerId", PocOutlineTag.DecorationId);
+            spriteMaterial.SetFloat("_Worn", Mathf.Max(0f, PocWorn.Current));   // ver4.0: the grass is scenery
+            spriteMaterial.SetFloat("_Smooth", 0f);
+            spriteMaterial.SetFloat("_FrontId", -1f);
             GL.PushMatrix();
             GL.LoadPixelMatrix(0f, screenWidth, 0f, screenHeight);
             spriteMaterial.SetPass(0);
@@ -456,13 +484,53 @@ namespace Halka.Poc2D3D
         // their base, like the flat wall rows of the 2D room (walls never hide the floor).
         public int CutWalls { get; private set; }
 
+        // ver4.0 (the user: she sank into the kitchen / the user's idea: "the kitchen as a layer over
+        // her"): furniture on the room's South wall stands between the 2D camera and her when she uses
+        // it. Per-pixel depth let a strip of her show inside its outline (the back of its top is farther
+        // than her feet); now, while she stands North of it, it and its outline are always drawn over
+        // her (PocOutlineTag.FrontFurnitureId, PocPixelSprite "_FrontId"). At its full height, the
+        // user's choice (lower versions looked as if she stood on it); Low2DScale stays for trying.
+        public static readonly HashSet<string> LowIn2D = new HashSet<string> { "kitchen_counter" };
+        public static float Low2DScale = 1f;
+        public static float Low2DShift = 0f;   // world units South (into the wall's base) in 2D
+        public int LowViews { get; private set; }
+
+        // The kitchen's id when a character at this root stands North of (behind) it, else -1.
+        public float FrontIdFor(Vector3 root)
+        {
+            if (worldPresenter == null || session == null || session.World == null || !session.World.IsInterior) return -1f;
+            var row = Mathf.RoundToInt(root.z / GridSpace3D.CellSize);
+            foreach (var view in worldPresenter.Views)
+                if (view != null && LowIn2D.Contains(view.DefinitionId) && view.RootCell.y < row) return PocOutlineTag.FrontFurnitureId;
+            return -1f;
+        }
+
+        public void RestoreLowViews()
+        {
+            if (worldPresenter == null) return;
+            foreach (var view in worldPresenter.Views)
+                if (view != null && LowIn2D.Contains(view.DefinitionId))
+                {
+                    view.transform.localScale = Vector3.one;
+                    view.transform.position = GridSpace3D.ToWorld(view.RootCell);
+                }
+            LowViews = 0;
+        }
+
         private void UpdateWallCutaway()
         {
             CutWalls = 0;
+            LowViews = 0;
             if (worldPresenter == null) return;
             var interior = session.World.IsInterior;
             foreach (var view in worldPresenter.Views)
             {
+                if (view != null && LowIn2D.Contains(view.DefinitionId))
+                {
+                    view.transform.localScale = new Vector3(1f, interior ? Low2DScale : 1f, 1f);
+                    view.transform.position = GridSpace3D.ToWorld(view.RootCell) + Vector3.back * (interior ? Low2DShift : 0f);
+                    if (interior) LowViews++;
+                }
                 if (view == null || !view.IsWall) continue;
                 var cut = interior && Vector2.Dot(view.WallOutward, Vector2.down) > PocThirdPersonCamera.CutawayFacing;
                 view.SetCutaway(cut);
@@ -647,18 +715,186 @@ namespace Halka.Poc2D3D
         // Phase 4: the crow on the ground is ordered with the player by row (the one further
         // North first) and hidden by the world like the player; in the air it is drawn last, above
         // everything, like the 2D game's raised sorting order during a flight.
+        // ver4.0: Rin, Len and the passers-by (PocWalker) are cards on the ground too, ordered with
+        // the player and the crow by row (further North first), hidden by the world like them.
         public void DrawOverlays(int screenWidth, int screenHeight)
         {
             LastCrowRect = default;
             LastCrowSprite = null;
+            WalkerRects.Clear();
             DrawGrass(screenWidth, screenHeight);
             var crowCard = CrowCard(out var crowOnTop);
-            var crowFirst = crowCard.HasValue && !crowOnTop && crowCard.Value.Root.z > actor.transform.position.z;
-            if (crowFirst) DrawCrow(crowCard.Value, false, screenWidth, screenHeight);
-            DrawActorSprite(screenWidth, screenHeight);
-            if (crowCard.HasValue && !crowOnTop && !crowFirst) DrawCrow(crowCard.Value, false, screenWidth, screenHeight);
+            DrawShadows(crowCard, crowOnTop, screenWidth, screenHeight);
+            groundCards.Clear();
+            if (crowCard.HasValue && !crowOnTop) groundCards.Add((crowCard.Value.Root.z, -1, null));
+            groundCards.Add((actor.transform.position.z, 0, null));
+            foreach (var walker in Life.PocWalker.Active)
+                if (walker != null && walker.Drawn && walker.CurrentSprite != null)
+                    groundCards.Add((WalkerRoot(walker).z, 1, walker));
+            // North first (larger z); the player before a card on the same row (as the crow did).
+            groundCards.Sort((a, b) => a.z != b.z ? b.z.CompareTo(a.z) : a.kind.CompareTo(b.kind));
+            foreach (var (_, kind, walker) in groundCards)
+            {
+                if (kind == -1) DrawCrow(crowCard.Value, false, screenWidth, screenHeight);
+                else if (kind == 0) DrawActorSprite(screenWidth, screenHeight);
+                else DrawWalker(walker, screenWidth, screenHeight);
+            }
             DrawFadeLayer(screenWidth, screenHeight);
             if (crowCard.HasValue && crowOnTop) DrawCrow(crowCard.Value, true, screenWidth, screenHeight);
+        }
+
+        // ver4.0 (the user's request after the second look): every character has a small dark oval
+        // on the ground at its feet (the player, Rin, Len, the passers-by and the crow; under a crow in
+        // the air, a fainter one on the ground). Drawn after the grass and before every character,
+        // through the same mask as the sprites, so whatever covers a character's feet covers its
+        // shadow too. The oval is drawn in sprite pixels, so it is as blocky as the sprites.
+        public static readonly Color ShadowColor = new Color(0.09f, 0.1f, 0.14f, 0.45f);
+        public const float ShadowWidthOfSprite = 0.38f;  // 64 px sprites: 24 x 8; Rin and Len (48 px): 18 x 6; the crow 12 x 4
+        public const int ShadowFeetPixels = 1;           // the oval's middle a pixel under the frame's lowest opaque row
+        public readonly List<RectInt> ShadowRects = new List<RectInt>();
+        private readonly Dictionary<Sprite, int> bottomPadding = new Dictionary<Sprite, int>();
+
+        // Transparent rows under a sprite frame's lowest opaque texel. The sprites are not CPU-readable,
+        // so each frame is read back once through a small render texture and remembered.
+        public int BottomPadding(Sprite sprite)
+        {
+            if (sprite == null) return 0;
+            if (bottomPadding.TryGetValue(sprite, out var known)) return known;
+            var texture = sprite.texture;
+            var rt = RenderTexture.GetTemporary(texture.width, texture.height, 0, RenderTextureFormat.ARGB32);
+            var previous = RenderTexture.active;
+            Graphics.Blit(texture, rt);
+            RenderTexture.active = rt;
+            var area = sprite.textureRect;
+            var read = new Texture2D(Mathf.CeilToInt(area.width), Mathf.CeilToInt(area.height), TextureFormat.RGBA32, false);
+            read.ReadPixels(new Rect(area.x, area.y, read.width, read.height), 0, 0);
+            read.Apply();
+            RenderTexture.active = previous;
+            RenderTexture.ReleaseTemporary(rt);
+            var pixels = read.GetPixels32();
+            var rows = 0;
+            for (var y = 0; y < read.height; y++, rows++)
+            {
+                var any = false;
+                for (var x = 0; x < read.width && !any; x++) any = pixels[y * read.width + x].a >= 128;
+                if (any) break;
+            }
+            if (Application.isPlaying) Destroy(read);
+            else DestroyImmediate(read);
+            bottomPadding[sprite] = rows;
+            return rows;
+        }
+        private readonly Dictionary<Vector2Int, Texture2D> shadowTextures = new Dictionary<Vector2Int, Texture2D>();
+
+        private void DrawShadows(SpriteCard? crowCard, bool crowOnTop, int screenWidth, int screenHeight)
+        {
+            ShadowRects.Clear();
+            if (!SpriteReady || target == null) return;
+            if (!actor.Seated && actor.CurrentSprite != null)
+                DrawShadow(new SpriteCard { Sprite = actor.CurrentSprite, Root = actor.SpriteRoot, OffsetNorth = actor.SpriteOffsetNorth },
+                    1f, screenWidth, screenHeight);
+            foreach (var walker in Life.PocWalker.Active)
+                if (walker != null && walker.Drawn && walker.CurrentSprite != null)
+                    DrawShadow(new SpriteCard { Sprite = walker.CurrentSprite, Root = WalkerRoot(walker), OffsetNorth = walker.SpriteOffsetNorth },
+                        1f, screenWidth, screenHeight);
+            if (crowCard.HasValue)
+            {
+                var ground = crowCard.Value;
+                ground.Root.y = 0f;
+                DrawShadow(ground, crowOnTop ? 0.5f : 1f, screenWidth, screenHeight);
+            }
+        }
+
+        private void DrawShadow(SpriteCard card, float strength, int screenWidth, int screenHeight)
+        {
+            if (!PlaceCard(card, out var rect, out var pixelSize, out var depthBottom, out _)) return;
+            var w = Mathf.Max(6, Mathf.RoundToInt(card.Sprite.rect.width * ShadowWidthOfSprite));
+            var h = Mathf.Max(3, Mathf.RoundToInt(w * 0.33f));
+            var width = Mathf.Max(1, Mathf.RoundToInt(w * pixelSize));
+            var height = Mathf.Max(1, Mathf.RoundToInt(h * pixelSize));
+            // a pixel under this frame's own lowest opaque row (the frames differ: Len's back view stands
+            // 5 px above its sprite's bottom, ﾊﾙｶﾁｬﾝ 2 px; at a fixed height his shadow looked like he floated)
+            var feet = rect.y + Mathf.RoundToInt(Mathf.Max(0, BottomPadding(card.Sprite) - ShadowFeetPixels) * pixelSize);
+            // feet behind the room's bottom wall: no shadow (it would show on the wall's face)
+            var wallLine = BottomWallLine(card.Root.x);
+            if (wallLine >= 0f && wallLine > feet - h * pixelSize * 0.5f) return;
+            var shadow = new RectInt(rect.x + (rect.width - width) / 2, feet - height / 2, width, height);
+            ShadowRects.Add(shadow);
+            var color = ShadowColor;
+            color.a *= strength;
+            spriteMaterial.mainTexture = ShadowTexture(w, h);
+            spriteMaterial.SetTexture("_MaskTex", outlineMask);
+            spriteMaterial.SetFloat("_UseMask", outlineMask != null && outlineMaskShader != null ? 1f : 0f);
+            spriteMaterial.SetFloat("_GroundOnly", 0f);
+            spriteMaterial.SetFloat("_Thickness", 0f);
+            spriteMaterial.SetFloat("_GroundLayerId", PocOutlineTag.DecorationId);
+            spriteMaterial.SetFloat("_Smooth", 0f);
+            spriteMaterial.SetFloat("_FrontId", FrontIdFor(card.Root));
+            spriteMaterial.SetFloat("_FrontThick", OutlinePixels);
+            spriteMaterial.SetFloat("_Shadow", 1f);
+            spriteMaterial.SetColor("_ShadowColor", color);
+            var maskW = (float)target.width * Scale;
+            var maskH = (float)target.height * Scale;
+            float x0 = shadow.x, y0 = shadow.y, x1 = shadow.xMax, y1 = shadow.yMax;
+            GL.PushMatrix();
+            GL.LoadPixelMatrix(0f, screenWidth, 0f, screenHeight);
+            spriteMaterial.SetPass(0);
+            GL.Begin(GL.QUADS);
+            // Flat on the ground: the whole oval at the depth of the feet.
+            Vertex(0f, 0f, (x0 + Offset.x) / maskW, (y0 + Offset.y) / maskH, depthBottom, x0, y0);
+            Vertex(0f, 1f, (x0 + Offset.x) / maskW, (y1 + Offset.y) / maskH, depthBottom, x0, y1);
+            Vertex(1f, 1f, (x1 + Offset.x) / maskW, (y1 + Offset.y) / maskH, depthBottom, x1, y1);
+            Vertex(1f, 0f, (x1 + Offset.x) / maskW, (y0 + Offset.y) / maskH, depthBottom, x1, y0);
+            GL.End();
+            GL.PopMatrix();
+            spriteMaterial.SetFloat("_Shadow", 0f);
+        }
+
+        // A hard-edged oval of w x h pixels (white; the shader colors it).
+        private Texture2D ShadowTexture(int w, int h)
+        {
+            var key = new Vector2Int(w, h);
+            if (shadowTextures.TryGetValue(key, out var texture) && texture != null) return texture;
+            texture = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp,
+                name = $"POC 2D shadow {w}x{h}", hideFlags = HideFlags.DontSave };
+            var pixels = new Color32[w * h];
+            for (var y = 0; y < h; y++)
+            for (var x = 0; x < w; x++)
+            {
+                var dx = (x + 0.5f - w * 0.5f) / (w * 0.5f);
+                var dy = (y + 0.5f - h * 0.5f) / (h * 0.5f);
+                pixels[y * w + x] = dx * dx + dy * dy <= 1f ? new Color32(255, 255, 255, 255) : new Color32(255, 255, 255, 0);
+            }
+            texture.SetPixels32(pixels);
+            texture.Apply(false, true);
+            shadowTextures[key] = texture;
+            return texture;
+        }
+
+        private readonly List<(float z, int kind, Life.PocWalker walker)> groundCards = new List<(float, int, Life.PocWalker)>();
+        // ver4.0: where each character was last drawn (destination pixels; clicks and the checks).
+        public readonly Dictionary<Life.PocWalker, RectInt> WalkerRects = new Dictionary<Life.PocWalker, RectInt>();
+
+        private Vector3 WalkerRoot(Life.PocWalker walker)
+        {
+            var root = GridSpace3D.ToWorld(walker.Position);
+            root.y = 0f;
+            if (actor != null && actor.PixelSnap.x > 0f)
+            {
+                root.x = Mathf.Round(root.x / actor.PixelSnap.x) * actor.PixelSnap.x;
+                root.z = Mathf.Round(root.z / actor.PixelSnap.y) * actor.PixelSnap.y;
+            }
+            return root;
+        }
+
+        private void DrawWalker(Life.PocWalker walker, int screenWidth, int screenHeight)
+        {
+            var card = new SpriteCard { Sprite = walker.CurrentSprite, Root = WalkerRoot(walker), OffsetNorth = walker.SpriteOffsetNorth };
+            if (!PlaceCard(card, out var rect, out _, out var depthBottom, out var depthTop)) return;
+            WalkerRects[walker] = rect;
+            var crop = OriginalGrass2D && HasGrass(walker.IsMoving && walker.StepProgressNormalized >= 0.5f ? walker.StepToCell : walker.Cell)
+                ? CrowGrassHiddenPixels : 0;
+            DrawCard(card, rect, depthBottom, depthTop, true, screenWidth, screenHeight, crop);
         }
 
         // One upright sprite card: the sprite's local origin goes to Root (x East, y height, z North),
@@ -755,7 +991,7 @@ namespace Halka.Poc2D3D
             LastSpriteDepthTop = depthTop;
             LastWallCropPixels = WallCropPixels(sprite, placed, pixelSize);
             LastPlayerCropPixels = Mathf.Max(PlayerCropPixels(), LastWallCropPixels);
-            DrawCard(new SpriteCard { Sprite = sprite }, placed, depthBottom, depthTop, true, screenWidth, screenHeight,
+            DrawCard(new SpriteCard { Sprite = sprite, Root = actor.SpriteRoot }, placed, depthBottom, depthTop, true, screenWidth, screenHeight,
                 LastPlayerCropPixels);
         }
 
@@ -767,6 +1003,10 @@ namespace Halka.Poc2D3D
             spriteMaterial.SetTexture("_MaskTex", outlineMask);
             spriteMaterial.SetFloat("_UseMask", useMask ? 1f : 0f);
             spriteMaterial.SetFloat("_GroundOnly", 0f);
+            spriteMaterial.SetFloat("_Worn", 0f);   // characters keep their colours
+            spriteMaterial.SetFloat("_Smooth", EvenDots(card.Sprite) ? 1f : 0f);
+            spriteMaterial.SetFloat("_FrontId", FrontIdFor(card.Root));
+            spriteMaterial.SetFloat("_FrontThick", OutlinePixels);
             spriteMaterial.SetColor("_OutlineColor", OutlineColor);
             spriteMaterial.SetFloat("_Thickness", OutlineReady ? OutlinePixels : 0);
             spriteMaterial.SetFloat("_MarkerStrength", GrassOutline);
@@ -1065,6 +1305,10 @@ namespace Halka.Poc2D3D
 
         private void OnDestroy()
         {
+            foreach (var shadow in shadowTextures.Values)
+                if (shadow != null && Application.isPlaying) Destroy(shadow);
+                else if (shadow != null) DestroyImmediate(shadow);
+            shadowTextures.Clear();
             if (target == null) return;
             if (worldCamera != null) worldCamera.targetTexture = null;
             Release(target);

@@ -1,0 +1,191 @@
+{
+  "source": "build_input_len.blend",
+  "who": "len",
+  "frame": 0,
+  "objects": [
+    {
+      "name": "Len_asi1.002",
+      "part": "FootR",
+      "triangles": 224
+    },
+    {
+      "name": "Len_asi2.002",
+      "part": "FootL",
+      "triangles": 224
+    },
+    {
+      "name": "Len_atama.002",
+      "part": "body",
+      "triangles": 564
+    },
+    {
+      "name": "Len_me 1",
+      "part": "body",
+      "triangles": 396
+    },
+    {
+      "name": "Len_me.002",
+      "part": "body",
+      "triangles": 396
+    },
+    {
+      "name": "Len_ren_short_ponytail_center",
+      "part": "body",
+      "triangles": 92
+    },
+    {
+      "name": "Len_ren_short_ponytail_left",
+      "part": "body",
+      "triangles": 92
+    },
+    {
+      "name": "Len_ren_short_ponytail_right",
+      "part": "body",
+      "triangles": 92
+    },
+    {
+      "name": "Len_te1.002",
+      "part": "HandR",
+      "triangles": 224
+    },
+    {
+      "name": "Len_te2.002",
+      "part": "HandL",
+      "triangles": 224
+    },
+    {
+      "name": "Len_hair",
+      "part": "body",
+      "triangles": 4228
+    },
+    {
+      "name": "Len_チューブ",
+      "part": "body",
+      "triangles": 80
+    },
+    {
+      "name": "Len_チューブ 1",
+      "part": "body",
+      "triangles": 34
+    },
+    {
+      "name": "Len_チューブ 1.001",
+      "part": "body",
+      "triangles": 34
+    },
+    {
+      "name": "Len_チューブ 1.002",
+      "part": "body",
+      "triangles": 34
+    },
+    {
+      "name": "Len_チューブ 1.003",
+      "part": "body",
+      "triangles": 34
+    },
+    {
+      "name": "Len_チューブ.001",
+      "part": "body",
+      "triangles": 28
+    },
+    {
+      "name": "Len_チューブ.002",
+      "part": "body",
+      "triangles": 36
+    },
+    {
+      "name": "Len_チューブ.003",
+      "part": "body",
+      "triangles": 44
+    },
+    {
+      "name": "Len_チューブ.004",
+      "part": "body",
+      "triangles": 28
+    },
+    {
+      "name": "Len_チューブ.005",
+      "part": "body",
+      "triangles": 92
+    },
+    {
+      "name": "Len_チューブ.006",
+      "part": "body",
+      "triangles": 100
+    },
+    {
+      "name": "Len_チューブ.007",
+      "part": "body",
+      "triangles": 34
+    },
+    {
+      "name": "Len_チューブ.008",
+      "part": "body",
+      "triangles": 92
+    },
+    {
+      "name": "Len_チューブ.009",
+      "part": "body",
+      "triangles": 60
+    }
+  ],
+  "materials": {
+    "Material_2": "tex*vc",
+    "Material_9": "tex*vc",
+    "Material_5": "tex*vc",
+    "Material_13": "tex*vc",
+    "Material_14": "tex*vc",
+    "Material_15": "tex*vc",
+    "Material_12": "tex*vc",
+    "Material_6": "vc",
+    "Material_23": "vc",
+    "Material_24": "vc",
+    "Material_25": "vc",
+    "Material_26": "vc",
+    "Material_7": "vc",
+    "Material_8": "vc",
+    "Material_17": "vc",
+    "Material_18": "vc",
+    "Material_19": "vc",
+    "Material_20": "vc",
+    "Material_22": "vc",
+    "Material_27": "vc",
+    "Material_28": "vc",
+    "Material_10": "tex*vc",
+    "Material_11": "tex*vc",
+    "Material_0": "tex*vc",
+    "Material_1": "tex*vc"
+  },
+  "texture_source": "rin.png 2048x2048 (packed in the file)",
+  "size": [
+    2.8497,
+    2.6569,
+    2.4877
+  ],
+  "parts": {
+    "body": {
+      "triangles": 6590,
+      "vertices": 4927
+    },
+    "HandR": {
+      "triangles": 224,
+      "vertices": 114
+    },
+    "HandL": {
+      "triangles": 224,
+      "vertices": 114
+    },
+    "FootR": {
+      "triangles": 224,
+      "vertices": 114
+    },
+    "FootL": {
+      "triangles": 224,
+      "vertices": 114
+    }
+  },
+  "triangles": 7486,
+  "texture": "len_onehead_tex.png 512x512",
+  "fbx": "len_onehead.fbx",
+  "blend": "len_onehead_game.blend"
+}

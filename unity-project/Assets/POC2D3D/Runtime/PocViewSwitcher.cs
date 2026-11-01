@@ -82,12 +82,51 @@ namespace Halka.Poc2D3D
             if (!pixel) actor.PixelSnap = Vector2.zero;
             // Trees made see-through for the 2D sprite are opaque again in 3D.
             if (!pixel) pixelView.RestoreAllFades();
+            // the kitchen drawn low in 2D stands at its full height again in 3D
+            if (!pixel) pixelView.RestoreLowViews();
             // Occluders hidden for the 3D camera must never stay hidden in the 2D view.
             if (pixel) thirdPerson.ShowAll();
             if (pixel) pixelView.SnapToTarget();
             else thirdPerson.SnapToTarget();
+            ApplyShadows(pixel);
             if (input != null) input.RequireRelease();
             LastSwitchMilliseconds = (float)((Time.realtimeSinceStartupAsDouble - started) * 1000.0);
+        }
+
+        // ver4.0 (the user's look after the second round: the shadows on the bigger house were jagged
+        // in 3D): in 3D the sun's shadows are filtered (soft) and reach 24 m from the camera instead of
+        // the quality level's 40, so the same shadow map is finer near her (no bigger map: phones'
+        // memory). The 2D view keeps hard shadows to the full distance (its camera stands 30 m away,
+        // and its pixels want hard edges).
+        public const float Shadow3DDistance = 24f;
+        private float shadowDistance2D = -1f;
+        private Light sun;
+
+        public Light Sun
+        {
+            get
+            {
+                if (sun != null) return sun;
+                sun = RenderSettings.sun;
+                if (sun == null)
+                    foreach (var light in FindObjectsByType<Light>(FindObjectsSortMode.None))
+                        if (light.type == LightType.Directional) { sun = light; break; }
+                return sun;
+            }
+        }
+
+        // The quality level's distance is shared by the whole process (the editor's checks run many
+        // games one after another): put it back when this view goes away.
+        private void OnDestroy()
+        {
+            if (shadowDistance2D >= 0f) QualitySettings.shadowDistance = shadowDistance2D;
+        }
+
+        private void ApplyShadows(bool pixel)
+        {
+            if (shadowDistance2D < 0f) shadowDistance2D = QualitySettings.shadowDistance;
+            QualitySettings.shadowDistance = pixel ? shadowDistance2D : Mathf.Min(shadowDistance2D, Shadow3DDistance);
+            if (Sun != null && Sun.shadows != LightShadows.None) Sun.shadows = pixel ? LightShadows.Hard : LightShadows.Soft;
         }
 
         // Shared picking for clicks: a ray from whichever camera is visible, tested against the
@@ -144,6 +183,34 @@ namespace Halka.Poc2D3D
 
         // Phase 4: the crow under the pointer (its 2D sprite as drawn, or its 3D model), unless a
         // standing wall is nearer. Talking keeps ExamineInteractable's range rule (PocCrow.TryTalk).
+        // ver4.0: Rin, Len or a passer-by under the pointer (its sprite in 2D, its model in 3D).
+        public Life.PocWalker PickWalker(Vector2 screenPosition)
+        {
+            Life.PocWalker best = null;
+            var bestDistance = float.MaxValue;
+            if (Mode == PocViewMode.PixelView2D)
+            {
+                if (pixelView == null) return null;
+                var point = new Vector2Int(Mathf.FloorToInt(screenPosition.x), Mathf.FloorToInt(screenPosition.y));
+                foreach (var pair in pixelView.WalkerRects)
+                    if (pair.Key != null && pair.Key.Drawn && pair.Value.width > 0 && pair.Value.Contains(point))
+                    {
+                        var d = pair.Value.y; // the one further South (lower on screen) is in front
+                        if (d < bestDistance) { bestDistance = d; best = pair.Key; }
+                    }
+                return best;
+            }
+            if (thirdPerson == null || thirdPerson.ViewCamera == null) return null;
+            var ray = thirdPerson.ViewCamera.ScreenPointToRay(screenPosition);
+            foreach (var walker in Life.PocWalker.Active)
+                if (walker != null && walker.Drawn && walker.RayHits(ray, out var distance) && distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = walker;
+                }
+            return best;
+        }
+
         public PocCrow PickCrow(Vector2 screenPosition)
         {
             if (crow == null || !crow.isActiveAndEnabled) return null;

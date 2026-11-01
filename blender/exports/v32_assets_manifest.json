@@ -156,40 +156,6 @@
       ]
     },
     {
-      "family": "living_rug",
-      "name": "living_rug",
-      "blend": "blender/sources/v32/living_rug.blend",
-      "fbx": "unity-project/Assets/POC2D3D/Models/V32/living_rug.fbx",
-      "triangles": 32,
-      "vertices": 48,
-      "materials": 1,
-      "parts": {
-        "living_rug": {
-          "triangles": 32,
-          "materials": 1,
-          "pivot": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        }
-      },
-      "boundsMin": [
-        -0.23,
-        -0.23,
-        0.0
-      ],
-      "boundsMax": [
-        1.23,
-        0.73,
-        0.014
-      ],
-      "anchors": {},
-      "supplemented": [
-        "new design for ver3.2"
-      ]
-    },
-    {
       "family": "low_table_living",
       "name": "low_table_living",
       "blend": "blender/sources/v32/low_table_living.blend",
@@ -258,6 +224,41 @@
         "new design for ver3.2",
         "strings not modelled",
         "simplified bracing"
+      ]
+    },
+    {
+      "family": "living_rug",
+      "name": "living_rug",
+      "blend": "blender/sources/v32/living_rug.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/V32/living_rug.fbx",
+      "triangles": 36,
+      "vertices": 56,
+      "materials": 1,
+      "parts": {
+        "living_rug": {
+          "triangles": 36,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -0.23,
+        -0.23,
+        0.0
+      ],
+      "boundsMax": [
+        1.73,
+        1.23,
+        0.014
+      ],
+      "anchors": {},
+      "supplemented": [
+        "new design for ver3.2",
+        "ver4.0: 4 x 3"
       ]
     }
   ]

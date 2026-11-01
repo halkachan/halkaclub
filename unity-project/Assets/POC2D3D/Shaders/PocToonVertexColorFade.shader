@@ -9,6 +9,7 @@ Shader "HALKA/POC/ToonVertexColorFade"
     {
         _Bands ("Light bands", Range(1, 6)) = 3
         _ShadowFloor ("Lowest direct light", Range(0, 1)) = 0.35
+        _WornExempt ("ver4.0: 1 = keeps its colours (characters), 0 = worn scenery", Range(0, 1)) = 0
         _Alpha ("Opacity", Range(0, 1)) = 0.4
     }
     SubShader
@@ -26,6 +27,7 @@ Shader "HALKA/POC/ToonVertexColorFade"
         CGPROGRAM
         #pragma surface surf Toon fullforwardshadows addshadow noforwardadd alpha:fade
         #pragma target 3.0
+        #include "PocWorn.cginc"
 
         half _Bands;
         half _ShadowFloor;
@@ -34,6 +36,8 @@ Shader "HALKA/POC/ToonVertexColorFade"
         struct Input
         {
             float4 color : COLOR;
+            float3 worldPos;
+            float3 worldNormal;
         };
 
         half4 LightingToon(SurfaceOutput s, half3 lightDir, half atten)
@@ -49,7 +53,7 @@ Shader "HALKA/POC/ToonVertexColorFade"
 
         void surf(Input IN, inout SurfaceOutput o)
         {
-            o.Albedo = IN.color.rgb;
+            o.Albedo = PocWorn(IN.color.rgb, IN.worldPos, IN.worldNormal);
             o.Alpha = _Alpha;
         }
         ENDCG

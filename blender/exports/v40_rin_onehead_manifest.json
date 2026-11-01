@@ -1,0 +1,103 @@
+{
+  "source": "build_input_rin.blend",
+  "who": "rin",
+  "frame": 0,
+  "objects": [
+    {
+      "name": "kami_matome",
+      "part": "body",
+      "triangles": 2024
+    },
+    {
+      "name": "maegami",
+      "part": "body",
+      "triangles": 848
+    },
+    {
+      "name": "migi syokaku",
+      "part": "body",
+      "triangles": 788
+    },
+    {
+      "name": "hidari syokaku",
+      "part": "body",
+      "triangles": 788
+    },
+    {
+      "name": "pin",
+      "part": "body",
+      "triangles": 32
+    },
+    {
+      "name": "ribon",
+      "part": "body",
+      "triangles": 576
+    },
+    {
+      "name": "asi1",
+      "part": "FootR",
+      "triangles": 224
+    },
+    {
+      "name": "asi2",
+      "part": "FootL",
+      "triangles": 224
+    },
+    {
+      "name": "atama",
+      "part": "body",
+      "triangles": 614
+    },
+    {
+      "name": "me",
+      "part": "body",
+      "triangles": 792
+    },
+    {
+      "name": "te1",
+      "part": "HandR",
+      "triangles": 224
+    },
+    {
+      "name": "te2",
+      "part": "HandL",
+      "triangles": 224
+    }
+  ],
+  "materials": {
+    "iro": "tex",
+    "iro.001": "tex"
+  },
+  "texture_source": "rin 2048x2048 (packed in the file)",
+  "size": [
+    2.4399,
+    2.0799,
+    2.747
+  ],
+  "parts": {
+    "body": {
+      "triangles": 6462,
+      "vertices": 3256
+    },
+    "HandR": {
+      "triangles": 224,
+      "vertices": 114
+    },
+    "HandL": {
+      "triangles": 224,
+      "vertices": 114
+    },
+    "FootR": {
+      "triangles": 224,
+      "vertices": 114
+    },
+    "FootL": {
+      "triangles": 224,
+      "vertices": 114
+    }
+  },
+  "triangles": 7358,
+  "texture": "rin_onehead_tex.png 512x512",
+  "fbx": "rin_onehead.fbx",
+  "blend": "rin_onehead_game.blend"
+}

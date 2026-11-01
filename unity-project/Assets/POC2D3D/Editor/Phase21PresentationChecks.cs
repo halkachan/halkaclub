@@ -61,6 +61,7 @@ namespace Halka.Poc2D3D.EditorTools
 
         private static void Check(string name, bool condition, string detail = "")
         {
+            detail ??= "";   // ver4.0: a check whose message is empty (a flower no longer stops her) fails instead of ending the run
             if (condition) { passes++; Debug.Log("PHASE21 PASS " + name + (detail.Length > 0 ? " | " + detail : "")); }
             else failures.Add(name + (detail.Length > 0 ? " | " + detail : ""));
         }

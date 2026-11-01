@@ -580,7 +580,7 @@
         "x": 3,
         "y": 1
       },
-      "signText": "ここは HALKA WORLD。"
+      "signText": "ここは はるかわーるど。"
     },
     {
       "instanceId": "obj_sign_north_v30_preview",
@@ -620,7 +620,7 @@
       "definitionId": "stone_basic",
       "rootCell": {
         "x": -4,
-        "y": -3
+        "y": -1
       }
     },
     {

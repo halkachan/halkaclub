@@ -36,17 +36,13 @@
         canvas.style.top = `${Math.floor((height - canvasHeight) / 2)}px`;
       }
       layoutCanvas();
-      // Keep the world near whole multiples of its 576-pixel outdoor art height.
+      // ver4.0 (the user: the crow's eyes were of different sizes): the picture is drawn at the
+      // screen's own pixels, never resized by the browser (stretching or shrinking by a factor like
+      // 1.33 made a 1-pixel eye 1 or 2 screen pixels). The game keeps the world's pixels at a whole
+      // size and draws the characters' dots evenly at in-between sizes (PocPixelSprite "_Smooth").
       function pixelRatio() {
-        const bounds = canvas.getBoundingClientRect();
-        const cssHeight = bounds.height;
-        const nativeRatio = Math.min(window.devicePixelRatio || 1, 2);
-        // Keep mobile controls at their original UI scale and avoid overlap.
-        if (!cssHeight || bounds.width < 800 || cssHeight > bounds.width) return nativeRatio;
-        const physicalHeight = cssHeight * nativeRatio;
-        const renderHeight = physicalHeight >= 576
-          ? 576 * Math.floor(physicalHeight / 576) : physicalHeight;
-        return renderHeight / cssHeight;
+        canvas.style.imageRendering = "pixelated";
+        return Math.min(window.devicePixelRatio || 1, 2);
       }
       createUnityInstance(canvas, {
         dataUrl: "Build/{{{ DATA_FILENAME }}}",

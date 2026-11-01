@@ -97,6 +97,13 @@ namespace Halka.Poc2D3D
         // Phase 4: the crow (occupancy and talking); the phone rotation guide (no input).
         public ISharedGroundOccupant GroundOccupant { get; set; }
         public ISharedTalkTarget TalkTarget { get; set; }
+        // ver4.0: furniture that opens something of its own instead of its message (the DTM desk,
+        // the drawing tablet, the microphone: PocLife's creator stations). Called with the Object
+        // used (a press of A ahead of her, or a click); true when it answered.
+        public Func<SharedObjectInstance, bool> InteractionOverride { get; set; }
+        // ver4.0: an answer for the cell ahead when no Object answers there (the microphone has no
+        // action point of its own). Called with her cell and facing.
+        public Func<Vector2Int, FacingDirection, bool> AheadOverride { get; set; }
         public bool InputSuspended { get; set; }
 
         // Phase 4: sitting (PlayerSeatController's rule: the player keeps the Action Point cell;
@@ -519,7 +526,8 @@ namespace Halka.Poc2D3D
             }
             if (TalkTarget != null && TalkTarget.TryTalk(motion.Cell, Facing, motion.IsMoving)) return true;
             var target = World.FindInteractionAhead(motion.Cell, Facing, out _);
-            return target != null && InteractWith(target);
+            if (target != null && InteractWith(target)) return true;
+            return AheadOverride != null && AheadOverride(motion.Cell, Facing);
         }
 
         // A click on an object: seated, only the active seat answers (and stands the player up).
@@ -532,6 +540,7 @@ namespace Halka.Poc2D3D
                 Stand();
                 return true;
             }
+            if (!motion.IsMoving && InteractionOverride != null && InteractionOverride(target)) return true;
             var kind = World.ResolveInteraction(target, motion.Cell, Facing, motion.IsMoving,
                 out var message, out var poseKey);
             if (kind == SharedActionKind.Sit) return TrySit(target, poseKey);

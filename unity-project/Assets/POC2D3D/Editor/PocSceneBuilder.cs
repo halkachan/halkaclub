@@ -24,7 +24,7 @@ namespace Halka.Poc2D3D.EditorTools
         // POC scene stays the technical verification scene with its options shown).
         // ver3.1: the game scene is HARUKA_WORLD_ver3.1 (the ver3.0 RC3 scene file is kept as the
         // published version's scene and no longer rebuilt).
-        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.9.unity";
+        public const string RcScenePath = Root + "/Scenes/HARUKA_WORLD_ver4.0.unity";
         // ver3.2: the chunk test scene (the release scene + a generated test world; test builds only).
         public const string ChunkTestScenePath = Root + "/Scenes/HARUKA_WORLD_ver3.2_CHUNKTEST.unity";
         public const string ChunkTestFixturePath = Root + "/Fixtures/ChunkTest/PocTestWorldFixture.asset";
@@ -83,6 +83,12 @@ namespace Halka.Poc2D3D.EditorTools
         public const string CrowVoicePath = "Assets/Content/Audio/crow_voice.mp3";
         // Phase 5: the 2D game's footstep and grass (same files, same settings).
         public const string FootstepPath = "Assets/Content/Audio/footstep_one_step.wav";
+        // ver4.0 (the user's request after the second look): two soft footsteps in turn, a little
+        // quieter, each at a slightly different pitch (tools/audio/make_soft_footsteps.py).
+        public static readonly string[] SoftFootstepPaths =
+            { "Assets/Content/Audio/footstep_soft_0.wav", "Assets/Content/Audio/footstep_soft_1.wav" };
+        public const float FootstepVolume = 0.35f;
+        public const float FootstepPitchJitter = 0.06f;
         public const string GrassPath = "Assets/Content/World/grass.png";
         public const string GrassRustlePath = "Assets/Content/World/grass_rustle/";
         public const string BenchSitPath = "Assets/Content/Character/bench_sit.png";
@@ -227,7 +233,7 @@ namespace Halka.Poc2D3D.EditorTools
                 new PocPresentationBinding { definitionId = "recording_mic_basic", model = Phase3("recording_mic_basic"),
                     cameraOccluder = false },
                 new PocPresentationBinding { definitionId = "art_easel_basic", model = Phase3("art_easel_basic"),
-                    cameraOccluder = false, fadeInFront3D = true, fadeOpacity = 0.4f, fadeSeconds = 0.25f },
+                    cameraOccluder = false },   // ver4.0: only trees are drawn see-through (user's request)
                 new PocPresentationBinding { definitionId = "sofa_basic", model = LoadModel(SofaModelPath), cameraOccluder = false },
                 new PocPresentationBinding { definitionId = "studio_shelf_basic", model = Phase3("studio_shelf_basic"),
                     cameraOccluder = false },
@@ -242,8 +248,11 @@ namespace Halka.Poc2D3D.EditorTools
                     cameraOccluder = false },
                 new PocPresentationBinding { definitionId = "illust_desk_tablet", model = V32("illust_desk_tablet"),
                     cameraOccluder = false },
+                // ver4.0 (the user's layout): the kitchen along the house's South wall, facing North; the
+                // ver3.2 model (made facing West, its cells running North) turned a quarter to the right,
+                // so its cells run East from the root: hob, sink, fridge.
                 new PocPresentationBinding { definitionId = "kitchen_counter", model = V32("kitchen_counter"),
-                    cameraOccluder = false },
+                    cameraOccluder = false, yawDegrees = 90f },
                 new PocPresentationBinding { definitionId = "living_rug", model = V32("living_rug"),
                     cameraOccluder = false, castShadows = false, outlineStrength = 0.5f },
                 new PocPresentationBinding { definitionId = "low_table_living", model = V32("low_table_living"),
@@ -255,7 +264,7 @@ namespace Halka.Poc2D3D.EditorTools
                 new PocPresentationBinding { definitionId = "flower_yellow", model = V33("flower_yellow"),
                     cameraOccluder = false, minPickSize = SmallPickSize },
                 new PocPresentationBinding { definitionId = "sunflower_cluster", model = V33("sunflower_cluster"),
-                    cameraOccluder = false, fadeInFront2D = true, fadeInFront3D = true, fadeOpacity = 0.4f, fadeSeconds = 0.25f },
+                    cameraOccluder = false },   // ver4.0: only trees are drawn see-through (user's request)
                 new PocPresentationBinding { definitionId = "signpost_yellow", model = V33("sign_yellow"), cameraOccluder = false },
                 // ver3.6, the North area: a blue flower, the blue signpost (its model: sign_blue), and at the
                 // pond the lily pads (flat on the water: no shadow, a soft outline) and the reeds.
@@ -362,7 +371,7 @@ namespace Halka.Poc2D3D.EditorTools
         // off unless ?debug=1, the HUD reads "ver3.0 RC1".
         private static void ConfigureReleaseCandidate(GameObject root)
         {
-            root.name = "HARUKA WORLD ver3.9";
+            root.name = "HARUKA WORLD ver4.0";
             var panel = root.GetComponent<PocDebugPanel>();
             var hud = root.GetComponentInChildren<GameHud>(true);
             var switcher = root.GetComponent<PocViewSwitcher>();
@@ -568,6 +577,8 @@ namespace Halka.Poc2D3D.EditorTools
             gameplay.ConfigureFastTravel(fastTravel);
             BuildPhase5Content(root, gameplay, pixelView);
             BuildPhase6Content(root, session, switcher, autoMode, lifeLog, menu, hud);
+            // ver4.0: そうさくせいかつ (the clock, the creator stations, ﾆｺﾁｭｰﾌﾞ, the passers-by, Rin and Len).
+            PocSceneBuilderVer40.Build(root);
         }
 
         // Phase 6: the save system (automatic save and load, backups, export / import). Its
@@ -597,7 +608,7 @@ namespace Halka.Poc2D3D.EditorTools
             var source = footstepObject.AddComponent<AudioSource>();
             source.playOnAwake = false;
             source.spatialBlend = 0f;
-            source.volume = 0.45f; // ProjectBuilder's value for the 2D game
+            source.volume = FootstepVolume; // ver4.0: was 0.45 (ProjectBuilder's value for the 2D game)
             var footsteps = footstepObject.AddComponent<Halka.Game.Player.PlayerFootstepAudio>();
             var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(FootstepPath);
             if (clip == null) throw new InvalidOperationException("Footstep missing: " + FootstepPath);
@@ -605,6 +616,15 @@ namespace Halka.Poc2D3D.EditorTools
             SetReference(footsteps, "footstep", clip);
             var serialized = new SerializedObject(footsteps);
             serialized.FindProperty("externallyDriven").boolValue = true;
+            var variants = serialized.FindProperty("variants");
+            variants.arraySize = SoftFootstepPaths.Length;
+            for (var i = 0; i < SoftFootstepPaths.Length; i++)
+            {
+                var soft = AssetDatabase.LoadAssetAtPath<AudioClip>(SoftFootstepPaths[i]);
+                if (soft == null) throw new InvalidOperationException("Footstep missing: " + SoftFootstepPaths[i]);
+                variants.GetArrayElementAtIndex(i).objectReferenceValue = soft;
+            }
+            serialized.FindProperty("pitchJitter").floatValue = FootstepPitchJitter;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             gameplay.ConfigureFootsteps(footsteps);
 

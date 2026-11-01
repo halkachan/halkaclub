@@ -138,6 +138,7 @@ namespace Halka.Poc2D3D
             model.localRotation = Quaternion.Euler(0f, presentation.yawOffsetDegrees, 0f);
             instance = Instantiate(presentation.model, model, false);
             instance.name = presentation.model.name;
+            PocWorn.Exempt(instance);   // ver4.0: she keeps her colours in the worn world
             PocOutlineTag.Apply(instance, PocOutlineTag.PlayerId, 1f); // the 3D view's outline
             instance.transform.localPosition = presentation.pivotOffset;
             instance.transform.localScale = Vector3.one * presentation.uniformScale;

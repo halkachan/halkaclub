@@ -8,239 +8,15 @@
   "grassMode": "none",
   "backdropColor": "#0c0c10",
   "bounds": {
-    "minX": -7,
-    "maxX": 7,
-    "minY": -5,
-    "maxY": 5
+    "minX": -5,
+    "maxX": 5,
+    "minY": -4,
+    "maxY": 4
   },
   "surfaces": [
     {
       "definitionId": "booth_wall",
       "cell": {
-        "x": -7,
-        "y": -5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -6,
-        "y": -5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -5,
-        "y": -5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -4,
-        "y": -5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -3,
-        "y": -5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -2,
-        "y": -5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -1,
-        "y": -5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 1,
-        "y": -5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 2,
-        "y": -5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 3,
-        "y": -5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 4,
-        "y": -5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 5,
-        "y": -5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 6,
-        "y": -5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 7,
-        "y": -5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -7,
-        "y": -4
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 7,
-        "y": -4
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -7,
-        "y": -3
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 7,
-        "y": -3
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -7,
-        "y": -2
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 7,
-        "y": -2
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -7,
-        "y": -1
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 7,
-        "y": -1
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -7,
-        "y": 0
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 7,
-        "y": 0
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -7,
-        "y": 1
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 7,
-        "y": 1
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -7,
-        "y": 2
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 7,
-        "y": 2
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -7,
-        "y": 3
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 7,
-        "y": 3
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -7,
-        "y": 4
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -6,
-        "y": 4
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
         "x": -5,
         "y": 4
       }
@@ -318,120 +94,232 @@
     {
       "definitionId": "booth_wall",
       "cell": {
-        "x": 6,
-        "y": 4
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": 7,
-        "y": 4
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -7,
-        "y": 5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
-        "x": -6,
-        "y": 5
-      }
-    },
-    {
-      "definitionId": "booth_wall",
-      "cell": {
         "x": -5,
-        "y": 5
+        "y": 3
       }
     },
     {
       "definitionId": "booth_wall",
       "cell": {
         "x": -4,
-        "y": 5
+        "y": 3
       }
     },
     {
       "definitionId": "booth_wall",
       "cell": {
         "x": -3,
-        "y": 5
+        "y": 3
       }
     },
     {
       "definitionId": "booth_wall",
       "cell": {
         "x": -2,
-        "y": 5
+        "y": 3
       }
     },
     {
       "definitionId": "booth_wall",
       "cell": {
         "x": -1,
-        "y": 5
+        "y": 3
       }
     },
     {
       "definitionId": "booth_wall",
       "cell": {
         "x": 0,
-        "y": 5
+        "y": 3
       }
     },
     {
       "definitionId": "booth_wall",
       "cell": {
         "x": 1,
-        "y": 5
+        "y": 3
       }
     },
     {
       "definitionId": "booth_wall",
       "cell": {
         "x": 2,
-        "y": 5
+        "y": 3
       }
     },
     {
       "definitionId": "booth_wall",
       "cell": {
         "x": 3,
-        "y": 5
+        "y": 3
       }
     },
     {
       "definitionId": "booth_wall",
       "cell": {
         "x": 4,
-        "y": 5
+        "y": 3
       }
     },
     {
       "definitionId": "booth_wall",
       "cell": {
         "x": 5,
-        "y": 5
+        "y": 3
       }
     },
     {
       "definitionId": "booth_wall",
       "cell": {
-        "x": 6,
-        "y": 5
+        "x": -5,
+        "y": 2
       }
     },
     {
       "definitionId": "booth_wall",
       "cell": {
-        "x": 7,
-        "y": 5
+        "x": 5,
+        "y": 2
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -5,
+        "y": 1
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 5,
+        "y": 1
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -5,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 5,
+        "y": 0
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -5,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 5,
+        "y": -1
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -5,
+        "y": -2
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 5,
+        "y": -2
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -5,
+        "y": -3
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 5,
+        "y": -3
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -5,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -4,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -3,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -2,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": -1,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 1,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 2,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 3,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 4,
+        "y": -4
+      }
+    },
+    {
+      "definitionId": "booth_wall",
+      "cell": {
+        "x": 5,
+        "y": -4
       }
     }
   ],
@@ -440,32 +328,32 @@
       "instanceId": "obj_dtm_desk_v31_soundbooth",
       "definitionId": "dtm_desk_large",
       "rootCell": {
-        "x": -3,
-        "y": 3
+        "x": -1,
+        "y": 2
       }
     },
     {
       "instanceId": "obj_illust_desk_v31_soundbooth",
       "definitionId": "illust_desk_tablet",
       "rootCell": {
-        "x": -6,
-        "y": 3
+        "x": -4,
+        "y": 2
       }
     },
     {
       "instanceId": "obj_recording_mic_v31_soundbooth",
       "definitionId": "recording_mic_basic",
       "rootCell": {
-        "x": 4,
-        "y": 1
+        "x": 2,
+        "y": -1
       }
     },
     {
       "instanceId": "obj_guitar_stand_v32_soundbooth",
       "definitionId": "guitar_stand",
       "rootCell": {
-        "x": 3,
-        "y": 3
+        "x": 4,
+        "y": 2
       }
     }
   ],
@@ -474,14 +362,14 @@
       "id": "interior_entry",
       "cell": {
         "x": 0,
-        "y": -4
+        "y": -3
       }
     },
     {
       "id": "interior_exit",
       "cell": {
         "x": 0,
-        "y": -5
+        "y": -4
       }
     }
   ],

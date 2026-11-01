@@ -52,9 +52,24 @@ namespace Halka.Poc2D3D
         }
 
         // ver3.5: no input while the phone guide shows or a flight is under way.
+        // ver4.0: nor while a mini game, the video site or the start of hide-and-seek is open.
         public void RefreshInputSuspension()
         {
-            if (session != null) session.InputSuspended = suspended || TravelBusy;
+            if (session != null) session.InputSuspended = suspended || TravelBusy || ActivityOpen;
+        }
+
+        // ver4.0: set by PocLife (a mini game, ﾆｺﾁｭｰﾌﾞ's result, hide-and-seek's count). World
+        // Time keeps running; her walking, AUTO and the world's input wait.
+        private bool activityOpen;
+        public bool ActivityOpen
+        {
+            get => activityOpen;
+            set
+            {
+                activityOpen = value;
+                RefreshInputSuspension();
+                if (autoMode != null && value) autoMode.RecordUserAction(Time.unscaledTime);
+            }
         }
 
         public void ConfigureFootsteps(PlayerFootstepAudio footstepAudio) => footsteps = footstepAudio;
@@ -109,8 +124,8 @@ namespace Halka.Poc2D3D
             if (menu != null)
             {
                 // Full screen is a button on the game's page, not a menu row (feedback after RC1).
-                menu.SetExtraItem(viewItem);
-                // ver3.1: the same row as a button at the top right; it names the view it goes to.
+                // ver4.0 (the user): the menu's 「ひょうじ」 row is gone; the button at the top right is enough.
+                // ver3.1: the view switch as a button at the top right; it names the view it goes to.
                 menu.SetQuickItem(viewItem, () => views != null && views.Mode == PocViewMode.ThirdPerson3D ? "2Dへ" : "3Dへ");
             }
             session.MapChanged += OnMapChanged;
@@ -332,6 +347,6 @@ namespace Halka.Poc2D3D
         }
 
         // ver3.5: a flight pauses AUTO too (its setting is not changed).
-        public bool Suspended => owner != null && (owner.Suspended || owner.TravelBusy);
+        public bool Suspended => owner != null && (owner.Suspended || owner.TravelBusy || owner.ActivityOpen);
     }
 }

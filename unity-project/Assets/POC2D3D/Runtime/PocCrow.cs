@@ -82,7 +82,10 @@ namespace Halka.Poc2D3D
 
         // DynamicGridOccupancy2D.CanCrowEnter: never where the player stands or steps.
         protected override bool CanCrowEnterCell(Vector2Int cell) =>
-            session == null || session.World != session.OutdoorWorld || !session.PlayerReserves(cell);
+            session == null || session.World != session.OutdoorWorld || !session.PlayerReserves(cell) && (OthersReserve == null || !OthersReserve(cell));
+
+        // ver4.0: the cells Rin, Len and the passers-by stand or step on (PocLife's roster).
+        public System.Func<Vector2Int, bool> OthersReserve { get; set; }
 
         protected override Vector3 CellToPosition(Vector2 cell) => GridSpace3D.ToWorld(cell);
         protected override Vector2Int PositionToCell(Vector3 position) => GridSpace3D.ToCell(position);

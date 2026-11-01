@@ -19,11 +19,19 @@ Shader "HALKA/POC/PixelSprite"
         _DepthEpsilon ("Depth epsilon (0..1 of far)", Float) = 0.0005
         _GroundLayerId ("Object ID drawn under the player besides the ground (grass tufts)", Float) = 250
         _GroundOnly ("Phase 5: draw only where the world shows ground (the 2D game's grass layer)", Float) = 0
+        _Shadow ("ver4.0: draw the texture's shape as a see-through shadow of _ShadowColor", Float) = 0
+        _ShadowColor ("ver4.0: the shadow's color and opacity", Color) = (0.09, 0.1, 0.14, 0.45)
+        _Worn ("ver4.0: the worn palette for the 2D game's grass (not the characters)", Range(0, 1)) = 0
+        _FrontId ("ver4.0: an object id always drawn over this card (the kitchen, for a character behind it); -1 none", Float) = -1
+        _FrontThick ("ver4.0: the 2D outline's thickness around that object (texels)", Float) = 1
+        _Smooth ("ver4.0: dots drawn evenly at an in-between size (each dot's edge blended over one screen pixel)", Float) = 0
     }
     SubShader
     {
         Tags { "Queue" = "Transparent" "IgnoreProjector" = "True" }
         Cull Off ZWrite Off ZTest Always
+        // ver4.0: blended for the characters' shadows; a sprite is always written with alpha 1.
+        Blend SrcAlpha OneMinusSrcAlpha
         Pass
         {
             CGPROGRAM
@@ -32,6 +40,9 @@ Shader "HALKA/POC/PixelSprite"
             #include "UnityCG.cginc"
 
             sampler2D _MainTex;
+            float4 _MainTex_TexelSize;
+            float _Smooth;
+            float _FrontId;
             sampler2D _MaskTex;
             float4 _MaskTex_TexelSize;
             float _UseMask;
@@ -41,6 +52,12 @@ Shader "HALKA/POC/PixelSprite"
             float _DepthEpsilon;
             float _GroundLayerId;
             float _GroundOnly;
+            float _Shadow;
+            float4 _ShadowColor;
+            float _Worn;
+            float4 _PocWornGrey;
+            float4 _PocWornTint;
+            float4 _PocWornGreen;
 
             struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; float3 mask : TEXCOORD1; };
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float3 mask : TEXCOORD1; };
@@ -65,6 +82,14 @@ Shader "HALKA/POC/PixelSprite"
                 if (id == 0.0 || id == _GroundLayerId) { strength = 0.0; depth = 2.0; }
             }
 
+            float _FrontThick;
+
+            float IsFront(float2 uv, float2 offset)
+            {
+                float id = floor(tex2D(_MaskTex, uv + offset * _MaskTex_TexelSize.xy).r * 255.0 + 0.5);
+                return abs(id - _FrontId) < 0.5 ? 1.0 : 0.0;
+            }
+
             float Cover(float2 uv, float2 offset, float depth0)
             {
                 float strength, depth;
@@ -72,9 +97,34 @@ Shader "HALKA/POC/PixelSprite"
                 return (strength > 0.0 && depth < depth0 - _DepthEpsilon) ? strength : 0.0;
             }
 
+            // ver4.0 (the user: the crow's eyes looked different sizes): at an in-between dot size (1.5
+            // screen pixels per dot) plain nearest sampling gives some dots 1 pixel and others 2. Here
+            // the dot's inside is its own colour and only its edge is blended over one screen pixel, so
+            // every dot shows at the same size ("sharp bilinear", by hand: the texture is point-filtered).
+            float4 SampleEven(float2 uv)
+            {
+                float2 size = _MainTex_TexelSize.zw;
+                float2 t = uv * size - 0.5;
+                float2 b = floor(t);
+                float2 f = t - b;
+                float2 w = max(fwidth(uv * size), 1e-4);
+                float2 k = saturate((f - 0.5) / w + 0.5);
+                float2 uv0 = (b + 0.5) * _MainTex_TexelSize.xy;
+                float2 uv1 = (b + 1.5) * _MainTex_TexelSize.xy;
+                float4 c00 = tex2D(_MainTex, uv0);
+                float4 c10 = tex2D(_MainTex, float2(uv1.x, uv0.y));
+                float4 c01 = tex2D(_MainTex, float2(uv0.x, uv1.y));
+                float4 c11 = tex2D(_MainTex, uv1);
+                // premultiplied, so a transparent neighbour never darkens the edge colour
+                c00.rgb *= c00.a; c10.rgb *= c10.a; c01.rgb *= c01.a; c11.rgb *= c11.a;
+                float4 c = lerp(lerp(c00, c10, k.x), lerp(c01, c11, k.x), k.y);
+                c.rgb /= max(c.a, 1e-4);
+                return c;
+            }
+
             float4 frag(v2f i) : SV_Target
             {
-                float4 color = tex2D(_MainTex, i.uv);
+                float4 color = _Smooth > 0.5 ? SampleEven(i.uv) : tex2D(_MainTex, i.uv);
                 clip(color.a - 0.5);
                 if (_GroundOnly > 0.5)
                 {
@@ -90,6 +140,20 @@ Shader "HALKA/POC/PixelSprite"
                     float strength0, depth0;
                     Read(uv, strength0, depth0);
                     clip(depth0 + _DepthEpsilon - i.mask.z);
+                    // ver4.0: the kitchen as a layer over her when she stands behind it (no depth test),
+                    // its outline too (drawn on the floor texels just above its top edge)
+                    if (_FrontId >= 0.0)
+                    {
+                        float front = 0.0;
+                        front = max(front, IsFront(uv, float2(0, 0)));
+                        front = max(front, IsFront(uv, float2(0, -1)));
+                        front = max(front, IsFront(uv, float2(1, -1)));
+                        front = max(front, IsFront(uv, float2(-1, -1)));
+                        front = max(front, IsFront(uv, float2(1, 0)));
+                        front = max(front, IsFront(uv, float2(-1, 0)));
+                        if (_Thickness > 1.5 || _FrontThick > 1.5) front = max(front, IsFront(uv, float2(0, -2)));
+                        clip(0.5 - front);
+                    }
                     if (_Thickness > 0.5)
                     {
                         float ink = 0.0;
@@ -110,6 +174,15 @@ Shader "HALKA/POC/PixelSprite"
                         }
                         color.rgb = lerp(color.rgb, _OutlineColor.rgb, saturate(ink));
                     }
+                }
+                if (_Shadow > 0.5) return _ShadowColor;
+                if (_Worn > 0.001)
+                {
+                    // the scenery's worn palette (PocWorn.cginc step 1): muted, olive grey, faded
+                    float l = dot(color.rgb, float3(0.299, 0.587, 0.114));
+                    float greenness = saturate((color.g - max(color.r, color.b)) * 4.0);
+                    color.rgb = lerp(color.rgb, l * _PocWornGrey.rgb, saturate(_PocWornGrey.a + _PocWornGreen.a * greenness) * _Worn);
+                    color.rgb *= lerp(float3(1, 1, 1), _PocWornTint.rgb, _Worn) * (1.0 - 0.08 * _Worn);
                 }
                 color.a = 1.0;
                 return color;
