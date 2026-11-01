@@ -60,11 +60,13 @@ namespace Halka.Poc2D3D.Life
             return true;
         }
 
-        // The bed answers from its sleep action point (in front of it, facing it).
+        // The bed answers from any side, facing it (the user's request after the second look: before,
+        // only its sleep action point, the bottom-left cell, answered).
         private bool TryBed(SharedObjectInstance target)
         {
-            if (target == null || target.DefinitionId != BedId) return false;
-            if (!session.World.TryInteract(target, session.Cell, session.Facing, session.IsMoving, out _)) return false;
+            if (target == null || target.DefinitionId != BedId || session.IsMoving) return false;
+            if (!session.World.TryInteract(target, session.Cell, session.Facing, false, out _) &&
+                !NextTo(target, session.Cell, session.Facing)) return false;
             return TrySleep();
         }
     }

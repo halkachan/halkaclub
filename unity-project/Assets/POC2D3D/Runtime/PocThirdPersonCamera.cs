@@ -39,7 +39,9 @@ namespace Halka.Poc2D3D
 
         // Phase 4 (user feedback): the camera stands a little farther back than in Phase 3
         // (outdoor 2.5, indoor 2.9), so she is smaller and more of the world shows; same angles.
-        public const float StandardOutdoorDistance = 3.4f;
+        // ver4.0 (the user's request after the second look): the house is 1.55x now, so the outdoor
+        // camera stands farther back again (3.4 -> 4.1); indoors as before.
+        public const float StandardOutdoorDistance = 4.1f;
         public const float StandardIndoorDistance = 3.6f;
 
         [Header("Outdoor")]

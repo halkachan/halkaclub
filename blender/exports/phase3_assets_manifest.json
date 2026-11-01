@@ -354,74 +354,6 @@
       ]
     },
     {
-      "family": "house_main",
-      "name": "house_main",
-      "blend": "blender/sources/phase3/house_main.blend",
-      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/house_main.fbx",
-      "triangles": 1418,
-      "vertices": 1416,
-      "materials": 1,
-      "parts": {
-        "house_main": {
-          "triangles": 776,
-          "materials": 1,
-          "pivot": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        },
-        "HouseRoof": {
-          "triangles": 510,
-          "materials": 1,
-          "pivot": [
-            0.0,
-            0.11,
-            0.0
-          ]
-        },
-        "HouseDoor": {
-          "triangles": 132,
-          "materials": 1,
-          "pivot": [
-            -0.3255,
-            0.4975,
-            0.0
-          ]
-        }
-      },
-      "boundsMin": [
-        -1.8526,
-        -0.448,
-        0.0
-      ],
-      "boundsMax": [
-        1.8526,
-        1.4158,
-        2.9217
-      ],
-      "anchors": {
-        "DoorAnchor": [
-          0.0,
-          0.451,
-          0.0
-        ],
-        "EntranceAnchor": [
-          0.0,
-          0.0,
-          0.0388
-        ]
-      },
-      "supplemented": [
-        "side and back walls",
-        "windows on the sides and the back",
-        "roof back and side slopes",
-        "door inside face",
-        "entrance step",
-        "ver4.0: 1.55 times as big (door 0.65 x 1.10)"
-      ]
-    },
-    {
       "family": "interior",
       "name": "interior_floor_a",
       "blend": "blender/sources/phase3/interior.blend",
@@ -635,6 +567,75 @@
         "wall faces (the 2D room shows wall tops only)",
         "doorway frame and door",
         "baseboard"
+      ]
+    },
+    {
+      "family": "house_main",
+      "name": "house_main",
+      "blend": "blender/sources/phase3/house_main.blend",
+      "fbx": "unity-project/Assets/POC2D3D/Models/Phase3/house_main.fbx",
+      "triangles": 1610,
+      "vertices": 1544,
+      "materials": 1,
+      "parts": {
+        "house_main": {
+          "triangles": 968,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "HouseRoof": {
+          "triangles": 510,
+          "materials": 1,
+          "pivot": [
+            0.0,
+            0.11,
+            0.0
+          ]
+        },
+        "HouseDoor": {
+          "triangles": 132,
+          "materials": 1,
+          "pivot": [
+            -0.3255,
+            0.4975,
+            0.0
+          ]
+        }
+      },
+      "boundsMin": [
+        -1.8526,
+        -0.448,
+        0.0
+      ],
+      "boundsMax": [
+        1.8526,
+        1.4158,
+        2.9217
+      ],
+      "anchors": {
+        "DoorAnchor": [
+          0.0,
+          0.451,
+          0.0
+        ],
+        "EntranceAnchor": [
+          0.0,
+          0.0,
+          0.0388
+        ]
+      },
+      "supplemented": [
+        "side and back walls",
+        "windows on the sides and the back",
+        "roof back and side slopes",
+        "door inside face",
+        "entrance step",
+        "ver4.0: 1.55 times as big (door 0.65 x 1.10)",
+        "ver4.0: windows on the front"
       ]
     }
   ]

@@ -195,6 +195,24 @@ namespace Halka.Poc2D3D.Life
             }
         }
 
+        // ver4.0 (the user's request after the second look): while a game is on, Rin and Len answer
+        // as players of it, never with their usual choices (あそんでおいで etc.): the one already
+        // found cheers her on until the other is found too; one still running to hide says so.
+        public const string FoundRinLine = "リン「レンは まだ かくれてるよ！ がんばって さがしてね！」";
+        public const string FoundLenLine = "レン「リンは まだ みつかってないよ！ どこかな～？」";
+        public const string HidingLine = "「いま かくれてるところ！ まだ みちゃだめ！」";
+        public int HideSeekTalks { get; private set; }
+
+        private bool TalkDuringHideSeek(PocWalker w)
+        {
+            if (!HideSeekActive || !hideModes.ContainsKey(w)) return false;
+            if (TryFind(w)) return true;
+            HideSeekTalks++;
+            if (HideSeekCounting) session.ShowMessage(NameOf(w) + HidingLine);
+            else session.ShowMessage(w == rin ? FoundRinLine : FoundLenLine);
+            return true;
+        }
+
         // A in front of a hider: found.
         private bool TryFind(PocWalker w)
         {
@@ -260,6 +278,7 @@ namespace Halka.Poc2D3D.Life
                 .Append(",\"hiders\":").Append(hideModes.Count.ToString(inv)).Append(",\"games\":").Append(HideSeekGames.ToString(inv))
                 .Append(",\"cleared\":").Append(HideSeekCleared.ToString(inv)).Append(",\"stopped\":").Append(HideSeekStopped.ToString(inv))
                 .Append(",\"hints\":").Append(HideSeekHints.ToString(inv)).Append(",\"hint\":\"").Append(LastHint).Append('"')
+                .Append(",\"talks\":").Append(HideSeekTalks.ToString(inv))
                 .Append(",\"lastSeconds\":").Append(LastClearSeconds.ToString("0.#", inv))
                 .Append(",\"rinFound\":").Append(h.RinFound.ToString(inv)).Append(",\"lenFound\":").Append(h.LenFound.ToString(inv))
                 .Append(",\"bothCleared\":").Append(h.BothCleared.ToString(inv)).Append(",\"bestRin\":").Append(h.BestRinSeconds.ToString(inv))

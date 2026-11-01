@@ -252,7 +252,7 @@ HOUSE_WALL_TOP = 1.06  # the 2D view sees the whole wall under the eaves, as in 
 DOOR_PLANE = 0.22  # back of the walkable alcove: the root (door) cell's north edge is 0.25
 
 
-def build_house():
+def build_house(front_windows=False):
     """Root cell (0, 0) is the walkable entrance alcove in the middle of the front row.
     Walls, roof and door are separate objects so Unity can show or hide each part."""
     walls = Geo()
@@ -314,6 +314,12 @@ def build_house():
         add_window(walls, Vector((x + outward * 0.005, 0.26, 0.56)), axis="x", outward=outward)
     for x in (-0.6, 0.6):
         add_window(walls, Vector((x, HOUSE_BACK + 0.005, 0.56)), axis="y", outward=1)
+    if front_windows:
+        # ver4.0 (the user's request after the second look): a window on each side of the door,
+        # in the front wall between the door posts and the corner posts, with a sill under it.
+        for x in (-0.78, 0.78):
+            add_window(walls, Vector((x, HOUSE_FRONT - 0.005, 0.52)), axis="y", outward=-1, size=0.3)
+            walls.box((x - 0.2, HOUSE_FRONT - 0.07, 0.33), (x + 0.2, HOUSE_FRONT, 0.36), TIMBER, top=TIMBER)
     house = walls.obj("house_main")
 
     roof = Geo()
@@ -372,7 +378,7 @@ HOUSE_SCALE_V40 = 1.55
 
 def build_house_v40():
     from mathutils import Matrix
-    objects, anchors, supplemented = build_house()
+    objects, anchors, supplemented = build_house(front_windows=True)
     s = HOUSE_SCALE_V40
     dy = HOUSE_FRONT * (1.0 - s)          # keeps the front (and the door cell) in place
     house = objects[0]
@@ -387,7 +393,7 @@ def build_house_v40():
             a.location = (0.0, 0.0, 0.025 * s)   # she stands on the step in the root cell
     hl.add_cell_guides("house_main", [(x, y) for x in range(-3, 4) for y in range(0, 3)])
     supplemented = dict(supplemented)
-    supplemented["house_main"] = supplemented["house_main"] + ["ver4.0: 1.55 times as big (door 0.65 x 1.10)"]
+    supplemented["house_main"] = supplemented["house_main"] + ["ver4.0: 1.55 times as big (door 0.65 x 1.10)", "ver4.0: windows on the front"]
     return objects, anchors, supplemented
 
 
@@ -395,10 +401,10 @@ STEP_COLOR = "#5e5e64"
 ALCOVE = "#3e3e44"
 
 
-def add_window(g, centre, axis, outward):
+def add_window(g, centre, axis, outward, size=0.26):
     """Small four-pane window (supplemented design): timber frame, pale glass, cross bars.
-    axis is the wall's normal axis ("x" for side walls, "y" for the back wall)."""
-    w, h, t = 0.26, 0.26, 0.03
+    axis is the wall's normal axis ("x" for side walls, "y" for the back and front walls)."""
+    w, h, t = size, size, 0.03
 
     def bx(a0, b0, a1, b1, depth, color):
         d0, d1 = sorted((0.0, outward * depth))

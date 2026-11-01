@@ -83,6 +83,12 @@ namespace Halka.Poc2D3D.EditorTools
         public const string CrowVoicePath = "Assets/Content/Audio/crow_voice.mp3";
         // Phase 5: the 2D game's footstep and grass (same files, same settings).
         public const string FootstepPath = "Assets/Content/Audio/footstep_one_step.wav";
+        // ver4.0 (the user's request after the second look): two soft footsteps in turn, a little
+        // quieter, each at a slightly different pitch (tools/audio/make_soft_footsteps.py).
+        public static readonly string[] SoftFootstepPaths =
+            { "Assets/Content/Audio/footstep_soft_0.wav", "Assets/Content/Audio/footstep_soft_1.wav" };
+        public const float FootstepVolume = 0.35f;
+        public const float FootstepPitchJitter = 0.06f;
         public const string GrassPath = "Assets/Content/World/grass.png";
         public const string GrassRustlePath = "Assets/Content/World/grass_rustle/";
         public const string BenchSitPath = "Assets/Content/Character/bench_sit.png";
@@ -602,7 +608,7 @@ namespace Halka.Poc2D3D.EditorTools
             var source = footstepObject.AddComponent<AudioSource>();
             source.playOnAwake = false;
             source.spatialBlend = 0f;
-            source.volume = 0.45f; // ProjectBuilder's value for the 2D game
+            source.volume = FootstepVolume; // ver4.0: was 0.45 (ProjectBuilder's value for the 2D game)
             var footsteps = footstepObject.AddComponent<Halka.Game.Player.PlayerFootstepAudio>();
             var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(FootstepPath);
             if (clip == null) throw new InvalidOperationException("Footstep missing: " + FootstepPath);
@@ -610,6 +616,15 @@ namespace Halka.Poc2D3D.EditorTools
             SetReference(footsteps, "footstep", clip);
             var serialized = new SerializedObject(footsteps);
             serialized.FindProperty("externallyDriven").boolValue = true;
+            var variants = serialized.FindProperty("variants");
+            variants.arraySize = SoftFootstepPaths.Length;
+            for (var i = 0; i < SoftFootstepPaths.Length; i++)
+            {
+                var soft = AssetDatabase.LoadAssetAtPath<AudioClip>(SoftFootstepPaths[i]);
+                if (soft == null) throw new InvalidOperationException("Footstep missing: " + SoftFootstepPaths[i]);
+                variants.GetArrayElementAtIndex(i).objectReferenceValue = soft;
+            }
+            serialized.FindProperty("pitchJitter").floatValue = FootstepPitchJitter;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             gameplay.ConfigureFootsteps(footsteps);
 

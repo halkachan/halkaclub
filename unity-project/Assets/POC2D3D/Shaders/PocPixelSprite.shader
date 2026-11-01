@@ -19,11 +19,15 @@ Shader "HALKA/POC/PixelSprite"
         _DepthEpsilon ("Depth epsilon (0..1 of far)", Float) = 0.0005
         _GroundLayerId ("Object ID drawn under the player besides the ground (grass tufts)", Float) = 250
         _GroundOnly ("Phase 5: draw only where the world shows ground (the 2D game's grass layer)", Float) = 0
+        _Shadow ("ver4.0: draw the texture's shape as a see-through shadow of _ShadowColor", Float) = 0
+        _ShadowColor ("ver4.0: the shadow's color and opacity", Color) = (0.09, 0.1, 0.14, 0.32)
     }
     SubShader
     {
         Tags { "Queue" = "Transparent" "IgnoreProjector" = "True" }
         Cull Off ZWrite Off ZTest Always
+        // ver4.0: blended for the characters' shadows; a sprite is always written with alpha 1.
+        Blend SrcAlpha OneMinusSrcAlpha
         Pass
         {
             CGPROGRAM
@@ -41,6 +45,8 @@ Shader "HALKA/POC/PixelSprite"
             float _DepthEpsilon;
             float _GroundLayerId;
             float _GroundOnly;
+            float _Shadow;
+            float4 _ShadowColor;
 
             struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; float3 mask : TEXCOORD1; };
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float3 mask : TEXCOORD1; };
@@ -111,6 +117,7 @@ Shader "HALKA/POC/PixelSprite"
                         color.rgb = lerp(color.rgb, _OutlineColor.rgb, saturate(ink));
                     }
                 }
+                if (_Shadow > 0.5) return _ShadowColor;
                 color.a = 1.0;
                 return color;
             }

@@ -81,6 +81,7 @@ namespace Halka.Poc2D3D.EditorTools
                 Run("house", HouseChecks);
                 Run("sleep", SleepChecks);
                 Run("difficulty", DifficultyChecks);
+                Run("look2", SecondLookChecks);
                 Run("save", SaveChecks);
                 Run("existing", ExistingChecks);
                 Run("protect", ProtectChecks);
@@ -488,7 +489,8 @@ namespace Halka.Poc2D3D.EditorTools
             Check("drawing: a finger gets a wider tolerance than the mouse", games.ScoreDrawingFor(3, off, true) > games.ScoreDrawingFor(3, off, false),
                 games.ScoreDrawingFor(3, off, true) + " > " + games.ScoreDrawingFor(3, off, false));
             Check("drawing: nothing drawn = 0", games.ScoreDrawingFor(0, new List<Vector2>(), false) == 0);
-            Check("singing: on the melody = 100, half a step off ≥ 55, far off = 0", games.ScoreSingingFor(0f) == 100 && games.ScoreSingingFor(0.5f) >= 55 &&
+            // (ふつう's band is 0.7 steps since the second look; it was 1.25, when half a step off gave 60)
+            Check("singing: on the melody = 100, a quarter step off ≥ 55, far off = 0", games.ScoreSingingFor(0f) == 100 && games.ScoreSingingFor(0.25f) >= 55 &&
                 games.ScoreSingingFor(3f) == 0);
             UnityEngine.Object.DestroyImmediate(host);
 
@@ -885,6 +887,14 @@ namespace Halka.Poc2D3D.EditorTools
                 {
                     var ok = StandNextTo(c, h.Cell) && c.Session.InteractAhead();
                     Check(mode + ": A in front of " + (h == rin ? "Rin" : "Len") + ": found", ok);
+                    if (mode == HideSeekMode.Both && h == hiders[0])
+                    {
+                        // after the second look: talking to the one found while the other still hides
+                        var talks = life.HideSeekTalks;
+                        var again = StandNextTo(c, h.Cell) && c.Session.InteractAhead();
+                        Check("both: A at Rin again before Len is found: her own line (「レンは まだ かくれてるよ！ …」), never the choices (あそんでおいで …)",
+                            again && c.Session.LastMessage == PocLife.FoundRinLine && life.HideSeekTalks == talks + 1 && Page(c)?.Title != "リン" && life.HideSeekActive, c.Session.LastMessage);
+                    }
                 }
                 Check(mode + ": everyone found: the game ends, the time recorded, each back to its own mode", !life.HideSeekActive && life.LastClearSeconds >= 0f &&
                     life.ModeOf(rin) == CompanionMode.Free && life.ModeOf(len) == CompanionMode.Free);
@@ -1017,7 +1027,9 @@ namespace Halka.Poc2D3D.EditorTools
             Check("the font has every character ver4.0 writes (no ? boxes)", new[] { "動画を投稿した！", PocLife.NicoName, PocLife.NicoOpenLabel, "3日目 14:35", "さっきょくりょく +4", "がりょく +3",
                 "かしょうりょく +5", "つぎのとうこうまで 05:42", "リンは きたのほうに いるみたい！", "ファン「いつもみてるよ！」", "アンチ「そんなに にんきなの？」",
                 "かくれんぼをやめる", "↑↓（W S）か ゆびで うえしたに", "+0～12", "むずかしさを えらんでね", "かんたん", "ふつう", "やばい",
-                "（やばい）", PocLife.NotSleepyLine, PocLife.SleptLine + " 01:00", "かくれんぼは にわで しよう！", "リンは とおくの きたにしのほうに いるみたい！" }
+                "（やばい）", PocLife.NotSleepyLine, PocLife.SleptLine + " 01:00", "かくれんぼは にわで しよう！", "リンは とおくの きたにしのほうに いるみたい！",
+                PocLife.FoundRinLine, PocLife.FoundLenLine, "リン" + PocLife.HidingLine, "レン" + PocLife.HidingLine, "おえかき：いろいろ 5こ", "おえかき：さんかくとしかく" }
+                .Concat(PocMinigames.Subjects)
                 .All(GameBitmapFont.HasAllGlyphs));
             Check("ニコチューブ is written in full-width katakana (the font's half-width kana are squeezed and lose ﾌﾞ's voicing mark)",
                 PocLife.NicoName == "ニコチューブ" && PocLife.NicoOpenLabel.StartsWith("ニコチューブ") &&
@@ -1177,7 +1189,34 @@ namespace Halka.Poc2D3D.EditorTools
             Check("saved at once: the wake time and the count", c.Save.Writes == writes + 1 && c.Save.LastWritten.Life.Sleeps == 1 &&
                 c.Save.LastWritten.Life.WakeMinute == life.State.WakeMinute && PocLife.SleepFadeSeconds > 0f);
             Check("just woken: not sleepy again (12 game hours from now)", c.Session.InteractAhead() && life.State.Sleeps == 1 && !life.Sleepy);
-            Check("from elsewhere in the room the bed does not answer", PocLife.BedId == bed.DefinitionId && bed.Definition.ActionPoints.Count == 1);
+            // after the second look: from every side, facing it (before: only the bottom-left cell, its action point)
+            var sides = new List<(Vector2Int cell, FacingDirection facing)>();
+            foreach (var blocked in bed.BlockedCells())
+                foreach (var d in Dirs)
+                {
+                    var cell = blocked + d;
+                    if (bed.BlockedCells().Contains(cell) || !room.CanEnter(cell) || c.Session.IsTransitionCell(room, cell)) continue;
+                    sides.Add((cell, FacingDirectionExtensions.FromVector(-d)));
+                }
+            var answered = 0;
+            foreach (var (cell, facing) in sides)
+            {
+                c.Session.PlaceForCheck(cell, facing);
+                Frame(c, 1f / 60f, Vector2Int.zero);
+                c.Session.ShowMessage("");
+                if (c.Session.InteractAhead() && c.Session.LastMessage == PocLife.NotSleepyLine) answered++;
+            }
+            var awayCell = sides.Count > 0 ? sides[0].cell + (sides[0].cell - (sides[0].cell + sides[0].facing.ToVector())) : stand;
+            var awayAnswers = false;
+            if (room.CanEnter(awayCell))
+            {
+                c.Session.PlaceForCheck(awayCell, sides[0].facing);
+                Frame(c, 1f / 60f, Vector2Int.zero);
+                c.Session.ShowMessage("");
+                awayAnswers = c.Session.InteractAhead() && c.Session.LastMessage == PocLife.NotSleepyLine;
+            }
+            Check("the bed answers from every side she can stand on, facing it (not only its bottom-left cell); one cell further away, it does not",
+                sides.Count >= 3 && answered == sides.Count && !awayAnswers, $"{answered} of {sides.Count} sides: " + string.Join(" ", sides.Select(x => x.cell + x.facing.ToString())));
             var anchor = c.Clock.AnchorMilliseconds;
             var c2 = Begin(storage, fakeNow + 1000);
             var life2 = L(c2);
@@ -1215,6 +1254,7 @@ namespace Halka.Poc2D3D.EditorTools
             var tolerance = new Dictionary<MinigameDifficulty, float>();
             var drawTime = new Dictionary<MinigameDifficulty, float>();
             var singScore = new Dictionary<MinigameDifficulty, int>();
+            var singTolerance = new Dictionary<MinigameDifficulty, float>();
             var intro = "";
             foreach (MinigameDifficulty d in Enum.GetValues(typeof(MinigameDifficulty)))
             {
@@ -1233,7 +1273,8 @@ namespace Halka.Poc2D3D.EditorTools
                 g.Begin(CreatorSkill.Singing, null, null);
                 g.StartForCheck(d);
                 melody[d] = g.MelodyCount;
-                singScore[d] = g.ScoreSingingFor(0.8f);
+                singScore[d] = g.ScoreSingingFor(0.4f);
+                singTolerance[d] = g.SingTolerance;
                 g.Cancel();
             }
             var e = MinigameDifficulty.Easy;
@@ -1243,13 +1284,18 @@ namespace Halka.Poc2D3D.EditorTools
             Check("DTM: かんたん fewer and slower notes with a wider window, やばい more, faster and tighter",
                 notes[e] < notes[n] && notes[n] < notes[h] && travel[e] > travel[n] && travel[n] > travel[h] && window[e] > window[n] && window[n] > window[h],
                 $"notes {notes[e]}/{notes[n]}/{notes[h]}");
-            Check("おえかき: かんたん a wider line and more time, やばい a narrower line and less time",
-                tolerance[e] > tolerance[n] && tolerance[n] > tolerance[h] && drawTime[e] > drawTime[n] && drawTime[n] > drawTime[h]);
+            Check("おえかき: かんたん a wider line, やばい a narrower one; the time grows with the shapes (25 / 30 / 35 s for 1 / 2 / 5)",
+                tolerance[e] > tolerance[n] && tolerance[n] > tolerance[h] && Mathf.Approximately(drawTime[e], 25f) &&
+                Mathf.Approximately(drawTime[n], 30f) && Mathf.Approximately(drawTime[h], 35f));
             Check("うた: かんたん a slower melody that forgives more, やばい a faster one that forgives less",
                 melody[e] < melody[n] && melody[n] < melody[h] && singScore[e] > singScore[n] && singScore[n] > singScore[h],
                 $"melody {melody[e]}/{melody[n]}/{melody[h]} score {singScore[e]}/{singScore[n]}/{singScore[h]}");
-            Check("ふつう is the first version's game (its windows, travel, line and times as before)", Mathf.Approximately(travel[n], PocMinigames.NoteTravelSeconds) &&
-                Mathf.Approximately(window[n], PocMinigames.GoodWindow) && Mathf.Approximately(drawTime[n], PocMinigames.DrawSeconds) && Mathf.Approximately(tolerance[n], 0.1f));
+            Check("ふつう: DTM as the first version (its windows and travel); おえかき's line as before (two shapes now, 30 s)",
+                Mathf.Approximately(travel[n], PocMinigames.NoteTravelSeconds) && Mathf.Approximately(window[n], PocMinigames.GoodWindow) &&
+                Mathf.Approximately(drawTime[n], PocMinigames.DrawSeconds) && Mathf.Approximately(tolerance[n], 0.1f));
+            Check("うた after the second look: かんたん is the first やばい (band 0.85), ふつう 0.7, やばい 0.5 with notes changing about every 0.4-0.6 s",
+                Mathf.Approximately(singTolerance[e], 0.85f) && Mathf.Approximately(singTolerance[n], 0.7f) && Mathf.Approximately(singTolerance[h], 0.5f) &&
+                melody[h] >= 36, $"melody {melody[h]} notes in 24 s");
             UnityEngine.Object.DestroyImmediate(host);
             // in the game: the difficulty chosen is the one paid
             var c = Begin(new HarukaMemoryStorage());
@@ -1266,6 +1312,102 @@ namespace Halka.Poc2D3D.EditorTools
             games.Cancel();
             Check("in the game: 100 points on やばい +12, on かんたん +3 (かしょうりょく 15)", hard == 12 && easy == 3 && life.State.Creator.Skills[2] == 15,
                 hard + " / " + easy);
+        }
+
+        // ---------------------------------------------------------------- after the second look (2026-11-01)
+
+        private static void SecondLookChecks()
+        {
+            var c = Begin(new HarukaMemoryStorage());
+            var life = L(c);
+            Check("the 3D camera stands farther back outdoors (4.1, was 3.4; the house is 1.55x), indoors as before (3.6)",
+                Mathf.Approximately(c.Third.OutdoorDistance, 4.1f) && Mathf.Approximately(c.Third.IndoorDistance, 3.6f) &&
+                Mathf.Approximately(PocThirdPersonCamera.StandardOutdoorDistance, 4.1f), c.Third.OutdoorDistance + " / " + c.Third.IndoorDistance);
+
+            // footsteps: two soft sounds in turn, a little quieter, a slightly different pitch each
+            var steps = c.Gameplay.Footsteps;
+            var source = steps.GetComponent<AudioSource>();
+            var clips = new List<AudioClip>();
+            var pitches = new List<float>();
+            for (var i = 0; i < 6; i++) { steps.PlayStep(); clips.Add(steps.LastClip); pitches.Add(source.pitch); }
+            Check("footsteps: the two soft sounds in turn (footstep_soft_0 / _1), volume 0.35, pitch within 1 ± 0.06",
+                clips.All(x => x != null && x.name.StartsWith("footstep_soft_")) && clips[0] != clips[1] && clips[0] == clips[2] &&
+                Mathf.Approximately(source.volume, 0.35f) && pitches.All(x => x >= 0.94f && x <= 1.06f) && pitches.Distinct().Count() > 1,
+                string.Join(" ", clips.Select(x => x != null ? x.name : "null")));
+            float Loudest(AudioClip clip)
+            {
+                var data = new float[clip.samples * clip.channels];
+                clip.GetData(data, 0);
+                return data.Max(Mathf.Abs);
+            }
+            var old = AssetDatabase.LoadAssetAtPath<AudioClip>(PocSceneBuilder.FootstepPath);
+            Check("…softer than the first footstep (peak 0.45 against 0.68; the old file kept for the 2D game)",
+                old != null && clips[0] != null && Loudest(clips[0]) < 0.5f && Loudest(old) > 0.6f, $"{Loudest(clips[0]):0.00} / {(old != null ? Loudest(old) : 0f):0.00}");
+
+            // 2D: a small dark oval at the feet of everyone drawn
+            Walk(c, new Vector2Int(-2, 0), 60f);
+            Settle(c, 1f);
+            c.Switcher.SetMode(PocViewMode.PixelView2D);
+            Frame(c, 1f / 60f, Vector2Int.zero);
+            c.Pixel.ComposeScreen(960, 540);
+            var player = c.Pixel.LastSpriteRect;
+            var shadows = c.Pixel.ShadowRects.ToList();
+            var walkers = c.Pixel.WalkerRects.Values.ToList();
+            var expected = 1 + walkers.Count + (c.Pixel.LastCrowSprite != null ? 1 : 0);
+            bool Under(RectInt sprite, RectInt shadow) => Mathf.Abs(sprite.center.x - shadow.center.x) <= 2f &&
+                shadow.y <= sprite.y + sprite.height * 0.12f && shadow.yMax >= sprite.y && shadow.width < sprite.width;
+            Check("2D: a shadow at the feet of her, of Rin and Len and of the crow (an oval under each, as wide as the feet)",
+                shadows.Count == expected && walkers.Count >= 2 && shadows.Count > 0 && Under(player, shadows[0]) &&
+                walkers.All(w => shadows.Any(sh => Under(w, sh))),
+                $"shadows {shadows.Count} expected {expected}; her {player} shadow {(shadows.Count > 0 ? shadows[0].ToString() : "-")}");
+            c.Switcher.SetMode(PocViewMode.ThirdPerson3D);
+            Frame(c, 1f / 60f, Vector2Int.zero);
+
+            // おえかき: one simple shape, two simple shapes, five different things
+            var host = new GameObject("ver40 drawing checks");
+            var g = host.AddComponent<PocMinigames>();
+            var counts = new Dictionary<MinigameDifficulty, List<int>>();
+            var hardSeen = new HashSet<int>();
+            var simpleOnly = true;
+            for (var round = 0; round < 12; round++)
+                foreach (MinigameDifficulty d in Enum.GetValues(typeof(MinigameDifficulty)))
+                {
+                    g.Begin(CreatorSkill.Drawing, null, null);
+                    g.StartForCheck(d);
+                    if (!counts.ContainsKey(d)) counts[d] = new List<int>();
+                    counts[d].Add(g.ShapesNow.Count);
+                    if (d != MinigameDifficulty.Hard) simpleOnly &= g.ShapesNow.All(x => PocMinigames.SimpleShapes.Contains(x));
+                    else
+                    {
+                        simpleOnly &= g.ShapesNow.Distinct().Count() == g.ShapesNow.Count;
+                        foreach (var x in g.ShapesNow) hardSeen.Add(x);
+                    }
+                    g.Cancel();
+                }
+            Check("おえかき: かんたん always 1 simple shape, ふつう 2, やばい 5 different things (from all 10, not only the simple ones)",
+                counts[MinigameDifficulty.Easy].All(x => x == 1) && counts[MinigameDifficulty.Normal].All(x => x == 2) &&
+                counts[MinigameDifficulty.Hard].All(x => x == 5) && simpleOnly && hardSeen.Count >= 8 && hardSeen.Any(x => !PocMinigames.SimpleShapes.Contains(x)),
+                "seen on やばい: " + string.Join(",", hardSeen.OrderBy(x => x)));
+            var five = new[] { 0, 1, 8, 9, 5 };
+            var lines = new List<List<Vector2>>();
+            var layout = PocMinigames.Layout(five);
+            for (var i = 0; i < five.Length; i++) lines.Add(layout.Skip(i * 161).Take(161).ToList());
+            g.Begin(CreatorSkill.Drawing, null, null);
+            g.StartForCheck(MinigameDifficulty.Hard);
+            var all = g.ScoreDrawingFor(five, lines, false);
+            var oneOfFive = g.ScoreDrawingFor(five, lines.Take(1).ToList(), false);
+            g.Cancel();
+            Check("…all five traced on やばい: a high score; only one of the five: half or less", all >= 95 && oneOfFive <= 50, $"{all} / {oneOfFive}");
+            UnityEngine.Object.DestroyImmediate(host);
+
+            // the house: windows on the front now (the Blender script's manifest for house_main.fbx: the
+            // note and the triangles the two windows and sills added: 1418 before)
+            var manifest = File.ReadAllText(Path.Combine(PocSceneBuilder.RepositoryRoot, "blender/exports/phase3_assets_manifest.json"));
+            var entry = manifest.Substring(manifest.IndexOf("\"name\": \"house_main\"", StringComparison.Ordinal));
+            entry = entry.Substring(0, Math.Min(entry.Length, entry.IndexOf("\"supplemented\"", StringComparison.Ordinal) + 600));
+            var triangles = int.Parse(System.Text.RegularExpressions.Regex.Match(entry, "\"triangles\": (\\d+)").Groups[1].Value);
+            Check("the house has windows on its front, one on each side of the door (house_main.fbx, built by build_phase3_buildings.py)",
+                entry.Contains("ver4.0: windows on the front") && triangles >= 1418 + 150, triangles + " triangles");
         }
 
         // ---------------------------------------------------------------- protect

@@ -656,6 +656,7 @@ namespace Halka.Poc2D3D
             WalkerRects.Clear();
             DrawGrass(screenWidth, screenHeight);
             var crowCard = CrowCard(out var crowOnTop);
+            DrawShadows(crowCard, crowOnTop, screenWidth, screenHeight);
             groundCards.Clear();
             if (crowCard.HasValue && !crowOnTop) groundCards.Add((crowCard.Value.Root.z, -1, null));
             groundCards.Add((actor.transform.position.z, 0, null));
@@ -672,6 +673,94 @@ namespace Halka.Poc2D3D
             }
             DrawFadeLayer(screenWidth, screenHeight);
             if (crowCard.HasValue && crowOnTop) DrawCrow(crowCard.Value, true, screenWidth, screenHeight);
+        }
+
+        // ver4.0 (the user's request after the second look): every character has a small dark oval
+        // on the ground at its feet (the player, Rin, Len, the passers-by and the crow; under a crow in
+        // the air, a fainter one on the ground). Drawn after the grass and before every character,
+        // through the same mask as the sprites, so whatever covers a character's feet covers its
+        // shadow too. The oval is drawn in sprite pixels, so it is as blocky as the sprites.
+        public static readonly Color ShadowColor = new Color(0.09f, 0.1f, 0.14f, 0.32f);
+        public const float ShadowWidthOfSprite = 0.31f;  // 64 px sprites: 20 x 6; Rin and Len (48 px): 15 x 5
+        public const int ShadowFeetPixels = 2;           // the sprites' feet stand about 2 px above their bottom
+        public readonly List<RectInt> ShadowRects = new List<RectInt>();
+        private readonly Dictionary<Vector2Int, Texture2D> shadowTextures = new Dictionary<Vector2Int, Texture2D>();
+
+        private void DrawShadows(SpriteCard? crowCard, bool crowOnTop, int screenWidth, int screenHeight)
+        {
+            ShadowRects.Clear();
+            if (!SpriteReady || target == null) return;
+            if (!actor.Seated && actor.CurrentSprite != null)
+                DrawShadow(new SpriteCard { Sprite = actor.CurrentSprite, Root = actor.SpriteRoot, OffsetNorth = actor.SpriteOffsetNorth },
+                    1f, screenWidth, screenHeight);
+            foreach (var walker in Life.PocWalker.Active)
+                if (walker != null && walker.Drawn && walker.CurrentSprite != null)
+                    DrawShadow(new SpriteCard { Sprite = walker.CurrentSprite, Root = WalkerRoot(walker), OffsetNorth = walker.SpriteOffsetNorth },
+                        1f, screenWidth, screenHeight);
+            if (crowCard.HasValue)
+            {
+                var ground = crowCard.Value;
+                ground.Root.y = 0f;
+                DrawShadow(ground, crowOnTop ? 0.5f : 1f, screenWidth, screenHeight);
+            }
+        }
+
+        private void DrawShadow(SpriteCard card, float strength, int screenWidth, int screenHeight)
+        {
+            if (!PlaceCard(card, out var rect, out var pixelSize, out var depthBottom, out _)) return;
+            var w = Mathf.Max(6, Mathf.RoundToInt(card.Sprite.rect.width * ShadowWidthOfSprite));
+            var h = Mathf.Max(3, Mathf.RoundToInt(w * 0.3f));
+            var width = Mathf.Max(1, Mathf.RoundToInt(w * pixelSize));
+            var height = Mathf.Max(1, Mathf.RoundToInt(h * pixelSize));
+            var feet = rect.y + Mathf.RoundToInt(ShadowFeetPixels * pixelSize);
+            var shadow = new RectInt(rect.x + (rect.width - width) / 2, feet - height / 2, width, height);
+            ShadowRects.Add(shadow);
+            var color = ShadowColor;
+            color.a *= strength;
+            spriteMaterial.mainTexture = ShadowTexture(w, h);
+            spriteMaterial.SetTexture("_MaskTex", outlineMask);
+            spriteMaterial.SetFloat("_UseMask", outlineMask != null && outlineMaskShader != null ? 1f : 0f);
+            spriteMaterial.SetFloat("_GroundOnly", 0f);
+            spriteMaterial.SetFloat("_Thickness", 0f);
+            spriteMaterial.SetFloat("_GroundLayerId", PocOutlineTag.DecorationId);
+            spriteMaterial.SetFloat("_Shadow", 1f);
+            spriteMaterial.SetColor("_ShadowColor", color);
+            var maskW = (float)target.width * Scale;
+            var maskH = (float)target.height * Scale;
+            float x0 = shadow.x, y0 = shadow.y, x1 = shadow.xMax, y1 = shadow.yMax;
+            GL.PushMatrix();
+            GL.LoadPixelMatrix(0f, screenWidth, 0f, screenHeight);
+            spriteMaterial.SetPass(0);
+            GL.Begin(GL.QUADS);
+            // Flat on the ground: the whole oval at the depth of the feet.
+            Vertex(0f, 0f, (x0 + Offset.x) / maskW, (y0 + Offset.y) / maskH, depthBottom, x0, y0);
+            Vertex(0f, 1f, (x0 + Offset.x) / maskW, (y1 + Offset.y) / maskH, depthBottom, x0, y1);
+            Vertex(1f, 1f, (x1 + Offset.x) / maskW, (y1 + Offset.y) / maskH, depthBottom, x1, y1);
+            Vertex(1f, 0f, (x1 + Offset.x) / maskW, (y0 + Offset.y) / maskH, depthBottom, x1, y0);
+            GL.End();
+            GL.PopMatrix();
+            spriteMaterial.SetFloat("_Shadow", 0f);
+        }
+
+        // A hard-edged oval of w x h pixels (white; the shader colors it).
+        private Texture2D ShadowTexture(int w, int h)
+        {
+            var key = new Vector2Int(w, h);
+            if (shadowTextures.TryGetValue(key, out var texture) && texture != null) return texture;
+            texture = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp,
+                name = $"POC 2D shadow {w}x{h}", hideFlags = HideFlags.DontSave };
+            var pixels = new Color32[w * h];
+            for (var y = 0; y < h; y++)
+            for (var x = 0; x < w; x++)
+            {
+                var dx = (x + 0.5f - w * 0.5f) / (w * 0.5f);
+                var dy = (y + 0.5f - h * 0.5f) / (h * 0.5f);
+                pixels[y * w + x] = dx * dx + dy * dy <= 1f ? new Color32(255, 255, 255, 255) : new Color32(255, 255, 255, 0);
+            }
+            texture.SetPixels32(pixels);
+            texture.Apply(false, true);
+            shadowTextures[key] = texture;
+            return texture;
         }
 
         private readonly List<(float z, int kind, Life.PocWalker walker)> groundCards = new List<(float, int, Life.PocWalker)>();
@@ -1104,6 +1193,10 @@ namespace Halka.Poc2D3D
 
         private void OnDestroy()
         {
+            foreach (var shadow in shadowTextures.Values)
+                if (shadow != null && Application.isPlaying) Destroy(shadow);
+                else if (shadow != null) DestroyImmediate(shadow);
+            shadowTextures.Clear();
             if (target == null) return;
             if (worldCamera != null) worldCamera.targetTexture = null;
             Release(target);

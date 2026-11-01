@@ -372,7 +372,7 @@ namespace Halka.Poc2D3D.Life
         private bool TalkTo(PocWalker walker)
         {
             walker.Face(FacingDirectionExtensions.FromVector(session.Cell - walker.Cell));
-            if (HideSeekActive && TryFind(walker)) return true;
+            if (TalkDuringHideSeek(walker)) return true;
             if (walker == rin || walker == len) return OpenCompanionChoices(walker);
             return TalkToNpc(walker);
         }
@@ -395,7 +395,7 @@ namespace Halka.Poc2D3D.Life
             }
             if (target.DefinitionId == MicId)
             {
-                if (!NextToMic(target, session.Cell, session.Facing)) return false;
+                if (!NextTo(target, session.Cell, session.Facing)) return false;
                 return OpenStation(MicId, "マイクスタンド。");
             }
             return false;
@@ -405,14 +405,17 @@ namespace Halka.Poc2D3D.Life
         {
             if (session.World == null || !session.World.IsInterior) return false;
             foreach (var instance in session.World.Objects)
-                if (instance.DefinitionId == MicId && NextToMic(instance, cell, facing)) return OpenStation(MicId, "マイクスタンド。");
+            {
+                if (instance.DefinitionId == MicId && NextTo(instance, cell, facing)) return OpenStation(MicId, "マイクスタンド。");
+                if (instance.DefinitionId == BedId && !session.IsMoving && NextTo(instance, cell, facing)) return TrySleep();
+            }
             return false;
         }
 
-        // The microphone answers from any side, facing it (it has no action point of its own).
-        private static bool NextToMic(SharedObjectInstance mic, Vector2Int cell, FacingDirection facing)
+        // The microphone (it has no action point of its own) and the bed answer from any side, facing them.
+        private static bool NextTo(SharedObjectInstance instance, Vector2Int cell, FacingDirection facing)
         {
-            foreach (var blocked in mic.BlockedCells())
+            foreach (var blocked in instance.BlockedCells())
                 if (ExamineInteractable.IsInRange(cell, false, facing, blocked)) return true;
             return false;
         }

@@ -18,7 +18,8 @@ namespace Halka.Poc2D3D.Life
     //                  how close it stays. No microphone (指示書 8.3: a later addition).
     // Each: the difficulty first (かんたん / ふつう / やばい, or やめる), 0-100 points, やめる at any time
     // (nothing is given or saved), then the result (「さっきょくした！」「さっきょくりょく +4」) and とじる.
-    // ふつう is the first version's game; かんたん is slower and kinder, やばい faster, tighter and
+    // ふつう was the first version's game (after the second look: おえかき two shapes, うた harder);
+    // かんたん is slower and kinder, やばい faster, tighter and
     // denser (CreatorState: かんたん +0〜3, ふつう +0〜5, やばい +0〜12 by the same score bands).
     // The sounds are made here (sine tones and a click), no recorded music.
     public sealed class PocMinigames : MonoBehaviour
@@ -26,7 +27,7 @@ namespace Halka.Poc2D3D.Life
         public enum Phase { Closed, Intro, Playing, Result }
 
         public const float DtmSeconds = 24f;
-        public const float DrawSeconds = 25f;
+        public const float DrawSeconds = 30f;   // ver4.0 after the second look: two shapes now (was 25 s for one)
         public const float SingSeconds = 24f;
         public const float NoteTravelSeconds = 1.6f;
         public const float PerfectWindow = 0.08f;
@@ -36,12 +37,14 @@ namespace Halka.Poc2D3D.Life
         private static readonly float[] TravelByDifficulty = { 2.1f, NoteTravelSeconds, 1.15f };
         private static readonly float[] PerfectByDifficulty = { 0.1f, PerfectWindow, 0.06f };
         private static readonly float[] GoodByDifficulty = { 0.2f, GoodWindow, 0.12f };
-        private static readonly float[] DrawSecondsByDifficulty = { 30f, DrawSeconds, 18f };
+        private static readonly float[] DrawSecondsByDifficulty = { 25f, DrawSeconds, 35f };   // one, two, five shapes
         private static readonly float[] ToleranceByDifficulty = { 0.14f, 0.1f, 0.07f };
-        private static readonly float[] SingToleranceByDifficulty = { 1.7f, 1.25f, 0.85f };
-        private static readonly float[] SingGapByDifficulty = { 1.9f, 1.2f, 0.7f };
-        private static readonly float[] SingGapRandomByDifficulty = { 0.6f, 0.6f, 0.4f };
-        private static readonly int[] SingJumpByDifficulty = { 1, 2, 3 };
+        // うた (the user's request after the second look): the first やばい is enough for かんたん, and
+        // やばい much harder: the notes change about every half second, up to 4 steps, a narrow band.
+        private static readonly float[] SingToleranceByDifficulty = { 0.85f, 0.7f, 0.5f };
+        private static readonly float[] SingGapByDifficulty = { 0.7f, 0.55f, 0.4f };
+        private static readonly float[] SingGapRandomByDifficulty = { 0.4f, 0.3f, 0.2f };
+        private static readonly int[] SingJumpByDifficulty = { 3, 3, 4 };
 
         public MinigameDifficulty Difficulty { get; private set; } = MinigameDifficulty.Normal;
         public float NoteTravel => TravelByDifficulty[(int)Difficulty];
@@ -298,7 +301,13 @@ namespace Halka.Poc2D3D.Life
 
         // ---------------------------------------------------------------- drawing
 
-        public static readonly string[] Subjects = { "ほし", "ハート", "はな", "まる", "ねこ" };
+        public static readonly string[] Subjects = { "ほし", "ハート", "はな", "まる", "ねこ", "さんかく", "しかく", "ひしがた", "つき", "しずく" };
+        // ver4.0 (the user's request after the second look): かんたん one simple shape, ふつう two
+        // simple shapes side by side, やばい five different things picked at random from all of them.
+        public static readonly int[] SimpleShapes = { 3, 5, 6, 7 };
+        public static readonly int[] ShapeCountByDifficulty = { 1, 2, 5 };
+        private readonly List<int> shapesNow = new List<int>();
+        public IReadOnlyList<int> ShapesNow => shapesNow;
         private readonly List<Vector2> model = new List<Vector2>();      // the shape, -1..1 (y up)
         private readonly List<List<Vector2>> strokes = new List<List<Vector2>>();
         private int drawFinger = int.MinValue;
@@ -307,20 +316,111 @@ namespace Halka.Poc2D3D.Life
 
         private void SetupDrawing(int seed)
         {
-            var pick = (seed & 0x7FFFFFFF) % Subjects.Length;
-            Subject = Subjects[pick];
+            var rng = new System.Random(seed);
+            var count = ShapeCountByDifficulty[(int)Difficulty];
+            var pool = new List<int>();
+            if (Difficulty == MinigameDifficulty.Hard)
+                for (var i = 0; i < Subjects.Length; i++) pool.Add(i);
+            else pool.AddRange(SimpleShapes);
+            shapesNow.Clear();
+            while (shapesNow.Count < count && pool.Count > 0)
+            {
+                var k = rng.Next(pool.Count);
+                shapesNow.Add(pool[k]);
+                pool.RemoveAt(k);
+            }
+            Subject = count == 1 ? Subjects[shapesNow[0]]
+                : count == 2 ? Subjects[shapesNow[0]] + "と" + Subjects[shapesNow[1]]
+                : "いろいろ " + count + "こ";
             model.Clear();
             strokes.Clear();
             StrokePoints = 0;
             drawFinger = int.MinValue;
-            model.AddRange(Shape(pick));
+            model.AddRange(Layout(shapesNow));
+        }
+
+        // Where the shapes go on the board (-1..1): one in the middle, two side by side, five in
+        // two rows (three over two), each scaled to its place.
+        public static List<Vector2> Layout(IList<int> shapes)
+        {
+            Vector2[] centres;
+            float scale;
+            if (shapes.Count <= 1) { centres = new[] { Vector2.zero }; scale = 1f; }
+            else if (shapes.Count == 2) { centres = new[] { new Vector2(-0.48f, 0f), new Vector2(0.48f, 0f) }; scale = 0.48f; }
+            else
+            {
+                centres = new[] { new Vector2(-0.6f, 0.42f), new Vector2(0f, 0.42f), new Vector2(0.6f, 0.42f),
+                    new Vector2(-0.3f, -0.45f), new Vector2(0.3f, -0.45f) };
+                scale = 0.3f;
+            }
+            var points = new List<Vector2>();
+            for (var i = 0; i < shapes.Count && i < centres.Length; i++)
+                foreach (var p in Shape(shapes[i])) points.Add(centres[i] + p * scale);
+            return points;
+        }
+
+        // A closed polygon walked at an even speed (n + 1 points, the last on the first).
+        private static List<Vector2> Polygon(Vector2[] corners, int n)
+        {
+            var length = 0f;
+            for (var i = 0; i < corners.Length; i++) length += (corners[(i + 1) % corners.Length] - corners[i]).magnitude;
+            var points = new List<Vector2>();
+            for (var k = 0; k <= n; k++)
+            {
+                var d = length * k / n;
+                for (var i = 0; i < corners.Length; i++)
+                {
+                    var a = corners[i];
+                    var b = corners[(i + 1) % corners.Length];
+                    var side = (b - a).magnitude;
+                    if (d <= side || i == corners.Length - 1) { points.Add(Vector2.Lerp(a, b, Mathf.Clamp01(d / side))); break; }
+                    d -= side;
+                }
+            }
+            return points;
         }
 
         // Outlines sampled every few degrees, inside -0.85..0.85.
         public static List<Vector2> Shape(int which)
         {
-            var points = new List<Vector2>();
             const int n = 160;
+            switch (which)
+            {
+                case 5: // triangle
+                    return Polygon(new[] { new Vector2(0f, 0.85f), new Vector2(-0.8f, -0.62f), new Vector2(0.8f, -0.62f) }, n);
+                case 6: // square
+                    return Polygon(new[] { new Vector2(-0.7f, 0.7f), new Vector2(-0.7f, -0.7f), new Vector2(0.7f, -0.7f), new Vector2(0.7f, 0.7f) }, n);
+                case 7: // diamond
+                    return Polygon(new[] { new Vector2(0f, 0.85f), new Vector2(-0.6f, 0f), new Vector2(0f, -0.85f), new Vector2(0.6f, 0f) }, n);
+                case 8: // crescent moon: the outer circle's left side, back along a smaller circle to the right
+                {
+                    var moon = new List<Vector2>();
+                    const float outer = 0.75f, inner = 0.6f, shift = 0.32f;
+                    const float a0 = 50.6f * Mathf.Deg2Rad, b0 = 75f * Mathf.Deg2Rad;
+                    for (var i = 0; i <= n / 2; i++)
+                    {
+                        var a = Mathf.Lerp(a0, Mathf.PI * 2f - a0, i / (float)(n / 2));
+                        moon.Add(new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * outer);
+                    }
+                    for (var i = 1; i <= n / 2; i++)
+                    {
+                        var b = Mathf.Lerp(Mathf.PI * 2f - b0, b0, i / (float)(n / 2));
+                        moon.Add(new Vector2(shift + Mathf.Cos(b) * inner, Mathf.Sin(b) * inner));
+                    }
+                    return moon;
+                }
+                case 9: // drop: pointed at the top, round at the bottom
+                {
+                    var drop = new List<Vector2>();
+                    for (var i = 0; i <= n; i++)
+                    {
+                        var t = i / (float)n * Mathf.PI * 2f;
+                        drop.Add(new Vector2(0.62f * Mathf.Sin(t) * Mathf.Sin(t * 0.5f), 0.85f * Mathf.Cos(t)));
+                    }
+                    return drop;
+                }
+            }
+            var points = new List<Vector2>();
             for (var i = 0; i <= n; i++)
             {
                 var a = i / (float)n * Mathf.PI * 2f;
@@ -811,6 +911,17 @@ namespace Halka.Poc2D3D.Life
             model.AddRange(Shape(shape));
             strokes.Clear();
             strokes.Add(new List<Vector2>(line));
+            touchUsed = touch;
+            return DrawingScore();
+        }
+
+        // For the checks: one stroke per line over a layout of shapes (as SetupDrawing places them).
+        public int ScoreDrawingFor(IList<int> shapes, IList<List<Vector2>> lines, bool touch)
+        {
+            model.Clear();
+            model.AddRange(Layout(shapes));
+            strokes.Clear();
+            foreach (var line in lines) strokes.Add(new List<Vector2>(line));
             touchUsed = touch;
             return DrawingScore();
         }
