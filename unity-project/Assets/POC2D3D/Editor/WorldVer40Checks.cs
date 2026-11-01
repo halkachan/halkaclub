@@ -1320,6 +1320,9 @@ namespace Halka.Poc2D3D.EditorTools
 
         private static void SecondLookChecks()
         {
+            // the WebGL quality level's shadow distance (High: 40 m); an earlier suite in the same editor
+            // may have left the 3D view's 24 m behind (Run puts the editor's own value back at the end)
+            QualitySettings.shadowDistance = 40f;
             var c = Begin(new HarukaMemoryStorage());
             var life = L(c);
             Check("the 3D camera stands farther back outdoors (4.1, was 3.4; the house is 1.55x), indoors as before (3.6)",

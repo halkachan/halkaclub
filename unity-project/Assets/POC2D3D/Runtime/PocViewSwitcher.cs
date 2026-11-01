@@ -113,6 +113,13 @@ namespace Halka.Poc2D3D
             }
         }
 
+        // The quality level's distance is shared by the whole process (the editor's checks run many
+        // games one after another): put it back when this view goes away.
+        private void OnDestroy()
+        {
+            if (shadowDistance2D >= 0f) QualitySettings.shadowDistance = shadowDistance2D;
+        }
+
         private void ApplyShadows(bool pixel)
         {
             if (shadowDistance2D < 0f) shadowDistance2D = QualitySettings.shadowDistance;
