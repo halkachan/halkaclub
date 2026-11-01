@@ -22,6 +22,9 @@ I2): the shade is warm (hair amber, skin peach: CEL_WARM) and covers about four 
 the bangs: SKIN_CUT). Gaps of one to three texels between a strand and the face are filled with the
 colour beside them (outlined, they became black dots). The outline is drawn as on ﾊﾙｶﾁｬﾝ's sprites:
 on the character's own edge texels, in her line colour (#12121e), not as an extra ring outside.
+Rin's front frames: scaled down, her left eye fell half a texel off and took an extra row (a black
+blob beside the cheek); her eyes are drawn as one pair there, the left a mirror of the right
+(MIRROR_EYES).
 """
 import json
 import os
@@ -35,6 +38,7 @@ CEL_WARM = (0.9, 0.78, 0.68)
 CEL_CUT = 1.1
 SKIN_CUT = 0.85
 INNER_OUTLINE = (18, 18, 30, 255)   # ﾊﾙｶﾁｬﾝ's line colour
+MIRROR_EYES = {"rin"}               # front frames: the left eye a mirror of the right
 DARK_LUMA = 70
 DARK_SHARE = 0.25
 CHARACTERS = {
@@ -99,6 +103,32 @@ def close_gaps(im):
                     break
     for xy, c in fill.items():
         p[xy] = c
+    return im
+
+
+def mirror_eyes(im):
+    """Front view: the dark texels of the right eye (at least 4 texels right of the head's middle)
+    are copied, mirrored, onto the left half of the same rows; the left half's own dark texels there
+    take the colour of their mirror texel."""
+    p = im.load()
+    w, h = im.size
+    rows = [y for y in range(h) if any(p[x, y][3] for x in range(w))]
+    spans = [(min(x for x in range(w) if p[x, y][3]), max(x for x in range(w) if p[x, y][3])) for y in rows]
+    widest = max(b - a for a, b in spans)
+    head = [(a, b) for a, b in spans if b - a >= widest - 2]
+    centre = round(sum(a + b for a, b in head) / (2.0 * len(head)))
+
+    def dark(c):
+        return c[3] and luma(c) < 90
+
+    eye_rows = sorted({y for y in range(h) for x in range(centre + 4, min(w, centre + 9)) if dark(p[x, y])})
+    if not eye_rows:
+        return im
+    for y in range(eye_rows[0] - 1, eye_rows[-1] + 1):
+        for x in range(centre - 8, centre - 3):
+            m = 2 * centre - x
+            if 0 <= x < w and 0 <= m < w and (dark(p[x, y]) or dark(p[m, y])) and p[x, y][3] and p[m, y][3]:
+                p[x, y] = p[m, y]
     return im
 
 
@@ -195,6 +225,8 @@ def build(root, out_root, cid, folder, height, canvas_size, colors, flat_folder=
         out.paste(rgb, (0, 0), alpha)
         if flat_folder:
             # Rin and Len: no ring outside; their own edge is the line, as on ﾊﾙｶﾁｬﾝ
+            if d == "front" and cid in MIRROR_EYES:
+                mirror_eyes(out)
             inner_outline(close_gaps(out))
             canvas = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
             canvas.paste(out, ((canvas_size - out.width - 2) // 2 + 1, canvas_size - 1 - out.height), out)   
